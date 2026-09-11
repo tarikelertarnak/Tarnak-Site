@@ -15,7 +15,6 @@ import { SearchDialog } from '@/components/search-dialog'
 import { Sidebar } from '@/components/sidebar'
 import { SkipLink } from '@/components/skip-link'
 import { TopBar } from '@/components/top-bar'
-import { PuckEditorOverlay } from '@/components/puck/puck-editor-overlay'
 import { getContent } from '@/lib/content'
 import './globals.css'
 
@@ -101,7 +100,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <ScrollToTop />
                 {children}
                 <MusicPlayer src={musicSrc} />
-                <PuckEditorOverlay />
               </LocaleProvider>
             </EmotionStyleRegistry>
           </AntdRegistry>

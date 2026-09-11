@@ -276,15 +276,16 @@ export function Sidebar() {
             <button
               onClick={() => {
                 setIsOpen(false)
-                window.dispatchEvent(new CustomEvent('editor:open'))
+                const page =
+                  pathname === '/'
+                    ? 'home'
+                    : pathname.replace(/^\//, '').replace(/\//g, '-') || 'home'
+                router.push(`/admin/puck/${page}`)
               }}
               className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
             >
               <EditSquareIcon size={18} />
               <span>{t('nav.pageEditor') ?? 'Sayfa Düzenleyici'}</span>
-              <span className="ml-auto text-[9px] uppercase tracking-wide text-foreground-500/60">
-                URL değişmez
-              </span>
             </button>
           </>
         )}

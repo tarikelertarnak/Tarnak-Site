@@ -566,9 +566,7 @@ export function AdminPanel({
         </div>
         <div className="flex flex-row gap-2">
           <Button
-            onPress={() =>
-              window.dispatchEvent(new CustomEvent('editor:open'))
-            }
+            onPress={() => router.push('/admin/puck')}
             variant="bordered"
             startContent={<Icon icon="mdi:vector-square" width={18} height={18} />}
           >
