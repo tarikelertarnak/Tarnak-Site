@@ -1,0 +1,20 @@
+▲ Next.js 16.3.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://169.254.102.156:3000
+- Environments: .env.local
+✓ Ready in 507ms
+✓ Running next.config.mjs took 16ms
+
+(node:28540) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 drain listeners added to [Gzip]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+(Use `node --trace-warnings ...` to show where the warning was created)
+ GET / 200 in 1257ms (next.js: 197ms, proxy.ts: 257ms, application-code: 803ms)
+✓ Compiled in 249ms
+✓ Compiled in 252ms
+(node:28540) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 drain listeners added to [Gzip]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ GET / 200 in 322ms (next.js: 21ms, proxy.ts: 100ms, application-code: 201ms)
+(node:28540) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 drain listeners added to [Gzip]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ GET /blog/ 200 in 15.7s (next.js: 853ms, proxy.ts: 4ms, application-code: 14.9s)
+(node:28540) MaxListenersExceededWarning: Possible EventEmitter memory leak detected. 11 drain listeners added to [Gzip]. MaxListeners is 10. Use emitter.setMaxListeners() to increase limit
+ GET /projects/ 200 in 820ms (next.js: 658ms, proxy.ts: 4ms, application-code: 158ms)
+ GET /api/github/ 400 in 79ms (next.js: 52ms, proxy.ts: 4ms, application-code: 23ms)
+ GET /api/github/?username=TARIKELER-TARNAK 200 in 2.7s (next.js: 4ms, proxy.ts: 10ms, application-code: 2.7s)

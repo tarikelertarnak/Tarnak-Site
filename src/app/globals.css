@@ -1,0 +1,609 @@
+@import "tailwindcss";
+
+@plugin '../hero.ts';
+
+@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@source '../**/*.{ts,tsx,js,jsx}';
+@source '../components/**/*.{ts,tsx}';
+@source '../app/**/*.{ts,tsx}';
+@source '../lib/**/*.{ts,tsx}';
+@custom-variant dark (&:is(.dark *));
+
+/* antd cssinjs `:where(.css-dev-*) a { background-color: transparent; color: var(--ant-color-link) }`
+   unlayered kurali Tailwind'in @layer utilities icindeki bg- ve text- kuralini eziyor (unlayered > layered).
+   a + class selector'i specificity'yi (0,1,1) yapip antd'nin (0,0,1) kuralini gecer.
+   Renk de ekleniyor: yazi duz siyah kalir, hover'da antd link mavisine donmez. */
+a.bg-\[\#e5e7eb\] { background-color: #e5e7eb; color: #000; }
+a.hover\:bg-\[\#d1d5db\]:hover,
+a.hover\:bg-\[\#d1d5db\]:hover { background-color: #d1d5db; color: #000; }
+/* bg'si container'da olan buton linkleri (İndir/chevron) — antd link rengini ez, düz siyah kalsın */
+a.text-black { color: #000; }
+a.hover\:text-black:hover { color: #000; }
+
+@theme {
+    /* Custom xs breakpoint for extra small devices (480px+) */
+    --breakpoint-xs: 480px;
+
+    /* Dark color tokens — used by Tailwind utilities like `bg-background`,
+       `text-foreground`, `border-foreground/10` etc. */
+    --color-background: #050507;
+    --color-foreground: #ededed;
+    --color-foreground-200: #1a1a1f;
+    --color-foreground-300: #25252b;
+    --color-foreground-400: #3a3a42;
+    --color-foreground-500: #71717a;
+    --color-foreground-600: #a1a1aa;
+    --color-foreground-700: #d4d4d8;
+    --color-foreground-800: #e4e4e7;
+    --color-foreground-900: #fafafa;
+    --color-foreground-950: #ffffff;
+    --color-primary: #3b82f6;
+    --color-primary-foreground: #ffffff;
+    --color-secondary: #60a5fa;
+    --color-secondary-foreground: #ffffff;
+    --color-success: #10b981;
+    --color-danger: #ef4444;
+
+    --keyframes-animatedTextGradient: {
+        0% {
+            background-position: 0% 50%;
+        }
+        50% {
+            background-position: 100% 50%;
+        }
+        100% {
+            background-position: 0% 50%;
+        }
+    };
+
+    --keyframes-marquee: {
+        from {
+            transform: translateX(0);
+        }
+        to {
+            transform: translateX(-50%);
+        }
+    };
+
+    --keyframes-float: {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-12px);
+        }
+    };
+
+    --keyframes-pulse-soft: {
+        0%, 100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.6;
+            transform: scale(0.85);
+        }
+    };
+
+    --keyframes-shimmer: {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    };
+
+    --keyframes-spin-slow: {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    };
+
+    --keyframes-spin-reverse: {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(-360deg);
+        }
+    };
+
+    --keyframes-twinkle: {
+        0%, 100% {
+            opacity: 0.25;
+            transform: scale(1);
+        }
+        50% {
+            opacity: 0.85;
+            transform: scale(1.4);
+        }
+    };
+
+    --keyframes-dash-flow: {
+        to {
+            stroke-dashoffset: -40;
+        }
+    };
+
+    --background-size-300: 300%;
+
+    --animation-gradient: animatedTextGradient 6s ease infinite alternate;
+    --animation-marquee: marquee 30s linear infinite;
+    --animation-float: float 6s ease-in-out infinite;
+    --animation-pulse-soft: pulse-soft 2s ease-in-out infinite;
+    --animation-spin-slow: spin-slow 90s linear infinite;
+    --animation-spin-reverse: spin-reverse 120s linear infinite;
+}
+
+/* --- Plain CSS utilities (SSR-safe, no Tailwind class resolution needed) --- */
+.animate-gradient {
+    animation: var(--animation-gradient);
+}
+.animate-float {
+    animation: var(--animation-float);
+}
+.animate-pulse-soft {
+    animation: var(--animation-pulse-soft);
+}
+.animate-spin-slow {
+    animation: var(--animation-spin-slow);
+}
+.animate-spin-reverse {
+    animation: var(--animation-spin-reverse);
+}
+.animate-twinkle {
+    animation: twinkle 4s ease-in-out infinite;
+}
+.animate-dash-flow {
+    animation: dash-flow 6s linear infinite;
+}
+.bg-size-300 {
+    background-size: 300%;
+}
+
+html {
+    /* Overscroll/boşlukta görünen zemin — tema varsayılanı koyu, class'larla yönetilir */
+    background-color: #000000;
+    scroll-behavior: smooth;
+}
+
+/* Sabit header yüksekliği kadar boşluk — çapa linkleri (#projects, #contact)
+   header'ın altına hizalansın */
+[id] {
+    scroll-margin-top: 88px;
+}
+
+/* Hareket azaltma tercihi olan kullanıcılar için animasyonları kapat */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .marquee-track,
+    .animate-float,
+    .animate-pulse-soft,
+    .animate-spin-slow,
+    .animate-spin-reverse,
+    .animate-twinkle,
+    .animate-dash-flow,
+    .shimmer {
+        animation: none !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Kullanıcı kontrollü hareket azaltma (settings modal'dan açılır) */
+html[data-reduce-motion="true"] *,
+html[data-reduce-motion="true"] *::before,
+html[data-reduce-motion="true"] *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+/* Karanlık tema yoğunluğu — sadece dark modda uygulanır.
+   "light" yoğunluk = arka plan açık gri ton (siyaha göre daha az kontrast).
+   "standard" = mevcut davranış (siyah arka plan).
+   "dark" = saf siyah / daha düşük değer. Sadece dark modda anlamlı. */
+html.dark[data-dark-intensity="light"] {
+    --heroui-background: 240 6% 12%;
+    background-color: #16161a;
+}
+html.dark[data-dark-intensity="standard"] {
+    --heroui-background: 240 10% 4%;
+    background-color: #000000;
+}
+html.dark[data-dark-intensity="dark"] {
+    --heroui-background: 0 0% 0%;
+    background-color: #000000;
+}
+
+/*
+   LobeUI (antd) cssinjs'in `a { color: var(--ant-color-link) }` kuralı
+   Tailwind utility'lerini (Cascade Layers yüzünden) ezebiliyor ve tüm
+   linkleri #60b1ff (mavi) yapıyordu. Değişkeni global override ediyoruz:
+   dark'ta açık gri, light'ta koyu; hover/active marka mavisi.
+*/
+:root {
+    --ant-color-link: #e4e4e7 !important;
+    --ant-color-link-hover: #0761d5 !important;
+    --ant-color-link-active: #0761d5 !important;
+}
+
+html[data-theme="light"] {
+    --ant-color-link: #3f3f46 !important;
+    --ant-color-link-hover: #004dba !important;
+    --ant-color-link-active: #004dba !important;
+}
+
+/*
+   LobeUI'nin kendi cssinjs'i (`.css-var-*`) link container'larına
+   `--ant-color-link: #60b1ff` yazıyor — bu, :root override'ından daha yakın
+   olduğu için kazanıyor ve linkler mavi kalıyor. Bu class'ları da ez:
+*/
+[class*="css-var"] {
+    --ant-color-link: #e4e4e7 !important;
+    --ant-color-link-hover: #0761d5 !important;
+    --ant-color-link-active: #0761d5 !important;
+}
+
+html[data-theme="light"] [class*="css-var"] {
+    --ant-color-link: #3f3f46 !important;
+    --ant-color-link-hover: #004dba !important;
+    --ant-color-link-active: #004dba !important;
+}
+
+/*
+   Aktif/inaktif ayrımını veren Tailwind renk sınıflarının (text-primary,
+   hover:text-primary vb.) antd'nin link rengine yenilmemesi için:
+*/
+a.text-primary {
+    color: hsl(var(--heroui-primary) / 1) !important;
+}
+
+a.text-primary:hover {
+    color: hsl(var(--heroui-primary) / 1) !important;
+}
+
+/*
+   antd'nin `:where(.css-dev...) a { color: var(--ant-color-link) }` kuralı
+   cascade layer DIŞINDA olduğu için (Tailwind utility'leri @layer içinde)
+   her zaman kazanıyor. Dark'ta renkler benzer olduğundan gizliydi, light'ta
+   açığa çıktı. `!important` ile net kurallar:
+*/
+a.text-foreground,
+a.text-foreground\/80,
+a.text-foreground\/90,
+a.text-foreground\/50 {
+    color: hsl(var(--heroui-foreground) / 1) !important;
+}
+
+html[data-theme="light"] a.text-foreground,
+html[data-theme="light"] a.text-foreground\/80,
+html[data-theme="light"] a.text-foreground\/90,
+html[data-theme="light"] a.text-foreground\/50 {
+    color: #27272a !important;
+}
+
+/* footer ve diğer tonlu linkler */
+a.text-foreground-400,
+a.text-foreground-500,
+a.text-foreground-600 {
+    color: hsl(var(--heroui-foreground-500) / 1) !important;
+}
+
+html[data-theme="light"] a.text-foreground-400,
+html[data-theme="light"] a.text-foreground-500,
+html[data-theme="light"] a.text-foreground-600 {
+    color: #52525b !important;
+}
+
+html[data-theme="dark"] {
+    color-scheme: dark;
+}
+
+html[data-theme="light"] {
+    background-color: #ffffff;
+    color-scheme: light;
+}
+
+/* ---------- İmleç (cursor) düzeltmeleri ---------- */
+html,
+body {
+    cursor: auto;
+    font-family: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+a,
+button,
+[role="button"],
+input[type="submit"],
+input[type="button"],
+input[type="checkbox"],
+input[type="radio"],
+select,
+summary,
+label[for],
+[data-cursor="pointer"] {
+    cursor: pointer;
+}
+
+a:disabled,
+button:disabled,
+[role="button"][aria-disabled="true"] {
+    cursor: not-allowed;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+textarea {
+    cursor: text;
+}
+
+/* ---------- Metin seçimi ---------- */
+::selection {
+    background: rgba(7, 97, 213, 0.35);
+    color: inherit;
+}
+
+/* ---------- Kaydırma çubuğu ---------- */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(7, 97, 213, 0.35);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(7, 97, 213, 0.6);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+html[data-theme="light"] ::-webkit-scrollbar-thumb {
+    background: rgba(0, 77, 186, 0.4);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+
+/* ---------- Odak halkası ---------- */
+:focus-visible {
+    outline: 2px solid #0761d5;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* ---------- Marquee ---------- */
+.marquee-track {
+    animation: var(--animation-marquee);
+    will-change: transform;
+}
+
+.marquee-track:hover {
+    animation-play-state: paused;
+}
+
+/* ---------- Float ---------- */
+.animate-float {
+    animation: var(--animation-float);
+}
+
+.animate-pulse-soft {
+    animation: var(--animation-pulse-soft);
+}
+
+/* ---------- Shimmer (kart parlaması) ---------- */
+.shimmer {
+    background: linear-gradient(
+        110deg,
+        transparent 40%,
+        rgba(255, 255, 255, 0.12) 50%,
+        transparent 60%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+}
+
+html[data-theme="light"] .shimmer {
+    background: linear-gradient(
+        110deg,
+        transparent 40%,
+        rgba(0, 0, 0, 0.05) 50%,
+        transparent 60%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 3s linear infinite;
+}
+
+/* ---------- Grid arka plan deseni ---------- */
+.bg-grid {
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+}
+
+html[data-theme="light"] .bg-grid {
+    background-image:
+        linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+    background-size: 56px 56px;
+}
+
+/* Radial vurgu */
+.bg-radial-fade {
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 75%);
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 75%);
+}
+
+/* Light mode: translusent surfaces on white */
+html[data-theme="light"] .bg-white\/5 { background-color: rgba(0, 0, 0, 0.04); }
+html[data-theme="light"] .bg-white\/10 { background-color: rgba(0, 0, 0, 0.07); }
+html[data-theme="light"] .bg-white\/15 { background-color: rgba(0, 0, 0, 0.10); }
+html[data-theme="light"] .bg-white\/20 { background-color: rgba(0, 0, 0, 0.12); }
+html[data-theme="light"] .border-white\/5 { border-color: rgba(0, 0, 0, 0.08); }
+html[data-theme="light"] .border-white\/10 { border-color: rgba(0, 0, 0, 0.12); }
+html[data-theme="light"] .border-white\/15 { border-color: rgba(0, 0, 0, 0.16); }
+html[data-theme="light"] .border-white\/20 { border-color: rgba(0, 0, 0, 0.20); }
+html[data-theme="light"] .bg-black\/10 { background-color: rgba(255, 255, 255, 0.40); }
+html[data-theme="light"] .bg-black\/20 { background-color: rgba(255, 255, 255, 0.50); }
+html[data-theme="light"] .bg-black\/50 { background-color: rgba(255, 255, 255, 0.70); }
+html[data-theme="light"] .bg-black\/90 { background-color: rgba(255, 255, 255, 0.95); }
+html[data-theme="light"] .bg-\[\#0b0b0f\] { background-color: #f5f5f7; }
+html[data-theme="light"] .bg-\[\#232329\] { background-color: #eceef1; }
+html[data-theme="light"] .bg-\[\#16161a\] { background-color: #f0f0f2; }
+html[data-theme="light"] .markdown-body code { background: rgba(0, 0, 0, 0.06); }
+html[data-theme="light"] .markdown-body pre { background: #f4f4f6; }
+html[data-theme="light"] .markdown-body th { background: rgba(0, 0, 0, 0.04); }
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.markdown-body h1 {
+    font-size: 1.6em;
+}
+
+.markdown-body h2 {
+    font-size: 1.35em;
+}
+
+.markdown-body h3 {
+    font-size: 1.15em;
+}
+
+.markdown-body h1:first-child,
+.markdown-body h2:first-child,
+.markdown-body h3:first-child {
+    margin-top: 0;
+}
+
+.markdown-body p {
+    margin: 0.75em 0;
+}
+
+.markdown-body a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+    margin: 0.75em 0;
+    padding-left: 1.5em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+}
+
+.markdown-body ul {
+    list-style: disc;
+}
+
+.markdown-body ol {
+    list-style: decimal;
+}
+
+.markdown-body blockquote {
+    border-left: 3px solid var(--color-primary);
+    padding-left: 1em;
+    margin: 1em 0;
+    color: var(--color-foreground-500);
+}
+
+.markdown-body code {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 0.15em 0.4em;
+    font-size: 0.9em;
+}
+
+.markdown-body pre {
+    background: #16161a;
+    border: 1px solid var(--color-default-100);
+    border-radius: 8px;
+    padding: 1em;
+    overflow-x: auto;
+    margin: 1em 0;
+}
+
+.markdown-body pre code {
+    background: transparent;
+    padding: 0;
+}
+
+.markdown-body img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 1em 0;
+}
+
+.markdown-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.markdown-body th,
+.markdown-body td {
+    border: 1px solid var(--color-default-100);
+    padding: 0.5em 0.75em;
+    text-align: left;
+}
+
+.markdown-body th {
+    background: rgba(255, 255, 255, 0.05);
+    font-weight: 600;
+}
+
+.markdown-body hr {
+    border: none;
+    border-top: 1px solid var(--color-default-100);
+    margin: 2em 0;
+}
+
+.markdown-body strong {
+    font-weight: 700;
+}
+
+/* ── Komut paleti (cmdk) focus sifirlama ─────────────────────────
+   Aranan input/kapsayici uzerinde mavi cerceve/halka cikmasini
+   kesin olarak engeller (tarayici + cmdk kendi stilleri dahil). */
+[cmdk-input-wrapper] input:focus,
+[cmdk-input-wrapper] input:focus-visible,
+[cmdk-root]:focus {
+    outline: none !important;
+    outline-style: none !important;
+    box-shadow: none !important;
+    border-color: transparent !important;
+}
