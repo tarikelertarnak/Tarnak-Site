@@ -32,7 +32,7 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getContent()
   const name = content.hero.name || 'TARIK ELER'
-  const title = `${name} - TARNAK | Portfolio`
+  const title = `${name} - TARNAK`
   const description =
     'TARIK ELER - TARNAK (Tarnak) - Web developer & creator. Next.js, TypeScript ve yapay zeka üzerine projeler geliştiriyorum. Projelerim, yeteneklerim ve iletişim bilgilerim.'
 
@@ -43,7 +43,7 @@ export async function generateMetadata(): Promise<Metadata> {
     keywords: [
       'TARIK ELER', 'TARNAK', 'Tarık Eler', 'TARIKELER', 'TARIKELER-TARNAK',
       'Tarnak', 'tarikeler', 'web developer', 'Next.js', 'TypeScript',
-      'portfolio', 'yazılım geliştirici',
+      'yazılım geliştirici',
     ],
     authors: [{ name: 'TARIK ELER - TARNAK', url: SITE_URL }],
     creator: 'TARIK ELER - TARNAK',
