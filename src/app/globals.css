@@ -171,6 +171,13 @@ html {
     scroll-behavior: smooth;
 }
 
+/* Zoom (Ctrl+scroll) ve dar ekranlarda yatay taşma düzeni kaydırıyordu.
+   Yatay scroll'u kilitle: içerik hiçbir zaman viewport'u aşamaz. */
+html,
+body {
+    overflow-x: hidden;
+}
+
 /* Sabit header yüksekliği kadar boşluk — çapa linkleri (#projects, #contact)
    header'ın altına hizalansın */
 [id] {
