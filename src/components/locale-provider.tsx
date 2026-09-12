@@ -1,7 +1,15 @@
 'use client'
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react'
-import { t, type Locale, type LocalePref } from '@/lib/i18n'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  detectLocale,
+  LOCALE_COOKIE,
+  resolveLocale,
+  t,
+  type Locale,
+  type LocalePref,
+} from '@/lib/i18n'
 
 interface LocaleContextValue {
   locale: Locale
@@ -13,15 +21,37 @@ interface LocaleContextValue {
 const LocaleContext = createContext<LocaleContextValue | null>(null)
 
 /**
- * Single-locale provider — the site is Turkish-only.
- * Kept as a component so existing consumers (useLocale/useT) keep working
- * unchanged; setPref is a no-op since there is no language switcher anymore.
+ * Bilingual provider — Turkish default, English opt-in.
+ * setPref persists the choice to the `site-locale` cookie and refreshes the
+ * page so server components re-render with the new locale.
  */
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const value = useMemo<LocaleContextValue>(
-    () => ({ locale: 'tr', pref: 'tr', detected: 'tr', setPref: () => {} }),
-    [],
-  )
+  const router = useRouter()
+  const [pref, setPrefState] = useState<LocalePref>('auto')
+
+  // Hydration-safe: bootstrap from cookie, then keep in sync with the provider.
+  useEffect(() => {
+    const fromCookie = (document.cookie.match(/(?:^|;\s*)site-locale=([^;]*)/) || [])[1]
+    setPrefState((fromCookie === 'tr' || fromCookie === 'en' || fromCookie === 'auto'
+      ? fromCookie
+      : 'auto') as LocalePref)
+  }, [])
+
+  const value = useMemo<LocaleContextValue>(() => {
+    const detected = detectLocale(typeof navigator !== 'undefined' ? navigator.language : 'tr')
+    const locale = resolveLocale(pref, detected)
+    const setPref = (next: LocalePref) => {
+      setPrefState(next)
+      try {
+        document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; SameSite=Lax`
+      } catch {
+        /* noop */
+      }
+      router.refresh()
+    }
+    return { locale, pref, detected, setPref }
+  }, [pref, router])
+
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
 }
 
@@ -33,7 +63,8 @@ export function useLocale(): LocaleContextValue {
   return ctx
 }
 
-/** Grab static strings from the Turkish UI dictionary. */
+/** Look up static UI strings for the active locale. */
 export function useT() {
-  return { t: (key: string) => t('tr', key), locale: 'tr' as Locale }
+  const { locale } = useLocale()
+  return { t: (key: string) => t(locale, key), locale }
 }

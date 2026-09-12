@@ -1,22 +1,60 @@
+import { cookies, headers } from 'next/headers'
 import { getContent, type SiteContent } from '@/lib/content'
-import type { Locale } from '@/lib/i18n'
-
-/** Single-locale site: the locale is always Turkish. */
-export async function getLocale(): Promise<Locale> {
-  return 'tr'
-}
+import {
+  detectLocale,
+  LOCALE_COOKIE,
+  resolveLocale,
+  type Locale,
+  type LocalePref,
+} from '@/lib/i18n'
+import { enContentOverlay } from '@/lib/i18n-content-en'
 
 /**
- * Content localization — Turkish-only.
- *
- * data/content.json IS the single source of truth (Turkish); the old
- * tr/en overlay layer was removed when the site was locked to one locale.
+ * Server-side locale: stored preference wins, otherwise accept-language
+ * (Turkish default).
  */
-export function localizeContent(content: SiteContent, _locale: Locale): SiteContent {
+export async function getLocale(): Promise<Locale> {
+  const pref = (await cookies()).get(LOCALE_COOKIE)?.value as LocalePref | undefined
+  const lang = (await headers()).get('accept-language') ?? undefined
+  return resolveLocale(pref, detectLocale(lang))
+}
+
+type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] }
+
+/** Deep-merge an overlay over the base content (only provided fields change). */
+function mergeContent<T extends object>(
+  base: T,
+  patch?: DeepPartial<T>,
+): T {
+  if (!patch) return base
+  const out: Record<string, unknown> = { ...(base as Record<string, unknown>) }
+  for (const [key, value] of Object.entries(patch as Record<string, unknown>)) {
+    const baseValue = (base as Record<string, unknown>)[key]
+    out[key] =
+      value &&
+      typeof value === 'object' &&
+      !Array.isArray(value) &&
+      baseValue &&
+      typeof baseValue === 'object'
+        ? mergeContent(
+            baseValue as Record<string, unknown>,
+            value as DeepPartial<Record<string, unknown>>,
+          )
+        : value
+  }
+  return out as T
+}
+
+/** Content localization — Turkish base content, English via overlay. */
+export function localizeContent(content: SiteContent, locale: Locale): SiteContent {
+  if (locale === 'en') {
+    return mergeContent(content, enContentOverlay)
+  }
   return content
 }
 
-/** Server components: localized content (identical to raw content here). */
+/** Server components: localized content for the current locale. */
 export async function getLocalizedContent(): Promise<SiteContent> {
-  return getContent()
+  const content = await getContent()
+  return localizeContent(content, await getLocale())
 }

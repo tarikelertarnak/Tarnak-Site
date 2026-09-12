@@ -1,22 +1,30 @@
 /**
- * Single-locale i18n — the site is Turkish-only.
+ * Bilingual i18n — Turkish (default) and English.
  *
- * Runtime always resolves to 'tr' (see detectLocale/resolveLocale below).
- * The literal 'en' stays in the type so legacy `locale === 'en'` branches
- * keep compiling; they are dead code and always take the Turkish path.
+ * detectLocale() reads the browser/accept-language; resolveLocale() combines
+ * the user preference (cookie) with the detected language; both fall back to
+ * Turkish. The site content stays Turkish-first; English is opt-in via the
+ * settings switcher.
  */
 
 export type Locale = 'tr' | 'en'
 export type LocalePref = 'auto' | Locale
 export const LOCALE_COOKIE = 'site-locale'
 
-/** Single-locale site: browser/accept-language is ignored, always Turkish. */
-export function detectLocale(_lang?: string): Locale {
-  return 'tr'
+const cleanLocale = (s?: string | null): Locale =>
+  s?.toLowerCase().startsWith('en') ? 'en' : 'tr'
+
+/** Detect from a language tag (`navigator.language` / `accept-language`). */
+export function detectLocale(lang?: string): Locale {
+  return cleanLocale(lang)
 }
 
-export function resolveLocale(_pref?: LocalePref, _detected?: Locale): Locale {
-  return 'tr'
+/** Combine stored preference with detection (works on server and client). */
+export function resolveLocale(pref?: LocalePref, detected?: Locale): Locale {
+  if (pref === 'tr' || pref === 'en') {
+    return pref
+  }
+  return detected ?? 'tr'
 }
 
 /* ------------------------------------------------------------------ */
@@ -24,12 +32,16 @@ export function resolveLocale(_pref?: LocalePref, _detected?: Locale): Locale {
 /* ------------------------------------------------------------------ */
 
 import trDict from '@/i18n/tr.json'
+import enDict from '@/i18n/en.json'
 
 type Dictionary = Record<string, string>
 
-/** Turkish is the only mounted dictionary; `en` never resolves at runtime. */
-export const dictionaries: Partial<Record<Locale, Dictionary>> = { tr: trDict }
+/** Turkish and English UI dictionaries; Turkish is the fallback default. */
+export const dictionaries: Record<Locale, Dictionary> = {
+  tr: trDict,
+  en: enDict,
+}
 
 export function t(locale: Locale, key: string): string {
-  return dictionaries[locale]?.[key] ?? key
+  return dictionaries[locale]?.[key] ?? dictionaries.tr[key] ?? key
 }

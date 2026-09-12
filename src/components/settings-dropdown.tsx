@@ -2,14 +2,18 @@
 import type { ThemeMode } from '@/components/theme'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
-import { useT } from '@/components/locale-provider'
+import { useLocale, useT } from '@/components/locale-provider'
 import { useTheme } from '@/components/theme'
 import { cn } from '@/components/ui/cn'
 import { Drawer } from '@/components/ui/drawer'
 import {
+  AutoIcon,
   CheckIcon,
   CogIcon,
   FileIcon,
+  FlagEnIcon,
+  FlagTrIcon,
+  GlobeIcon,
   MoonIcon,
   RefreshCwIcon,
   RotateCcwIcon,
@@ -18,6 +22,7 @@ import {
   VolumeIcon,
 } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
+import type { LocalePref } from '@/lib/i18n'
 
 type DarkIntensity = 'light' | 'standard' | 'dark'
 
@@ -49,6 +54,7 @@ export function SettingsModal({
 }) {
   const { theme, setTheme } = useTheme()
   const { t } = useT()
+  const { pref, setPref } = useLocale()
   const router = useRouter()
 
   const [reduceMotion, setReduceMotion] = useState<boolean>(false)
@@ -152,6 +158,12 @@ export function SettingsModal({
     { value: 'dark', label: t('settings.darkIntensityIntense') },
   ]
 
+  const localeOptions: { value: LocalePref; icon?: React.ReactNode; label: string }[] = [
+    { value: 'auto', icon: <AutoIcon size={16} />, label: t('settings.auto') },
+    { value: 'tr', icon: <FlagTrIcon size={16} />, label: 'Türkçe' },
+    { value: 'en', icon: <FlagEnIcon size={16} />, label: 'English' },
+  ]
+
   return (
     <Drawer
       open={open}
@@ -166,6 +178,15 @@ export function SettingsModal({
             options={themeOptions}
             value={theme}
             onChange={(v) => setTheme(v as ThemeMode)}
+          />
+        </Section>
+
+        {/* Language */}
+        <Section title={t('settings.language')} icon={<GlobeIcon size={16} />}>
+          <RadioGroup
+            options={localeOptions}
+            value={pref}
+            onChange={(v) => setPref(v as LocalePref)}
           />
         </Section>
 

@@ -522,3 +522,16 @@ av.adminPanel başlığı altında "Panel" (/admin) + "Sayfa Düzenleyici" (/adm
 - Dogrulama: tsc 0. / 200 (orijinal statik sayfa), /blog/ 200, /projects/ 200, /admin/puck/ 307→/login (korumali). Tarayicida HAKKIMDA/ARAC CANTAM/PROJELER/BLOG/ILETISIM bolumleri gorunuyor.
 - Puck sistemi duruyor (gercek puck sayfalari /admin/puck + /puck/* rotalarinda); vitrin kaydi yedekte. Ana sayfa Puck'tan bagimsiz.
 - Dev server yeniden baslatildi (port 3000, .next-dev.log).
+
+## 2026-09-11 (devam) — I18n CIFT DILLI GERI (TR varsayilan + EN secenegi)
+- Sorun (kullanici tespiti): "Ayarlarda ingilizce dil secenegi gozukmuyor, o kisim gitmis" — 17. turda tek-dil (TR) sabitlemesi dil seciciyi settings-dropdown'dan tamamen kaldirmisti.
+- Cozum (cift dilli mimari geri kuruldu, TR hala varsayilan):
+  - src/lib/i18n.ts: detectLocale() gercek (accept-language/navigator), resolveLocale() pref+cookie mantigi; dictionaries artik { tr, en } (en.json mount edildi); t() tr ye geri dususlu.
+  - src/lib/i18n-content-en.ts (YENI): EN icerik overlay'i — content.json TR base, 'en' locale'inde Text alanlari uzerine uygulaniyor (DeepPartial, name/url/icon/data-array'ler korunuyor).
+  - src/lib/i18n-server.ts: getLocale() server'da cookie (site-locale) + accept-language okur; localizeContent() locale 'en' ise enContentOverlay birlestirir; getLocalizedContent() locale'e gore doner.
+  - src/components/locale-provider.tsx: setPref artik gercek — site-locale cookie yazar + router.refresh(); useT() aktif locale'i kullanir.
+  - src/app/layout.tsx: <html lang={locale}> dinamik.
+  - src/components/settings-dropdown.tsx: DIL bolumu geri — "Dil" Section (Auto/Turkce/English radio, AutoIcon/FlagTrIcon/FlagEnIcon/GlobeIcon) tema ile karanlik yogunlugu arasina eklendi (eski yapida settings.language etiketi hali hazirda tr.json/en.json'da mevcuttu).
+  - i18n-content-tr.ts pasif kalmaya devam ediyor (TR artik base'te; overlay gerekmiyor).
+- Dogrulama: tsc 0. HTTP: cookie site-locale=en -> hero "Explore Projects" + <html lang="en">; cookie tr -> "Projeleri Keşfet" + lang="tr". (BrowserOS MCP su an bagli degil — kullanici BrowserOS'u acarsa gorsel de teyit edilir.)
+- Not: React hydration uyumu icin provider baslangicta cookie'yi useEffect'te okur (SSR'da 'auto' ile render, sonra senkron) — gorsel olarak bir anda TR gozukup locale'e gecis yapabilir; sorun degil.
