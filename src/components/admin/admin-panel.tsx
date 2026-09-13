@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react'
 import type {
-  BlogPost,
   ChatMessage,
   InterestItem,
   ProjectItem,
@@ -29,20 +28,16 @@ type SaveStatus = { type: 'success' | 'error', text: string } | null
 
 export function AdminPanel({
   initialContent,
-  initialPosts,
   initialMessages,
   username,
 }: {
   initialContent: SiteContent
-  initialPosts: BlogPost[]
   initialMessages: ChatMessage[]
   username: string
 }) {
   const router = useRouter()
   const [content, setContent] = useState<SiteContent>(initialContent)
-  const [posts, setPosts] = useState<BlogPost[]>(initialPosts)
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
-  const [editingPostId, setEditingPostId] = useState<string | null>(null)
   const [status, setStatus] = useState<SaveStatus>(null)
   const [saving, setSaving] = useState(false)
   const [backgroundUploading, setBackgroundUploading] = useState(false)
@@ -211,95 +206,7 @@ export function AdminPanel({
     }))
   }
 
-  const newPost = () => {
-    const post: BlogPost = {
-      id: crypto.randomUUID(),
-      title: '',
-      slug: '',
-      date: new Date().toISOString().slice(0, 10),
-      excerpt: '',
-      content: '',
-    }
-    setPosts(prev => [...prev, post])
-    setEditingPostId(post.id)
-  }
-
-  const updatePost = (field: keyof BlogPost, value: string) => {
-    if (!editingPostId) {
-      return
-    }
-    setPosts(prev =>
-      prev.map(post =>
-        post.id === editingPostId ? { ...post, [field]: value } : post,
-      ),
-    )
-  }
-
-  const savePost = async () => {
-    if (!editingPostId) {
-      return
-    }
-    const post = posts.find(p => p.id === editingPostId)
-    if (!post) {
-      return
-    }
-    setSaving(true)
-    setStatus(null)
-    try {
-      const res = await fetch('/api/admin/blog', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'upsert', post }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setStatus({ type: 'success', text: 'Yazı kaydedildi.' })
-      }
-      else {
-        setStatus({
-          type: 'error',
-          text: data.message || 'Yazı kaydedilemedi.',
-        })
-      }
-    }
-    catch {
-      setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    }
-    finally {
-      setSaving(false)
-    }
-  }
-
-  const removePost = async (id: string) => {
-    setSaving(true)
-    setStatus(null)
-    try {
-      const res = await fetch('/api/admin/blog', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', id }),
-      })
-      const data = await res.json()
-      if (res.ok) {
-        setPosts(prev => prev.filter(post => post.id !== id))
-        if (editingPostId === id) {
-          setEditingPostId(null)
-        }
-        setStatus({ type: 'success', text: 'Yazı silindi.' })
-      }
-      else {
-        setStatus({ type: 'error', text: data.message || 'Yazı silinemedi.' })
-      }
-    }
-    catch {
-      setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    }
-    finally {
-      setSaving(false)
-    }
-  }
-
-  const clearMessages = async () => {
+const clearMessages = async () => {
     setSaving(true)
     try {
       for (const message of messages) {
@@ -1596,148 +1503,7 @@ export function AdminPanel({
                 </div>
               ),
             },
-            {
-              key: 'blog',
-              label: (
-                <span className="inline-flex items-center gap-1.5">
-                  <Icon icon="mdi:post-outline" width={15} height={15} />
-                  Blog
-                </span>
-              ),
-              children: (
-                <div className="space-y-4 pt-4">
-                  <div className="flex flex-row items-center justify-between">
-                    <p className="text-sm text-foreground-500">
-                      {posts.length}
-                      {' '}
-                      yazı
-                    </p>
-                    <Button
-                      onPress={newPost}
-                      color="primary"
-                      size="sm"
-                      startContent={
-                        <Icon icon="mdi:plus" width={18} height={18} />
-                      }
-                    >
-                      Yeni Yazı
-                    </Button>
-                  </div>
-                  <div className="flex flex-col gap-3">
-                    {posts.map(post => (
-                      <ItemCard
-                        key={post.id}
-                        title={post.title || 'Başlıksız Yazı'}
-                        onRemove={() => removePost(post.id)}
-                      >
-                        <div className="flex flex-row flex-wrap items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="bordered"
-                            onPress={() => setEditingPostId(post.id)}
-                            startContent={
-                              <Icon icon="mdi:pencil" width={16} height={16} />
-                            }
-                          >
-                            Düzenle
-                          </Button>
-                          <span className="text-xs text-foreground-500">
-                            {post.date}
-                          </span>
-                          {editingPostId === post.id && (
-                            <span className="text-xs font-semibold text-primary">
-                              Düzenleniyor...
-                            </span>
-                          )}
-                        </div>
-                      </ItemCard>
-                    ))}
-                  </div>
-                  {editingPostId
-                    && (() => {
-                      const post = posts.find(p => p.id === editingPostId)
-                      if (!post) {
-                        return null
-                      }
-                      return (
-                        <PanelCard title="Yazı Editörü">
-                          <div className="flex flex-col gap-4">
-                            <Grid>
-                              <Field label="Başlık">
-                                <Input
-                                  variant="faded"
-                                  value={post.title}
-                                  onValueChange={value =>
-                                    updatePost('title', value)}
-                                />
-                              </Field>
-                              <Field label="Slug (link kısmı, boşluk yerine - kullan)">
-                                <Input
-                                  variant="faded"
-                                  value={post.slug}
-                                  onValueChange={value =>
-                                    updatePost('slug', value)}
-                                />
-                              </Field>
-                              <Field label="Tarih">
-                                <Input
-                                  variant="faded"
-                                  type="date"
-                                  value={post.date}
-                                  onValueChange={value =>
-                                    updatePost('date', value)}
-                                />
-                              </Field>
-                              <Field label="Özet (liste sayfasında görünür)">
-                                <Input
-                                  variant="faded"
-                                  value={post.excerpt}
-                                  onValueChange={value =>
-                                    updatePost('excerpt', value)}
-                                />
-                              </Field>
-                            </Grid>
-                            <Field label="İçerik (Markdown desteklenir)">
-                              <Textarea
-                                variant="faded"
-                                value={post.content}
-                                onValueChange={value =>
-                                  updatePost('content', value)}
-                                minRows={12}
-                                maxRows={30}
-                                placeholder={
-                                  '# Başlık\n\nParagraf yazısı...\n\n- Liste\n- Öğe\n\n**Kalın**, *italik*'
-                                }
-                              />
-                            </Field>
-                            <div className="flex flex-row gap-2">
-                              <Button
-                                color="primary"
-                                onPress={savePost}
-                                isLoading={saving}
-                              >
-                                <Icon
-                                  icon="material-symbols:save"
-                                  width={18}
-                                  height={18}
-                                />
-                                Yazıyı Kaydet
-                              </Button>
-                              <Button
-                                variant="light"
-                                onPress={() => setEditingPostId(null)}
-                              >
-                                Kapat
-                              </Button>
-                            </div>
-                          </div>
-                        </PanelCard>
-                      )
-                    })()}
-                </div>
-              ),
-            },
-            {
+{
               key: 'messages',
               label: (
                 <span className="inline-flex items-center gap-1.5">

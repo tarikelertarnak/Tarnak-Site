@@ -42,13 +42,15 @@ const INTEREST_ICONS: Record<string, ReactNode> = {
 export function AboutSection({ content }: { content: SiteContent }) {
   const about = content.about
   const { t } = useT()
-  const [discordCopied, setDiscordCopied] = useState(false)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
-  const copyDiscord = () => {
-    const handle = t('footer.discordHandle')
-    void navigator.clipboard?.writeText(handle)
-    setDiscordCopied(true)
-    window.setTimeout(() => setDiscordCopied(false), 2000)
+  const copyValue = (key: string, value: string) => {
+    void navigator.clipboard?.writeText(value)
+    setCopiedKey(key)
+    window.setTimeout(
+      () => setCopiedKey(prev => (prev === key ? null : prev)),
+      2000,
+    )
   }
 
   return (
@@ -97,40 +99,61 @@ export function AboutSection({ content }: { content: SiteContent }) {
                   {t('about.infoCardTitle')}
                 </h3>
                 <div className="mt-2 grid w-full grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                  <InfoRow
+<InfoRow
                     label={t('about.infoName')}
                     value={`${content.profile.firstName} ${content.profile.lastName}`}
+                    action={(
+                      <CopyValueButton
+                        copied={copiedKey === 'name'}
+                        label={t('about.copy')}
+                        copiedLabel={t('about.copied')}
+                        onClick={() =>
+                          copyValue(
+                            'name',
+                            `${content.profile.firstName} ${content.profile.lastName}`,
+                          )}
+                      />
+                    )}
                   />
                   <InfoRow label={t('about.infoTitle')} value={content.profile.title} />
                   <InfoRow
                     label={t('about.infoExperience')}
                     value={content.profile.experience}
                   />
-                  <InfoRow label={t('about.infoPhone')} value={content.contact.phone} />
-                  <InfoRow label={t('about.infoEmail')} value={content.contact.email} />
+                  <InfoRow
+                    label={t('about.infoPhone')}
+                    value={content.contact.phone}
+                    action={(
+                      <CopyValueButton
+                        copied={copiedKey === 'phone'}
+                        label={t('about.copy')}
+                        copiedLabel={t('about.copied')}
+                        onClick={() => copyValue('phone', content.contact.phone)}
+                      />
+                    )}
+                  />
+                  <InfoRow
+                    label={t('about.infoEmail')}
+                    value={content.contact.email}
+                    action={(
+                      <CopyValueButton
+                        copied={copiedKey === 'email'}
+                        label={t('about.copy')}
+                        copiedLabel={t('about.copied')}
+                        onClick={() => copyValue('email', content.contact.email)}
+                      />
+                    )}
+                  />
                   <InfoRow
                     label={t('about.infoDiscord')}
                     value={t('footer.discordHandle')}
                     action={(
-                      <button
-                        type="button"
-                        onClick={copyDiscord}
-                        aria-label={t('about.copy')}
-                        title={discordCopied ? t('about.copied') : t('about.copy')}
-                        className={`ml-1 inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors ${
-                          discordCopied
-                            ? 'border-success/40 bg-success/10 text-success'
-                            : 'border-foreground-200/20 bg-background text-foreground-500 hover:border-primary/50 hover:text-primary'
-                        }`}
-                      >
-                        {discordCopied
-                          ? (
-                              <CheckIcon size={13} />
-                            )
-                          : (
-                              <CopyIcon size={13} />
-                            )}
-                      </button>
+                      <CopyValueButton
+                        copied={copiedKey === 'discord'}
+                        label={t('about.copy')}
+                        copiedLabel={t('about.copied')}
+                        onClick={() => copyValue('discord', t('footer.discordHandle'))}
+                      />
                     )}
                   />
                   <InfoRow
@@ -295,6 +318,40 @@ function InfoRow({
         {action}
       </span>
     </div>
+  )
+}
+
+function CopyValueButton({
+  copied,
+  label,
+  copiedLabel,
+  onClick,
+}: {
+  copied: boolean
+  label: string
+  copiedLabel: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={copied ? copiedLabel : label}
+      title={copied ? copiedLabel : label}
+      className={`ml-1 inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors ${
+        copied
+          ? 'border-success/40 bg-success/10 text-success'
+          : 'border-foreground-200/20 bg-background text-foreground-500 hover:border-primary/50 hover:text-primary'
+      }`}
+    >
+      {copied
+        ? (
+            <CheckIcon size={13} />
+          )
+        : (
+            <CopyIcon size={13} />
+          )}
+    </button>
   )
 }
 

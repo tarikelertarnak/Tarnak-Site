@@ -361,7 +361,7 @@ function ProjectMedia({
   const prev = () => setIndex(i => (i - 1 + count) % count)
   const next = () => setIndex(i => (i + 1) % count)
 
-  const mediaNode = (src: string, video: boolean, controls: boolean) =>
+const mediaNode = (src: string, video: boolean, controls: boolean) =>
     video ? (
       <video
         key={src}
@@ -383,13 +383,22 @@ function ProjectMedia({
         key={src}
         src={src}
         alt={project.title}
-        className="h-full w-full object-contain"
+        title={t('projects.zoom')}
+        onClick={() => setZoomed(true)}
+        className="h-full w-full cursor-zoom-in object-contain"
       />
     )
 
   return (
     <div>
-      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-white/5 ring-1 ring-foreground-200/10 transition-colors group-hover:ring-primary/30">
+      <div
+        className="relative aspect-video w-full overflow-hidden rounded-lg bg-white/5 ring-1 ring-foreground-200/10 transition-colors group-hover:ring-primary/30"
+        onClick={() => {
+          // Clicking a photo/GIF opens the lightbox; videos keep playing/pausing on click.
+          if (!isVideo)
+            setZoomed(true)
+        }}
+      >
         {mediaNode(current, isVideo, true)}
       </div>
 
@@ -579,18 +588,34 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
         {/* Content */}
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-row items-start justify-between gap-2">
-            <h3 className="break-words text-base font-semibold transition-colors duration-300 group-hover:text-primary sm:text-lg">
+            {/* Project name → project page */}
+            <a
+              href={project.projectLink}
+              target={isExternal ? '_blank' : undefined}
+              rel={isExternal ? 'noopener noreferrer' : undefined}
+              onClick={() => recordView()}
+              title={isExternal ? t('projects.view') : t('projects.open')}
+              className="min-w-0 break-words text-base font-semibold text-foreground no-underline transition-colors duration-300 group-hover:text-primary hover:text-primary sm:text-lg"
+            >
               {project.title}
-            </h3>
+            </a>
             {project.notice && (
               <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-bold text-primary">
                 {project.notice.replace(/[[\]]/g, '')}
               </span>
             )}
           </div>
-          <p className="line-clamp-3 min-h-[3.5em] text-sm text-foreground-500">
+          {/* Description → project showcase page */}
+          <a
+            href={project.srcLink || project.projectLink}
+            target={isExternal ? '_blank' : undefined}
+            rel={isExternal ? 'noopener noreferrer' : undefined}
+            onClick={() => recordView()}
+            title={t('projects.showcase')}
+            className="line-clamp-3 min-h-[3.5em] text-sm text-foreground-500 no-underline transition-colors duration-300 hover:text-foreground/80"
+          >
             {project.description}
-          </p>
+          </a>
 
           {/* Tags */}
           {tags.length > 0 && (
