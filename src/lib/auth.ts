@@ -58,10 +58,11 @@ function safeEqual(a: string, b: string): boolean {
 export async function verifyCredentials(
   username: string,
   password: string,
-): Promise<{ ok: boolean; needsRehash: boolean }> {
+): Promise<{ ok: boolean, needsRehash: boolean }> {
   const admin = await getAdmin()
   const userOk = safeEqual(username, admin.username)
-  if (!userOk) return { ok: false, needsRehash: false }
+  if (!userOk)
+    return { ok: false, needsRehash: false }
   const passOk = await verifyPassword(password, admin.passwordHash)
   const needsRehash = passOk && !admin.passwordHash.startsWith('$2')
   return { ok: passOk, needsRehash }

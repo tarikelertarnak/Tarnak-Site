@@ -57,25 +57,27 @@ export function Button({
 
   if (variant === 'light') {
     btnVariant = 'text'
-  } else if (variant === 'faded') {
+  }
+  else if (variant === 'faded') {
     btnVariant = 'fill'
-  } else if (color === 'primary') {
+  }
+  else if (color === 'primary') {
     btnVariant = 'primary'
   }
 
   // Master style: all primary solid buttons match the "Contact" reference —
   // light gray background, fully opaque black (#000) text/icon.
   // !important is used to override LobeButton's blue/soft colors.
-  const masterClass =
-    variant === 'solid' && color === 'primary'
+  const masterClass
+    = variant === 'solid' && color === 'primary'
       ? '!bg-[#e5e7eb] !text-[#000] !opacity-100 hover:!bg-[#d1d5db]'
       : ''
 
   // Force the text/border color so bordered/ghost buttons stay visible in light theme too.
   // LobeButton's ghost variant + default text color could disappear
   // in light mode (see the "invisible buttons" report).
-  const outlineClass =
-    variant === 'bordered' || variant === 'ghost'
+  const outlineClass
+    = variant === 'bordered' || variant === 'ghost'
       ? color === 'primary'
         ? '!text-primary !border-primary/40 hover:!bg-primary/10'
         : '!text-foreground !border-foreground/30 hover:!bg-foreground/5'

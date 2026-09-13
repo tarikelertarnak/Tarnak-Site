@@ -7,12 +7,20 @@
  * settings switcher.
  */
 
+/* ------------------------------------------------------------------ */
+/* UI dictionary — static strings used by components                   */
+/* ------------------------------------------------------------------ */
+
+import enDict from '@/i18n/en.json'
+import trDict from '@/i18n/tr.json'
+
 export type Locale = 'tr' | 'en'
 export type LocalePref = 'auto' | Locale
 export const LOCALE_COOKIE = 'site-locale'
 
-const cleanLocale = (s?: string | null): Locale =>
-  s?.toLowerCase().startsWith('en') ? 'en' : 'tr'
+function cleanLocale(s?: string | null): Locale {
+  return s?.toLowerCase().startsWith('en') ? 'en' : 'tr'
+}
 
 /** Detect from a language tag (`navigator.language` / `accept-language`). */
 export function detectLocale(lang?: string): Locale {
@@ -26,13 +34,6 @@ export function resolveLocale(pref?: LocalePref, detected?: Locale): Locale {
   }
   return detected ?? 'tr'
 }
-
-/* ------------------------------------------------------------------ */
-/* UI dictionary — static strings used by components                   */
-/* ------------------------------------------------------------------ */
-
-import trDict from '@/i18n/tr.json'
-import enDict from '@/i18n/en.json'
 
 type Dictionary = Record<string, string>
 

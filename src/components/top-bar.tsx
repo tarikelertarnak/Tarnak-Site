@@ -8,9 +8,9 @@
  * which uses a top-bar pattern instead of always-visible sidebar.
  */
 
-import { useState, useEffect } from 'react'
 import { motion } from 'motion/react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 
 export function TopBar() {
@@ -24,14 +24,16 @@ export function TopBar() {
   useEffect(() => {
     let cancelled = false
     fetch('/api/admin/session')
-      .then((r) => r.json())
+      .then(r => r.json())
       .then((data) => {
-        if (cancelled) return
+        if (cancelled)
+          return
         setIsAdmin(data.user?.role === 'admin')
         setAdminChecked(true)
       })
       .catch(() => {
-        if (!cancelled) setAdminChecked(true)
+        if (!cancelled)
+          setAdminChecked(true)
       })
     return () => {
       cancelled = true
@@ -123,8 +125,8 @@ export function TopBar() {
               <button
                 type="button"
                 onClick={() => {
-                  const page =
-                    pathname === '/'
+                  const page
+                    = pathname === '/'
                       ? 'home'
                       : pathname.replace(/^\//, '').replace(/\//g, '-') || 'home'
                   router.push(`/admin/puck/${page}`)
@@ -175,7 +177,8 @@ export function TopBar() {
                 <path d="m21 21-4.3-4.3" />
               </svg>
               <span className="hidden min-w-0 flex-1 truncate text-xs sm:inline">
-                {t('common.search')}...
+                {t('common.search')}
+                ...
               </span>
               <kbd className="pointer-events-none hidden shrink-0 items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-foreground/50 sm:inline-flex">
                 <span>⌘</span>

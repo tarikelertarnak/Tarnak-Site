@@ -1,7 +1,7 @@
 import { Navigation } from '@/components/navigation'
-import { Section, SectionTitle } from '@/components/ui/section'
 import { GithubIcon } from '@/components/ui/icons'
-import { getLocalizedContent, getLocale } from '@/lib/i18n-server'
+import { Section, SectionTitle } from '@/components/ui/section'
+import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
 
 export async function generateMetadata({
   params,

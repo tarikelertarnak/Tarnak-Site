@@ -6,24 +6,26 @@
  * When `onClose` is given it is overlay mode: shows the close label instead of the back label.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { Puck } from '@measured/puck'
-import '@measured/puck/dist/index.css'
+import Link from 'next/link'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { cn } from '@/components/ui/cn'
 import { config, SAMPLE_DATA } from '@/lib/puck/config'
 import { normalizePage } from '@/lib/puck/normalize'
-import { cn } from '@/components/ui/cn'
+import '@measured/puck/dist/index.css'
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error'
 type Mode = 'edit' | 'preview'
-type Version = { id: string; name: string; ts: string }
+interface Version { id: string, name: string, ts: string }
 
 const EMPTY_DATA = { root: { props: {} }, content: [], zones: {} } as const
 
 function validateData(d: unknown): Record<string, unknown> | null {
-  if (!d || typeof d !== 'object') return null
+  if (!d || typeof d !== 'object')
+    return null
   const obj = d as Record<string, unknown>
-  if (!Array.isArray(obj.content)) return null
+  if (!Array.isArray(obj.content))
+    return null
   return obj
 }
 
@@ -77,7 +79,9 @@ export function PuckEditor({
       const json = await res.json()
       // Unpublished page → show sample content (instead of an empty canvas)
       setData(validateData(json.data) || (SAMPLE_DATA as Record<string, unknown>))
-    } catch { setData(null) } finally { setLoading(false) }
+    }
+    catch { setData(null) }
+    finally { setLoading(false) }
   }, [path])
 
   useEffect(() => { load().catch(() => {}) }, [load])
@@ -86,10 +90,12 @@ export function PuckEditor({
 
   /* ── Inject component icons (after Puck mounts) ── */
   useEffect(() => {
-    if (mode !== 'edit' || loading) return
+    if (mode !== 'edit' || loading)
+      return
     const timer = setTimeout(() => {
       const el = puckRef.current
-      if (!el) return
+      if (!el)
+        return
       el.querySelectorAll('[class*="DrawerItem-name"]').forEach((nameEl) => {
         const name = nameEl.textContent?.trim() || ''
         const iconSvg = COMPONENT_ICONS[name] || DEFAULT_ICON
@@ -101,7 +107,8 @@ export function PuckEditor({
           icon.setAttribute('data-puck-icon', '1')
           icon.innerHTML = iconSvg
           icon.className = 'puck-comp-icon'
-          if (draggable) { draggable.prepend(icon) } else { item.prepend(icon) }
+          if (draggable) { draggable.prepend(icon) }
+          else { item.prepend(icon) }
         }
       })
     }, 800)
@@ -110,13 +117,17 @@ export function PuckEditor({
 
   /* ── Component search: add a filter input at the top of the drawer ── */
   useEffect(() => {
-    if (mode !== 'edit' || loading) return
+    if (mode !== 'edit' || loading)
+      return
     const timer = setTimeout(() => {
       const el = puckRef.current
-      if (!el) return
+      if (!el)
+        return
       const drawer = el.querySelector('[class*="_Drawer_"]') as HTMLElement | null
-      if (!drawer) return
-      if (drawer.querySelector('.puck-drawer-search')) return
+      if (!drawer)
+        return
+      if (drawer.querySelector('.puck-drawer-search'))
+        return
 
       const search = document.createElement('input')
       search.className = 'puck-drawer-search'
@@ -127,11 +138,12 @@ export function PuckEditor({
         const q = search.value.trim().toLowerCase()
         ;[...drawer.children].forEach((c) => {
           const rowEl = c as HTMLElement
-          if (rowEl.classList.contains('puck-drawer-search')) return
-          const name =
-            rowEl.querySelector('[class*="DrawerItem-name"]')?.textContent?.trim() || ''
-          rowEl.style.display =
-            !q || name.toLowerCase().includes(q) || rowEl.textContent?.toLowerCase().includes(q)
+          if (rowEl.classList.contains('puck-drawer-search'))
+            return
+          const name
+            = rowEl.querySelector('[class*="DrawerItem-name"]')?.textContent?.trim() || ''
+          rowEl.style.display
+            = !q || name.toLowerCase().includes(q) || rowEl.textContent?.toLowerCase().includes(q)
               ? ''
               : 'none'
         })
@@ -143,13 +155,16 @@ export function PuckEditor({
 
   /* ── Components list: drag-and-drop ordering (grip handle + localStorage) ── */
   useEffect(() => {
-    if (mode !== 'edit' || loading) return
+    if (mode !== 'edit' || loading)
+      return
     const timer = setTimeout(() => {
       const el = puckRef.current
-      if (!el) return
+      if (!el)
+        return
       const section = el.querySelector('[class*="SidebarSection"][class*="noBorderTop"]') as HTMLElement | null
       const drawer = el.querySelector('[class*="_Drawer_"]') as HTMLElement | null
-      if (!section || !drawer) return
+      if (!section || !drawer)
+        return
       const KEY = 'puck-component-order'
       const nameOf = (row: HTMLElement) =>
         (row.querySelector('[class*="DrawerItem-name"]') as HTMLElement | null)?.textContent?.trim() || ''
@@ -168,12 +183,14 @@ export function PuckEditor({
             if (r) { drawer.appendChild(r); byName.delete(n) }
           }
         }
-      } catch { /* corrupt record → ignore */ }
+      }
+      catch { /* corrupt record → ignore */ }
 
       // Grip handles — added to the same flex row as the icon (DrawerItem-draggable)
       liveRows().forEach((row) => {
         const inner = (row.querySelector('[class*="DrawerItem-draggable"]') as HTMLElement | null) || row
-        if (inner.querySelector('.puck-reorder-grip')) return
+        if (inner.querySelector('.puck-reorder-grip'))
+          return
         const grip = document.createElement('span')
         grip.className = 'puck-reorder-grip'
         grip.title = 'Sıralamak için sürükle'
@@ -185,16 +202,20 @@ export function PuckEditor({
       // Reorder — the drawer's direct children (rows) are moved
       drawer.addEventListener('dragstart', (e) => {
         const grip = (e.target as HTMLElement)?.closest?.('.puck-reorder-grip')
-        if (grip) (grip as HTMLElement).setAttribute('data-dragging', '1')
+        if (grip)
+          (grip as HTMLElement).setAttribute('data-dragging', '1')
       })
       drawer.addEventListener('dragover', (e: DragEvent) => {
         const grip = drawer.querySelector('.puck-reorder-grip[data-dragging]') as HTMLElement | null
-        if (!grip) return
+        if (!grip)
+          return
         e.preventDefault()
         const dragging = rowOf(grip)
-        if (!dragging) return
+        if (!dragging)
+          return
         const after = liveRows().find(r => r !== dragging && e.clientY < r.getBoundingClientRect().top + r.offsetHeight / 2)
-        if (after) drawer.insertBefore(dragging, after)
+        if (after)
+          drawer.insertBefore(dragging, after)
         else drawer.appendChild(dragging)
         dragging.classList.add('puck-dragging')
       })
@@ -205,7 +226,8 @@ export function PuckEditor({
         try {
           const order = liveRows().map(nameOf).filter(Boolean)
           localStorage.setItem(KEY, JSON.stringify(order))
-        } catch { /* yoksay */ }
+        }
+        catch { /* yoksay */ }
       })
     }, 900)
     return () => clearTimeout(timer)
@@ -214,10 +236,11 @@ export function PuckEditor({
   /* ── Zoom control ── */
   const handleZoomReset = useCallback(() => {
     const el = puckRef.current
-    if (!el) return
+    if (!el)
+      return
     const zoomSelect = el.querySelector('select[class*="ViewportControls-zoom"]') as HTMLSelectElement | null
     if (zoomSelect) {
-      const opts = [...zoomSelect.options].map(o => ({ val: parseFloat(o.value), el: o }))
+      const opts = [...zoomSelect.options].map(o => ({ val: Number.parseFloat(o.value), el: o }))
       const target = opts.reduce((prev, curr) => Math.abs(curr.val - 1) < Math.abs(prev.val - 1) ? curr : prev)
       zoomSelect.value = target.el.value
       zoomSelect.dispatchEvent(new Event('change', { bubbles: true }))
@@ -226,16 +249,18 @@ export function PuckEditor({
   }, [])
 
   const handleZoomInput = useCallback((val: string) => {
-    const num = parseInt(val, 10)
-    if (isNaN(num)) return
+    const num = Number.parseInt(val, 10)
+    if (isNaN(num))
+      return
     const clamped = Math.min(500, Math.max(10, num))
     setZoomValue(String(clamped))
     const el = puckRef.current
-    if (!el) return
+    if (!el)
+      return
     const zoomSelect = el.querySelector('select[class*="ViewportControls-zoom"]') as HTMLSelectElement | null
     if (zoomSelect) {
       const decimal = clamped / 100
-      const opts = [...zoomSelect.options].map(o => ({ val: parseFloat(o.value), el: o }))
+      const opts = [...zoomSelect.options].map(o => ({ val: Number.parseFloat(o.value), el: o }))
       const closest = opts.reduce((prev, curr) => Math.abs(curr.val - decimal) < Math.abs(prev.val - decimal) ? curr : prev)
       zoomSelect.value = closest.el.value
       zoomSelect.dispatchEvent(new Event('change', { bubbles: true }))
@@ -244,15 +269,19 @@ export function PuckEditor({
 
   /* ── Viewport/Zoom toolbar inject ── */
   useEffect(() => {
-    if (mode !== 'edit' || loading) return
+    if (mode !== 'edit' || loading)
+      return
     const timer = setTimeout(() => {
       const el = puckRef.current
-      if (!el) return
+      if (!el)
+        return
       const rightGroup = document.getElementById('puck-topbar-right')
-      if (!rightGroup || rightGroup.querySelector('.puck-header-toolbar')) return
+      if (!rightGroup || rightGroup.querySelector('.puck-header-toolbar'))
+        return
 
       const publishBtn = [...rightGroup.querySelectorAll('button')].find(b => b.textContent?.includes('Yayınla'))
-      if (!publishBtn) return
+      if (!publishBtn)
+        return
 
       const toolbar = document.createElement('div')
       toolbar.className = 'puck-header-toolbar'
@@ -283,15 +312,20 @@ export function PuckEditor({
         if (canvas) { canvas.dataset.device = deviceSelect.value; canvas.style.setProperty('--device', deviceSelect.value) }
       })
       zoomInput?.addEventListener('change', () => handleZoomInput(zoomInput.value))
-      zoomInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleZoomInput(zoomInput.value) })
+      zoomInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter')
+          handleZoomInput(zoomInput.value)
+      })
       zoomReset?.addEventListener('click', () => { handleZoomReset(); zoomInput.value = '100' })
 
       if (zoomSelect) {
-        const currentDecimal = parseFloat(zoomSelect.value) || 1
-        if (zoomInput) zoomInput.value = String(Math.round(currentDecimal * 100))
+        const currentDecimal = Number.parseFloat(zoomSelect.value) || 1
+        if (zoomInput)
+          zoomInput.value = String(Math.round(currentDecimal * 100))
         zoomSelect.addEventListener('change', () => {
-          const v = parseFloat(zoomSelect.value) || 1
-          if (zoomInput) zoomInput.value = String(Math.round(v * 100))
+          const v = Number.parseFloat(zoomSelect.value) || 1
+          if (zoomInput)
+            zoomInput.value = String(Math.round(v * 100))
           setZoomValue(String(Math.round(v * 100)))
         })
       }
@@ -301,7 +335,8 @@ export function PuckEditor({
 
   /* ── Toolbar actions ── */
   const exportJson = () => {
-    if (!data) return
+    if (!data)
+      return
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
@@ -314,60 +349,80 @@ export function PuckEditor({
     reader.onload = () => {
       try {
         const parsed = validateData(JSON.parse(String(reader.result)))
-        if (!parsed) throw new Error('geçersiz')
-        setData(parsed); setDataKey((k) => k + 1); toast('İçe aktarıldı ✓')
-      } catch { toast('Dosya geçersiz') }
+        if (!parsed)
+          throw new Error('geçersiz')
+        setData(parsed); setDataKey(k => k + 1); toast('İçe aktarıldı ✓')
+      }
+      catch { toast('Dosya geçersiz') }
     }
     reader.readAsText(file)
   }
 
   const resetPage = () => {
-    if (!window.confirm('Yayınlanmış düzene mi dönülsün?')) return
-    load().catch(() => {}); setDataKey((k) => k + 1)
+    if (!window.confirm('Yayınlanmış düzene mi dönülsün?'))
+      return
+    load().catch(() => {}); setDataKey(k => k + 1)
   }
 
   const saveVersion = () => {
     const name = window.prompt('Düzen adı:', `Düzen ${new Date().toLocaleString('tr-TR')}`)
-    if (!name || !data) return
+    if (!name || !data)
+      return
     fetch('/api/admin/puck', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ page: path, action: 'saveVersion', name, data }),
-    }).then(r => r.json()).then(j => {
-      if (j.success) { toast('Düzen kaydedildi ✓'); setVersions(j.versions || null) } else toast('Kaydedilemedi')
+    }).then(r => r.json()).then((j) => {
+      if (j.success) { toast('Düzen kaydedildi ✓'); setVersions(j.versions || null) }
+      else {
+        toast('Kaydedilemedi')
+      }
     }).catch(() => toast('Kaydedilemedi'))
   }
 
   const openVersions = () => {
     const next = !showVersions; setShowVersions(next)
-    if (next) fetch(`/api/admin/puck?page=${encodeURIComponent(path)}&action=versions`)
-      .then(r => r.json()).then(j => setVersions(j.versions || [])).catch(() => setVersions([]))
+    if (next) {
+      fetch(`/api/admin/puck?page=${encodeURIComponent(path)}&action=versions`)
+        .then(r => r.json())
+        .then(j => setVersions(j.versions || []))
+        .catch(() => setVersions([]))
+    }
   }
 
   const loadVersion = (id: string) => {
     fetch('/api/admin/puck', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ page: path, action: 'loadVersion', id }),
-    }).then(r => r.json()).then(j => {
-      if (j.success && validateData(j.data)) { setData(j.data as Record<string, unknown>); setDataKey((k) => k + 1); toast('Sürüm yüklendi ✓') } else toast('Yüklenemedi')
+    }).then(r => r.json()).then((j) => {
+      if (j.success && validateData(j.data)) { setData(j.data as Record<string, unknown>); setDataKey(k => k + 1); toast('Sürüm yüklendi ✓') }
+      else {
+        toast('Yüklenemedi')
+      }
     }).catch(() => toast('Yüklenemedi'))
   }
 
   const deleteVersion = (id: string) => {
-    if (!window.confirm('Bu düzen silinsin mi?')) return
+    if (!window.confirm('Bu düzen silinsin mi?'))
+      return
     fetch('/api/admin/puck', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ page: path, action: 'deleteVersion', id }),
     }).then(r => r.json()).then(j => j.success && setVersions(j.versions || [])).catch(() => {})
   }
 
-  if (!isClient) return null
+  if (!isClient)
+    return null
 
   const btn = 'rounded-md border border-black/15 px-3 py-1.5 text-xs text-black/70 hover:border-black/40 dark:border-white/20 dark:text-white/70 dark:hover:border-white/60 disabled:opacity-40'
 
   return (
     <div className={cn('flex flex-col', onClose ? 'h-dvh' : 'h-[calc(100dvh-56px)]')}>
       {/* ── Global CSS overrides ── */}
-      <style>{`
+      <style>
+        {`
         html.dark {
           --puck-color-white: #1a1b21; --puck-color-black: #f1f2f4;
           --puck-color-grey-01: #f1f2f4; --puck-color-grey-02: #d8dae0;
@@ -405,21 +460,24 @@ export function PuckEditor({
         }
         .puck-drawer-search:focus { border-color: rgba(96,165,250,0.55); background: rgba(255,255,255,0.1); }
         .puck-drawer-search::placeholder { color: rgba(255,255,255,0.35); }
-      `}</style>
+      `}
+      </style>
 
       {/* ── Top bar ── */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-black/10 bg-white px-4 py-2 text-sm text-black dark:border-white/10 dark:bg-[#0d0d12] dark:text-white">
         <div className="flex items-center gap-3">
-          {onClose ? (
-            <button
-              onClick={onClose}
-              className="text-black/50 hover:text-black dark:text-white/60 dark:hover:text-white"
-            >
-              ✕ Kapat
-            </button>
-          ) : (
-            <Link href="/admin" className="text-black/50 hover:text-black dark:text-white/60 dark:hover:text-white">← Panel</Link>
-          )}
+          {onClose
+            ? (
+                <button
+                  onClick={onClose}
+                  className="text-black/50 hover:text-black dark:text-white/60 dark:hover:text-white"
+                >
+                  ✕ Kapat
+                </button>
+              )
+            : (
+                <Link href="/admin" className="text-black/50 hover:text-black dark:text-white/60 dark:hover:text-white">← Panel</Link>
+              )}
           <span className="font-medium">Sayfa Düzenleyici</span>
           <code className="rounded bg-black/5 px-2 py-0.5 text-xs dark:bg-white/10">{path}</code>
         </div>
@@ -434,63 +492,89 @@ export function PuckEditor({
           <Link href={`/puck/${path}`} target="_blank" className={btn}>Yeni Sekme</Link>
           <button className={btn} onClick={exportJson} disabled={!data}>Dışa Aktar</button>
           <button className={btn} onClick={() => fileRef.current?.click()}>İçe Aktar</button>
-          <input ref={fileRef} type="file" accept="application/json,.json" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) importJson(f); e.target.value = '' }} />
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0]; if (f)
+                importJson(f); e.target.value = ''
+            }}
+          />
           <button className={btn} onClick={resetPage} disabled={!data}>Sıfırla</button>
           <button className={btn} onClick={saveVersion} disabled={!data}>Düzeni Kaydet</button>
           <div className="relative">
-            <button className={btn} onClick={openVersions}>Sürümler{versions && versions.length > 0 ? ` (${versions.length})` : ''}</button>
+            <button className={btn} onClick={openVersions}>
+              Sürümler
+              {versions && versions.length > 0 ? ` (${versions.length})` : ''}
+            </button>
             {showVersions && (
               <div className="absolute right-0 top-9 z-50 max-h-72 w-64 overflow-auto rounded-md border border-black/15 bg-white p-2 shadow-xl dark:border-white/15 dark:bg-[#16161d]">
                 <div className="mb-1 flex items-center justify-between px-1 text-xs text-black/50 dark:text-white/50">
                   <span>Kayıtlı düzenler</span>
                   <button onClick={() => setShowVersions(false)}>✕</button>
                 </div>
-                {versions === null ? <p className="px-1 py-2 text-xs text-black/40 dark:text-white/40">Yükleniyor…</p>
-                  : versions.length === 0 ? <p className="px-1 py-2 text-xs text-black/40 dark:text-white/40">Henüz kayıtlı düzen yok.</p>
-                  : versions.map((v) => (
-                    <div key={v.id} className="flex items-center justify-between gap-2 rounded px-1 py-1 hover:bg-black/5 dark:hover:bg-white/5">
-                      <button className="min-w-0 flex-1 text-left text-xs" title={v.ts} onClick={() => loadVersion(v.id)}>{v.name}</button>
-                      <button className="text-black/40 hover:text-red-500 dark:text-white/40 dark:hover:text-red-400" onClick={() => deleteVersion(v.id)}>🗑</button>
-                    </div>
-                  ))}
+                {versions === null
+                  ? <p className="px-1 py-2 text-xs text-black/40 dark:text-white/40">Yükleniyor…</p>
+                  : versions.length === 0
+                    ? <p className="px-1 py-2 text-xs text-black/40 dark:text-white/40">Henüz kayıtlı düzen yok.</p>
+                    : versions.map(v => (
+                        <div key={v.id} className="flex items-center justify-between gap-2 rounded px-1 py-1 hover:bg-black/5 dark:hover:bg-white/5">
+                          <button className="min-w-0 flex-1 text-left text-xs" title={v.ts} onClick={() => loadVersion(v.id)}>{v.name}</button>
+                          <button className="text-black/40 hover:text-red-500 dark:text-white/40 dark:hover:text-red-400" onClick={() => deleteVersion(v.id)}>🗑</button>
+                        </div>
+                      ))}
               </div>
             )}
           </div>
-          <button className={btn + ' border-emerald-500/40 text-emerald-600 dark:border-emerald-400/40 dark:text-emerald-300'} onClick={async () => {
-            if (!data) return; setSaveState('saving')
-            try {
-              const res = await fetch('/api/admin/puck', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: path, data }) })
-              const json = await res.json().catch(() => null); setSaveState(json?.success ? 'saved' : 'error')
-            } catch { setSaveState('error') }
-            setTimeout(() => setSaveState('idle'), 2500)
-          }}>Yayınla</button>
+          <button
+            className={`${btn} border-emerald-500/40 text-emerald-600 dark:border-emerald-400/40 dark:text-emerald-300`}
+            onClick={async () => {
+              if (!data)
+                return; setSaveState('saving')
+              try {
+                const res = await fetch('/api/admin/puck', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: path, data }) })
+                const json = await res.json().catch(() => null); setSaveState(json?.success ? 'saved' : 'error')
+              }
+              catch { setSaveState('error') }
+              setTimeout(() => setSaveState('idle'), 2500)
+            }}
+          >
+            Yayınla
+          </button>
           {snack && <span className="text-xs text-yellow-600 dark:text-yellow-300/90">{snack}</span>}
         </div>
       </div>
 
       {/* ── Editor / Preview — fills the remaining space ── */}
       <div className="relative min-h-0 flex-1">
-        {mode === 'preview' ? (
-          <iframe key={`preview-${dataKey}`} src={`/puck/${path}?embed=1`} className="h-full w-full border-0 bg-white dark:bg-black" />
-        ) : loading ? (
-          <div className="flex h-full items-center justify-center text-black/50 dark:text-white/50">Yükleniyor…</div>
-        ) : (
-          <div ref={puckRef} className="puck-editor-wrap">
-            <Puck
-              key={dataKey}
-              config={config}
-              data={(data as Parameters<typeof Puck>[0]['data']) || EMPTY_DATA}
-              onPublish={async (published) => {
-                setSaveState('saving')
-                try {
-                  const res = await fetch('/api/admin/puck', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: path, data: published }) })
-                  const json = await res.json().catch(() => null); setSaveState(json?.success ? 'saved' : 'error')
-                } catch { setSaveState('error') }
-                setTimeout(() => setSaveState('idle'), 2500)
-              }}
-            />
-          </div>
-        )}
+        {mode === 'preview'
+          ? (
+              <iframe key={`preview-${dataKey}`} src={`/puck/${path}?embed=1`} className="h-full w-full border-0 bg-white dark:bg-black" />
+            )
+          : loading
+            ? (
+                <div className="flex h-full items-center justify-center text-black/50 dark:text-white/50">Yükleniyor…</div>
+              )
+            : (
+                <div ref={puckRef} className="puck-editor-wrap">
+                  <Puck
+                    key={dataKey}
+                    config={config}
+                    data={(data as Parameters<typeof Puck>[0]['data']) || EMPTY_DATA}
+                    onPublish={async (published) => {
+                      setSaveState('saving')
+                      try {
+                        const res = await fetch('/api/admin/puck', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: path, data: published }) })
+                        const json = await res.json().catch(() => null); setSaveState(json?.success ? 'saved' : 'error')
+                      }
+                      catch { setSaveState('error') }
+                      setTimeout(() => setSaveState('idle'), 2500)
+                    }}
+                  />
+                </div>
+              )}
       </div>
     </div>
   )

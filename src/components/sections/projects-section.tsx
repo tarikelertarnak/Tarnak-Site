@@ -1,12 +1,12 @@
 'use client'
 
 import type { SiteContent } from '@/lib/content'
+import { FadeUpSection } from '@/components/fade-up-section'
+import { useT } from '@/components/locale-provider'
 import { ProjectsGrid } from '@/components/projects/projects-grid'
 import { Button } from '@/components/ui/button'
-import { Section } from '@/components/ui/section'
-import { useT } from '@/components/locale-provider'
 import { FolderIcon, GithubIcon } from '@/components/ui/icons'
-import { FadeUpSection } from '@/components/fade-up-section'
+import { Section } from '@/components/ui/section'
 
 export function ProjectsSection({
   content,

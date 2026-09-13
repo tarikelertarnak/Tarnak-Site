@@ -1,11 +1,13 @@
+import type { SiteContent } from '@/lib/content'
+import type { Locale, LocalePref } from '@/lib/i18n'
 import { cookies, headers } from 'next/headers'
-import { getContent, type SiteContent } from '@/lib/content'
+import { getContent } from '@/lib/content'
 import {
   detectLocale,
+
   LOCALE_COOKIE,
+
   resolveLocale,
-  type Locale,
-  type LocalePref,
 } from '@/lib/i18n'
 import { enContentOverlay } from '@/lib/i18n-content-en'
 
@@ -26,16 +28,17 @@ function mergeContent<T extends object>(
   base: T,
   patch?: DeepPartial<T>,
 ): T {
-  if (!patch) return base
+  if (!patch)
+    return base
   const out: Record<string, unknown> = { ...(base as Record<string, unknown>) }
   for (const [key, value] of Object.entries(patch as Record<string, unknown>)) {
     const baseValue = (base as Record<string, unknown>)[key]
-    out[key] =
-      value &&
-      typeof value === 'object' &&
-      !Array.isArray(value) &&
-      baseValue &&
-      typeof baseValue === 'object'
+    out[key]
+      = value
+        && typeof value === 'object'
+        && !Array.isArray(value)
+        && baseValue
+        && typeof baseValue === 'object'
         ? mergeContent(
             baseValue as Record<string, unknown>,
             value as DeepPartial<Record<string, unknown>>,

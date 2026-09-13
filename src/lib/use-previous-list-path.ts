@@ -17,7 +17,8 @@ export function usePreviousListPath() {
   useEffect(() => {
     try {
       setPrevious(sessionStorage.getItem(KEY))
-    } catch {
+    }
+    catch {
       setPrevious(null)
     }
   }, [])
@@ -25,7 +26,8 @@ export function usePreviousListPath() {
   const set = (path: string) => {
     try {
       sessionStorage.setItem(KEY, path)
-    } catch {
+    }
+    catch {
       // silently
     }
     setPrevious(path)

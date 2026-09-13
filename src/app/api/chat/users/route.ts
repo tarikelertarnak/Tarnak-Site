@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { getSessionUser } from '@/lib/supabase/session'
 
 /**
@@ -31,7 +31,7 @@ export async function GET() {
 
   return NextResponse.json({
     success: true,
-    users: (data ?? []).map((p) => ({
+    users: (data ?? []).map(p => ({
       username: p.username,
       fullName: p.full_name,
       avatarUrl: p.avatar_url,

@@ -32,9 +32,10 @@ export async function GET(req: Request) {
       if (Date.now() - cache.ts < CACHE_TTL_MS) {
         return NextResponse.json({ success: true, ...cache.data })
       }
-    } else if (Date.now() - cache.ts < FAIL_CACHE_TTL_MS) {
+    }
+    else if (Date.now() - cache.ts < FAIL_CACHE_TTL_MS) {
       return NextResponse.json(
-        { success: false, message: "GitHub'a bağlanılamadı. Lütfen daha sonra tekrar deneyin." },
+        { success: false, message: 'GitHub\'a bağlanılamadı. Lütfen daha sonra tekrar deneyin.' },
         { status: 500 },
       )
     }
@@ -56,7 +57,7 @@ export async function GET(req: Request) {
   if (!profile && !repos) {
     cache = { username, data: null, ts: Date.now() }
     return NextResponse.json(
-      { success: false, message: "GitHub'a bağlanılamadı. Lütfen daha sonra tekrar deneyin." },
+      { success: false, message: 'GitHub\'a bağlanılamadı. Lütfen daha sonra tekrar deneyin.' },
       { status: 500 },
     )
   }

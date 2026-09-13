@@ -1,40 +1,46 @@
 /**
  * Puck page data store — data/puck-pages.json (same pattern as the content file).
+ * Cloudflare Workers has no filesystem: reads fall back to in-memory store,
+ * writes are best-effort (persist in memory for the worker lifetime).
  */
-import fs from 'fs/promises'
-import path from 'path'
+import fs from 'node:fs/promises'
+import path from 'node:path'
+// Baked into the worker bundle at build time (Workers has no fs).
+import bundledPagesJson from '../../../data/puck-pages.json'
+import bundledVersionsJson from '../../../data/puck-versions.json'
 import { normalizePage } from './normalize'
 
 const DATA_DIR = path.join(process.cwd(), 'data')
 const PUCK_FILE = path.join(DATA_DIR, 'puck-pages.json')
 const VERSIONS_FILE = path.join(DATA_DIR, 'puck-versions.json')
 
-export type PuckVersion = { id: string; name: string; ts: string; data: unknown }
+const bundledPages = bundledPagesJson as Record<string, unknown>
+const bundledVersions = bundledVersionsJson as Record<string, unknown>
+
+export interface PuckVersion { id: string, name: string, ts: string, data: unknown }
 
 const MAX_VERSIONS = 10
 
-async function ensureDataDir() {
-  await fs.mkdir(DATA_DIR, { recursive: true })
-}
+let memoryPages: Record<string, unknown> | null = null
+let memoryVersions: Record<string, unknown> | null = null
 
 async function readJson(file: string): Promise<Record<string, unknown>> {
   try {
     const raw = await fs.readFile(file, 'utf-8')
     const parsed = JSON.parse(raw)
     return typeof parsed === 'object' && parsed !== null ? parsed : {}
-  } catch {
+  }
+  catch {
     return {}
   }
 }
 
 export async function getPuckPages(): Promise<Record<string, unknown>> {
-  try {
-    const raw = await fs.readFile(PUCK_FILE, 'utf-8')
-    const parsed = JSON.parse(raw)
-    return typeof parsed === 'object' && parsed !== null ? parsed : {}
-  } catch {
-    return {}
-  }
+  if (memoryPages)
+    return memoryPages
+  const all = await readJson(PUCK_FILE)
+  memoryPages = Object.keys(all).length ? all : bundledPages
+  return memoryPages
 }
 
 export async function getPuckPage(page: string): Promise<unknown | null> {
@@ -45,14 +51,24 @@ export async function getPuckPage(page: string): Promise<unknown | null> {
 /* ---------- Version (edit history) management ---------- */
 
 export async function getPuckVersions(page: string): Promise<PuckVersion[]> {
-  const all = await readJson(VERSIONS_FILE)
-  const list = all[normalizePage(page)]
-  return Array.isArray(list) ? (list as PuckVersion[]) : []
+  const all = memoryVersions ?? await readJson(VERSIONS_FILE)
+  const key = normalizePage(page)
+  const list = all[key]
+  if (Array.isArray(list))
+    return list as PuckVersion[]
+  const bundledList = bundledVersions[key]
+  return Array.isArray(bundledList) ? (bundledList as PuckVersion[]) : []
+}
+
+async function writeJson(file: string, data: Record<string, unknown>): Promise<void> {
+  try {
+    await fs.writeFile(file, `${JSON.stringify(data, null, 2)}\n`, 'utf-8')
+  }
+  catch { /* Workers: in-memory only */ }
 }
 
 export async function addPuckVersion(page: string, name: string, data: unknown): Promise<PuckVersion[]> {
-  await ensureDataDir()
-  const all = await readJson(VERSIONS_FILE)
+  const all = memoryVersions ?? await readJson(VERSIONS_FILE)
   const key = normalizePage(page)
   const list = Array.isArray(all[key]) ? (all[key] as PuckVersion[]) : []
   const version: PuckVersion = {
@@ -63,31 +79,32 @@ export async function addPuckVersion(page: string, name: string, data: unknown):
   }
   const next = [version, ...list].slice(0, MAX_VERSIONS)
   all[key] = next
-  await fs.writeFile(VERSIONS_FILE, `${JSON.stringify(all, null, 2)}\n`, 'utf-8')
+  memoryVersions = all
+  await writeJson(VERSIONS_FILE, all)
   return next
 }
 
 export async function removePuckVersion(page: string, id: string): Promise<PuckVersion[]> {
-  await ensureDataDir()
-  const all = await readJson(VERSIONS_FILE)
+  const all = memoryVersions ?? await readJson(VERSIONS_FILE)
   const key = normalizePage(page)
   const list = Array.isArray(all[key]) ? (all[key] as PuckVersion[]) : []
-  const next = list.filter((v) => v.id !== id)
+  const next = list.filter(v => v.id !== id)
   all[key] = next
-  await fs.writeFile(VERSIONS_FILE, `${JSON.stringify(all, null, 2)}\n`, 'utf-8')
+  memoryVersions = all
+  await writeJson(VERSIONS_FILE, all)
   return next
 }
 
 export async function getPuckVersion(page: string, id: string): Promise<PuckVersion | null> {
   const list = await getPuckVersions(page)
-  return list.find((v) => v.id === id) ?? null
+  return list.find(v => v.id === id) ?? null
 }
 
 export async function savePuckPage(page: string, data: unknown): Promise<void> {
-  await ensureDataDir()
   const all = await getPuckPages()
   all[normalizePage(page)] = data
-  await fs.writeFile(PUCK_FILE, `${JSON.stringify(all, null, 2)}\n`, 'utf-8')
+  memoryPages = all
+  await writeJson(PUCK_FILE, all)
 }
 
 export async function deletePuckPage(page: string): Promise<void> {
@@ -95,6 +112,7 @@ export async function deletePuckPage(page: string): Promise<void> {
   const key = normalizePage(page)
   if (key in all) {
     delete all[key]
-    await fs.writeFile(PUCK_FILE, `${JSON.stringify(all, null, 2)}\n`, 'utf-8')
+    memoryPages = all
+    await writeJson(PUCK_FILE, all)
   }
 }

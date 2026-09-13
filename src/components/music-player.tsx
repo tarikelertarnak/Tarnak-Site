@@ -18,7 +18,8 @@ function readMusicEnabled(): boolean {
   }
   try {
     return localStorage.getItem(MUSIC_ENABLED_KEY) !== 'false'
-  } catch {
+  }
+  catch {
     return true
   }
 }
@@ -38,7 +39,8 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
 
   useEffect(() => {
     const saved = localStorage.getItem('music-player-closed')
-    if (saved === 'true') setIsClosed(true)
+    if (saved === 'true')
+      setIsClosed(true)
     setIsGloballyEnabled(readMusicEnabled())
 
     // Cross-tab updates: storage event fires only in *other* tabs.
@@ -59,9 +61,11 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
   }, [])
 
   useEffect(() => {
-    if (!src) return
+    if (!src)
+      return
     const audio = audioRef.current
-    if (!audio) return
+    if (!audio)
+      return
 
     const onTimeUpdate = () => {
       if (audio.duration) {
@@ -88,10 +92,12 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
 
   const togglePlay = () => {
     const audio = audioRef.current
-    if (!audio) return
+    if (!audio)
+      return
     if (isPlaying) {
       audio.pause()
-    } else {
+    }
+    else {
       audio.play().catch(() => {})
     }
     setIsPlaying(!isPlaying)
@@ -99,7 +105,8 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current
-    if (!audio || !audio.duration) return
+    if (!audio || !audio.duration)
+      return
     const pct = Number(e.target.value)
     audio.currentTime = (pct / 100) * audio.duration
     setProgress(pct)
@@ -107,7 +114,8 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
 
   const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current
-    if (!audio) return
+    if (!audio)
+      return
     const v = Number(e.target.value)
     audio.volume = v
     setVolume(v)
@@ -115,7 +123,8 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
 
   const handleClose = () => {
     const audio = audioRef.current
-    if (audio) audio.pause()
+    if (audio)
+      audio.pause()
     setIsPlaying(false)
     setIsClosed(true)
     localStorage.setItem('music-player-closed', 'true')
@@ -125,7 +134,8 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
     setIsMinimized(!isMinimized)
   }
 
-  if (isClosed || !src || !isGloballyEnabled) return null
+  if (isClosed || !src || !isGloballyEnabled)
+    return null
 
   const displayTitle = title || (isEn ? 'Music' : 'Müzik')
 

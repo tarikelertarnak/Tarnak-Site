@@ -1,32 +1,32 @@
 'use client'
 
-import type { GitHubRepo } from '@/lib/github'
 import type { ProjectItem } from '@/lib/content'
+import type { GitHubRepo } from '@/lib/github'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useT, useLocale } from '@/components/locale-provider'
+import { useLocale, useT } from '@/components/locale-provider'
 import { ProjectCard } from '@/components/projects/project-card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   ChevronDownIcon,
   CloseIcon,
   SearchIcon,
 } from '@/components/ui/icons'
+import { Input } from '@/components/ui/input'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { clientFetchUserRepos } from '@/lib/github-client'
 import { useGridCols } from '@/lib/use-grid-cols'
 
 /** All sort types — the direction is embedded in the option itself (no separate ASC/DESC buttons needed). */
-type SortKey =
-  | 'newest'
-  | 'oldest'
-  | 'views'
-  | 'downloads'
-  | 'stars'
-  | 'forks'
-  | 'rating'
-  | 'az'
-  | 'za'
+type SortKey
+  = | 'newest'
+    | 'oldest'
+    | 'views'
+    | 'downloads'
+    | 'stars'
+    | 'forks'
+    | 'rating'
+    | 'az'
+    | 'za'
 
 const SORT_LABEL_KEYS: Record<SortKey, string> = {
   newest: 'projects.sortNewest',
@@ -41,7 +41,7 @@ const SORT_LABEL_KEYS: Record<SortKey, string> = {
 }
 
 interface UserStars {
-  [title: string]: { average: number; count: number }
+  [title: string]: { average: number, count: number }
 }
 
 const GITHUB_DOWNLOAD_OVERRIDES: Record<string, Partial<ProjectItem>> = {
@@ -56,7 +56,7 @@ const GITHUB_DOWNLOAD_OVERRIDES: Record<string, Partial<ProjectItem>> = {
 
 /** Turkish translations of GitHub repo descriptions (so EN descriptions don't show in TR locales). */
 const REPO_DESCRIPTIONS_TR: Record<string, string> = {
-  Accentra:
+  'Accentra':
     'Accentra - Ferdium kod tabanı üzerine inşa edilmiş çalışma alanı işletim sistemi.',
   'codehub-vsc':
     'VS Code için Terminal & AI kodlama ajan yöneticisi - tüm ajanlarınız, oturumlarınız ve projeleriniz için tek panel.',
@@ -66,9 +66,9 @@ const REPO_DESCRIPTIONS_TR: Record<string, string> = {
   'TARIKELER-TARNAK': 'GitHub profil README\'si.',
   'TARIKELER-TARNAK.github.io': 'Kişisel portfolyo web sitesi.',
   'AI-Jailbreak': 'AI model güvenlik sınır testleri için prompt koleksiyonu.',
-  OfficeSetupWizard:
+  'OfficeSetupWizard':
     'Tek tıkla Microsoft Office LTSC Professional Plus 2024 kurulum ve aktivasyonu (Office Deployment Tool sarmalayıcısı).',
-  Player:
+  'Player':
     'Müzik, video, ses, eklenti ve AI entegrasyonlu modern, çok platformlu medya oynatıcısı.',
 }
 
@@ -92,12 +92,12 @@ function githubRepoToProject(repo: GitHubRepo, tr: boolean): ProjectItem {
 
 function readLocalStats(): Record<
   string,
-  { views: number; downloads: number }
+  { views: number, downloads: number }
 > {
   if (typeof window === 'undefined') {
     return {}
   }
-  const map: Record<string, { views: number; downloads: number }> = {}
+  const map: Record<string, { views: number, downloads: number }> = {}
   try {
     for (let i = 0; i < window.localStorage.length; i++) {
       const key = window.localStorage.key(i)
@@ -110,7 +110,8 @@ function readLocalStats(): Record<
         }
       }
     }
-  } catch {
+  }
+  catch {
     /* swallow */
   }
   return map
@@ -150,15 +151,16 @@ export function ProjectsGrid({
     setGithubRepos(null)
     try {
       const repos = await clientFetchUserRepos(githubUsername)
-      const seen = new Set(projects.map((p) => p.title.toLowerCase()))
+      const seen = new Set(projects.map(p => p.title.toLowerCase()))
       const merged: ProjectItem[] = [
-        ...repos.map((r) => githubRepoToProject(r, !isEn)),
+        ...repos.map(r => githubRepoToProject(r, !isEn)),
       ].filter(
-        (p) => !seen.has(p.title.toLowerCase()),
+        p => !seen.has(p.title.toLowerCase()),
       )
       merged.unshift(...projects)
       setGithubRepos(merged)
-    } catch {
+    }
+    catch {
       setGithubError(t('github.loadErrorSection'))
       setGithubRepos(projects)
     }
@@ -171,7 +173,7 @@ export function ProjectsGrid({
   // Fetch user stars in bulk
   useEffect(() => {
     fetch('/api/stars?itemType=project&list=1')
-      .then((res) =>
+      .then(res =>
         res.ok
           ? (res.json() as Promise<{
               items: Array<{
@@ -183,7 +185,8 @@ export function ProjectsGrid({
           : null,
       )
       .then((d) => {
-        if (!d?.items) return
+        if (!d?.items)
+          return
         const map: UserStars = {}
         d.items.forEach((item) => {
           map[item.itemId] = { average: item.average, count: item.count }
@@ -196,9 +199,9 @@ export function ProjectsGrid({
   // Collect all tags (admin + github topics)
   const allTags = useMemo(() => {
     const set = new Set<string>()
-    projects.forEach((p) => p.tags?.forEach((t) => set.add(t)))
+    projects.forEach(p => p.tags?.forEach(t => set.add(t)))
     if (githubRepos) {
-      githubRepos.forEach((p) => p.tags?.forEach((t) => set.add(t)))
+      githubRepos.forEach(p => p.tags?.forEach(t => set.add(t)))
     }
     return Array.from(set).sort()
   }, [projects, githubRepos])
@@ -208,14 +211,14 @@ export function ProjectsGrid({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     const list = allProjects.filter((p) => {
-      const matchesQuery =
-        !q ||
-        p.title.toLowerCase().includes(q) ||
-        p.description.toLowerCase().includes(q) ||
-        (p.tags ?? []).some(t => t.toLowerCase().includes(q))
-      const matchesTag =
-        activeTags.length === 0 ||
-        (p.tags ?? []).some((t) => activeTags.includes(t))
+      const matchesQuery
+        = !q
+          || p.title.toLowerCase().includes(q)
+          || p.description.toLowerCase().includes(q)
+          || (p.tags ?? []).some(t => t.toLowerCase().includes(q))
+      const matchesTag
+        = activeTags.length === 0
+          || (p.tags ?? []).some(t => activeTags.includes(t))
       return matchesQuery && matchesTag
     })
 
@@ -269,7 +272,7 @@ export function ProjectsGrid({
           {/* Search — below the title, above the filters */}
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             placeholder={t('projects.search')}
             aria-label={t('projects.search')}
             className="h-11 w-full"
@@ -280,10 +283,10 @@ export function ProjectsGrid({
           <div className="flex w-full flex-row flex-wrap items-center gap-2">
             <SearchableCombobox
               options={(Object.keys(SORT_LABEL_KEYS) as SortKey[]).map(
-                (v) => ({ value: v, label: t(SORT_LABEL_KEYS[v]) }),
+                v => ({ value: v, label: t(SORT_LABEL_KEYS[v]) }),
               )}
               selected={[sort]}
-              onSelect={(v) => setSort(v as SortKey)}
+              onSelect={v => setSort(v as SortKey)}
               onClear={() => setSort('newest')}
               placeholder={t('projects.sort')}
               searchPlaceholder={t('projects.searchSort')}
@@ -292,18 +295,17 @@ export function ProjectsGrid({
             {allTags.length > 0 && (
               <SearchableCombobox
                 multiple
-                options={allTags.map((tag) => ({
+                options={allTags.map(tag => ({
                   value: tag,
                   label: `#${tag}`,
                 }))}
                 selected={activeTags}
-                onSelect={(v) =>
-                  setActiveTags((prev) =>
+                onSelect={v =>
+                  setActiveTags(prev =>
                     prev.includes(v)
-                      ? prev.filter((x) => x !== v)
+                      ? prev.filter(x => x !== v)
                       : [...prev, v],
-                  )
-                }
+                  )}
                 onClear={() => setActiveTags([])}
                 placeholder={t('projects.allTags')}
                 searchPlaceholder={t('projects.searchTag')}
@@ -314,26 +316,28 @@ export function ProjectsGrid({
               />
             )}
             <span className="ml-auto text-sm font-medium text-foreground/70">
-              {filtered.length} {t('projects.found')}
+              {filtered.length}
+              {' '}
+              {t('projects.found')}
             </span>
           </div>
 
           {/* Active filter chips — clicked tags, removed with an x */}
           {activeTags.length > 0 && (
             <div className="flex flex-row flex-wrap items-center gap-1.5">
-              {activeTags.map((tag) => (
+              {activeTags.map(tag => (
                 <span
                   key={tag}
                   className="inline-flex items-center gap-1 rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary"
                 >
-                  #{tag}
+                  #
+                  {tag}
                   <button
                     type="button"
                     onClick={() =>
-                      setActiveTags((prev) =>
-                        prev.filter((x) => x !== tag),
-                      )
-                    }
+                      setActiveTags(prev =>
+                        prev.filter(x => x !== tag),
+                      )}
                     aria-label={`${t('projects.removeTag')} ${tag}`}
                     className="-mr-1 grid h-4 w-4 cursor-pointer place-items-center rounded-full transition-colors hover:bg-primary/20"
                   >
@@ -350,17 +354,19 @@ export function ProjectsGrid({
         <p className="text-center text-danger text-sm">{githubError}</p>
       )}
 
-      {filtered.length === 0 ? (
-        <p className="text-foreground-500 py-10 text-center">
-          {t('projects.empty')}
-        </p>
-      ) : (
-        <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
-          {shown.map((project) => (
-            <ProjectCard key={project.title} project={project} />
-          ))}
-        </div>
-      )}
+      {filtered.length === 0
+        ? (
+            <p className="text-foreground-500 py-10 text-center">
+              {t('projects.empty')}
+            </p>
+          )
+        : (
+            <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
+              {shown.map(project => (
+                <ProjectCard key={project.title} project={project} />
+              ))}
+            </div>
+          )}
 
       {hasMore && (
         <div className="flex flex-col items-center justify-center gap-3 pt-6 sm:flex-row">
@@ -368,11 +374,14 @@ export function ProjectsGrid({
             variant="solid"
             color="primary"
             onPress={() =>
-              setVisibleCount((c) => Math.min(c + cols, filtered.length))
-            }
+              setVisibleCount(c => Math.min(c + cols, filtered.length))}
             endContent={<ChevronDownIcon size={18} />}
           >
-            {t('projects.showMore')} ({remaining})
+            {t('projects.showMore')}
+            {' '}
+            (
+            {remaining}
+            )
           </Button>
         </div>
       )}

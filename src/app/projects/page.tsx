@@ -1,6 +1,6 @@
 import { Navigation } from '@/components/navigation'
-import { RememberListPath } from '@/components/remember-list-path'
 import { ProjectsGrid } from '@/components/projects/projects-grid'
+import { RememberListPath } from '@/components/remember-list-path'
 import { FolderIcon, GithubIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { getLocalizedContent } from '@/lib/i18n-server'
@@ -51,4 +51,3 @@ export default async function ProjectsPage() {
     </div>
   )
 }
-

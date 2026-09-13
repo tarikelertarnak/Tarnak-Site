@@ -11,21 +11,21 @@ import type {
   ToolboxItem,
 } from '@/lib/content'
 import type { GitHubRepo } from '@/lib/github'
-import { clientFetchUserRepos } from '@/lib/github-client'
 import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
 import { Divider } from 'antd'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { ChatPanel } from '@/components/admin/chat-panel'
 
 import { UsersPanel } from '@/components/admin/users-panel'
-import { ChatPanel } from '@/components/admin/chat-panel'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { clientFetchUserRepos } from '@/lib/github-client'
 
-type SaveStatus = { type: 'success' | 'error'; text: string } | null
+type SaveStatus = { type: 'success' | 'error', text: string } | null
 
 export function AdminPanel({
   initialContent,
@@ -51,7 +51,8 @@ export function AdminPanel({
 
   useEffect(() => {
     const username = content.settings.githubUsername
-    if (!username) return
+    if (!username)
+      return
     clientFetchUserRepos(username)
       .then(setGithubRepos)
       .catch(() => setGithubRepos([]))
@@ -76,20 +77,23 @@ export function AdminPanel({
       })
       const data = await res.json()
       if (res.ok && data.success) {
-        setContent((prev) => ({
+        setContent(prev => ({
           ...prev,
           settings: { ...prev.settings, backgroundImage: data.backgroundImage },
         }))
         setStatus({ type: 'success', text: data.message })
-      } else {
+      }
+      else {
         setStatus({
           type: 'error',
           text: data.message || 'Görsel yüklenemedi.',
         })
       }
-    } catch {
+    }
+    catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+    finally {
       setBackgroundUploading(false)
     }
   }
@@ -101,17 +105,20 @@ export function AdminPanel({
       const res = await fetch('/api/admin/background', { method: 'DELETE' })
       const data = await res.json()
       if (res.ok) {
-        setContent((prev) => ({
+        setContent(prev => ({
           ...prev,
           settings: { ...prev.settings, backgroundImage: '' },
         }))
         setStatus({ type: 'success', text: data.message })
-      } else {
+      }
+      else {
         setStatus({ type: 'error', text: data.message || 'Kaldırılamadı.' })
       }
-    } catch {
+    }
+    catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+    finally {
       setBackgroundUploading(false)
     }
   }
@@ -131,12 +138,15 @@ export function AdminPanel({
           type: 'success',
           text: 'Kaydedildi! Siteyi yenileyerek değişiklikleri görebilirsin.',
         })
-      } else {
+      }
+      else {
         setStatus({ type: 'error', text: data.message || 'Kaydedilemedi.' })
       }
-    } catch {
+    }
+    catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+    finally {
       setSaving(false)
     }
   }
@@ -147,13 +157,13 @@ export function AdminPanel({
   }
 
   const setHero = (field: keyof SiteContent['hero'], value: string) => {
-    setContent((prev) => ({ ...prev, hero: { ...prev.hero, [field]: value } }))
+    setContent(prev => ({ ...prev, hero: { ...prev.hero, [field]: value } }))
   }
   const setNav = (field: keyof SiteContent['nav'], value: string) => {
-    setContent((prev) => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
+    setContent(prev => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
   }
   const setAbout = (field: keyof SiteContent['about'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: { ...prev.about, [field]: value },
     }))
@@ -162,40 +172,40 @@ export function AdminPanel({
     field: 'subtitle' | 'title' | 'description',
     value: string,
   ) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       projects: { ...prev.projects, [field]: value },
     }))
   }
   const setContact = (field: keyof SiteContent['contact'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       contact: { ...prev.contact, [field]: value },
     }))
   }
   const setFooter = (field: keyof SiteContent['footer'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       footer: { ...prev.footer, [field]: value },
     }))
   }
   const setSettings = (field: keyof SiteContent['settings'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       settings: { ...prev.settings, [field]: value },
     }))
   }
   const setGithub = (field: keyof SiteContent['github'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       github: { ...prev.github, [field]: value },
     }))
   }
   const setChat = (field: keyof SiteContent['chat'], value: string) => {
-    setContent((prev) => ({ ...prev, chat: { ...prev.chat, [field]: value } }))
+    setContent(prev => ({ ...prev, chat: { ...prev.chat, [field]: value } }))
   }
   const setProfile = (field: keyof SiteContent['profile'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       profile: { ...prev.profile, [field]: value },
     }))
@@ -210,7 +220,7 @@ export function AdminPanel({
       excerpt: '',
       content: '',
     }
-    setPosts((prev) => [...prev, post])
+    setPosts(prev => [...prev, post])
     setEditingPostId(post.id)
   }
 
@@ -218,8 +228,8 @@ export function AdminPanel({
     if (!editingPostId) {
       return
     }
-    setPosts((prev) =>
-      prev.map((post) =>
+    setPosts(prev =>
+      prev.map(post =>
         post.id === editingPostId ? { ...post, [field]: value } : post,
       ),
     )
@@ -229,7 +239,7 @@ export function AdminPanel({
     if (!editingPostId) {
       return
     }
-    const post = posts.find((p) => p.id === editingPostId)
+    const post = posts.find(p => p.id === editingPostId)
     if (!post) {
       return
     }
@@ -244,15 +254,18 @@ export function AdminPanel({
       const data = await res.json()
       if (res.ok) {
         setStatus({ type: 'success', text: 'Yazı kaydedildi.' })
-      } else {
+      }
+      else {
         setStatus({
           type: 'error',
           text: data.message || 'Yazı kaydedilemedi.',
         })
       }
-    } catch {
+    }
+    catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+    finally {
       setSaving(false)
     }
   }
@@ -268,17 +281,20 @@ export function AdminPanel({
       })
       const data = await res.json()
       if (res.ok) {
-        setPosts((prev) => prev.filter((post) => post.id !== id))
+        setPosts(prev => prev.filter(post => post.id !== id))
         if (editingPostId === id) {
           setEditingPostId(null)
         }
         setStatus({ type: 'success', text: 'Yazı silindi.' })
-      } else {
+      }
+      else {
         setStatus({ type: 'error', text: data.message || 'Yazı silinemedi.' })
       }
-    } catch {
+    }
+    catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+    finally {
       setSaving(false)
     }
   }
@@ -293,9 +309,11 @@ export function AdminPanel({
       }
       setMessages([])
       setStatus({ type: 'success', text: 'Tüm mesajlar silindi.' })
-    } catch {
+    }
+    catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+    finally {
       setSaving(false)
     }
   }
@@ -314,14 +332,14 @@ export function AdminPanel({
   }
 
   const addNavItem = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       nav: { ...prev.nav, items: [...prev.nav.items, { title: '', href: '' }] },
     }))
   }
 
   const removeNavItem = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       nav: { ...prev.nav, items: prev.nav.items.filter((_, i) => i !== index) },
     }))
@@ -341,7 +359,7 @@ export function AdminPanel({
   }
 
   const addToolbox = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -351,7 +369,7 @@ export function AdminPanel({
   }
 
   const removeToolbox = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -374,7 +392,7 @@ export function AdminPanel({
   }
 
   const addInterest = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -387,7 +405,7 @@ export function AdminPanel({
   }
 
   const removeInterest = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -410,7 +428,7 @@ export function AdminPanel({
   }
 
   const addSecurityTool = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -423,7 +441,7 @@ export function AdminPanel({
   }
 
   const removeSecurityTool = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -448,7 +466,8 @@ export function AdminPanel({
   const setProjectDownloadMode = (index: number, mode: 'global' | 'per-os') => {
     setContent((prev) => {
       const items = prev.projects.items.map((item, i) => {
-        if (i !== index) return item
+        if (i !== index)
+          return item
         if (mode === 'global') {
           const { downloads: _drop, ...rest } = item
           return { ...rest, downloadMode: 'global' as const }
@@ -470,7 +489,8 @@ export function AdminPanel({
   ) => {
     setContent((prev) => {
       const items = prev.projects.items.map((item, i) => {
-        if (i !== index) return item
+        if (i !== index)
+          return item
         const downloads = { ...(item.downloads ?? {}), [os]: value }
         return { ...item, downloads }
       })
@@ -479,7 +499,7 @@ export function AdminPanel({
   }
 
   const addProject = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       projects: {
         ...prev.projects,
@@ -499,7 +519,7 @@ export function AdminPanel({
   }
 
   const removeProject = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       projects: {
         ...prev.projects,
@@ -510,7 +530,8 @@ export function AdminPanel({
 
   const addGithubRepo = (repo: GitHubRepo) => {
     setContent((prev) => {
-      if (prev.projects.items.some((p) => p.title === repo.name)) return prev
+      if (prev.projects.items.some(p => p.title === repo.name))
+        return prev
       const [owner, repoName] = repo.fullName.split('/')
       const item: ProjectItem = {
         title: repo.name,
@@ -541,14 +562,14 @@ export function AdminPanel({
   }
 
   const addSocial = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       social: [...prev.social, { name: '', href: '', icon: 'mdi:github' }],
     }))
   }
 
   const removeSocial = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       social: prev.social.filter((_, i) => i !== index),
     }))
@@ -560,7 +581,8 @@ export function AdminPanel({
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Admin Paneli</h1>
           <p className="text-sm text-foreground-500">
-            Giriş yapan:{' '}
+            Giriş yapan:
+            {' '}
             <span className="font-semibold text-foreground">{username}</span>
           </p>
         </div>
@@ -594,1214 +616,1184 @@ export function AdminPanel({
         <Tabs
           size="large"
           className="w-full min-w-max"
-        items={[
-          {
-            key: 'profile',
-            label: (
-              <span className="inline-flex items-center gap-1.5">
-                <Icon icon="mdi:account-circle" width={15} height={15} />
-                Profil
-              </span>
-            ),
-            children: (
-              <div className="space-y-4 pt-4">
-                <ProfilePhotoCard
-                  profileImage={content.profile.profileImage}
-                  displayName={content.profile.displayName}
-                  onUploaded={(image) => setProfile('profileImage', image)}
-                  onStatus={setStatus}
-                />
-                <PanelCard title="Profil Bilgileri">
-                  <Grid>
-                    <Field label="Ad (First Name)">
-                      <Input
-                        variant="faded"
-                        value={content.profile.firstName}
-                        onValueChange={(value) =>
-                          setProfile('firstName', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Soyad (Last Name)">
-                      <Input
-                        variant="faded"
-                        value={content.profile.lastName}
-                        onValueChange={(value) => setProfile('lastName', value)}
-                      />
-                    </Field>
-                    <Field label="Görünen Ad (örn. TARIKELER)">
-                      <Input
-                        variant="faded"
-                        value={content.profile.displayName}
-                        onValueChange={(value) =>
-                          setProfile('displayName', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Lakap / Takma Ad (örn. Tarnak)">
-                      <Input
-                        variant="faded"
-                        value={content.profile.nickname}
-                        onValueChange={(value) => setProfile('nickname', value)}
-                      />
-                    </Field>
-                    <Field label="Ünvan">
-                      <Input
-                        variant="faded"
-                        value={content.profile.title}
-                        onValueChange={(value) => setProfile('title', value)}
-                      />
-                    </Field>
-                  </Grid>
-                  <p className="mt-3 text-xs text-foreground-500">
-                    Bu bilgiler Chat üzerinde profil olarak görünür.
-                  </p>
-                </PanelCard>
-              </div>
-            ),
-          },
-          {
-            key: 'general',
-            label: (
-              <span className="inline-flex items-center gap-1.5">
-                <Icon icon="mdi:cog-outline" width={15} height={15} />
-                Genel
-              </span>
-            ),
-            children: (
-              <div className="space-y-4 pt-4">
-                <PanelCard title="Hero (Ana Ekran)">
-                  <Grid>
-                    <Field label="İsim">
-                      <Input
-                        variant="faded"
-                        value={content.hero.name}
-                        onValueChange={(value) => setHero('name', value)}
-                      />
-                    </Field>
-                    <Field label="Emoji / Logo">
-                      <Input
-                        variant="faded"
-                        value={content.hero.emoji}
-                        onValueChange={(value) => setHero('emoji', value)}
-                      />
-                    </Field>
-                    <Field label="Alt Başlık (Tagline)">
-                      <Input
-                        variant="faded"
-                        value={content.hero.tagline}
-                        onValueChange={(value) => setHero('tagline', value)}
-                      />
-                    </Field>
-                    <Field label="Proje Butonu Yazısı">
-                      <Input
-                        variant="faded"
-                        value={content.hero.exploreLabel}
-                        onValueChange={(value) =>
-                          setHero('exploreLabel', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="İletişim Butonu Yazısı">
-                      <Input
-                        variant="faded"
-                        value={content.hero.connectLabel}
-                        onValueChange={(value) =>
-                          setHero('connectLabel', value)
-                        }
-                      />
-                    </Field>
-                  </Grid>
-                </PanelCard>
-                <PanelCard title="Menü (Navigation)">
-                  <Grid>
-                    <Field label="CTA Buton Yazısı (üst menü)">
-                      <Input
-                        variant="faded"
-                        value={content.nav.ctaLabel}
-                        onValueChange={(value) => setNav('ctaLabel', value)}
-                      />
-                    </Field>
-                    <Field label="CTA Link (örn. GitHub)">
-                      <Input
-                        variant="faded"
-                        value={content.nav.githubRepo}
-                        onValueChange={(value) => setNav('githubRepo', value)}
-                      />
-                    </Field>
-                  </Grid>
-                  <div className="mt-4 flex flex-col gap-3">
-                    {content.nav.items.map((item, index) => (
-                      <ItemCard
-                        key={index}
-                        title={`Menü Öğesi #${index + 1}`}
-                        onRemove={() => removeNavItem(index)}
-                      >
-                        <Grid>
-                          <Field label="Başlık">
-                            <Input
-                              variant="faded"
-                              value={item.title}
-                              onValueChange={(value) =>
-                                setNavItem(index, 'title', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Link (örn. /#projects)">
-                            <Input
-                              variant="faded"
-                              value={item.href}
-                              onValueChange={(value) =>
-                                setNavItem(index, 'href', value)
-                              }
-                            />
-                          </Field>
-                        </Grid>
-                      </ItemCard>
-                    ))}
-                    <AddButton onPress={addNavItem} label="Menü Öğesi Ekle" />
-                  </div>
-                </PanelCard>
-                <PanelCard title="İletişim Bölümü">
-                  <Grid>
-                    <Field label="Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.contact.title}
-                        onValueChange={(value) => setContact('title', value)}
-                      />
-                    </Field>
-                    <Field label="Alt Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.contact.subtitle}
-                        onValueChange={(value) => setContact('subtitle', value)}
-                      />
-                    </Field>
-                    <Field label="Açıklama">
-                      <Input
-                        variant="faded"
-                        value={content.contact.description}
-                        onValueChange={(value) =>
-                          setContact('description', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Buton Altı Yazısı">
-                      <Input
-                        variant="faded"
-                        value={content.contact.footerText}
-                        onValueChange={(value) =>
-                          setContact('footerText', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Başarı Başlığı">
-                      <Input
-                        variant="faded"
-                        value={content.contact.successTitle}
-                        onValueChange={(value) =>
-                          setContact('successTitle', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Başarı Metni">
-                      <Input
-                        variant="faded"
-                        value={content.contact.successText}
-                        onValueChange={(value) =>
-                          setContact('successText', value)
-                        }
-                      />
-                    </Field>
-                  </Grid>
-                </PanelCard>
-                <PanelCard title="Footer">
-                  <Field label="Telif Hakkı İsmi">
-                    <Input
-                      variant="faded"
-                      value={content.footer.copyright}
-                      onValueChange={(value) => setFooter('copyright', value)}
-                    />
-                  </Field>
-                </PanelCard>
-                <PanelCard title="GitHub Bölümü">
-                  <Grid>
-                    <Field label="Alt Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.github.subtitle}
-                        onValueChange={(value) => setGithub('subtitle', value)}
-                      />
-                    </Field>
-                    <Field label="Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.github.title}
-                        onValueChange={(value) => setGithub('title', value)}
-                      />
-                    </Field>
-                    <Field label="Açıklama">
-                      <Input
-                        variant="faded"
-                        value={content.github.description}
-                        onValueChange={(value) =>
-                          setGithub('description', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="GitHub Kullanıcı Adı (projeler otomatik çekilir)">
-                      <Input
-                        variant="faded"
-                        value={content.settings.githubUsername}
-                        onValueChange={(value) =>
-                          setSettings('githubUsername', value)
-                        }
-                      />
-                    </Field>
-                  </Grid>
-                  <p className="mt-3 text-xs text-foreground-500">
-                    Kullanıcı adı (örn.{' '}
-                    <span className="font-mono">TARIKTR1099</span>) yazarsan
-                    sitendeki "GitHub Projects" bölümü bu hesabın public
-                    repolarını gösterir. Boş bırakırsan bölüm gizlenir.
-                  </p>
-                </PanelCard>
-                <PanelCard title="Chat Bölümü">
-                  <Grid>
-                    <Field label="Alt Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.chat.subtitle}
-                        onValueChange={(value) => setChat('subtitle', value)}
-                      />
-                    </Field>
-                    <Field label="Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.chat.title}
-                        onValueChange={(value) => setChat('title', value)}
-                      />
-                    </Field>
-                    <Field label="Açıklama">
-                      <Input
-                        variant="faded"
-                        value={content.chat.description}
-                        onValueChange={(value) => setChat('description', value)}
-                      />
-                    </Field>
-                  </Grid>
-                </PanelCard>
-                <PanelCard title="Arka Plan">
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                      <div
-                        className="flex h-28 w-full sm:w-48 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10"
-                        style={{
-                          backgroundColor: content.settings.backgroundImage
-                            ? 'transparent'
-                            : '#0d0d12',
-                          backgroundImage: content.settings.backgroundImage
-                            ? `url(${content.settings.backgroundImage})`
-                            : undefined,
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                        }}
-                      >
-                        {!content.settings.backgroundImage && (
-                          <p className="text-xs text-foreground-500">
-                            Görsel yok — düz tema
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex flex-col items-center sm:items-start gap-3">
-                        <input
-                          ref={backgroundFileRef}
-                          type="file"
-                          accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
-                          className="hidden"
-                          onChange={uploadBackground}
+          items={[
+            {
+              key: 'profile',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:account-circle" width={15} height={15} />
+                  Profil
+                </span>
+              ),
+              children: (
+                <div className="space-y-4 pt-4">
+                  <ProfilePhotoCard
+                    profileImage={content.profile.profileImage}
+                    displayName={content.profile.displayName}
+                    onUploaded={image => setProfile('profileImage', image)}
+                    onStatus={setStatus}
+                  />
+                  <PanelCard title="Profil Bilgileri">
+                    <Grid>
+                      <Field label="Ad (First Name)">
+                        <Input
+                          variant="faded"
+                          value={content.profile.firstName}
+                          onValueChange={value =>
+                            setProfile('firstName', value)}
                         />
-                        <div className="flex flex-row gap-2">
-                          <Button
-                            color="primary"
-                            onPress={() => backgroundFileRef.current?.click()}
-                            isLoading={backgroundUploading}
-                            startContent={
-                              <Icon
-                                icon="mdi:image-plus"
-                                width={18}
-                                height={18}
-                              />
-                            }
-                          >
-                            Görsel Yükle
-                          </Button>
-                          {content.settings.backgroundImage && (
-                            <Button
-                              variant="bordered"
-                              color="danger"
-                              onPress={removeBackground}
-                              isLoading={backgroundUploading}
-                              startContent={
-                                <Icon
-                                  icon="mdi:trash-can-outline"
-                                  width={18}
-                                  height={18}
-                                />
-                              }
-                            >
-                              Kaldır
-                            </Button>
-                          )}
-                        </div>
-                        <p className="text-xs text-foreground-500">
-                          Sitenin arka planına tam ekran görsel koyar (kaplama).
-                          Görsel yoksa düz siyah (koyu tema) / beyaz (açık tema)
-                          kullanılır. PNG, JPG, WEBP, GIF veya SVG — en fazla 8
-                          MB.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex flex-row flex-wrap items-center gap-x-4 gap-y-2 text-xs text-foreground-500">
-                      <span className="flex items-center gap-1.5">
-                        Varsayılan tema:
-                      </span>
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="defaultTheme"
-                          checked={content.settings.defaultTheme === 'dark'}
-                          onChange={() => setSettings('defaultTheme', 'dark')}
+                      </Field>
+                      <Field label="Soyad (Last Name)">
+                        <Input
+                          variant="faded"
+                          value={content.profile.lastName}
+                          onValueChange={value => setProfile('lastName', value)}
                         />
-                        Koyu (siyah)
-                      </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="defaultTheme"
-                          checked={content.settings.defaultTheme === 'light'}
-                          onChange={() => setSettings('defaultTheme', 'light')}
+                      </Field>
+                      <Field label="Görünen Ad (örn. TARIKELER)">
+                        <Input
+                          variant="faded"
+                          value={content.profile.displayName}
+                          onValueChange={value =>
+                            setProfile('displayName', value)}
                         />
-                        Açık (beyaz)
-                      </label>
-                      <span className="w-full text-foreground-500">
-                        Ziyaretçi üst menüden istediği an koyu/açık arasında
-                        geçiş yapabilir; bu ayar ilk açılışta hangisinin
-                        gösterileceğini belirler.
-                      </span>
-                    </div>
-                  </div>
-                </PanelCard>
-              </div>
-            ),
-          },
-          {
-            key: 'about',
-            label: (
-              <span className="inline-flex items-center gap-1.5">
-                <Icon icon="mdi:information-outline" width={15} height={15} />
-                Hakkımda
-              </span>
-            ),
-            children: (
-              <div className="space-y-4 pt-4">
-                <PanelCard title="Bölüm Başlıkları">
-                  <Grid>
-                    <Field label="Alt Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.about.subtitle}
-                        onValueChange={(value) => setAbout('subtitle', value)}
-                      />
-                    </Field>
-                    <Field label="Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.about.title}
-                        onValueChange={(value) => setAbout('title', value)}
-                      />
-                    </Field>
-                    <Field label="Açıklama">
-                      <Input
-                        variant="faded"
-                        value={content.about.description}
-                        onValueChange={(value) =>
-                          setAbout('description', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="'Kimim Ben?' Başlığı">
-                      <Input
-                        variant="faded"
-                        value={content.about.whoTitle}
-                        onValueChange={(value) => setAbout('whoTitle', value)}
-                      />
-                    </Field>
-                    <Field label="'Kimim Ben?' Metni">
-                      <Textarea
-                        variant="faded"
-                        value={content.about.whoText}
-                        onValueChange={(value) => setAbout('whoText', value)}
-                        minRows={3}
-                      />
-                    </Field>
-                  </Grid>
-                </PanelCard>
-                <PanelCard title="Toolbox (Kullandığım Teknolojiler)">
-                  <Grid>
-                    <Field label="Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.about.toolboxTitle}
-                        onValueChange={(value) =>
-                          setAbout('toolboxTitle', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Açıklama">
-                      <Input
-                        variant="faded"
-                        value={content.about.toolboxDescription}
-                        onValueChange={(value) =>
-                          setAbout('toolboxDescription', value)
-                        }
-                      />
-                    </Field>
-                  </Grid>
-                  <div className="mt-4 flex flex-col gap-3">
-                    {content.about.toolbox.map((item, index) => (
-                      <ItemCard
-                        key={index}
-                        title={`Teknoloji #${index + 1}`}
-                        onRemove={() => removeToolbox(index)}
-                      >
-                        <Grid>
-                          <Field label="İsim">
-                            <Input
-                              variant="faded"
-                              value={item.label}
-                              onValueChange={(value) =>
-                                setToolbox(index, 'label', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Tip">
-                            <select
-                              value={item.type ?? 'link'}
-                              onChange={(e) =>
-                                setToolbox(index, 'type', e.target.value)
-                              }
-                              className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-                            >
-                              <option value="link">Link</option>
-                              <option value="command">
-                                Komut (SVG + tıklayınca kopyala)
-                              </option>
-                            </select>
-                          </Field>
-                          <Field
-                            label={
-                              item.type === 'command'
-                                ? 'Komut (tıklanınca kopyalanır)'
-                                : 'URL'
-                            }
-                          >
-                            <Input
-                              variant="faded"
-                              placeholder={
-                                item.type === 'command'
-                                  ? 'örn. npx create-next-app@latest'
-                                  : 'https://...'
-                              }
-                              value={item.href ?? ''}
-                              onValueChange={(value) =>
-                                setToolbox(index, 'href', value)
-                              }
-                            />
-                          </Field>
-                        </Grid>
-                      </ItemCard>
-                    ))}
-                    <AddButton onPress={addToolbox} label="Teknoloji Ekle" />
-                  </div>
-                </PanelCard>
-                <PanelCard title="İlgi Alanları (Beyond the Code)">
-                  <Grid>
-                    <Field label="Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.about.beyondTitle}
-                        onValueChange={(value) =>
-                          setAbout('beyondTitle', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Açıklama">
-                      <Input
-                        variant="faded"
-                        value={content.about.beyondDescription}
-                        onValueChange={(value) =>
-                          setAbout('beyondDescription', value)
-                        }
-                      />
-                    </Field>
-                  </Grid>
-                  <div className="mt-4 flex flex-col gap-3">
-                    {content.about.interests.map((item, index) => (
-                      <ItemCard
-                        key={index}
-                        title={`İlgi Alanı #${index + 1}`}
-                        onRemove={() => removeInterest(index)}
-                      >
-                        <Grid>
-                          <Field label="İsim">
-                            <Input
-                              variant="faded"
-                              value={item.label}
-                              onValueChange={(value) =>
-                                setInterest(index, 'label', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="İkon (iconify)">
-                            <Input
-                              variant="faded"
-                              value={item.icon}
-                              onValueChange={(value) =>
-                                setInterest(index, 'icon', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Açıklama">
-                            <Input
-                              variant="faded"
-                              value={item.content}
-                              onValueChange={(value) =>
-                                setInterest(index, 'content', value)
-                              }
-                            />
-                          </Field>
-                        </Grid>
-                      </ItemCard>
-                    ))}
-                    <AddButton onPress={addInterest} label="İlgi Alanı Ekle" />
-                  </div>
-                </PanelCard>
-                <PanelCard title="Siber Güvenlik Bölümü">
-                  <Grid>
-                    <Field label="Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.about.securityTitle}
-                        onValueChange={(value) =>
-                          setAbout('securityTitle', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Metin">
-                      <Input
-                        variant="faded"
-                        value={content.about.securityText}
-                        onValueChange={(value) =>
-                          setAbout('securityText', value)
-                        }
-                      />
-                    </Field>
-                  </Grid>
-                  <div className="mt-4 flex flex-col gap-3">
-                    {content.about.securityTools.map((item, index) => (
-                      <ItemCard
-                        key={index}
-                        title={`Araç #${index + 1}`}
-                        onRemove={() => removeSecurityTool(index)}
-                      >
-                        <Grid>
-                          <Field label="İsim">
-                            <Input
-                              variant="faded"
-                              value={item.label}
-                              onValueChange={(value) =>
-                                setSecurityTool(index, 'label', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Tip">
-                            <select
-                              value={item.type ?? 'link'}
-                              onChange={(e) =>
-                                setSecurityTool(index, 'type', e.target.value)
-                              }
-                              className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-                            >
-                              <option value="link">Link</option>
-                              <option value="command">
-                                Komut (SVG + tıklayınca kopyala)
-                              </option>
-                            </select>
-                          </Field>
-                          <Field
-                            label={
-                              item.type === 'command'
-                                ? 'Komut (tıklanınca kopyalanır)'
-                                : 'URL'
-                            }
-                          >
-                            <Input
-                              variant="faded"
-                              placeholder={
-                                item.type === 'command'
-                                  ? 'örn. nmap -sV target'
-                                  : 'https://...'
-                              }
-                              value={item.href ?? ''}
-                              onValueChange={(value) =>
-                                setSecurityTool(index, 'href', value)
-                              }
-                            />
-                          </Field>
-                        </Grid>
-                      </ItemCard>
-                    ))}
-                    <AddButton onPress={addSecurityTool} label="Araç Ekle" />
-                  </div>
-                </PanelCard>
-              </div>
-            ),
-          },
-          {
-            key: 'social',
-            label: (
-              <span className="inline-flex items-center gap-1.5">
-                <Icon icon="mdi:share-variant-outline" width={15} height={15} />
-                Sosyal Medya
-              </span>
-            ),
-            children: (
-              <div className="space-y-4 pt-4">
-                <PanelCard title="Sosyal Medya Linkleri">
-                  <div className="flex flex-col gap-3">
-                    {content.social.map((item, index) => (
-                      <ItemCard
-                        key={index}
-                        title={`${item.name || `Sosyal #${index + 1}`}`}
-                        onRemove={() => removeSocial(index)}
-                      >
-                        <Grid>
-                          <Field label="İsim">
-                            <Input
-                              variant="faded"
-                              value={item.name}
-                              onValueChange={(value) =>
-                                setSocial(index, 'name', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Link">
-                            <Input
-                              variant="faded"
-                              value={item.href}
-                              onValueChange={(value) =>
-                                setSocial(index, 'href', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Platform (SVG)">
-                            <select
-                              value={item.icon}
-                              onChange={(e) =>
-                                setSocial(index, 'icon', e.target.value)
-                              }
-                              className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-                            >
-                              <option value="mdi:github">GitHub</option>
-                              <option value="mdi:twitter">X / Twitter</option>
-                              <option value="mdi:instagram">Instagram</option>
-                              <option value="mdi:youtube">YouTube</option>
-                              <option value="ic:baseline-tiktok">TikTok</option>
-                              <option value="mdi:discord">Discord</option>
-                              <option value="mdi:linkedin">LinkedIn</option>
-                              <option value="mdi:telegram">Telegram</option>
-                              <option value="mdi:link">Link (jenerik)</option>
-                            </select>
-                          </Field>
-                        </Grid>
-                      </ItemCard>
-                    ))}
-                    <AddButton onPress={addSocial} label="Sosyal Medya Ekle" />
-                  </div>
-                </PanelCard>
-              </div>
-            ),
-          },
-          {
-            key: 'projects',
-            label: (
-              <span className="inline-flex items-center gap-1.5">
-                <Icon icon="mdi:folder-outline" width={15} height={15} />
-                Projeler
-              </span>
-            ),
-            children: (
-              <div className="space-y-4 pt-4">
-                <PanelCard title="Bölüm Başlıkları">
-                  <Grid>
-                    <Field label="Alt Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.projects.subtitle}
-                        onValueChange={(value) =>
-                          setProjectsMeta('subtitle', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Başlık">
-                      <Input
-                        variant="faded"
-                        value={content.projects.title}
-                        onValueChange={(value) =>
-                          setProjectsMeta('title', value)
-                        }
-                      />
-                    </Field>
-                    <Field label="Açıklama">
-                      <Input
-                        variant="faded"
-                        value={content.projects.description}
-                        onValueChange={(value) =>
-                          setProjectsMeta('description', value)
-                        }
-                      />
-                    </Field>
-                  </Grid>
-                </PanelCard>
-                <PanelCard title="Projeler">
-                  <div className="flex flex-col gap-3">
-                    {content.projects.items.map((item, index) => (
-                      <ItemCard
-                        key={index}
-                        title={`${item.title || `Proje #${index + 1}`}`}
-                        onRemove={() => removeProject(index)}
-                      >
-                        <Grid>
-                          <Field label="Başlık">
-                            <Input
-                              variant="faded"
-                              value={item.title}
-                              onValueChange={(value) =>
-                                setProject(index, 'title', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Rozet (örn. [Under Development])">
-                            <Input
-                              variant="faded"
-                              value={item.notice || ''}
-                              onValueChange={(value) =>
-                                setProject(index, 'notice', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Açıklama">
-                            <Textarea
-                              variant="faded"
-                              value={item.description}
-                              onValueChange={(value) =>
-                                setProject(index, 'description', value)
-                              }
-                              minRows={2}
-                            />
-                          </Field>
-                          <Field label="Proje Linki">
-                            <Input
-                              variant="faded"
-                              value={item.projectLink}
-                              onValueChange={(value) =>
-                                setProject(index, 'projectLink', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Kaynak Kod Linki (opsiyonel)">
-                            <Input
-                              variant="faded"
-                              value={item.srcLink || ''}
-                              onValueChange={(value) =>
-                                setProject(index, 'srcLink', value)
-                              }
-                            />
-                          </Field>
-                          <Field label="Görsel Yolu (örn. /projects/portfolyo.png)">
-                            <Input
-                              variant="faded"
-                              value={item.image}
-                              onValueChange={(value) =>
-                                setProject(index, 'image', value)
-                              }
-                            />
-                          </Field>
-                        </Grid>
-                        <div className="mt-4 flex flex-col gap-3 rounded-lg border border-foreground-200/10 p-3">
-                          <p className="text-xs font-semibold text-foreground">
-                            İndirme (Download butonu)
-                          </p>
-                          <div className="flex flex-row flex-wrap items-center gap-3 text-xs text-foreground-500">
-                            <label className="flex items-center gap-1.5 cursor-pointer">
-                              <input
-                                type="radio"
-                                name={`downloadMode-${index}`}
-                                checked={
-                                  (item.downloadMode ?? 'global') === 'global'
-                                }
-                                onChange={() =>
-                                  setProjectDownloadMode(index, 'global')
-                                }
-                              />
-                              Global (tek link)
-                            </label>
-                            <label className="flex items-center gap-1.5 cursor-pointer">
-                              <input
-                                type="radio"
-                                name={`downloadMode-${index}`}
-                                checked={item.downloadMode === 'per-os'}
-                                onChange={() =>
-                                  setProjectDownloadMode(index, 'per-os')
-                                }
-                              />
-                              İşletim sistemine özel (Windows / Android / Linux)
-                            </label>
-                          </div>
-                          {(item.downloadMode ?? 'global') === 'global' ? (
-                            <Field label="İndirme Linki / Dosya Yolu">
-                              <Input
-                                variant="faded"
-                                placeholder="/downloads/app.zip veya https://..."
-                                value={item.downloadUrl || ''}
-                                onValueChange={(value) =>
-                                  setProject(index, 'downloadUrl', value)
-                                }
-                              />
-                            </Field>
-                          ) : (
-                            <Grid>
-                              <Field label="Windows">
-                                <Input
-                                  variant="faded"
-                                  placeholder="/downloads/setup.exe"
-                                  value={item.downloads?.windows || ''}
-                                  onValueChange={(value) =>
-                                    setProjectDownloadOs(
-                                      index,
-                                      'windows',
-                                      value,
-                                    )
-                                  }
-                                />
-                              </Field>
-                              <Field label="Android">
-                                <Input
-                                  variant="faded"
-                                  placeholder="/downloads/app.apk"
-                                  value={item.downloads?.android || ''}
-                                  onValueChange={(value) =>
-                                    setProjectDownloadOs(
-                                      index,
-                                      'android',
-                                      value,
-                                    )
-                                  }
-                                />
-                              </Field>
-                              <Field label="Linux">
-                                <Input
-                                  variant="faded"
-                                  placeholder="/downloads/app.AppImage"
-                                  value={item.downloads?.linux || ''}
-                                  onValueChange={(value) =>
-                                    setProjectDownloadOs(index, 'linux', value)
-                                  }
-                                />
-                              </Field>
-                            </Grid>
-                          )}
-                          <p className="text-xs text-foreground-500">
-                            Boş bırakırsan Download butonu görünmez.
-                            Kullanıcının işletim sistemi otomatik algılanır ve
-                            uygun link/dosya açılır.
-                          </p>
-                        </div>
-                      </ItemCard>
-                    ))}
-                    <AddButton onPress={addProject} label="Proje Ekle" />
-                  </div>
-                </PanelCard>
-
-                <PanelCard
-                  title={`GitHub Repoları (${githubRepos.length})`}
-                >
-                  <p className="mb-3 text-xs text-foreground-500">
-                    GitHub hesabındaki public repo'lar. 'Eksik' olanlar sitede
-                    görünmüyor — tek tıkla ekleyebilirsin. Ekledikten sonra
-                    Kaydet'e bas.
-                  </p>
-                  {githubRepos.length === 0 ? (
-                    <p className="text-xs text-foreground-500">
-                      Repo listesi yükleniyor veya alınamıyor (GitHub
-                      kullanıcı adı ayarla: Site › GitHub Kullanıcı Adı).
+                      </Field>
+                      <Field label="Lakap / Takma Ad (örn. Tarnak)">
+                        <Input
+                          variant="faded"
+                          value={content.profile.nickname}
+                          onValueChange={value => setProfile('nickname', value)}
+                        />
+                      </Field>
+                      <Field label="Ünvan">
+                        <Input
+                          variant="faded"
+                          value={content.profile.title}
+                          onValueChange={value => setProfile('title', value)}
+                        />
+                      </Field>
+                    </Grid>
+                    <p className="mt-3 text-xs text-foreground-500">
+                      Bu bilgiler Chat üzerinde profil olarak görünür.
                     </p>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      {githubRepos.map((repo) => {
-                        const inSite = content.projects.items.some(
-                          (p) => p.title === repo.name,
-                        )
-                        return (
-                          <div
-                            key={repo.name}
-                            className="flex flex-row items-center gap-3 rounded-lg border border-foreground-200/10 p-2.5"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-foreground">
-                                {repo.name}
-                              </p>
-                              {repo.description && (
-                                <p className="truncate text-xs text-foreground-500">
-                                  {repo.description}
-                                </p>
-                              )}
-                              <p className="mt-0.5 text-[10px] text-foreground-600">
-                                ★ {repo.stars} · {repo.forks} fork ·{' '}
-                                {repo.language ?? '—'}
-                              </p>
-                            </div>
-                            {inSite ? (
-                              <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                                Sitede var
-                              </span>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => addGithubRepo(repo)}
-                                className="shrink-0 h-8 rounded-lg bg-[#e5e7eb] px-3 text-xs font-semibold text-black hover:bg-[#d1d5db]"
-                              >
-                                Ekle
-                              </button>
-                            )}
-                            <a
-                              href={repo.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="shrink-0 text-xs text-foreground-500 hover:text-primary"
-                            >
-                              GitHub ↗
-                            </a>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </PanelCard>
-              </div>
-            ),
-          },
-          {
-            key: 'blog',
-            label: (
-              <span className="inline-flex items-center gap-1.5">
-                <Icon icon="mdi:post-outline" width={15} height={15} />
-                Blog
-              </span>
-            ),
-            children: (
-              <div className="space-y-4 pt-4">
-                <div className="flex flex-row items-center justify-between">
-                  <p className="text-sm text-foreground-500">
-                    {posts.length} yazı
-                  </p>
-                  <Button
-                    onPress={newPost}
-                    color="primary"
-                    size="sm"
-                    startContent={
-                      <Icon icon="mdi:plus" width={18} height={18} />
-                    }
-                  >
-                    Yeni Yazı
-                  </Button>
+                  </PanelCard>
                 </div>
-                <div className="flex flex-col gap-3">
-                  {posts.map((post) => (
-                    <ItemCard
-                      key={post.id}
-                      title={post.title || 'Başlıksız Yazı'}
-                      onRemove={() => removePost(post.id)}
-                    >
-                      <div className="flex flex-row flex-wrap items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="bordered"
-                          onPress={() => setEditingPostId(post.id)}
-                          startContent={
-                            <Icon icon="mdi:pencil" width={16} height={16} />
-                          }
+              ),
+            },
+            {
+              key: 'general',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:cog-outline" width={15} height={15} />
+                  Genel
+                </span>
+              ),
+              children: (
+                <div className="space-y-4 pt-4">
+                  <PanelCard title="Hero (Ana Ekran)">
+                    <Grid>
+                      <Field label="İsim">
+                        <Input
+                          variant="faded"
+                          value={content.hero.name}
+                          onValueChange={value => setHero('name', value)}
+                        />
+                      </Field>
+                      <Field label="Emoji / Logo">
+                        <Input
+                          variant="faded"
+                          value={content.hero.emoji}
+                          onValueChange={value => setHero('emoji', value)}
+                        />
+                      </Field>
+                      <Field label="Alt Başlık (Tagline)">
+                        <Input
+                          variant="faded"
+                          value={content.hero.tagline}
+                          onValueChange={value => setHero('tagline', value)}
+                        />
+                      </Field>
+                      <Field label="Proje Butonu Yazısı">
+                        <Input
+                          variant="faded"
+                          value={content.hero.exploreLabel}
+                          onValueChange={value =>
+                            setHero('exploreLabel', value)}
+                        />
+                      </Field>
+                      <Field label="İletişim Butonu Yazısı">
+                        <Input
+                          variant="faded"
+                          value={content.hero.connectLabel}
+                          onValueChange={value =>
+                            setHero('connectLabel', value)}
+                        />
+                      </Field>
+                    </Grid>
+                  </PanelCard>
+                  <PanelCard title="Menü (Navigation)">
+                    <Grid>
+                      <Field label="CTA Buton Yazısı (üst menü)">
+                        <Input
+                          variant="faded"
+                          value={content.nav.ctaLabel}
+                          onValueChange={value => setNav('ctaLabel', value)}
+                        />
+                      </Field>
+                      <Field label="CTA Link (örn. GitHub)">
+                        <Input
+                          variant="faded"
+                          value={content.nav.githubRepo}
+                          onValueChange={value => setNav('githubRepo', value)}
+                        />
+                      </Field>
+                    </Grid>
+                    <div className="mt-4 flex flex-col gap-3">
+                      {content.nav.items.map((item, index) => (
+                        <ItemCard
+                          key={index}
+                          title={`Menü Öğesi #${index + 1}`}
+                          onRemove={() => removeNavItem(index)}
                         >
-                          Düzenle
-                        </Button>
-                        <span className="text-xs text-foreground-500">
-                          {post.date}
-                        </span>
-                        {editingPostId === post.id && (
-                          <span className="text-xs font-semibold text-primary">
-                            Düzenleniyor...
-                          </span>
-                        )}
-                      </div>
-                    </ItemCard>
-                  ))}
-                </div>
-                {editingPostId &&
-                  (() => {
-                    const post = posts.find((p) => p.id === editingPostId)
-                    if (!post) {
-                      return null
-                    }
-                    return (
-                      <PanelCard title="Yazı Editörü">
-                        <div className="flex flex-col gap-4">
                           <Grid>
                             <Field label="Başlık">
                               <Input
                                 variant="faded"
-                                value={post.title}
-                                onValueChange={(value) =>
-                                  updatePost('title', value)
-                                }
+                                value={item.title}
+                                onValueChange={value =>
+                                  setNavItem(index, 'title', value)}
                               />
                             </Field>
-                            <Field label="Slug (link kısmı, boşluk yerine - kullan)">
+                            <Field label="Link (örn. /#projects)">
                               <Input
                                 variant="faded"
-                                value={post.slug}
-                                onValueChange={(value) =>
-                                  updatePost('slug', value)
-                                }
-                              />
-                            </Field>
-                            <Field label="Tarih">
-                              <Input
-                                variant="faded"
-                                type="date"
-                                value={post.date}
-                                onValueChange={(value) =>
-                                  updatePost('date', value)
-                                }
-                              />
-                            </Field>
-                            <Field label="Özet (liste sayfasında görünür)">
-                              <Input
-                                variant="faded"
-                                value={post.excerpt}
-                                onValueChange={(value) =>
-                                  updatePost('excerpt', value)
-                                }
+                                value={item.href}
+                                onValueChange={value =>
+                                  setNavItem(index, 'href', value)}
                               />
                             </Field>
                           </Grid>
-                          <Field label="İçerik (Markdown desteklenir)">
-                            <Textarea
-                              variant="faded"
-                              value={post.content}
-                              onValueChange={(value) =>
-                                updatePost('content', value)
-                              }
-                              minRows={12}
-                              maxRows={30}
-                              placeholder={
-                                '# Başlık\n\nParagraf yazısı...\n\n- Liste\n- Öğe\n\n**Kalın**, *italik*'
-                              }
-                            />
-                          </Field>
+                        </ItemCard>
+                      ))}
+                      <AddButton onPress={addNavItem} label="Menü Öğesi Ekle" />
+                    </div>
+                  </PanelCard>
+                  <PanelCard title="İletişim Bölümü">
+                    <Grid>
+                      <Field label="Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.contact.title}
+                          onValueChange={value => setContact('title', value)}
+                        />
+                      </Field>
+                      <Field label="Alt Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.contact.subtitle}
+                          onValueChange={value => setContact('subtitle', value)}
+                        />
+                      </Field>
+                      <Field label="Açıklama">
+                        <Input
+                          variant="faded"
+                          value={content.contact.description}
+                          onValueChange={value =>
+                            setContact('description', value)}
+                        />
+                      </Field>
+                      <Field label="Buton Altı Yazısı">
+                        <Input
+                          variant="faded"
+                          value={content.contact.footerText}
+                          onValueChange={value =>
+                            setContact('footerText', value)}
+                        />
+                      </Field>
+                      <Field label="Başarı Başlığı">
+                        <Input
+                          variant="faded"
+                          value={content.contact.successTitle}
+                          onValueChange={value =>
+                            setContact('successTitle', value)}
+                        />
+                      </Field>
+                      <Field label="Başarı Metni">
+                        <Input
+                          variant="faded"
+                          value={content.contact.successText}
+                          onValueChange={value =>
+                            setContact('successText', value)}
+                        />
+                      </Field>
+                    </Grid>
+                  </PanelCard>
+                  <PanelCard title="Footer">
+                    <Field label="Telif Hakkı İsmi">
+                      <Input
+                        variant="faded"
+                        value={content.footer.copyright}
+                        onValueChange={value => setFooter('copyright', value)}
+                      />
+                    </Field>
+                  </PanelCard>
+                  <PanelCard title="GitHub Bölümü">
+                    <Grid>
+                      <Field label="Alt Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.github.subtitle}
+                          onValueChange={value => setGithub('subtitle', value)}
+                        />
+                      </Field>
+                      <Field label="Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.github.title}
+                          onValueChange={value => setGithub('title', value)}
+                        />
+                      </Field>
+                      <Field label="Açıklama">
+                        <Input
+                          variant="faded"
+                          value={content.github.description}
+                          onValueChange={value =>
+                            setGithub('description', value)}
+                        />
+                      </Field>
+                      <Field label="GitHub Kullanıcı Adı (projeler otomatik çekilir)">
+                        <Input
+                          variant="faded"
+                          value={content.settings.githubUsername}
+                          onValueChange={value =>
+                            setSettings('githubUsername', value)}
+                        />
+                      </Field>
+                    </Grid>
+                    <p className="mt-3 text-xs text-foreground-500">
+                      Kullanıcı adı (örn.
+                      {' '}
+                      <span className="font-mono">TARIKTR1099</span>
+                      ) yazarsan
+                      sitendeki "GitHub Projects" bölümü bu hesabın public
+                      repolarını gösterir. Boş bırakırsan bölüm gizlenir.
+                    </p>
+                  </PanelCard>
+                  <PanelCard title="Chat Bölümü">
+                    <Grid>
+                      <Field label="Alt Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.chat.subtitle}
+                          onValueChange={value => setChat('subtitle', value)}
+                        />
+                      </Field>
+                      <Field label="Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.chat.title}
+                          onValueChange={value => setChat('title', value)}
+                        />
+                      </Field>
+                      <Field label="Açıklama">
+                        <Input
+                          variant="faded"
+                          value={content.chat.description}
+                          onValueChange={value => setChat('description', value)}
+                        />
+                      </Field>
+                    </Grid>
+                  </PanelCard>
+                  <PanelCard title="Arka Plan">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex flex-col sm:flex-row items-center gap-4">
+                        <div
+                          className="flex h-28 w-full sm:w-48 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10"
+                          style={{
+                            backgroundColor: content.settings.backgroundImage
+                              ? 'transparent'
+                              : '#0d0d12',
+                            backgroundImage: content.settings.backgroundImage
+                              ? `url(${content.settings.backgroundImage})`
+                              : undefined,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                          }}
+                        >
+                          {!content.settings.backgroundImage && (
+                            <p className="text-xs text-foreground-500">
+                              Görsel yok — düz tema
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-center sm:items-start gap-3">
+                          <input
+                            ref={backgroundFileRef}
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                            className="hidden"
+                            onChange={uploadBackground}
+                          />
                           <div className="flex flex-row gap-2">
                             <Button
                               color="primary"
-                              onPress={savePost}
-                              isLoading={saving}
+                              onPress={() => backgroundFileRef.current?.click()}
+                              isLoading={backgroundUploading}
+                              startContent={(
+                                <Icon
+                                  icon="mdi:image-plus"
+                                  width={18}
+                                  height={18}
+                                />
+                              )}
                             >
-                              <Icon
-                                icon="material-symbols:save"
-                                width={18}
-                                height={18}
-                              />
-                              Yazıyı Kaydet
+                              Görsel Yükle
                             </Button>
-                            <Button
-                              variant="light"
-                              onPress={() => setEditingPostId(null)}
-                            >
-                              Kapat
-                            </Button>
+                            {content.settings.backgroundImage && (
+                              <Button
+                                variant="bordered"
+                                color="danger"
+                                onPress={removeBackground}
+                                isLoading={backgroundUploading}
+                                startContent={(
+                                  <Icon
+                                    icon="mdi:trash-can-outline"
+                                    width={18}
+                                    height={18}
+                                  />
+                                )}
+                              >
+                                Kaldır
+                              </Button>
+                            )}
                           </div>
+                          <p className="text-xs text-foreground-500">
+                            Sitenin arka planına tam ekran görsel koyar (kaplama).
+                            Görsel yoksa düz siyah (koyu tema) / beyaz (açık tema)
+                            kullanılır. PNG, JPG, WEBP, GIF veya SVG — en fazla 8
+                            MB.
+                          </p>
                         </div>
-                      </PanelCard>
-                    )
-                  })()}
-              </div>
-            ),
-          },
-          {
-            key: 'messages',
-            label: (
-              <span className="inline-flex items-center gap-1.5">
-                <Icon icon="mdi:chat-outline" width={15} height={15} />
-                Chat Mesajları
-              </span>
-            ),
-            children: (
-              <div className="space-y-4 pt-4">
-                <div className="flex flex-row items-center justify-between">
-                  <p className="text-sm text-foreground-500">
-                    {messages.length} mesaj
-                  </p>
-                  {messages.length > 0 && (
+                      </div>
+                      <div className="flex flex-row flex-wrap items-center gap-x-4 gap-y-2 text-xs text-foreground-500">
+                        <span className="flex items-center gap-1.5">
+                          Varsayılan tema:
+                        </span>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="defaultTheme"
+                            checked={content.settings.defaultTheme === 'dark'}
+                            onChange={() => setSettings('defaultTheme', 'dark')}
+                          />
+                          Koyu (siyah)
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="defaultTheme"
+                            checked={content.settings.defaultTheme === 'light'}
+                            onChange={() => setSettings('defaultTheme', 'light')}
+                          />
+                          Açık (beyaz)
+                        </label>
+                        <span className="w-full text-foreground-500">
+                          Ziyaretçi üst menüden istediği an koyu/açık arasında
+                          geçiş yapabilir; bu ayar ilk açılışta hangisinin
+                          gösterileceğini belirler.
+                        </span>
+                      </div>
+                    </div>
+                  </PanelCard>
+                </div>
+              ),
+            },
+            {
+              key: 'about',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:information-outline" width={15} height={15} />
+                  Hakkımda
+                </span>
+              ),
+              children: (
+                <div className="space-y-4 pt-4">
+                  <PanelCard title="Bölüm Başlıkları">
+                    <Grid>
+                      <Field label="Alt Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.about.subtitle}
+                          onValueChange={value => setAbout('subtitle', value)}
+                        />
+                      </Field>
+                      <Field label="Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.about.title}
+                          onValueChange={value => setAbout('title', value)}
+                        />
+                      </Field>
+                      <Field label="Açıklama">
+                        <Input
+                          variant="faded"
+                          value={content.about.description}
+                          onValueChange={value =>
+                            setAbout('description', value)}
+                        />
+                      </Field>
+                      <Field label="'Kimim Ben?' Başlığı">
+                        <Input
+                          variant="faded"
+                          value={content.about.whoTitle}
+                          onValueChange={value => setAbout('whoTitle', value)}
+                        />
+                      </Field>
+                      <Field label="'Kimim Ben?' Metni">
+                        <Textarea
+                          variant="faded"
+                          value={content.about.whoText}
+                          onValueChange={value => setAbout('whoText', value)}
+                          minRows={3}
+                        />
+                      </Field>
+                    </Grid>
+                  </PanelCard>
+                  <PanelCard title="Toolbox (Kullandığım Teknolojiler)">
+                    <Grid>
+                      <Field label="Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.about.toolboxTitle}
+                          onValueChange={value =>
+                            setAbout('toolboxTitle', value)}
+                        />
+                      </Field>
+                      <Field label="Açıklama">
+                        <Input
+                          variant="faded"
+                          value={content.about.toolboxDescription}
+                          onValueChange={value =>
+                            setAbout('toolboxDescription', value)}
+                        />
+                      </Field>
+                    </Grid>
+                    <div className="mt-4 flex flex-col gap-3">
+                      {content.about.toolbox.map((item, index) => (
+                        <ItemCard
+                          key={index}
+                          title={`Teknoloji #${index + 1}`}
+                          onRemove={() => removeToolbox(index)}
+                        >
+                          <Grid>
+                            <Field label="İsim">
+                              <Input
+                                variant="faded"
+                                value={item.label}
+                                onValueChange={value =>
+                                  setToolbox(index, 'label', value)}
+                              />
+                            </Field>
+                            <Field label="Tip">
+                              <select
+                                value={item.type ?? 'link'}
+                                onChange={e =>
+                                  setToolbox(index, 'type', e.target.value)}
+                                className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+                              >
+                                <option value="link">Link</option>
+                                <option value="command">
+                                  Komut (SVG + tıklayınca kopyala)
+                                </option>
+                              </select>
+                            </Field>
+                            <Field
+                              label={
+                                item.type === 'command'
+                                  ? 'Komut (tıklanınca kopyalanır)'
+                                  : 'URL'
+                              }
+                            >
+                              <Input
+                                variant="faded"
+                                placeholder={
+                                  item.type === 'command'
+                                    ? 'örn. npx create-next-app@latest'
+                                    : 'https://...'
+                                }
+                                value={item.href ?? ''}
+                                onValueChange={value =>
+                                  setToolbox(index, 'href', value)}
+                              />
+                            </Field>
+                          </Grid>
+                        </ItemCard>
+                      ))}
+                      <AddButton onPress={addToolbox} label="Teknoloji Ekle" />
+                    </div>
+                  </PanelCard>
+                  <PanelCard title="İlgi Alanları (Beyond the Code)">
+                    <Grid>
+                      <Field label="Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.about.beyondTitle}
+                          onValueChange={value =>
+                            setAbout('beyondTitle', value)}
+                        />
+                      </Field>
+                      <Field label="Açıklama">
+                        <Input
+                          variant="faded"
+                          value={content.about.beyondDescription}
+                          onValueChange={value =>
+                            setAbout('beyondDescription', value)}
+                        />
+                      </Field>
+                    </Grid>
+                    <div className="mt-4 flex flex-col gap-3">
+                      {content.about.interests.map((item, index) => (
+                        <ItemCard
+                          key={index}
+                          title={`İlgi Alanı #${index + 1}`}
+                          onRemove={() => removeInterest(index)}
+                        >
+                          <Grid>
+                            <Field label="İsim">
+                              <Input
+                                variant="faded"
+                                value={item.label}
+                                onValueChange={value =>
+                                  setInterest(index, 'label', value)}
+                              />
+                            </Field>
+                            <Field label="İkon (iconify)">
+                              <Input
+                                variant="faded"
+                                value={item.icon}
+                                onValueChange={value =>
+                                  setInterest(index, 'icon', value)}
+                              />
+                            </Field>
+                            <Field label="Açıklama">
+                              <Input
+                                variant="faded"
+                                value={item.content}
+                                onValueChange={value =>
+                                  setInterest(index, 'content', value)}
+                              />
+                            </Field>
+                          </Grid>
+                        </ItemCard>
+                      ))}
+                      <AddButton onPress={addInterest} label="İlgi Alanı Ekle" />
+                    </div>
+                  </PanelCard>
+                  <PanelCard title="Siber Güvenlik Bölümü">
+                    <Grid>
+                      <Field label="Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.about.securityTitle}
+                          onValueChange={value =>
+                            setAbout('securityTitle', value)}
+                        />
+                      </Field>
+                      <Field label="Metin">
+                        <Input
+                          variant="faded"
+                          value={content.about.securityText}
+                          onValueChange={value =>
+                            setAbout('securityText', value)}
+                        />
+                      </Field>
+                    </Grid>
+                    <div className="mt-4 flex flex-col gap-3">
+                      {content.about.securityTools.map((item, index) => (
+                        <ItemCard
+                          key={index}
+                          title={`Araç #${index + 1}`}
+                          onRemove={() => removeSecurityTool(index)}
+                        >
+                          <Grid>
+                            <Field label="İsim">
+                              <Input
+                                variant="faded"
+                                value={item.label}
+                                onValueChange={value =>
+                                  setSecurityTool(index, 'label', value)}
+                              />
+                            </Field>
+                            <Field label="Tip">
+                              <select
+                                value={item.type ?? 'link'}
+                                onChange={e =>
+                                  setSecurityTool(index, 'type', e.target.value)}
+                                className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+                              >
+                                <option value="link">Link</option>
+                                <option value="command">
+                                  Komut (SVG + tıklayınca kopyala)
+                                </option>
+                              </select>
+                            </Field>
+                            <Field
+                              label={
+                                item.type === 'command'
+                                  ? 'Komut (tıklanınca kopyalanır)'
+                                  : 'URL'
+                              }
+                            >
+                              <Input
+                                variant="faded"
+                                placeholder={
+                                  item.type === 'command'
+                                    ? 'örn. nmap -sV target'
+                                    : 'https://...'
+                                }
+                                value={item.href ?? ''}
+                                onValueChange={value =>
+                                  setSecurityTool(index, 'href', value)}
+                              />
+                            </Field>
+                          </Grid>
+                        </ItemCard>
+                      ))}
+                      <AddButton onPress={addSecurityTool} label="Araç Ekle" />
+                    </div>
+                  </PanelCard>
+                </div>
+              ),
+            },
+            {
+              key: 'social',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:share-variant-outline" width={15} height={15} />
+                  Sosyal Medya
+                </span>
+              ),
+              children: (
+                <div className="space-y-4 pt-4">
+                  <PanelCard title="Sosyal Medya Linkleri">
+                    <div className="flex flex-col gap-3">
+                      {content.social.map((item, index) => (
+                        <ItemCard
+                          key={index}
+                          title={`${item.name || `Sosyal #${index + 1}`}`}
+                          onRemove={() => removeSocial(index)}
+                        >
+                          <Grid>
+                            <Field label="İsim">
+                              <Input
+                                variant="faded"
+                                value={item.name}
+                                onValueChange={value =>
+                                  setSocial(index, 'name', value)}
+                              />
+                            </Field>
+                            <Field label="Link">
+                              <Input
+                                variant="faded"
+                                value={item.href}
+                                onValueChange={value =>
+                                  setSocial(index, 'href', value)}
+                              />
+                            </Field>
+                            <Field label="Platform (SVG)">
+                              <select
+                                value={item.icon}
+                                onChange={e =>
+                                  setSocial(index, 'icon', e.target.value)}
+                                className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+                              >
+                                <option value="mdi:github">GitHub</option>
+                                <option value="mdi:twitter">X / Twitter</option>
+                                <option value="mdi:instagram">Instagram</option>
+                                <option value="mdi:youtube">YouTube</option>
+                                <option value="ic:baseline-tiktok">TikTok</option>
+                                <option value="mdi:discord">Discord</option>
+                                <option value="mdi:linkedin">LinkedIn</option>
+                                <option value="mdi:telegram">Telegram</option>
+                                <option value="mdi:link">Link (jenerik)</option>
+                              </select>
+                            </Field>
+                          </Grid>
+                        </ItemCard>
+                      ))}
+                      <AddButton onPress={addSocial} label="Sosyal Medya Ekle" />
+                    </div>
+                  </PanelCard>
+                </div>
+              ),
+            },
+            {
+              key: 'projects',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:folder-outline" width={15} height={15} />
+                  Projeler
+                </span>
+              ),
+              children: (
+                <div className="space-y-4 pt-4">
+                  <PanelCard title="Bölüm Başlıkları">
+                    <Grid>
+                      <Field label="Alt Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.projects.subtitle}
+                          onValueChange={value =>
+                            setProjectsMeta('subtitle', value)}
+                        />
+                      </Field>
+                      <Field label="Başlık">
+                        <Input
+                          variant="faded"
+                          value={content.projects.title}
+                          onValueChange={value =>
+                            setProjectsMeta('title', value)}
+                        />
+                      </Field>
+                      <Field label="Açıklama">
+                        <Input
+                          variant="faded"
+                          value={content.projects.description}
+                          onValueChange={value =>
+                            setProjectsMeta('description', value)}
+                        />
+                      </Field>
+                    </Grid>
+                  </PanelCard>
+                  <PanelCard title="Projeler">
+                    <div className="flex flex-col gap-3">
+                      {content.projects.items.map((item, index) => (
+                        <ItemCard
+                          key={index}
+                          title={`${item.title || `Proje #${index + 1}`}`}
+                          onRemove={() => removeProject(index)}
+                        >
+                          <Grid>
+                            <Field label="Başlık">
+                              <Input
+                                variant="faded"
+                                value={item.title}
+                                onValueChange={value =>
+                                  setProject(index, 'title', value)}
+                              />
+                            </Field>
+                            <Field label="Rozet (örn. [Under Development])">
+                              <Input
+                                variant="faded"
+                                value={item.notice || ''}
+                                onValueChange={value =>
+                                  setProject(index, 'notice', value)}
+                              />
+                            </Field>
+                            <Field label="Açıklama">
+                              <Textarea
+                                variant="faded"
+                                value={item.description}
+                                onValueChange={value =>
+                                  setProject(index, 'description', value)}
+                                minRows={2}
+                              />
+                            </Field>
+                            <Field label="Proje Linki">
+                              <Input
+                                variant="faded"
+                                value={item.projectLink}
+                                onValueChange={value =>
+                                  setProject(index, 'projectLink', value)}
+                              />
+                            </Field>
+                            <Field label="Kaynak Kod Linki (opsiyonel)">
+                              <Input
+                                variant="faded"
+                                value={item.srcLink || ''}
+                                onValueChange={value =>
+                                  setProject(index, 'srcLink', value)}
+                              />
+                            </Field>
+                            <Field label="Görsel Yolu (örn. /projects/portfolyo.png)">
+                              <Input
+                                variant="faded"
+                                value={item.image}
+                                onValueChange={value =>
+                                  setProject(index, 'image', value)}
+                              />
+                            </Field>
+                          </Grid>
+                          <div className="mt-4 flex flex-col gap-3 rounded-lg border border-foreground-200/10 p-3">
+                            <p className="text-xs font-semibold text-foreground">
+                              İndirme (Download butonu)
+                            </p>
+                            <div className="flex flex-row flex-wrap items-center gap-3 text-xs text-foreground-500">
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`downloadMode-${index}`}
+                                  checked={
+                                    (item.downloadMode ?? 'global') === 'global'
+                                  }
+                                  onChange={() =>
+                                    setProjectDownloadMode(index, 'global')}
+                                />
+                                Global (tek link)
+                              </label>
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input
+                                  type="radio"
+                                  name={`downloadMode-${index}`}
+                                  checked={item.downloadMode === 'per-os'}
+                                  onChange={() =>
+                                    setProjectDownloadMode(index, 'per-os')}
+                                />
+                                İşletim sistemine özel (Windows / Android / Linux)
+                              </label>
+                            </div>
+                            {(item.downloadMode ?? 'global') === 'global'
+                              ? (
+                                  <Field label="İndirme Linki / Dosya Yolu">
+                                    <Input
+                                      variant="faded"
+                                      placeholder="/downloads/app.zip veya https://..."
+                                      value={item.downloadUrl || ''}
+                                      onValueChange={value =>
+                                        setProject(index, 'downloadUrl', value)}
+                                    />
+                                  </Field>
+                                )
+                              : (
+                                  <Grid>
+                                    <Field label="Windows">
+                                      <Input
+                                        variant="faded"
+                                        placeholder="/downloads/setup.exe"
+                                        value={item.downloads?.windows || ''}
+                                        onValueChange={value =>
+                                          setProjectDownloadOs(
+                                            index,
+                                            'windows',
+                                            value,
+                                          )}
+                                      />
+                                    </Field>
+                                    <Field label="Android">
+                                      <Input
+                                        variant="faded"
+                                        placeholder="/downloads/app.apk"
+                                        value={item.downloads?.android || ''}
+                                        onValueChange={value =>
+                                          setProjectDownloadOs(
+                                            index,
+                                            'android',
+                                            value,
+                                          )}
+                                      />
+                                    </Field>
+                                    <Field label="Linux">
+                                      <Input
+                                        variant="faded"
+                                        placeholder="/downloads/app.AppImage"
+                                        value={item.downloads?.linux || ''}
+                                        onValueChange={value =>
+                                          setProjectDownloadOs(index, 'linux', value)}
+                                      />
+                                    </Field>
+                                  </Grid>
+                                )}
+                            <p className="text-xs text-foreground-500">
+                              Boş bırakırsan Download butonu görünmez.
+                              Kullanıcının işletim sistemi otomatik algılanır ve
+                              uygun link/dosya açılır.
+                            </p>
+                          </div>
+                        </ItemCard>
+                      ))}
+                      <AddButton onPress={addProject} label="Proje Ekle" />
+                    </div>
+                  </PanelCard>
+
+                  <PanelCard
+                    title={`GitHub Repoları (${githubRepos.length})`}
+                  >
+                    <p className="mb-3 text-xs text-foreground-500">
+                      GitHub hesabındaki public repo'lar. 'Eksik' olanlar sitede
+                      görünmüyor — tek tıkla ekleyebilirsin. Ekledikten sonra
+                      Kaydet'e bas.
+                    </p>
+                    {githubRepos.length === 0
+                      ? (
+                          <p className="text-xs text-foreground-500">
+                            Repo listesi yükleniyor veya alınamıyor (GitHub
+                            kullanıcı adı ayarla: Site › GitHub Kullanıcı Adı).
+                          </p>
+                        )
+                      : (
+                          <div className="flex flex-col gap-2">
+                            {githubRepos.map((repo) => {
+                              const inSite = content.projects.items.some(
+                                p => p.title === repo.name,
+                              )
+                              return (
+                                <div
+                                  key={repo.name}
+                                  className="flex flex-row items-center gap-3 rounded-lg border border-foreground-200/10 p-2.5"
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <p className="truncate text-sm font-semibold text-foreground">
+                                      {repo.name}
+                                    </p>
+                                    {repo.description && (
+                                      <p className="truncate text-xs text-foreground-500">
+                                        {repo.description}
+                                      </p>
+                                    )}
+                                    <p className="mt-0.5 text-[10px] text-foreground-600">
+                                      ★
+                                      {' '}
+                                      {repo.stars}
+                                      {' '}
+                                      ·
+                                      {' '}
+                                      {repo.forks}
+                                      {' '}
+                                      fork ·
+                                      {' '}
+                                      {repo.language ?? '—'}
+                                    </p>
+                                  </div>
+                                  {inSite
+                                    ? (
+                                        <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                                          Sitede var
+                                        </span>
+                                      )
+                                    : (
+                                        <button
+                                          type="button"
+                                          onClick={() => addGithubRepo(repo)}
+                                          className="shrink-0 h-8 rounded-lg bg-[#e5e7eb] px-3 text-xs font-semibold text-black hover:bg-[#d1d5db]"
+                                        >
+                                          Ekle
+                                        </button>
+                                      )}
+                                  <a
+                                    href={repo.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="shrink-0 text-xs text-foreground-500 hover:text-primary"
+                                  >
+                                    GitHub ↗
+                                  </a>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                  </PanelCard>
+                </div>
+              ),
+            },
+            {
+              key: 'blog',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:post-outline" width={15} height={15} />
+                  Blog
+                </span>
+              ),
+              children: (
+                <div className="space-y-4 pt-4">
+                  <div className="flex flex-row items-center justify-between">
+                    <p className="text-sm text-foreground-500">
+                      {posts.length}
+                      {' '}
+                      yazı
+                    </p>
                     <Button
+                      onPress={newPost}
+                      color="primary"
                       size="sm"
-                      color="danger"
-                      variant="bordered"
-                      onPress={clearMessages}
-                      isLoading={saving}
+                      startContent={
+                        <Icon icon="mdi:plus" width={18} height={18} />
+                      }
                     >
-                      Tümünü Sil
+                      Yeni Yazı
                     </Button>
-                  )}
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {posts.map(post => (
+                      <ItemCard
+                        key={post.id}
+                        title={post.title || 'Başlıksız Yazı'}
+                        onRemove={() => removePost(post.id)}
+                      >
+                        <div className="flex flex-row flex-wrap items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="bordered"
+                            onPress={() => setEditingPostId(post.id)}
+                            startContent={
+                              <Icon icon="mdi:pencil" width={16} height={16} />
+                            }
+                          >
+                            Düzenle
+                          </Button>
+                          <span className="text-xs text-foreground-500">
+                            {post.date}
+                          </span>
+                          {editingPostId === post.id && (
+                            <span className="text-xs font-semibold text-primary">
+                              Düzenleniyor...
+                            </span>
+                          )}
+                        </div>
+                      </ItemCard>
+                    ))}
+                  </div>
+                  {editingPostId
+                    && (() => {
+                      const post = posts.find(p => p.id === editingPostId)
+                      if (!post) {
+                        return null
+                      }
+                      return (
+                        <PanelCard title="Yazı Editörü">
+                          <div className="flex flex-col gap-4">
+                            <Grid>
+                              <Field label="Başlık">
+                                <Input
+                                  variant="faded"
+                                  value={post.title}
+                                  onValueChange={value =>
+                                    updatePost('title', value)}
+                                />
+                              </Field>
+                              <Field label="Slug (link kısmı, boşluk yerine - kullan)">
+                                <Input
+                                  variant="faded"
+                                  value={post.slug}
+                                  onValueChange={value =>
+                                    updatePost('slug', value)}
+                                />
+                              </Field>
+                              <Field label="Tarih">
+                                <Input
+                                  variant="faded"
+                                  type="date"
+                                  value={post.date}
+                                  onValueChange={value =>
+                                    updatePost('date', value)}
+                                />
+                              </Field>
+                              <Field label="Özet (liste sayfasında görünür)">
+                                <Input
+                                  variant="faded"
+                                  value={post.excerpt}
+                                  onValueChange={value =>
+                                    updatePost('excerpt', value)}
+                                />
+                              </Field>
+                            </Grid>
+                            <Field label="İçerik (Markdown desteklenir)">
+                              <Textarea
+                                variant="faded"
+                                value={post.content}
+                                onValueChange={value =>
+                                  updatePost('content', value)}
+                                minRows={12}
+                                maxRows={30}
+                                placeholder={
+                                  '# Başlık\n\nParagraf yazısı...\n\n- Liste\n- Öğe\n\n**Kalın**, *italik*'
+                                }
+                              />
+                            </Field>
+                            <div className="flex flex-row gap-2">
+                              <Button
+                                color="primary"
+                                onPress={savePost}
+                                isLoading={saving}
+                              >
+                                <Icon
+                                  icon="material-symbols:save"
+                                  width={18}
+                                  height={18}
+                                />
+                                Yazıyı Kaydet
+                              </Button>
+                              <Button
+                                variant="light"
+                                onPress={() => setEditingPostId(null)}
+                              >
+                                Kapat
+                              </Button>
+                            </div>
+                          </div>
+                        </PanelCard>
+                      )
+                    })()}
                 </div>
-                <ChatPanel
-                  initialMessages={messages}
-                  displayName={content.profile.displayName}
-                  onStatus={setStatus}
-                />
-              </div>
-            ),
-          },
-          {
-            key: 'settings',
-            label: (
-              <span className="inline-flex items-center gap-1.5">
-                <Icon icon="mdi:tune" width={15} height={15} />
-                Ayarlar
-              </span>
-            ),
-            children: (
-              <div className="space-y-4 pt-4">
-                <PasswordCard />
-                <div>
-                  <h2 className="mb-2 text-base font-semibold">
-                    Kullanıcı Yönetimi
-                  </h2>
-                  <UsersPanel />
+              ),
+            },
+            {
+              key: 'messages',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:chat-outline" width={15} height={15} />
+                  Chat Mesajları
+                </span>
+              ),
+              children: (
+                <div className="space-y-4 pt-4">
+                  <div className="flex flex-row items-center justify-between">
+                    <p className="text-sm text-foreground-500">
+                      {messages.length}
+                      {' '}
+                      mesaj
+                    </p>
+                    {messages.length > 0 && (
+                      <Button
+                        size="sm"
+                        color="danger"
+                        variant="bordered"
+                        onPress={clearMessages}
+                        isLoading={saving}
+                      >
+                        Tümünü Sil
+                      </Button>
+                    )}
+                  </div>
+                  <ChatPanel
+                    initialMessages={messages}
+                    displayName={content.profile.displayName}
+                    onStatus={setStatus}
+                  />
                 </div>
-              </div>
-            ),
-          },
-        ]}
+              ),
+            },
+            {
+              key: 'settings',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:tune" width={15} height={15} />
+                  Ayarlar
+                </span>
+              ),
+              children: (
+                <div className="space-y-4 pt-4">
+                  <PasswordCard />
+                  <div>
+                    <h2 className="mb-2 text-base font-semibold">
+                      Kullanıcı Yönetimi
+                    </h2>
+                    <UsersPanel />
+                  </div>
+                </div>
+              ),
+            },
+          ]}
         />
       </div>
       <div className="mt-6 flex flex-col items-center gap-3">
@@ -1867,7 +1859,7 @@ function Grid({ children }: { children: ReactNode }) {
   )
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children }: { label: string, children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs sm:text-sm text-foreground-500">{label}</label>
@@ -1905,7 +1897,7 @@ function ItemCard({
   )
 }
 
-function AddButton({ onPress, label }: { onPress: () => void; label: string }) {
+function AddButton({ onPress, label }: { onPress: () => void, label: string }) {
   return (
     <Button
       variant="bordered"
@@ -1951,15 +1943,18 @@ function ProfilePhotoCard({
       if (res.ok && data.success) {
         onUploaded(data.profileImage)
         onStatus({ type: 'success', text: 'Profil fotoğrafı güncellendi.' })
-      } else {
+      }
+      else {
         onStatus({
           type: 'error',
           text: data.message || 'Fotoğraf yüklenemedi.',
         })
       }
-    } catch {
+    }
+    catch {
       onStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+    finally {
       setUploading(false)
     }
   }
@@ -1968,19 +1963,21 @@ function ProfilePhotoCard({
     <PanelCard title="Profil Fotoğrafı">
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative shrink-0">
-          {profileImage ? (
-            <img
-              src={profileImage}
-              alt={displayName}
-              width={96}
-              height={96}
-              className="h-24 w-24 rounded-2xl object-cover ring-1 ring-white/10"
-            />
-          ) : (
-            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 text-4xl font-black text-black">
-              {displayName.charAt(0) || 'T'}
-            </div>
-          )}
+          {profileImage
+            ? (
+                <img
+                  src={profileImage}
+                  alt={displayName}
+                  width={96}
+                  height={96}
+                  className="h-24 w-24 rounded-2xl object-cover ring-1 ring-white/10"
+                />
+              )
+            : (
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 text-4xl font-black text-black">
+                  {displayName.charAt(0) || 'T'}
+                </div>
+              )}
         </div>
         <div className="flex flex-col items-center sm:items-start gap-3">
           <input
@@ -1999,8 +1996,11 @@ function ProfilePhotoCard({
             Fotoğraf Yükle
           </Button>
           <p className="text-xs text-foreground-500">
-            PNG, JPG, WEBP veya GIF — en fazla 5 MB. Yüklenince{' '}
-            <span className="font-mono">/uploads/profile.png</span> olarak
+            PNG, JPG, WEBP veya GIF — en fazla 5 MB. Yüklenince
+            {' '}
+            <span className="font-mono">/uploads/profile.png</span>
+            {' '}
+            olarak
             kaydedilir ve sitede profil olarak gösterilir.
           </p>
         </div>
@@ -2029,15 +2029,18 @@ function PasswordCard() {
         setStatus({ type: 'success', text: 'Şifre güncellendi.' })
         setCurrentPassword('')
         setNewPassword('')
-      } else {
+      }
+      else {
         setStatus({
           type: 'error',
           text: data.message || 'Şifre güncellenemedi.',
         })
       }
-    } catch {
+    }
+    catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }

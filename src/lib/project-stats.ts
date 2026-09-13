@@ -14,7 +14,8 @@ export interface ProjectStats {
 }
 
 export function readProjectStats(title: string): ProjectStats {
-  if (typeof localStorage === 'undefined') return { views: 0, downloads: 0 }
+  if (typeof localStorage === 'undefined')
+    return { views: 0, downloads: 0 }
   try {
     const raw = localStorage.getItem(STAT_KEY(title))
     const stored = raw ? JSON.parse(raw) : {}
@@ -22,7 +23,8 @@ export function readProjectStats(title: string): ProjectStats {
       views: typeof stored.views === 'number' ? stored.views : 0,
       downloads: typeof stored.downloads === 'number' ? stored.downloads : 0,
     }
-  } catch {
+  }
+  catch {
     return { views: 0, downloads: 0 }
   }
 }
@@ -38,7 +40,8 @@ export function recordProjectView(title: string): number {
     localStorage.setItem(STAT_KEY(title), JSON.stringify(next))
     localStorage.setItem(VIEWED_KEY(title), '1')
     return next.views
-  } catch {
+  }
+  catch {
     return readProjectStats(title).views
   }
 }
@@ -50,7 +53,8 @@ export function recordDownload(title: string): number {
     const next = { ...current, downloads: current.downloads + 1 }
     localStorage.setItem(STAT_KEY(title), JSON.stringify(next))
     return next.downloads
-  } catch {
+  }
+  catch {
     return 0
   }
 }

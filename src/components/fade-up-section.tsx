@@ -12,8 +12,9 @@
  *  - Delay/duration: identical across sections (0.5s, easeOut).
  */
 
-import { motion, type HTMLMotionProps } from 'motion/react'
+import type { HTMLMotionProps } from 'motion/react'
 import type { ReactNode } from 'react'
+import { motion } from 'motion/react'
 
 export interface FadeUpSectionProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
   children: ReactNode

@@ -19,10 +19,10 @@ function cn(...parts: (string | false | undefined)[]) {
 
 export const FONTS: Record<string, string> = {
   inherit: 'inherit',
-  montserrat: "'Montserrat', sans-serif",
-  system: "system-ui, -apple-system, sans-serif",
+  montserrat: '\'Montserrat\', sans-serif',
+  system: 'system-ui, -apple-system, sans-serif',
   serif: 'Georgia, "Times New Roman", serif',
-  mono: "'Courier New', monospace",
+  mono: '\'Courier New\', monospace',
   arial: 'Arial, Helvetica, sans-serif',
 }
 
@@ -117,21 +117,33 @@ function layoutFields(): Record<string, any> {
 /** Generates inline CSS style from props (layout + type styles). */
 function layoutStyle(p: Record<string, unknown>): CSSProperties {
   const s: CSSProperties = {}
-  if (p.position && p.position !== 'static') s.position = p.position as 'absolute'
-  if (p.top) s.top = parseInt(String(p.top), 10)
-  if (p.left) s.left = parseInt(String(p.left), 10)
-  if (p.zIndex !== undefined && p.zIndex !== null && p.zIndex !== 0) s.zIndex = Number(p.zIndex)
+  if (p.position && p.position !== 'static')
+    s.position = p.position as 'absolute'
+  if (p.top)
+    s.top = Number.parseInt(String(p.top), 10)
+  if (p.left)
+    s.left = Number.parseInt(String(p.left), 10)
+  if (p.zIndex !== undefined && p.zIndex !== null && p.zIndex !== 0)
+    s.zIndex = Number(p.zIndex)
   if (p.opacity !== undefined && p.opacity !== null && Number(p.opacity) < 100)
     s.opacity = Number(p.opacity) / 100
-  if (p.width) s.width = Number(p.width)
-  if (p.marginTop !== undefined && p.marginTop) s.marginTop = Number(p.marginTop)
-  if (p.marginBottom !== undefined && p.marginBottom) s.marginBottom = Number(p.marginBottom)
+  if (p.width)
+    s.width = Number(p.width)
+  if (p.marginTop !== undefined && p.marginTop)
+    s.marginTop = Number(p.marginTop)
+  if (p.marginBottom !== undefined && p.marginBottom)
+    s.marginBottom = Number(p.marginBottom)
   const color = pickColor(p.palette as string, p.hex as string)
-  if (color) s.color = color
-  if (p.font && p.font !== 'inherit') s.fontFamily = FONTS[p.font as string]
-  if (p.fontSize) s.fontSize = `${p.fontSize}px`
-  if (p.weight && p.weight !== '400') s.fontWeight = Number(p.weight)
-  if (p.lineHeight) s.lineHeight = Number(p.lineHeight)
+  if (color)
+    s.color = color
+  if (p.font && p.font !== 'inherit')
+    s.fontFamily = FONTS[p.font as string]
+  if (p.fontSize)
+    s.fontSize = `${p.fontSize}px`
+  if (p.weight && p.weight !== '400')
+    s.fontWeight = Number(p.weight)
+  if (p.lineHeight)
+    s.lineHeight = Number(p.lineHeight)
   return s
 }
 
@@ -139,7 +151,7 @@ function layoutStyle(p: Record<string, unknown>): CSSProperties {
 /* Component renders                                                     */
 /* ------------------------------------------------------------------ */
 
-function Section({ children, className }: { children: React.ReactNode; className?: string }) {
+function Section({ children, className }: { children: React.ReactNode, className?: string }) {
   return (
     <section
       className={cn(
@@ -153,7 +165,7 @@ function Section({ children, className }: { children: React.ReactNode; className
 }
 
 function HeroBlock(props: Record<string, unknown>) {
-  const p = props as { name: string; tagline: string; description: string }
+  const p = props as { name: string, tagline: string, description: string }
   return (
     <Section>
       <div className="text-center" style={layoutStyle(props)}>
@@ -161,16 +173,18 @@ function HeroBlock(props: Record<string, unknown>) {
           {p.tagline}
         </p>
         <h1 className="mt-4 text-4xl font-extrabold sm:text-6xl">{p.name}</h1>
-        {p.description ? (
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-foreground/80 dark:text-white/70">{p.description}</p>
-        ) : null}
+        {p.description
+          ? (
+              <p className="mx-auto mt-6 max-w-2xl text-lg text-foreground/80 dark:text-white/70">{p.description}</p>
+            )
+          : null}
       </div>
     </Section>
   )
 }
 
 function HeadingBlock(props: Record<string, unknown>) {
-  const p = props as { text: string; level: string; align: string }
+  const p = props as { text: string, level: string, align: string }
   const Tag = (p.level || 'h2') as 'h1' | 'h2' | 'h3' | 'h4'
   const sizes: Record<string, string> = {
     h1: 'text-4xl sm:text-5xl font-extrabold',
@@ -189,7 +203,7 @@ function HeadingBlock(props: Record<string, unknown>) {
 }
 
 function ParagraphBlock(props: Record<string, unknown>) {
-  const p = props as { text: string; size: string; align: string }
+  const p = props as { text: string, size: string, align: string }
   const sizes: Record<string, string> = {
     sm: 'text-sm leading-relaxed',
     base: 'text-base leading-relaxed',
@@ -216,7 +230,8 @@ function ImageBlock(props: Record<string, unknown>) {
     rounded: number
     shadow: boolean
   }
-  if (!p.src) return null
+  if (!p.src)
+    return null
   return (
     <div className="my-2" style={layoutStyle(props)}>
       <img
@@ -246,7 +261,8 @@ function ButtonBlock(props: Record<string, unknown>) {
     align: string
     full: boolean
   }
-  if (!p.href) return null
+  if (!p.href)
+    return null
   const sizes: Record<string, string> = {
     sm: 'px-3.5 py-1.5 text-xs',
     md: 'px-5 py-2.5 text-sm',
@@ -293,7 +309,7 @@ function SpacerBlock(props: Record<string, unknown>) {
 }
 
 function HeroWelcome(props: Record<string, unknown>) {
-  const p = props as { name: string; tagline: string }
+  const p = props as { name: string, tagline: string }
   return (
     <div style={layoutStyle(props)}>
       <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary" style={{ color: pickColor((props as any).palette, (props as any).hex) || undefined }}>
@@ -305,20 +321,24 @@ function HeroWelcome(props: Record<string, unknown>) {
 }
 
 function QuoteBlock(props: Record<string, unknown>) {
-  const p = props as { text: string; author: string; align: string }
+  const p = props as { text: string, author: string, align: string }
   return (
     <blockquote
       className={cn('my-4 border-l-4 border-primary pl-4 italic text-foreground/80 dark:text-white/80', p.align === 'center' && 'text-center border-l-0')}
       style={layoutStyle(props)}
     >
-      <p className="text-xl">“{p.text}”</p>
+      <p className="text-xl">
+        “
+        {p.text}
+        ”
+      </p>
       {p.author ? <footer className="mt-2 text-sm not-italic text-foreground/50">{p.author}</footer> : null}
     </blockquote>
   )
 }
 
 function DividerBlock(props: Record<string, unknown>) {
-  const p = props as { thickness: number; width: number; color: string }
+  const p = props as { thickness: number, width: number, color: string }
   return (
     <div className="my-4 flex justify-center" style={layoutStyle(props)}>
       <hr
@@ -335,16 +355,19 @@ function DividerBlock(props: Record<string, unknown>) {
 }
 
 function VideoBlock(props: Record<string, unknown>) {
-  const p = props as { url: string; maxWidth: number; rounded: boolean }
+  const p = props as { url: string, maxWidth: number, rounded: boolean }
   const url = (p.url || '').trim()
   let embed = ''
   if (url) {
     const yt = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{6,})/.exec(url)
-    if (yt) embed = `https://www.youtube.com/embed/${yt[1]}`
-    else if (url.includes('vimeo.com')) embed = url.replace('vimeo.com', 'player.vimeo.com/video')
+    if (yt)
+      embed = `https://www.youtube.com/embed/${yt[1]}`
+    else if (url.includes('vimeo.com'))
+      embed = url.replace('vimeo.com', 'player.vimeo.com/video')
     else embed = url
   }
-  if (!embed) return <p style={layoutStyle(props)} className="text-sm text-foreground/40">Video URL ekleyin (YouTube/Vimeo/direct link)</p>
+  if (!embed)
+    return <p style={layoutStyle(props)} className="text-sm text-foreground/40">Video URL ekleyin (YouTube/Vimeo/direct link)</p>
   return (
     <div className="my-4" style={layoutStyle(props)}>
       <div
@@ -380,7 +403,8 @@ function ColoredBox(props: Record<string, unknown>) {
   if (p.borderWidth) {
     style.border = `${p.borderWidth}px solid ${p.borderColor || 'rgba(255,255,255,0.15)'}`
   }
-  if (p.shadow) style.boxShadow = '0 20px 50px -20px rgba(0,0,0,0.6)'
+  if (p.shadow)
+    style.boxShadow = '0 20px 50px -20px rgba(0,0,0,0.6)'
   const textStyle = layoutStyle(props)
   return (
     <div className="my-4 text-white" style={style}>
@@ -391,7 +415,7 @@ function ColoredBox(props: Record<string, unknown>) {
 }
 
 function ColumnsBlock(props: any) {
-  const p = props as { gap: number; ratio: string }
+  const p = props as { gap: number, ratio: string }
   const ratioCls: Record<string, string> = {
     '1:1': 'md:grid-cols-2',
     '1:2': 'md:grid-cols-3',
@@ -414,15 +438,18 @@ function ColumnsBlock(props: any) {
 /* ------------------------------------------------------------------ */
 
 function StatsBlock(props: Record<string, unknown>) {
-  const p = props as { rows: string; size: string }
+  const p = props as { rows: string, size: string }
   // Each row: "value | label" — separated by line breaks
   const rows = (p.rows || '')
     .split('\n')
-    .map((line) => line.split('|').map((s) => s.trim()))
-    .filter((parts) => parts.length >= 2 && parts[0])
-  if (!rows.length) return null
+    .map(line => line.split('|').map(s => s.trim()))
+    .filter(parts => parts.length >= 2 && parts[0])
+  if (!rows.length)
+    return null
   const sizes: Record<string, string> = {
-    sm: 'text-2xl', md: 'text-3xl', lg: 'text-5xl',
+    sm: 'text-2xl',
+    md: 'text-3xl',
+    lg: 'text-5xl',
   }
   return (
     <div
@@ -443,9 +470,10 @@ function StatsBlock(props: Record<string, unknown>) {
 }
 
 function ImageGalleryBlock(props: Record<string, unknown>) {
-  const p = props as { img1: string; img2: string; img3: string; alt: string; rounded: number; gap: number }
+  const p = props as { img1: string, img2: string, img3: string, alt: string, rounded: number, gap: number }
   const images = [p.img1, p.img2, p.img3].filter(Boolean)
-  if (!images.length) return null
+  if (!images.length)
+    return null
   return (
     <div
       className="mx-auto my-6 grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-3"
@@ -468,9 +496,10 @@ function ImageGalleryBlock(props: Record<string, unknown>) {
 }
 
 function TagCloudBlock(props: Record<string, unknown>) {
-  const p = props as { tags: string; color: string }
-  const tags = (p.tags || '').split(',').map((s) => s.trim()).filter(Boolean)
-  if (!tags.length) return null
+  const p = props as { tags: string, color: string }
+  const tags = (p.tags || '').split(',').map(s => s.trim()).filter(Boolean)
+  if (!tags.length)
+    return null
   return (
     <div className="my-6 flex flex-wrap justify-center gap-2" style={layoutStyle(props)}>
       {tags.map((tag, i) => (

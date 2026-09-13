@@ -1,13 +1,14 @@
 'use client'
 
-import { useRef } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 import type { SiteContent } from '@/lib/content'
 import { motion } from 'motion/react'
+import { useRef } from 'react'
+import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardFooter } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
+import { CountrySelect } from '@/components/ui/country-select'
 import {
   ArrowLeftIcon,
   ChatIcon,
@@ -15,10 +16,10 @@ import {
   GlobeIcon,
   SendIcon,
 } from '@/components/ui/icons'
+import { Input } from '@/components/ui/input'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { useContactForm } from '@/hooks/use-contact-form'
-import { FadeUpSection } from '@/components/fade-up-section'
 
 interface ContactCardProps {
   icon: ReactNode
@@ -54,8 +55,8 @@ function ContactCard({
       </div>
     </>
   )
-  const cls =
-    'flex w-full items-center gap-3 rounded-xl border border-foreground-200/10 bg-background p-3.5 transition-colors'
+  const cls
+    = 'flex w-full items-center gap-3 rounded-xl border border-foreground-200/10 bg-background p-3.5 transition-colors'
   if (href) {
     return (
       <a
@@ -121,6 +122,8 @@ export function ContactSection({ content }: { content: SiteContent }) {
     submitForm,
     resetForm,
     switchContactMethod,
+    country,
+    setCountry,
   } = useContactForm()
 
   const nameRef = useRef<HTMLInputElement>(null)
@@ -180,7 +183,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
               </Button>
             </CardBody>
           </Card>
-      </motion.div>
+        </motion.div>
       </Section>
     )
   }
@@ -190,24 +193,24 @@ export function ContactSection({ content }: { content: SiteContent }) {
       {/* Title outside the box */}
       <FadeUpSection className="w-full">
         <SectionTitle
-        title=""
-        subTitle={content.contact.subtitle}
-        description={content.contact.description}
-        icon={
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width={36}
-            height={36}
-            viewBox="0 0 2048 2048"
-            fill="currentColor"
-            className="inline-block"
-            aria-hidden="true"
-          >
-            <path d="M958 1328q101 40 184 106t142 153t91 187t33 210v64h-128v-64q0-119-45-224t-124-183t-183-123t-224-46q-119 0-224 45t-183 124t-123 183t-46 224v64H0v-64q0-109 32-210t92-187t142-152t184-107q-45-31-81-72t-61-88t-38-100t-14-108q0-93 35-174t96-142t142-96t175-36q93 0 174 35t142 96t96 142t36 175q0 55-13 107t-39 100t-61 89t-81 72m-254-48q66 0 124-25t101-68t69-102t26-125t-25-124t-69-101t-102-69t-124-26t-124 25t-102 69t-69 102t-25 124t25 124t68 102t102 69t125 25M2048 0v1024h-256l-384 384v-384h-128V896h256v203l203-203h181V128H640v230q-32 4-64 10t-64 18V0z"/>
-          </svg>
-        }
-        big
-      />
+          title=""
+          subTitle={content.contact.subtitle}
+          description={content.contact.description}
+          icon={(
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width={36}
+              height={36}
+              viewBox="0 0 2048 2048"
+              fill="currentColor"
+              className="inline-block"
+              aria-hidden="true"
+            >
+              <path d="M958 1328q101 40 184 106t142 153t91 187t33 210v64h-128v-64q0-119-45-224t-124-183t-183-123t-224-46q-119 0-224 45t-183 124t-123 183t-46 224v64H0v-64q0-109 32-210t92-187t142-152t184-107q-45-31-81-72t-61-88t-38-100t-14-108q0-93 35-174t96-142t142-96t175-36q93 0 174 35t142 96t96 142t36 175q0 55-13 107t-39 100t-61 89t-81 72m-254-48q66 0 124-25t101-68t69-102t26-125t-25-124t-69-101t-102-69t-124-26t-124 25t-102 69t-69 102t-25 124t25 124t68 102t102 69t125 25M2048 0v1024h-256l-384 384v-384h-128V896h256v203l203-203h181V128H640v230q-32 4-64 10t-64 18V0z" />
+            </svg>
+          )}
+          big
+        />
       </FadeUpSection>
       {/* Contact cards */}
       <FadeUpSection className="w-full">
@@ -241,7 +244,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
               icon={<GlobeIcon size={20} />}
               label={t('contact.cardLocation')}
               value=""
-              actions={
+              actions={(
                 <div className="flex flex-row flex-wrap gap-1.5">
                   {content.contact.location && (
                     <a
@@ -264,7 +267,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
                     </a>
                   )}
                 </div>
-              }
+              )}
             />
           </div>
         </div>
@@ -281,7 +284,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
                   inputRef={nameRef}
                   placeholder={t('contact.placeholderName')}
                   value={formData.name}
-                  onValueChange={(value) => updateField('name', value)}
+                  onValueChange={value => updateField('name', value)}
                   isInvalid={!!errors.name}
                   errorMessage={errors.name}
                   required
@@ -291,15 +294,21 @@ export function ContactSection({ content }: { content: SiteContent }) {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                   <select
                     value={formData.contactMethod}
-                    onChange={(e) =>
-                      switchContactMethod(e.target.value as 'email' | 'phone')
-                    }
+                    onChange={e =>
+                      switchContactMethod(e.target.value as 'email' | 'phone')}
                     aria-label={t('contact.method')}
                     className="h-12 w-full rounded-xl border border-foreground-200/20 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary/50 sm:w-44 [&>option]:bg-background"
                   >
                     <option value="email">{t('contact.methodEmail')}</option>
                     <option value="phone">{t('contact.methodPhone')}</option>
                   </select>
+                  {formData.contactMethod === 'phone' && (
+                    <CountrySelect
+                      value={country}
+                      onChange={setCountry}
+                      showCode={false}
+                    />
+                  )}
                   <div className="w-full flex-1">
                     <Input
                       type={
@@ -318,9 +327,8 @@ export function ContactSection({ content }: { content: SiteContent }) {
                           : t('contact.placeholderPhone')
                       }
                       value={formData.contactValue}
-                      onValueChange={(value) =>
-                        updateField('contactValue', value)
-                      }
+                      onValueChange={value =>
+                        updateField('contactValue', value)}
                       isInvalid={!!errors.contactValue}
                       errorMessage={errors.contactValue}
                       required
@@ -334,7 +342,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
                   inputRef={messageRef}
                   placeholder={t('contact.placeholderMessage')}
                   value={formData.message}
-                  onValueChange={(value) => updateField('message', value)}
+                  onValueChange={value => updateField('message', value)}
                   isInvalid={!!errors.message}
                   errorMessage={errors.message}
                   minRows={3}

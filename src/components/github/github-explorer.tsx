@@ -5,27 +5,29 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale, useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody } from '@/components/ui/card'
+import { SearchIcon } from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
 import { Link } from '@/components/ui/link'
-import { SearchIcon } from '@/components/ui/icons'
 import {
   clientFetchUserProfile,
   clientFetchUserRepos,
 } from '@/lib/github-client'
 
-function RepoCard({ repo, t }: { repo: GitHubRepo; t: (k: string) => string }) {
+function RepoCard({ repo, t }: { repo: GitHubRepo, t: (k: string) => string }) {
   return (
     <Card className="bg-background ">
       <CardBody className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
-          {repo.language ? (
-            <span className="flex items-center gap-1.5 text-xs text-foreground-500">
-              <span className="h-2 w-2 rounded-full bg-primary" />
-              {repo.language}
-            </span>
-          ) : (
-            <span />
-          )}
+          {repo.language
+            ? (
+                <span className="flex items-center gap-1.5 text-xs text-foreground-500">
+                  <span className="h-2 w-2 rounded-full bg-primary" />
+                  {repo.language}
+                </span>
+              )
+            : (
+                <span />
+              )}
           <svg
             viewBox="0 0 16 16"
             width={18}
@@ -54,10 +56,14 @@ function RepoCard({ repo, t }: { repo: GitHubRepo; t: (k: string) => string }) {
         <div className="mt-auto flex items-center justify-between gap-2 text-[11px] text-foreground/75">
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1" title="Stars">
-              ★ {repo.stars}
+              ★
+              {' '}
+              {repo.stars}
             </span>
             <span className="flex items-center gap-1" title="Forks">
-              ⑂ {repo.forks}
+              ⑂
+              {' '}
+              {repo.forks}
             </span>
           </div>
           {repo.updatedAt && (
@@ -92,7 +98,10 @@ function ProfileCard({ profile }: { profile: GitHubUserProfile }) {
               {profile.name}
             </h3>
           )}
-          <p className="text-sm text-foreground-500">@{profile.login}</p>
+          <p className="text-sm text-foreground-500">
+            @
+            {profile.login}
+          </p>
           {profile.bio && (
             <p className="text-xs text-foreground-500 line-clamp-2">
               {profile.bio}
@@ -100,10 +109,18 @@ function ProfileCard({ profile }: { profile: GitHubUserProfile }) {
           )}
           <div className="flex items-center gap-3 text-xs text-foreground/75">
             {profile.publicRepos != null && (
-              <span>{profile.publicRepos} repos</span>
+              <span>
+                {profile.publicRepos}
+                {' '}
+                repos
+              </span>
             )}
             {profile.followers != null && (
-              <span>{profile.followers} followers</span>
+              <span>
+                {profile.followers}
+                {' '}
+                followers
+              </span>
             )}
           </div>
         </div>
@@ -129,14 +146,14 @@ function SkeletonCard() {
 
 type SortKey = 'updated' | 'stars' | 'forks' | 'name'
 
-const SORT_OPTIONS_TR: { key: SortKey; label: string }[] = [
+const SORT_OPTIONS_TR: { key: SortKey, label: string }[] = [
   { key: 'updated', label: 'Güncellenme' },
   { key: 'stars', label: 'Yıldız' },
   { key: 'forks', label: 'Fork' },
   { key: 'name', label: 'Ad (A-Z)' },
 ]
 
-const SORT_OPTIONS_EN: { key: SortKey; label: string }[] = [
+const SORT_OPTIONS_EN: { key: SortKey, label: string }[] = [
   { key: 'updated', label: 'Updated' },
   { key: 'stars', label: 'Stars' },
   { key: 'forks', label: 'Forks' },
@@ -164,9 +181,11 @@ export function GithubExplorer({ username }: { username: string }) {
       ])
       setProfile(profileData)
       setRepos(reposData)
-    } catch {
+    }
+    catch {
       setError(t('github.loadError'))
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }, [username])
@@ -180,12 +199,12 @@ export function GithubExplorer({ username }: { username: string }) {
       return []
     }
     const q = query.trim().toLowerCase()
-    let list = q
+    const list = q
       ? repos.filter(
-          (repo) =>
-            repo.name.toLowerCase().includes(q) ||
-            (repo.description ?? '').toLowerCase().includes(q) ||
-            (repo.language ?? '').toLowerCase().includes(q),
+          repo =>
+            repo.name.toLowerCase().includes(q)
+            || (repo.description ?? '').toLowerCase().includes(q)
+            || (repo.language ?? '').toLowerCase().includes(q),
         )
       : [...repos]
     list.sort((a, b) => {
@@ -231,11 +250,11 @@ export function GithubExplorer({ username }: { username: string }) {
                 </span>
                 <select
                   value={sort}
-                  onChange={(e) => setSort(e.target.value as SortKey)}
+                  onChange={e => setSort(e.target.value as SortKey)}
                   aria-label={isEn ? 'Sort' : 'Sırala'}
                   className="h-9 cursor-pointer rounded-full border border-foreground-200/15 bg-background px-3 text-xs font-medium text-foreground/85 outline-none transition-colors hover:border-primary/40 focus:border-primary/60"
                 >
-                  {(isEn ? SORT_OPTIONS_EN : SORT_OPTIONS_TR).map((opt) => (
+                  {(isEn ? SORT_OPTIONS_EN : SORT_OPTIONS_TR).map(opt => (
                     <option
                       key={opt.key}
                       value={opt.key}
@@ -249,7 +268,9 @@ export function GithubExplorer({ username }: { username: string }) {
 
               {/* Repo count right-aligned */}
               <span className="ml-auto text-sm text-foreground-500">
-                {filtered.length} {t('github.reposFound')}
+                {filtered.length}
+                {' '}
+                {t('github.reposFound')}
               </span>
             </div>
           </>
@@ -279,7 +300,7 @@ export function GithubExplorer({ username }: { username: string }) {
             size="sm"
             color="primary"
             onPress={() => load()}
-            startContent={
+            startContent={(
               <svg
                 viewBox="0 0 24 24"
                 width={16}
@@ -296,7 +317,7 @@ export function GithubExplorer({ username }: { username: string }) {
                 <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
                 <path d="M16 16h5v5" />
               </svg>
-            }
+            )}
           >
             {t('github.retry')}
           </Button>
@@ -316,7 +337,7 @@ export function GithubExplorer({ username }: { username: string }) {
             </CardBody>
           </Card>
           <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[0, 1, 2].map((i) => (
+            {[0, 1, 2].map(i => (
               <SkeletonCard key={i} />
             ))}
           </div>
@@ -325,17 +346,19 @@ export function GithubExplorer({ username }: { username: string }) {
 
       {repos && repos.length > 0 && (
         <>
-          {filtered.length === 0 ? (
-            <p className="text-center text-foreground-500 py-10">
-              {t('github.noResults')}
-            </p>
-          ) : (
-            <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {filtered.map((repo) => (
-                <RepoCard key={repo.fullName} repo={repo} t={t} />
-              ))}
-            </div>
-          )}
+          {filtered.length === 0
+            ? (
+                <p className="text-center text-foreground-500 py-10">
+                  {t('github.noResults')}
+                </p>
+              )
+            : (
+                <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  {filtered.map(repo => (
+                    <RepoCard key={repo.fullName} repo={repo} t={t} />
+                  ))}
+                </div>
+              )}
         </>
       )}
 

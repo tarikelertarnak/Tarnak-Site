@@ -6,7 +6,7 @@ import type { TechColor } from './tech-stack'
  */
 export const TECH_COLORS: Record<
   TechColor,
-  { ring: string; bg: string; text: string }
+  { ring: string, bg: string, text: string }
 > = {
   sky: { ring: 'ring-sky-400/70', bg: 'bg-sky-500/20', text: 'text-sky-300' },
   amber: { ring: 'ring-amber-400/70', bg: 'bg-amber-500/20', text: 'text-amber-300' },

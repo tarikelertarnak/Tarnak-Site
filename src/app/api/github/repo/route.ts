@@ -13,7 +13,8 @@ export async function GET(req: Request) {
   try {
     const details = await fetchRepoDetails(owner, repo)
     return NextResponse.json({ success: true, details })
-  } catch {
+  }
+  catch {
     return NextResponse.json({ success: false, message: 'Repo yüklenemedi.' }, { status: 500 })
   }
 }

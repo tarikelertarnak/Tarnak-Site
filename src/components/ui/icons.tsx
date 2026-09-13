@@ -11,14 +11,14 @@ interface IconProps {
 
 function base(size: number, className?: string) {
   return {
-    width: size,
-    height: size,
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 2,
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
+    'width': size,
+    'height': size,
+    'viewBox': '0 0 24 24',
+    'fill': 'none',
+    'stroke': 'currentColor',
+    'strokeWidth': 2,
+    'strokeLinecap': 'round',
+    'strokeLinejoin': 'round',
     className,
     'aria-hidden': true,
   } as const
@@ -26,10 +26,10 @@ function base(size: number, className?: string) {
 
 function fillBase(size: number, className?: string) {
   return {
-    width: size,
-    height: size,
-    viewBox: '0 0 24 24',
-    fill: 'currentColor',
+    'width': size,
+    'height': size,
+    'viewBox': '0 0 24 24',
+    'fill': 'currentColor',
     className,
     'aria-hidden': true,
   } as const

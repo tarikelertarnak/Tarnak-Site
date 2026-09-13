@@ -17,7 +17,7 @@ export default function GithubLoading() {
         </div>
       </div>
       <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2].map(i => (
           <div
             key={i}
             className="flex flex-col gap-3 rounded-2xl bg-background p-4"

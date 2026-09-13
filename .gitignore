@@ -45,3 +45,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# OpenNext / Cloudflare
+/.open-next/
+/.wrangler/
+.wrangler/
+*.log
+!progress.md

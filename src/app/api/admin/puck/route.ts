@@ -1,16 +1,15 @@
-import { NextResponse } from 'next/server'
 import { revalidatePath } from 'next/cache'
-import { isAdminUser } from '@/lib/supabase/session'
+import { NextResponse } from 'next/server'
 import {
   addPuckVersion,
   deletePuckPage,
   getPuckPage,
-  getPuckPages,
   getPuckVersion,
   getPuckVersions,
   removePuckVersion,
   savePuckPage,
 } from '@/lib/puck/store'
+import { isAdminUser } from '@/lib/supabase/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,8 +31,6 @@ export async function GET(req: Request) {
   const data = await getPuckPage(page)
   return NextResponse.json({ success: true, data })
 }
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // POST /api/admin/puck
 //   { page, data }                    → publish/save
@@ -78,7 +75,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: 'Geçersiz veri.' }, { status: 400 })
   }
   await savePuckPage(body.page, body.data)
-  revalidatePath(`/puck/${body.page}`, 'page')
+  try {
+    revalidatePath(`/puck/${body.page}`, 'page')
+  }
+  catch { /* Workers: no-op */ }
   return NextResponse.json({ success: true })
 }
 
@@ -93,6 +93,9 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: false, message: 'page gerekli.' }, { status: 400 })
   }
   await deletePuckPage(page)
-  revalidatePath(`/puck/${page}`, 'page')
+  try {
+    revalidatePath(`/puck/${page}`, 'page')
+  }
+  catch { /* Workers: no-op */ }
   return NextResponse.json({ success: true })
 }

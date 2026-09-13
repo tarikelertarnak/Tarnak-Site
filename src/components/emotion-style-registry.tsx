@@ -1,10 +1,10 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { cache as emotionCssCache } from '@emotion/css'
 import { CacheProvider } from '@emotion/react'
 import { extractStaticStyle } from 'antd-style'
 import { useServerInsertedHTML } from 'next/navigation'
-import type { ReactNode } from 'react'
 
 /**
  * SSR registry for Emotion styles.

@@ -3,8 +3,8 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { NextResponse } from 'next/server'
-import { isAdminUser } from '@/lib/supabase/session'
 import { getContent, saveContent } from '@/lib/content'
+import { isAdminUser } from '@/lib/supabase/session'
 
 const ALLOWED_EXT = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
 
@@ -14,10 +14,10 @@ function looksLikeImage(data: Buffer, ext: string): boolean {
     return false
   }
   if (ext === '.png') {
-    return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4e && data[3] === 0x47
+    return data[0] === 0x89 && data[1] === 0x50 && data[2] === 0x4E && data[3] === 0x47
   }
   if (ext === '.jpg' || ext === '.jpeg') {
-    return data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff
+    return data[0] === 0xFF && data[1] === 0xD8 && data[2] === 0xFF
   }
   if (ext === '.gif') {
     return data.toString('latin1', 0, 6) === 'GIF89a' || data.toString('latin1', 0, 6) === 'GIF87a'
@@ -37,7 +37,8 @@ export async function POST(req: Request) {
   let formData: FormData
   try {
     formData = await req.formData()
-  } catch {
+  }
+  catch {
     return NextResponse.json({ success: false, message: 'Form verisi okunamadı.' }, { status: 400 })
   }
 
@@ -81,7 +82,8 @@ export async function POST(req: Request) {
       message: 'Profil fotoğrafı güncellendi.',
       profileImage: content.profile.profileImage,
     })
-  } catch {
+  }
+  catch {
     return NextResponse.json({ success: false, message: 'Dosya kaydedilemedi.' }, { status: 500 })
   }
 }

@@ -144,12 +144,12 @@ export const ROLE_PRESETS: RolePreset[] = [
   },
 ]
 
-export const ALL_PERMISSION_IDS: string[] = PERMISSION_GROUPS.flatMap((g) =>
-  g.permissions.map((p) => p.id),
+export const ALL_PERMISSION_IDS: string[] = PERMISSION_GROUPS.flatMap(g =>
+  g.permissions.map(p => p.id),
 )
 
 const VALIDS = new Set(ALL_PERMISSION_IDS)
-const ROLES = new Set(ROLE_PRESETS.map((r) => r.id))
+const ROLES = new Set(ROLE_PRESETS.map(r => r.id))
 
 export function isValidPermission(id: string): boolean {
   return VALIDS.has(id)
@@ -161,11 +161,12 @@ export function isValidRole(id: string): boolean {
 
 /** Expands a pattern like 'blog.*' into individual permissions. */
 export function expandPermissionPattern(pattern: string): string[] {
-  if (pattern === '*') return [...ALL_PERMISSION_IDS]
+  if (pattern === '*')
+    return [...ALL_PERMISSION_IDS]
   if (pattern.endsWith('.*')) {
     const group = pattern.slice(0, -2)
-    const g = PERMISSION_GROUPS.find((x) => x.id === group)
-    return g ? g.permissions.map((p) => p.id) : []
+    const g = PERMISSION_GROUPS.find(x => x.id === group)
+    return g ? g.permissions.map(p => p.id) : []
   }
   return isValidPermission(pattern) ? [pattern] : []
 }
@@ -177,15 +178,21 @@ export function effectivePermissions(
 ): string[] {
   const set = new Set<string>()
   for (const r of roles) {
-    const preset = ROLE_PRESETS.find((x) => x.id === r)
-    if (!preset) continue
+    const preset = ROLE_PRESETS.find(x => x.id === r)
+    if (!preset)
+      continue
     for (const pattern of preset.permissions) {
       for (const id of expandPermissionPattern(pattern)) set.add(id)
     }
   }
-  for (const id of extra) if (isValidPermission(id)) set.add(id)
+  for (const id of extra) {
+    if (isValidPermission(id))
+      set.add(id)
+  }
   // Admin protection: anyone with the admin role always has full permissions.
-  if (roles.includes('admin')) for (const id of ALL_PERMISSION_IDS) set.add(id)
+  if (roles.includes('admin')) {
+    for (const id of ALL_PERMISSION_IDS) set.add(id)
+  }
   return [...set]
 }
 

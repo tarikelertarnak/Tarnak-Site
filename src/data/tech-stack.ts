@@ -7,22 +7,22 @@
  *
  * @see components/sections/hero-section.tsx
  */
-export type TechColor =
-  | 'sky'
-  | 'amber'
-  | 'emerald'
-  | 'rose'
-  | 'violet'
-  | 'cyan'
-  | 'orange'
-  | 'fuchsia'
-  | 'lime'
-  | 'blue'
-  | 'red'
-  | 'indigo'
-  | 'teal'
-  | 'yellow'
-  | 'pink'
+export type TechColor
+  = | 'sky'
+    | 'amber'
+    | 'emerald'
+    | 'rose'
+    | 'violet'
+    | 'cyan'
+    | 'orange'
+    | 'fuchsia'
+    | 'lime'
+    | 'blue'
+    | 'red'
+    | 'indigo'
+    | 'teal'
+    | 'yellow'
+    | 'pink'
 
 export interface Tech {
   label: string

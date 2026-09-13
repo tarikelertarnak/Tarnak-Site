@@ -12,7 +12,8 @@ export async function GET(req: Request) {
   try {
     const profile = await fetchUserProfile(username)
     return NextResponse.json({ success: true, profile })
-  } catch {
+  }
+  catch {
     return NextResponse.json({ success: false, message: 'Profil alınamadı.' }, { status: 500 })
   }
 }

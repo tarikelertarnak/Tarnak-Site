@@ -8,6 +8,10 @@ dns.setDefaultResultOrder('ipv4first')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   trailingSlash: true,
+  // Turbopack, lightningcss'in native .node require'ını bundle edemiyor
+  // (Cannot find module / could not resolve ...win32-x64-msvc.node).
+  // External bırakınca Node kendi require'ıyla (düzgün çalışan) yüklüyor.
+  serverExternalPackages: ['lightningcss'],
   images: {
     unoptimized: true,
   },

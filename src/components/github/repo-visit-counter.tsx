@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
-import { GithubIcon, EyeIcon } from '@/components/ui/icons'
-import { recordProjectView, readProjectStats } from '@/lib/project-stats'
+import { EyeIcon, GithubIcon } from '@/components/ui/icons'
+import { readProjectStats, recordProjectView } from '@/lib/project-stats'
 
 /**
  * /github/OWNER/REPO visit → view counter.
@@ -39,7 +39,9 @@ export function RepoVisitCounter({
         className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-2 py-1 text-sm text-foreground/80"
         title={t('projects.viewsTitle')}
       >
-        <EyeIcon size={14} /> {views > 0 ? views : readProjectStats(title).views}
+        <EyeIcon size={14} />
+        {' '}
+        {views > 0 ? views : readProjectStats(title).views}
       </span>
     </div>
   )

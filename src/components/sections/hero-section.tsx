@@ -1,15 +1,16 @@
 'use client'
 
+import type { Variants } from 'motion/react'
 import type { SiteContent } from '@/lib/content'
 import { TypewriterEffect } from '@lobehub/ui/awesome'
-import { motion, type Variants } from 'motion/react'
-import { Button } from '@/components/ui/button'
-import { Section } from '@/components/ui/section'
-import {
-  socialIcon,
-  EyeIcon,
-} from '@/components/ui/icons'
+import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
+import { Button } from '@/components/ui/button'
+import {
+  EyeIcon,
+  socialIcon,
+} from '@/components/ui/icons'
+import { Section } from '@/components/ui/section'
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -71,7 +72,8 @@ export function HeroSection({ content }: { content: SiteContent }) {
               <span className="block pl-1">{name}</span>
               <span className="block pl-1 mt-1 text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-foreground/50 tracking-widest">
                 {' '}
-                — TARNAK{' '}
+                — TARNAK
+                {' '}
               </span>
             </h1>
           </motion.div>
@@ -146,7 +148,7 @@ export function HeroSection({ content }: { content: SiteContent }) {
             variants={item}
             className="mt-8 flex flex-row items-center gap-3"
           >
-            {content.social.map((social) => (
+            {content.social.map(social => (
               <a
                 key={social.name}
                 href={social.href}

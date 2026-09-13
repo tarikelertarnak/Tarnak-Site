@@ -62,7 +62,7 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
         label: 'Müzik',
         icon: 'mdi:music',
         content:
-          "Müziğin büyük bir hayranıyım; yeni sanatçılar ve türler keşfetmeyi severim.",
+          'Müziğin büyük bir hayranıyım; yeni sanatçılar ve türler keşfetmeyi severim.',
       },
       {
         label: 'Siber Güvenlik',

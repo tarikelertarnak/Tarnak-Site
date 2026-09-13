@@ -15,8 +15,10 @@ const STORAGE_KEY = 'site-theme'
  * auto/light/dark — if 'system' ever got into state, the RadioGroup looked empty).
  */
 function normalizeThemeMode(t: ThemeMode | null | undefined): ThemeMode {
-  if (t === 'system') return 'auto'
-  if (t === 'light' || t === 'dark' || t === 'auto') return t
+  if (t === 'system')
+    return 'auto'
+  if (t === 'light' || t === 'dark' || t === 'auto')
+    return t
   return 'auto'
 }
 
@@ -94,8 +96,8 @@ export function Providers({
     return () => mq.removeEventListener('change', onChange)
   }, [])
 
-  const resolvedTheme: 'light' | 'dark' =
-    theme === 'auto' || theme === 'system'
+  const resolvedTheme: 'light' | 'dark'
+    = theme === 'auto' || theme === 'system'
       ? systemDark
         ? 'dark'
         : 'light'

@@ -1,14 +1,14 @@
 'use client'
 
 import type { FormEvent } from 'react'
-import { useState } from 'react'
 import { Icon } from '@iconify/react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
+import { useLocale } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { useLocale } from '@/components/locale-provider'
 
 export function LoginForm() {
   const router = useRouter()
@@ -35,9 +35,11 @@ export function LoginForm() {
         return
       }
       router.refresh()
-    } catch {
+    }
+    catch {
       setError(isEn ? 'Something went wrong. Please try again.' : 'Bir hata oluştu. Lütfen tekrar dene.')
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }

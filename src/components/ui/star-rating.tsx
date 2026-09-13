@@ -54,7 +54,8 @@ export function StarRating({
     // Hydrate the "did I like it" state from localStorage on the client
     try {
       setLiked(window.localStorage.getItem(storeKey) === '1')
-    } catch { /* sessiz */ }
+    }
+    catch { /* sessiz */ }
 
     return () => {
       cancelled = true
@@ -62,7 +63,8 @@ export function StarRating({
   }, [itemId, itemType, storeKey])
 
   const handleToggle = async () => {
-    if (readonly || isSubmitting) return
+    if (readonly || isSubmitting)
+      return
     setIsSubmitting(true)
     try {
       const res = await fetch('/api/stars', {
@@ -76,11 +78,14 @@ export function StarRating({
         setLiked(!liked)
         try {
           window.localStorage.setItem(storeKey, liked ? '0' : '1')
-        } catch { /* sessiz */ }
+        }
+        catch { /* sessiz */ }
       }
-    } catch {
+    }
+    catch {
       // pass silently
-    } finally {
+    }
+    finally {
       setIsSubmitting(false)
     }
   }

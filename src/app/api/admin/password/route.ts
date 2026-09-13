@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { hashPassword, verifyPassword } from '@/lib/auth'
-import { isAdminUser } from '@/lib/supabase/session'
 import { getAdmin, saveAdmin } from '@/lib/content'
+import { isAdminUser } from '@/lib/supabase/session'
 
 export async function POST(req: Request) {
   const adminUser = await isAdminUser()

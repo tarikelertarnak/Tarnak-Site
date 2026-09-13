@@ -13,7 +13,8 @@ export async function GET(req: Request) {
   try {
     const releases = await fetchRepoReleases(owner, repo)
     return NextResponse.json({ success: true, releases })
-  } catch {
+  }
+  catch {
     return NextResponse.json({ success: false, message: 'Releases alınamadı.' }, { status: 500 })
   }
 }

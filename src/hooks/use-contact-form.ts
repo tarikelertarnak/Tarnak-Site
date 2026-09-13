@@ -1,5 +1,6 @@
 import type { ContactApiResponse, ContactFormData } from '@/lib/validations'
 import { useCallback, useMemo, useState } from 'react'
+import { COUNTRIES } from '@/lib/countries-data'
 import { contactFormSchema } from '@/lib/validations'
 
 interface FormErrors {
@@ -19,6 +20,9 @@ interface UseContactFormReturn {
   resetForm: () => void
   isFormValid: boolean
   switchContactMethod: (method: 'email' | 'phone') => void
+  /** Selected country ISO2 for the phone field (default "TR"). */
+  country: string
+  setCountry: (iso2: string) => void
 }
 
 const initialFormData: ContactFormData = {
@@ -36,6 +40,7 @@ export function useContactForm(): UseContactFormReturn {
   const [touchedFields, setTouchedFields] = useState<Set<keyof ContactFormData>>(
     new Set(),
   )
+  const [country, setCountry] = useState('TR')
 
   const validateField = useCallback(
     (field: keyof ContactFormData, value: string, showError = false) => {
@@ -50,10 +55,11 @@ export function useContactForm(): UseContactFormReturn {
           return newErrors
         })
         return true
-      } catch (error: any) {
+      }
+      catch (error: any) {
         const zodError = error.errors?.[0]
         if (zodError && (showError || touchedFields.has(field))) {
-          setErrors((prev) => ({
+          setErrors(prev => ({
             ...prev,
             [field]: (zodError as { message: string }).message,
           }))
@@ -66,18 +72,20 @@ export function useContactForm(): UseContactFormReturn {
 
   const updateField = useCallback(
     (field: keyof ContactFormData, value: string) => {
-      setFormData((prev) => ({ ...prev, [field]: value }))
-      setTouchedFields((prev) => new Set(prev).add(field))
+      setFormData(prev => ({ ...prev, [field]: value }))
+      setTouchedFields(prev => new Set(prev).add(field))
       if (field === 'message' && touchedFields.has(field)) {
         if (value.trim().length > 0 && value.trim().length < 10) {
-          setErrors((prev) => ({
+          setErrors(prev => ({
             ...prev,
             message: `Message must be at least 10 characters (${value.trim().length}/10)`,
           }))
-        } else if (value.trim().length >= 10) {
+        }
+        else if (value.trim().length >= 10) {
           validateField(field, value, true)
         }
-      } else if (value.trim() || touchedFields.has(field)) {
+      }
+      else if (value.trim() || touchedFields.has(field)) {
         validateField(field, value, true)
       }
     },
@@ -92,14 +100,15 @@ export function useContactForm(): UseContactFormReturn {
     try {
       contactFormSchema.parse(formData)
       return true
-    } catch {
+    }
+    catch {
       return false
     }
   }, [formData])
 
   /** Reset the value and error when the contact method (Email/Phone) changes. */
   const switchContactMethod = useCallback((method: 'email' | 'phone') => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       contactMethod: method,
       contactValue: '',
@@ -127,16 +136,28 @@ export function useContactForm(): UseContactFormReturn {
       )
       const messageValid = validateField('message', formData.message, true)
       if (!nameValid || !messageValid || !contactValid) {
-        if (!nameValid) return 'name'
-        if (!contactValid) return 'contactValue'
-        if (!messageValid) return 'message'
+        if (!nameValid)
+          return 'name'
+        if (!contactValid)
+          return 'contactValue'
+        if (!messageValid)
+          return 'message'
       }
       setIsSubmitting(true)
       const validatedData = contactFormSchema.parse(formData)
+      // Prefix the selected country calling code to the phone number.
+      const callingCode = COUNTRIES.find(c => c.iso2 === country)?.code ?? '90'
+      const payload
+        = validatedData.contactMethod === 'phone'
+          ? {
+              ...validatedData,
+              contactValue: `+${callingCode}${validatedData.contactValue.replace(/^0+/, '')}`,
+            }
+          : validatedData
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validatedData),
+        body: JSON.stringify(payload),
       })
       const result: ContactApiResponse = await response.json()
       if (!response.ok) {
@@ -151,7 +172,8 @@ export function useContactForm(): UseContactFormReturn {
       }
       setErrors({ general: result.message || 'Failed to send message' })
       return null
-    } catch (error: any) {
+    }
+    catch (error: any) {
       if (error.errors) {
         const fieldErrors: FormErrors = {}
         error.errors.forEach((err: any) => {
@@ -165,10 +187,11 @@ export function useContactForm(): UseContactFormReturn {
       }
       setErrors({ general: error.message || 'An unexpected error occurred' })
       return null
-    } finally {
+    }
+    finally {
       setIsSubmitting(false)
     }
-  }, [formData, validateField])
+  }, [formData, validateField, country])
 
   const resetForm = useCallback(() => {
     setFormData(initialFormData)
@@ -188,5 +211,7 @@ export function useContactForm(): UseContactFormReturn {
     resetForm,
     isFormValid,
     switchContactMethod,
+    country,
+    setCountry,
   }
 }

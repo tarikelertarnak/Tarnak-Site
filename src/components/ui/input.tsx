@@ -1,11 +1,11 @@
 'use client'
 
 import type { KeyboardEvent, ReactNode } from 'react'
-import { useState } from 'react'
 import { Input as LobeInput } from '@lobehub/ui/base-ui'
+import { useState } from 'react'
+import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { EyeIcon, EyeOffIcon } from '@/components/ui/icons'
-import { useT } from '@/components/locale-provider'
 
 export interface InputProps {
   'label'?: string
@@ -83,21 +83,23 @@ export function Input({
         onKeyDown={onKeyDown}
         prefix={startContent}
         suffix={
-          isPassword ? (
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => setShowPassword((s) => !s)}
-              aria-label={
-                showPassword ? t('auth.hidePassword') : t('auth.showPassword')
-              }
-              className="text-foreground/60 transition-colors hover:text-foreground"
-            >
-              {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
-            </button>
-          ) : (
-            endContent
-          )
+          isPassword
+            ? (
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword(s => !s)}
+                  aria-label={
+                    showPassword ? t('auth.hidePassword') : t('auth.showPassword')
+                  }
+                  className="text-foreground/60 transition-colors hover:text-foreground"
+                >
+                  {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                </button>
+              )
+            : (
+                endContent
+              )
         }
         aria-label={ariaLabel}
         autoComplete={autoComplete}

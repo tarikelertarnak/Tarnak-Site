@@ -10,19 +10,43 @@ const CHAT_FILE = path.join(DATA_DIR, 'chat', 'messages.json')
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'chat')
 const MAX_MESSAGES = 2000
 
+/**
+ * Cloudflare Workers has no filesystem — writes fail silently there.
+ * Fall back to an in-memory store so the chat still works per worker
+ * instance (resets on redeploy; local dev keeps disk persistence).
+ */
+let memoryMessages: ChatMessage[] | null = null
+
 async function ensureChatDir() {
-  await fs.mkdir(path.join(DATA_DIR, 'chat'), { recursive: true })
+  try {
+    await fs.mkdir(path.join(DATA_DIR, 'chat'), { recursive: true })
+  }
+  catch { /* Workers: no-op */ }
 }
 
 /** Reads all messages raw (including owner) — for internal operations. */
 async function readAllMessages(): Promise<ChatMessage[]> {
+  if (memoryMessages)
+    return memoryMessages
   await ensureChatDir()
   try {
     const raw = await fs.readFile(CHAT_FILE, 'utf-8')
-    return JSON.parse(raw) as ChatMessage[]
-  } catch {
+    const parsed = JSON.parse(raw) as ChatMessage[]
+    memoryMessages = parsed
+    return parsed
+  }
+  catch {
+    memoryMessages = []
     return []
   }
+}
+
+async function writeMessages(messages: ChatMessage[]): Promise<void> {
+  memoryMessages = messages
+  try {
+    await fs.writeFile(CHAT_FILE, `${JSON.stringify(messages, null, 2)}\n`, 'utf-8')
+  }
+  catch { /* Workers: in-memory only */ }
 }
 
 export async function getMessages(user?: string): Promise<ChatMessage[]> {
@@ -40,7 +64,7 @@ export async function getMessages(user?: string): Promise<ChatMessage[]> {
 export async function addMessage(
   name: string,
   text: string,
-  opts: { file?: ChatFile; owner?: boolean; to?: string } = {},
+  opts: { file?: ChatFile, owner?: boolean, to?: string } = {},
 ): Promise<ChatMessage> {
   await ensureChatDir()
   const messages = await readAllMessages()
@@ -54,24 +78,24 @@ export async function addMessage(
     ...(opts.to ? { to: opts.to } : {}),
   }
   messages.push(message)
-  const trimmed =
-    messages.length > MAX_MESSAGES
+  const trimmed
+    = messages.length > MAX_MESSAGES
       ? messages.slice(messages.length - MAX_MESSAGES)
       : messages
-  await fs.writeFile(CHAT_FILE, `${JSON.stringify(trimmed, null, 2)}\n`, 'utf-8')
+  await writeMessages(trimmed)
   return message
 }
 
 export async function deleteMessage(id: string): Promise<void> {
-  await ensureChatDir()
   const messages = await readAllMessages()
   const target = messages.find(m => m.id === id)
   const next = messages.filter(m => m.id !== id)
-  await fs.writeFile(CHAT_FILE, `${JSON.stringify(next, null, 2)}\n`, 'utf-8')
+  await writeMessages(next)
   if (target?.file?.url?.startsWith('/uploads/chat/')) {
     try {
       await fs.unlink(path.join(process.cwd(), 'public', target.file.url))
-    } catch {
+    }
+    catch {
       // ignore missing file
     }
   }
@@ -102,13 +126,13 @@ const ALLOWED_EXTENSIONS = new Set([
 ])
 
 // Magic-byte signatures: file content must match its extension
-const MAGIC_BYTES: Array<{ ext: string; test: (b: Buffer) => boolean }> = [
+const MAGIC_BYTES: Array<{ ext: string, test: (b: Buffer) => boolean }> = [
   {
     ext: 'png',
-    test: b => b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47,
+    test: b => b.length > 8 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47,
   },
-  { ext: 'jpg', test: b => b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
-  { ext: 'jpeg', test: b => b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  { ext: 'jpg', test: b => b.length > 3 && b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF },
+  { ext: 'jpeg', test: b => b.length > 3 && b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF },
   {
     ext: 'gif',
     test: b => b.length > 3 && b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38,
@@ -116,14 +140,14 @@ const MAGIC_BYTES: Array<{ ext: string; test: (b: Buffer) => boolean }> = [
   {
     ext: 'webp',
     test: b =>
-      b.length > 11 &&
-      b.toString('latin1', 0, 4) === 'RIFF' &&
-      b.toString('latin1', 8, 12) === 'WEBP',
+      b.length > 11
+      && b.toString('latin1', 0, 4) === 'RIFF'
+      && b.toString('latin1', 8, 12) === 'WEBP',
   },
   { ext: 'avif', test: b => b.length > 11 && b.toString('latin1', 4, 8) === 'ftyp' },
   { ext: 'pdf', test: b => b.length > 3 && b.toString('latin1', 0, 4) === '%PDF' },
-  { ext: 'zip', test: b => b.length > 3 && b[0] === 0x50 && b[1] === 0x4b },
-  { ext: 'gz', test: b => b.length > 2 && b[0] === 0x1f && b[1] === 0x8b },
+  { ext: 'zip', test: b => b.length > 3 && b[0] === 0x50 && b[1] === 0x4B },
+  { ext: 'gz', test: b => b.length > 2 && b[0] === 0x1F && b[1] === 0x8B },
   { ext: 'mp3', test: b => b.length > 2 && b.toString('latin1', 0, 3) === 'ID3' },
 ]
 
@@ -160,7 +184,6 @@ export async function saveUploadedFile(
   originalName: string,
   mimeType: string,
 ): Promise<ChatFile> {
-  await fs.mkdir(UPLOAD_DIR, { recursive: true })
   const rawExt = path.extname(originalName).toLowerCase().slice(0, 12) || '.bin'
   const ext = ALLOWED_EXTENSIONS.has(rawExt) ? rawExt : '.bin'
   if (ext === '.bin') {
@@ -171,8 +194,15 @@ export async function saveUploadedFile(
   }
   const safeName = originalName.replace(/[^\w.\- ]+/g, '_').slice(0, 80)
   const filename = `${Date.now()}-${randomUUID().slice(0, 8)}${ext}`
-  const filepath = path.join(UPLOAD_DIR, filename)
-  await fs.writeFile(filepath, data)
+  try {
+    await fs.mkdir(UPLOAD_DIR, { recursive: true })
+    const filepath = path.join(UPLOAD_DIR, filename)
+    await fs.writeFile(filepath, data)
+  }
+  catch {
+    // Cloudflare Workers: no filesystem — uploads fail gracefully.
+    throw new Error('Dosya yükleme şu anda kullanılamıyor.')
+  }
   return {
     name: safeName,
     type: mimeType || 'application/octet-stream',

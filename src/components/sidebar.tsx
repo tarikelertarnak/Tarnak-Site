@@ -15,11 +15,12 @@
  * the sidebar overlays content.
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'motion/react'
-import { useT } from '@/components/locale-provider'
 import type { SessionUser } from '@/lib/supabase/session'
+import { AnimatePresence, motion } from 'motion/react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useCallback, useEffect, useState } from 'react'
+import { useT } from '@/components/locale-provider'
+import { cn } from '@/components/ui/cn'
 import {
   CogIcon,
   FolderIcon,
@@ -30,13 +31,12 @@ import {
   ShieldIcon,
   UserIcon,
 } from '@/components/ui/icons'
-import { cn } from '@/components/ui/cn'
 import { Link } from '@/components/ui/link'
 
 /* ─── Navigation Items ─────────────────────────────────────── */
 
 /** Support (Donate) icon — heart/mug. */
-function DonateIcon({ size = 18, className }: { size?: number; className?: string }) {
+function DonateIcon({ size = 18, className }: { size?: number, className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -46,14 +46,14 @@ function DonateIcon({ size = 18, className }: { size?: number; className?: strin
       fill="currentColor"
       className={className}
     >
-      <path d="m21.32 12.05l-2.23-.74c-.81-.27-1.69-.11-2.35.42l-3.4 2.72l-1.17-2.34A2 2 0 0 0 10.38 11H4c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h9.62c1.17 0 2.28-.51 3.04-1.4l5.1-5.95c.22-.25.29-.6.2-.92s-.33-.58-.65-.68Zm-6.18 6.25c-.38.44-.93.7-1.52.7H4v-6h6.38l1 2H7v2h6c.23 0 .45-.08.63-.22l4.36-3.49c.13-.11.31-.14.47-.08l.81.27z"/>
-      <path d="M13.28 10.69a.99.99 0 0 0 1.44 0l3.4-3.57C18.69 6.55 19 5.8 19 5s-.31-1.55-.88-2.12S16.8 2 16 2c-.06 0-1 .02-2 .7c-1-.68-1.85-.74-2-.7c-.8 0-1.56.31-2.12.88C9.31 3.45 9 4.2 9 5s.31 1.56.86 2.1l3.41 3.59Zm-1.98-6.4c.19-.19.44-.29.68-.29c.03 0 .65.04 1.31.71c.39.39 1.02.39 1.41 0c.67-.67 1.29-.71 1.29-.71a.99.99 0 0 1 1 1c0 .27-.1.52-.31.72l-2.69 2.83l-2.71-2.84c-.19-.19-.29-.44-.29-.71s.1-.52.29-.71Z"/>
+      <path d="m21.32 12.05l-2.23-.74c-.81-.27-1.69-.11-2.35.42l-3.4 2.72l-1.17-2.34A2 2 0 0 0 10.38 11H4c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h9.62c1.17 0 2.28-.51 3.04-1.4l5.1-5.95c.22-.25.29-.6.2-.92s-.33-.58-.65-.68Zm-6.18 6.25c-.38.44-.93.7-1.52.7H4v-6h6.38l1 2H7v2h6c.23 0 .45-.08.63-.22l4.36-3.49c.13-.11.31-.14.47-.08l.81.27z" />
+      <path d="M13.28 10.69a.99.99 0 0 0 1.44 0l3.4-3.57C18.69 6.55 19 5.8 19 5s-.31-1.55-.88-2.12S16.8 2 16 2c-.06 0-1 .02-2 .7c-1-.68-1.85-.74-2-.7c-.8 0-1.56.31-2.12.88C9.31 3.45 9 4.2 9 5s.31 1.56.86 2.1l3.41 3.59Zm-1.98-6.4c.19-.19.44-.29.68-.29c.03 0 .65.04 1.31.71c.39.39 1.02.39 1.41 0c.67-.67 1.29-.71 1.29-.71a.99.99 0 0 1 1 1c0 .27-.1.52-.31.72l-2.69 2.83l-2.71-2.84c-.19-.19-.29-.44-.29-.71s.1-.52.29-.71Z" />
     </svg>
   )
 }
 
 /** Contributors (credits) icon — document/pen. */
-function CreditsIcon({ size = 18, className }: { size?: number; className?: string }) {
+function CreditsIcon({ size = 18, className }: { size?: number, className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -77,7 +77,7 @@ function CreditsIcon({ size = 18, className }: { size?: number; className?: stri
 }
 
 /** Page Editor icon — pen + square. */
-function EditSquareIcon({ size = 18, className }: { size?: number; className?: string }) {
+function EditSquareIcon({ size = 18, className }: { size?: number, className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -102,7 +102,7 @@ interface NavItem {
   key: string
   labelKey: string
   href: string
-  icon: (props: { size?: number; className?: string }) => React.ReactElement
+  icon: (props: { size?: number, className?: string }) => React.ReactElement
 }
 
 const SIDEBAR_WIDTH = 260
@@ -138,9 +138,11 @@ export function Sidebar() {
   }, [isOpen])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen)
+      return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false)
+      if (e.key === 'Escape')
+        setIsOpen(false)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
@@ -154,13 +156,15 @@ export function Sidebar() {
     let cancelled = false
     fetch('/api/admin/session')
       .then(r => r.json())
-      .then(data => {
-        if (cancelled) return
+      .then((data) => {
+        if (cancelled)
+          return
         setSessionUser(data.user || null)
         setSessionChecked(true)
       })
       .catch(() => {
-        if (!cancelled) setSessionChecked(true)
+        if (!cancelled)
+          setSessionChecked(true)
       })
     return () => {
       cancelled = true
@@ -175,7 +179,8 @@ export function Sidebar() {
   const logout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
-    } catch {
+    }
+    catch {
       // ignore
     }
     setSessionUser(null)
@@ -225,7 +230,10 @@ export function Sidebar() {
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
-        <span className="min-w-0 flex-1 truncate">{t('common.search')}...</span>
+        <span className="min-w-0 flex-1 truncate">
+          {t('common.search')}
+          ...
+        </span>
         <kbd className="pointer-events-none inline-flex shrink-0 items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-foreground/50">
           <span>⌘</span>
           <span>K</span>
@@ -234,7 +242,7 @@ export function Sidebar() {
 
       {/* Primary nav */}
       <div className="flex flex-1 flex-col gap-1 px-3 py-4">
-        {NAV_LINKS.map(item => {
+        {NAV_LINKS.map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
           return (
@@ -276,8 +284,8 @@ export function Sidebar() {
             <button
               onClick={() => {
                 setIsOpen(false)
-                const page =
-                  pathname === '/'
+                const page
+                  = pathname === '/'
                     ? 'home'
                     : pathname.replace(/^\//, '').replace(/\//g, '-') || 'home'
                 router.push(`/admin/puck/${page}`)

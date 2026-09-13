@@ -33,7 +33,7 @@ interface SearchableComboboxProps {
 }
 
 function optionsLabel(options: SearchableComboboxOption[], selected: string[]) {
-  const found = options.find((o) => o.value === selected[0])
+  const found = options.find(o => o.value === selected[0])
   return found ? found.label : ''
 }
 
@@ -59,14 +59,16 @@ export function SearchableCombobox({
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!open) return
+    if (!open)
+      return
     const onDown = (e: MouseEvent) => {
       if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape')
+        setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
@@ -78,8 +80,9 @@ export function SearchableCombobox({
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
-    if (!needle) return options
-    return options.filter((o) => o.label.toLowerCase().includes(needle))
+    if (!needle)
+      return options
+    return options.filter(o => o.label.toLowerCase().includes(needle))
   }, [options, q])
 
   const triggerText = multiple ? placeholder : optionsLabel(options, selected) || placeholder
@@ -90,7 +93,7 @@ export function SearchableCombobox({
       <button
         type="button"
         onClick={() => {
-          setOpen((v) => !v)
+          setOpen(v => !v)
           setQ('')
         }}
         aria-label={ariaLabel}
@@ -124,7 +127,7 @@ export function SearchableCombobox({
               />
               <input
                 value={q}
-                onChange={(e) => setQ(e.target.value)}
+                onChange={e => setQ(e.target.value)}
                 placeholder={searchPlaceholder}
                 aria-label={searchPlaceholder}
                 className="h-8 w-full rounded-lg border border-foreground-200/15 bg-background pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
@@ -179,7 +182,8 @@ export function SearchableCombobox({
                     type="button"
                     onClick={() => {
                       onSelect(o.value)
-                      if (!multiple) setOpen(false)
+                      if (!multiple)
+                        setOpen(false)
                     }}
                     className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
                       active

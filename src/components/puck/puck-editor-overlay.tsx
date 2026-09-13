@@ -7,8 +7,8 @@
  * and opens the current page's puck editor fullscreen.
  */
 
-import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import { PuckEditor } from '@/components/puck/puck-editor'
 import { normalizePage } from '@/lib/puck/normalize'
 
@@ -32,7 +32,8 @@ export function PuckEditorOverlay() {
     setOpen(false)
   }, [pathname])
 
-  if (!open) return null
+  if (!open)
+    return null
   const path = normalizePage(pathname)
 
   return (

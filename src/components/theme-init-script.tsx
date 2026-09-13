@@ -36,7 +36,7 @@ export function ThemeInitScript({ defaultTheme }: { defaultTheme: string }) {
     <script
       id="theme-init"
       // the loop variable is used inside the script scope — it comes from SSR, a fixed XSS-free enum.
-      dangerouslySetInnerHTML={{ __html: `var defaultTheme='${defaultTheme}';\n` + SCRIPT }}
+      dangerouslySetInnerHTML={{ __html: `var defaultTheme='${defaultTheme}';\n${SCRIPT}` }}
     />
   )
 }

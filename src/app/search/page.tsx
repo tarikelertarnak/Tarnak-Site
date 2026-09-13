@@ -1,11 +1,10 @@
-import { Navigation } from '@/components/navigation'
-import { ProjectCard } from '@/components/projects/project-card'
-import { Section, SectionTitle } from '@/components/ui/section'
-import { getContent } from '@/lib/content'
-import { getPosts } from '@/lib/blog'
-import { getLocalizedContent, getLocale } from '@/lib/i18n-server'
-import { clientFetchUserRepos } from '@/lib/github-client'
 import Link from 'next/link'
+import { Navigation } from '@/components/navigation'
+import { Section, SectionTitle } from '@/components/ui/section'
+import { getPosts } from '@/lib/blog'
+import { getContent } from '@/lib/content'
+import { clientFetchUserRepos } from '@/lib/github-client'
+import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
 
 export async function generateMetadata() {
   const locale = await getLocale()
@@ -79,7 +78,8 @@ export default async function SearchPage({
           date: p.date,
           tags: p.tags,
         }))
-    } catch {
+    }
+    catch {
       /* noop */
     }
 
@@ -99,7 +99,8 @@ export default async function SearchPage({
             href: `/github/${r.fullName}`,
           }))
       }
-    } catch {
+    }
+    catch {
       /* noop */
     }
 
@@ -164,47 +165,52 @@ export default async function SearchPage({
             </form>
 
             {/* Results */}
-            {q ? (
-              hits.length > 0 ? (
-                <div className="mt-8 flex flex-col gap-3">
-                  {hits.map((hit, idx) => (
-                    <Link
-                      key={`${hit.type}-${idx}`}
-                      href={hit.href}
-                      className="group flex flex-col gap-1.5 rounded-xl border border-foreground-200/10 bg-background p-4 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
-                          {hit.type === 'blog' ? (isEn ? 'Blog' : 'Blog') : isEn ? 'Project' : 'Proje'}
-                        </span>
-                        <h3 className="text-base font-semibold text-foreground group-hover:text-primary">
-                          {hit.title}
-                        </h3>
-                      </div>
-                      <p className="line-clamp-2 text-sm text-foreground-500">
-                        {hit.description}
-                      </p>
-                      {hit.type === 'blog' && hit.tags && hit.tags.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {hit.tags.slice(0, 3).map(tag => (
-                            <span
-                              key={tag}
-                              className="rounded-full bg-foreground-200/10 px-2 py-0.5 text-[10px] text-foreground-600"
+            {q
+              ? (
+                  hits.length > 0
+                    ? (
+                        <div className="mt-8 flex flex-col gap-3">
+                          {hits.map((hit, idx) => (
+                            <Link
+                              key={`${hit.type}-${idx}`}
+                              href={hit.href}
+                              className="group flex flex-col gap-1.5 rounded-xl border border-foreground-200/10 bg-background p-4 transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
                             >
-                              #{tag}
-                            </span>
+                              <div className="flex items-center gap-2">
+                                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
+                                  {hit.type === 'blog' ? (isEn ? 'Blog' : 'Blog') : isEn ? 'Project' : 'Proje'}
+                                </span>
+                                <h3 className="text-base font-semibold text-foreground group-hover:text-primary">
+                                  {hit.title}
+                                </h3>
+                              </div>
+                              <p className="line-clamp-2 text-sm text-foreground-500">
+                                {hit.description}
+                              </p>
+                              {hit.type === 'blog' && hit.tags && hit.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {hit.tags.slice(0, 3).map(tag => (
+                                    <span
+                                      key={tag}
+                                      className="rounded-full bg-foreground-200/10 px-2 py-0.5 text-[10px] text-foreground-600"
+                                    >
+                                      #
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </Link>
                           ))}
                         </div>
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <p className="mt-8 text-center text-sm text-foreground-500">
-                  {isEn ? 'No results found.' : 'Hiç sonuç bulunamadı.'}
-                </p>
-              )
-            ) : null}
+                      )
+                    : (
+                        <p className="mt-8 text-center text-sm text-foreground-500">
+                          {isEn ? 'No results found.' : 'Hiç sonuç bulunamadı.'}
+                        </p>
+                      )
+                )
+              : null}
           </div>
         </Section>
       </main>

@@ -3,9 +3,9 @@
 import { Icon } from '@iconify/react'
 import { useRouter } from 'next/navigation'
 
+import { useLocale } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { usePreviousListPath } from '@/lib/use-previous-list-path'
-import { useLocale } from '@/components/locale-provider'
 
 interface LabelCtx {
   isEn: boolean
@@ -13,11 +13,16 @@ interface LabelCtx {
 
 /** Path → short, user-friendly label. */
 function pathLabel(path: string, isEn: boolean): string {
-  if (path === '/') return isEn ? 'Home' : 'Ana sayfa'
-  if (path.startsWith('/projects')) return isEn ? 'Projects' : 'Projeler'
-  if (path.startsWith('/blog')) return 'Blog'
-  if (path.startsWith('/github')) return 'GitHub'
-  if (path.startsWith('/chat')) return isEn ? 'Chat' : 'Sohbet'
+  if (path === '/')
+    return isEn ? 'Home' : 'Ana sayfa'
+  if (path.startsWith('/projects'))
+    return isEn ? 'Projects' : 'Projeler'
+  if (path.startsWith('/blog'))
+    return 'Blog'
+  if (path.startsWith('/github'))
+    return 'GitHub'
+  if (path.startsWith('/chat'))
+    return isEn ? 'Chat' : 'Sohbet'
   return path
 }
 
@@ -44,7 +49,7 @@ export function BackToListButton({ fallback = '/' }: { fallback?: string }) {
       startContent={<Icon icon="solar:arrow-left-bold-duotone" width={16} height={16} />}
       className="self-start"
     >
-{isEn ? 'Go Back' : 'Geri Gel'}
+      {isEn ? 'Go Back' : 'Geri Gel'}
       {' '}
       <span className="text-foreground-500">
         (

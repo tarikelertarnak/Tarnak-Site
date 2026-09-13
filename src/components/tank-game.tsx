@@ -33,7 +33,7 @@ export function TankGame() {
   const tankRef = useRef<Tank>({ x: 400, y: 300, angle: 0, speed: 3 })
   const bulletsRef = useRef<Bullet[]>([])
   const glitchesRef = useRef<Glitch[]>([])
-  const targetsRef = useRef<{ x: number; y: number; hit: boolean }[]>([])
+  const targetsRef = useRef<{ x: number, y: number, hit: boolean }[]>([])
   const animRef = useRef<number>(0)
   const [score, setScore] = useState(0)
   const { locale } = useLocale()
@@ -53,7 +53,8 @@ export function TankGame() {
   }, [])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen)
+      return
     resetGame()
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,9 +81,11 @@ export function TankGame() {
     window.addEventListener('keyup', handleKeyUp)
 
     const canvas = canvasRef.current
-    if (!canvas) return
+    if (!canvas)
+      return
     const ctx = canvas.getContext('2d')
-    if (!ctx) return
+    if (!ctx)
+      return
 
     const loop = () => {
       const keys = keysRef.current
@@ -97,8 +100,10 @@ export function TankGame() {
         t.x -= Math.cos(t.angle) * t.speed * 0.6
         t.y -= Math.sin(t.angle) * t.speed * 0.6
       }
-      if (keys.has('a') || keys.has('arrowleft')) t.angle -= 0.05
-      if (keys.has('d') || keys.has('arrowright')) t.angle += 0.05
+      if (keys.has('a') || keys.has('arrowleft'))
+        t.angle -= 0.05
+      if (keys.has('d') || keys.has('arrowright'))
+        t.angle += 0.05
 
       // Border control
       t.x = Math.max(15, Math.min(canvas.width - 15, t.x))
@@ -116,7 +121,8 @@ export function TankGame() {
       bulletsRef.current = bulletsRef.current.filter((b) => {
         b.x += b.dx
         b.y += b.dy
-        if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) return false
+        if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height)
+          return false
         // Target check
         for (const target of targetsRef.current) {
           if (!target.hit) {
@@ -124,7 +130,7 @@ export function TankGame() {
             if (dist < 18) {
               target.hit = true
               glitchesRef.current.push({ x: target.x, y: target.y, size: 40, opacity: 1 })
-              setScore((s) => s + 1)
+              setScore(s => s + 1)
               return false
             }
           }
@@ -140,7 +146,7 @@ export function TankGame() {
       })
 
       // All targets hit?
-      if (targetsRef.current.every((t) => t.hit) && !gameOver) {
+      if (targetsRef.current.every(t => t.hit) && !gameOver) {
         setGameOver('win')
       }
 
@@ -183,7 +189,8 @@ export function TankGame() {
 
       // Targets
       targetsRef.current.forEach((target) => {
-        if (target.hit) return
+        if (target.hit)
+          return
         ctx.save()
         ctx.translate(target.x, target.y)
         ctx.fillStyle = '#ef4444'
@@ -224,7 +231,7 @@ export function TankGame() {
       ctx.font = 'bold 16px Montserrat, sans-serif'
       ctx.textAlign = 'left'
       ctx.fillText(
-        isEn ? `Score: ${targetsRef.current.filter((t) => t.hit).length}/${targetsRef.current.length}` : `Skor: ${targetsRef.current.filter((t) => t.hit).length}/${targetsRef.current.length}`,
+        isEn ? `Score: ${targetsRef.current.filter(t => t.hit).length}/${targetsRef.current.length}` : `Skor: ${targetsRef.current.filter(t => t.hit).length}/${targetsRef.current.length}`,
         15,
         25,
       )
@@ -274,7 +281,8 @@ export function TankGame() {
     }
   }, [isOpen, gameOver, resetGame, isEn])
 
-  if (!isOpen) return null
+  if (!isOpen)
+    return null
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black">

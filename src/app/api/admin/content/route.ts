@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server'
+import type { SiteContent } from '@/lib/content'
 import { revalidatePath } from 'next/cache'
+import { NextResponse } from 'next/server'
+import { getContent, saveContent } from '@/lib/content'
 import { isAdminUser } from '@/lib/supabase/session'
-import { getContent, saveContent, type SiteContent } from '@/lib/content'
 import { contentSchema } from '@/lib/validations'
 
 export async function POST(req: Request) {
@@ -38,9 +39,9 @@ export async function POST(req: Request) {
       phone: parsed.data.contact.phone ?? current.contact.phone ?? '',
       location: parsed.data.contact.location ?? current.contact.location ?? '',
       locationYandex:
-        parsed.data.contact.locationYandex ??
-        current.contact.locationYandex ??
-        '',
+        parsed.data.contact.locationYandex
+        ?? current.contact.locationYandex
+        ?? '',
     },
   }
 
@@ -48,7 +49,10 @@ export async function POST(req: Request) {
   await saveContent(contentToSave as unknown as SiteContent)
 
   // Clear the ISR cache: content changed, must reflect immediately
-  revalidatePath('/', 'layout')
+  try {
+    revalidatePath('/', 'layout')
+  }
+  catch { /* Workers: no-op */ }
 
   return NextResponse.json({ success: true, message: 'Kaydedildi.' })
 }

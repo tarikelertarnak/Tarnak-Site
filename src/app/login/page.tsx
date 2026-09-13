@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { getSessionUser } from '@/lib/supabase/session'
 import { AuthForm } from '@/components/auth/auth-form'
 import { Navigation } from '@/components/navigation'
-import { getLocalizedContent, getLocale } from '@/lib/i18n-server'
+import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
+import { getSessionUser } from '@/lib/supabase/session'
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale()

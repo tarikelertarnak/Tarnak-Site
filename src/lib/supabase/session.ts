@@ -1,8 +1,8 @@
-import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { verifySessionToken } from '@/lib/auth'
 import { getAdmin } from '@/lib/content'
 import { effectivePermissions } from '@/lib/permissions'
+import { createClient } from '@/lib/supabase/server'
 
 export interface SessionUser {
   id: string
@@ -52,7 +52,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
         }
       }
     }
-  } catch {
+  }
+  catch {
     /* fall through to the flows below if the admin session can't be verified */
   }
 
@@ -83,7 +84,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
         permissions: effectivePermissions(['user']),
       }
     }
-  } catch {
+  }
+  catch {
     /* fall to the normal flow if the cookie can't be read */
   }
 
@@ -100,9 +102,9 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     .eq('id', user.id)
     .maybeSingle()
 
-  const rawRoles =
-    (profile?.roles as string[] | null) ??
-    (profile?.role === 'admin' ? ['admin'] : profile?.role ? [profile.role] : [])
+  const rawRoles
+    = (profile?.roles as string[] | null)
+      ?? (profile?.role === 'admin' ? ['admin'] : profile?.role ? [profile.role] : [])
   const rawExtra = (profile?.permissions as string[] | null) ?? []
 
   return {

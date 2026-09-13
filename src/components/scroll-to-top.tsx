@@ -1,9 +1,9 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ChevronUpIcon } from '@/components/ui/icons'
-import { cn } from '@/components/ui/cn'
 import { useLocale } from '@/components/locale-provider'
+import { cn } from '@/components/ui/cn'
+import { ChevronUpIcon } from '@/components/ui/icons'
 
 export function ScrollToTop() {
   const { locale } = useLocale()

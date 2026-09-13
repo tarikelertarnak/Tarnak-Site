@@ -1,10 +1,11 @@
 import { redirect } from 'next/navigation'
 import { AdminPanel } from '@/components/admin/admin-panel'
-import { getSessionUser } from '@/lib/supabase/session'
 import { getPosts } from '@/lib/blog'
 import { getMessages } from '@/lib/chat'
 import { getContent } from '@/lib/content'
 import { getLocale } from '@/lib/i18n-server'
+import { getSessionUser } from '@/lib/supabase/session'
+
 export const metadata = { title: 'Admin Panel' }
 export const dynamic = 'force-dynamic'
 export default async function AdminPage() {
@@ -23,13 +24,18 @@ export default async function AdminPage() {
         {' '}
         <div className="max-w-sm rounded-2xl border border-danger-200/30 bg-danger-50/10 p-6 text-center">
           {' '}
-          <p className="text-3xl">🔒</p>{' '}
-          <h1 className="mt-2 text-xl font-bold">{isEn ? 'Unauthorized Access' : 'Yetkisiz Erişim'}</h1>{' '}
+          <p className="text-3xl">🔒</p>
+          {' '}
+          <h1 className="mt-2 text-xl font-bold">{isEn ? 'Unauthorized Access' : 'Yetkisiz Erişim'}</h1>
+          {' '}
           <p className="mt-2 text-sm text-foreground-500">
             {' '}
-            {isEn ? 'The admin panel is only available to admin accounts.' : 'Sayfa düzenleyici yalnızca yönetici hesaplarına açıktır.'}{' '}
-          </p>{' '}
-        </div>{' '}
+            {isEn ? 'The admin panel is only available to admin accounts.' : 'Sayfa düzenleyici yalnızca yönetici hesaplarına açıktır.'}
+            {' '}
+          </p>
+          {' '}
+        </div>
+        {' '}
       </main>
     )
   }
@@ -46,7 +52,8 @@ export default async function AdminPage() {
         initialPosts={posts}
         initialMessages={messages}
         username={user.email ?? user.username ?? 'admin'}
-      />{' '}
+      />
+      {' '}
     </main>
   )
 }

@@ -11,14 +11,13 @@ import { Icon } from '@iconify/react'
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { BackToListButton } from '@/components/back-to-list-button'
 import { useLocale, useT } from '@/components/locale-provider'
+import { Navigation } from '@/components/navigation'
+import { cn } from '@/components/ui/cn'
+import { Link } from '@/components/ui/link'
 import {
   clientFetchFileContent,
   clientFetchRepoReleases,
 } from '@/lib/github-client'
-import { Navigation } from '@/components/navigation'
-import { Button } from '@/components/ui/button'
-import { Link } from '@/components/ui/link'
-import { cn } from '@/components/ui/cn'
 
 const GITHUB_BASE = 'https://github.com'
 
@@ -29,7 +28,7 @@ interface TabDef {
   href: string
 }
 
-const TABS: { key: string; i18nKey: string; icon: string; href: string }[] = [
+const TABS: { key: string, i18nKey: string, icon: string, href: string }[] = [
   { key: 'code', i18nKey: 'github.tabCode', icon: 'mdi:code', href: '' },
   {
     key: 'issues',
@@ -125,11 +124,16 @@ function timeAgo(dateStr: string, isEn: boolean): string {
   }
   const diffDays = Math.floor((Date.now() - ts) / (24 * 60 * 60 * 1000))
   if (isEn) {
-    if (diffDays < 1) return 'today'
-    if (diffDays === 1) return 'yesterday'
-    if (diffDays < 7) return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) === 1 ? '' : 's'} ago`
-    if (diffDays < 365) return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) === 1 ? '' : 's'} ago`
+    if (diffDays < 1)
+      return 'today'
+    if (diffDays === 1)
+      return 'yesterday'
+    if (diffDays < 7)
+      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`
+    if (diffDays < 30)
+      return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) === 1 ? '' : 's'} ago`
+    if (diffDays < 365)
+      return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) === 1 ? '' : 's'} ago`
     return `${Math.floor(diffDays / 365)} year${Math.floor(diffDays / 365) === 1 ? '' : 's'} ago`
   }
   if (diffDays < 1) {
@@ -157,9 +161,9 @@ function getChildren(
   const prefix = dir ? `${dir}/` : ''
   return entries
     .filter(
-      (entry) =>
-        entry.path.startsWith(prefix) &&
-        !entry.path.slice(prefix.length).includes('/'),
+      entry =>
+        entry.path.startsWith(prefix)
+        && !entry.path.slice(prefix.length).includes('/'),
     )
     .sort((a, b) => {
       const aDir = a.type === 'tree' ? 0 : 1
@@ -179,8 +183,8 @@ function AboutRow({
   value: string
   href?: string
 }) {
-  const cls =
-    'flex w-full items-center gap-2.5 rounded-md px-1.5 py-1.5 text-sm transition-colors hover:bg-foreground/5'
+  const cls
+    = 'flex w-full items-center gap-2.5 rounded-md px-1.5 py-1.5 text-sm transition-colors hover:bg-foreground/5'
   const inner = (
     <>
       <Icon
@@ -264,7 +268,8 @@ export function GithubRepoView({
       await navigator.clipboard.writeText(url)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch {
+    }
+    catch {
       /* clipboard API unavailable — ignore */
     }
   }
@@ -282,7 +287,8 @@ export function GithubRepoView({
     }
     try {
       return new URL(details.homepage).hostname
-    } catch {
+    }
+    catch {
       return details.homepage
     }
   }, [details.homepage])
@@ -294,7 +300,8 @@ export function GithubRepoView({
     try {
       const data = await clientFetchRepoReleases(details.owner, details.repo)
       setReleases(data)
-    } catch {
+    }
+    catch {
       setReleases([])
     }
   }, [details.owner, details.repo])
@@ -319,7 +326,8 @@ export function GithubRepoView({
         details.defaultBranch,
       )
       setSelected(file)
-    } catch (err) {
+    }
+    catch (err) {
       setFileError(
         isEn
           ? 'Directory selected: pick a file.'
@@ -327,7 +335,8 @@ export function GithubRepoView({
             ? 'Dizin seçildi: bir dosya seç.'
             : 'Dosya açılamadı.',
       )
-    } finally {
+    }
+    finally {
       setLoadingFile(false)
     }
   }
@@ -479,8 +488,7 @@ export function GithubRepoView({
                       <button
                         type="button"
                         onClick={() =>
-                          goToDir(fileDirParts.slice(0, i + 1).join('/'))
-                        }
+                          goToDir(fileDirParts.slice(0, i + 1).join('/'))}
                         className="rounded-md px-1.5 py-0.5 text-sm text-foreground transition-colors hover:bg-foreground/5 hover:text-primary"
                       >
                         {part}
@@ -535,26 +543,30 @@ export function GithubRepoView({
 
                 {selected && (
                   <div className="overflow-auto">
-                    {selected.content ? (
-                      <pre className="p-4 text-xs leading-relaxed sm:p-5 sm:text-sm">
-                        <code>{selected.content}</code>
-                      </pre>
-                    ) : selected.downloadUrl ? (
-                      <div className="px-4 py-10 text-center text-sm text-foreground-500">
-                        <a
-                          href={selected.downloadUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          {t('github.fileDownload')}
-                        </a>
-                      </div>
-                    ) : (
-                      <p className="px-4 py-10 text-center text-sm text-foreground-500">
-                        {t('github.filePreviewUnavailable')}
-                      </p>
-                    )}
+                    {selected.content
+                      ? (
+                          <pre className="p-4 text-xs leading-relaxed sm:p-5 sm:text-sm">
+                            <code>{selected.content}</code>
+                          </pre>
+                        )
+                      : selected.downloadUrl
+                        ? (
+                            <div className="px-4 py-10 text-center text-sm text-foreground-500">
+                              <a
+                                href={selected.downloadUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary hover:underline"
+                              >
+                                {t('github.fileDownload')}
+                              </a>
+                            </div>
+                          )
+                        : (
+                            <p className="px-4 py-10 text-center text-sm text-foreground-500">
+                              {t('github.filePreviewUnavailable')}
+                            </p>
+                          )}
                   </div>
                 )}
               </div>
@@ -611,8 +623,7 @@ export function GithubRepoView({
                           <button
                             type="button"
                             onClick={() =>
-                              goToDir(pathParts.slice(0, i + 1).join('/'))
-                            }
+                              goToDir(pathParts.slice(0, i + 1).join('/'))}
                             className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-foreground transition-colors hover:bg-foreground/5 hover:text-primary"
                           >
                             <Icon
@@ -634,42 +645,43 @@ export function GithubRepoView({
                     )}
                   </div>
 
-                  {currentEntries.length === 0 ? (
-                    <p className="px-4 py-10 text-center text-sm text-foreground-500">
-                      {currentPath
-                        ? t('github.folderEmpty')
-                        : t('github.repoEmpty')}
-                    </p>
-                  ) : (
-                    <ul className="divide-y divide-foreground-200/10">
-                      {currentEntries.map((entry) => {
-                        const isDir = entry.type === 'tree'
-                        return (
-                          <li key={entry.path}>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                isDir
-                                  ? goToDir(entry.path)
-                                  : openFile(entry.path)
-                              }
-                              className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-foreground transition-colors hover:bg-foreground/5 sm:px-4"
-                            >
-                              <Icon
-                                icon={isDir ? 'mdi:folder' : 'mdi:file-outline'}
-                                width={16}
-                                height={16}
-                                className={
-                                  isDir ? 'text-primary' : 'text-foreground-500'
-                                }
-                              />
-                              <span className="truncate">{entry.name}</span>
-                            </button>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
+                  {currentEntries.length === 0
+                    ? (
+                        <p className="px-4 py-10 text-center text-sm text-foreground-500">
+                          {currentPath
+                            ? t('github.folderEmpty')
+                            : t('github.repoEmpty')}
+                        </p>
+                      )
+                    : (
+                        <ul className="divide-y divide-foreground-200/10">
+                          {currentEntries.map((entry) => {
+                            const isDir = entry.type === 'tree'
+                            return (
+                              <li key={entry.path}>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    isDir
+                                      ? goToDir(entry.path)
+                                      : openFile(entry.path)}
+                                  className="flex w-full items-center gap-2.5 px-3 py-2 text-sm text-foreground transition-colors hover:bg-foreground/5 sm:px-4"
+                                >
+                                  <Icon
+                                    icon={isDir ? 'mdi:folder' : 'mdi:file-outline'}
+                                    width={16}
+                                    height={16}
+                                    className={
+                                      isDir ? 'text-primary' : 'text-foreground-500'
+                                    }
+                                  />
+                                  <span className="truncate">{entry.name}</span>
+                                </button>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
                 </div>
 
                 {/* README */}
@@ -692,16 +704,18 @@ export function GithubRepoView({
                       <Icon icon="mdi:dots-horizontal" width={18} height={18} />
                     </button>
                   </div>
-                  {readmeHtml ? (
-                    <div
-                      className="markdown-body px-5 py-4 text-sm leading-relaxed sm:px-6 sm:text-base"
-                      dangerouslySetInnerHTML={{ __html: readmeHtml }}
-                    />
-                  ) : (
-                    <p className="px-4 py-10 text-center text-foreground-500">
-                      {t('github.noReadme')}
-                    </p>
-                  )}
+                  {readmeHtml
+                    ? (
+                        <div
+                          className="markdown-body px-5 py-4 text-sm leading-relaxed sm:px-6 sm:text-base"
+                          dangerouslySetInnerHTML={{ __html: readmeHtml }}
+                        />
+                      )
+                    : (
+                        <p className="px-4 py-10 text-center text-foreground-500">
+                          {t('github.noReadme')}
+                        </p>
+                      )}
                 </div>
               </>
             )}
@@ -735,7 +749,7 @@ export function GithubRepoView({
             )}
             {details.topics.length > 0 && (
               <div className="mt-3 flex flex-wrap gap-1.5">
-                {details.topics.map((topic) => (
+                {details.topics.map(topic => (
                   <span
                     key={topic}
                     className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs text-primary"
@@ -816,7 +830,7 @@ export function GithubRepoView({
               )}
               {releases && releases.length > 0 && (
                 <div className="divide-y divide-foreground-200/10 overflow-hidden rounded-lg border border-foreground-200/10">
-                  {releases.map((release) => (
+                  {releases.map(release => (
                     <div
                       key={release.tagName}
                       className="flex flex-col gap-1.5 px-4 py-3"
@@ -839,9 +853,10 @@ export function GithubRepoView({
                           </span>
                         </a>
                         <span className="shrink-0 text-xs text-foreground-500">
-                          {release.tagName}{' '}
-                          {release.publishedAt &&
-                            ` • ${formatDate(release.publishedAt, 'en' as any)}`}
+                          {release.tagName}
+                          {' '}
+                          {release.publishedAt
+                            && ` • ${formatDate(release.publishedAt, 'en' as any)}`}
                         </span>
                       </div>
                       {release.body && (
@@ -851,7 +866,7 @@ export function GithubRepoView({
                       )}
                       {release.assets.length > 0 && (
                         <div className="flex flex-wrap gap-1.5 pt-0.5">
-                          {release.assets.map((asset) => (
+                          {release.assets.map(asset => (
                             <a
                               key={asset.name}
                               href={asset.downloadUrl}

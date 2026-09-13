@@ -1,11 +1,11 @@
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
-import { isAdminUser } from '@/lib/supabase/session'
 import {
   isValidPermission,
   isValidRole,
   ROLE_PRESETS,
 } from '@/lib/permissions'
+import { isAdminUser } from '@/lib/supabase/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +33,8 @@ export interface AdminUserRow {
 function adminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key) return null
+  if (!url || !key)
+    return null
   return createSupabaseAdmin(url, key, {
     global: {
       fetch: (input, init) =>
@@ -79,7 +80,7 @@ export async function GET() {
     )
   }
   const profiles = new Map(
-    (profileRes.data ?? []).map((p) => [
+    (profileRes.data ?? []).map(p => [
       p.id,
       {
         username: p.username,
@@ -150,15 +151,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: 'Kullanıcı bulunamadı.' }, { status: 404 })
   }
   const blocked = ownerBlocked(Boolean(target.is_owner))
-  if (blocked) return blocked
+  if (blocked)
+    return blocked
 
   if (body.action === 'setRoles') {
     if (
-      !Array.isArray(body.roles) ||
-      !body.roles.every((r: unknown) => typeof r === 'string' && isValidRole(r))
+      !Array.isArray(body.roles)
+      || !body.roles.every((r: unknown) => typeof r === 'string' && isValidRole(r))
     ) {
       return NextResponse.json(
-        { success: false, message: 'Geçersiz roller. İzin verilenler: ' + ROLE_PRESETS.map((r) => r.id).join(', ') },
+        { success: false, message: `Geçersiz roller. İzin verilenler: ${ROLE_PRESETS.map(r => r.id).join(', ')}` },
         { status: 400 },
       )
     }
@@ -176,8 +178,8 @@ export async function POST(req: Request) {
   }
   if (body.action === 'setPermissions') {
     if (
-      !Array.isArray(body.permissions) ||
-      !body.permissions.every((p: unknown) => typeof p === 'string' && isValidPermission(p))
+      !Array.isArray(body.permissions)
+      || !body.permissions.every((p: unknown) => typeof p === 'string' && isValidPermission(p))
     ) {
       return NextResponse.json(
         { success: false, message: 'Geçersiz yetki.' },
@@ -270,7 +272,8 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: false, message: 'Kullanıcı bulunamadı.' }, { status: 404 })
   }
   const blocked = ownerBlocked(Boolean(target.is_owner))
-  if (blocked) return blocked
+  if (blocked)
+    return blocked
   const { error } = await supabase.auth.admin.deleteUser(userId, true)
   if (error) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 })

@@ -3,10 +3,9 @@
 import type { SiteContent } from '@/lib/content'
 import { useState } from 'react'
 import { useT } from '@/components/locale-provider'
-import { Button } from '@/components/ui/button'
-import { Link } from '@/components/ui/link'
 import { TankGame } from '@/components/tank-game'
 import { socialIcon } from '@/components/ui/icons'
+import { Link } from '@/components/ui/link'
 
 export function Footer({ content }: { content: SiteContent }) {
   const { t } = useT()
@@ -37,7 +36,7 @@ export function Footer({ content }: { content: SiteContent }) {
               <p className="text-xs font-bold uppercase tracking-wider text-foreground-500">
                 {t('footer.navigate')}
               </p>
-              {content.nav.items.map((item) => (
+              {content.nav.items.map(item => (
                 <Link
                   key={item.title}
                   href={item.href}
@@ -54,7 +53,7 @@ export function Footer({ content }: { content: SiteContent }) {
                 {t('footer.follow')}
               </p>
               <div className="flex flex-row flex-wrap gap-2">
-                {content.social.map((item) => (
+                {content.social.map(item => (
                   <a
                     key={item.name}
                     href={item.href}
@@ -74,7 +73,14 @@ export function Footer({ content }: { content: SiteContent }) {
           {/* Bottom row */}
           <div className="flex flex-col items-center justify-between gap-2 border-t border-foreground-200/10 py-5 sm:flex-row">
             <p className="text-xs sm:text-sm text-foreground-500 text-center sm:text-left">
-              &copy; {content.footer.copyright} {new Date().getFullYear()} .{' '}
+              &copy;
+              {' '}
+              {content.footer.copyright}
+              {' '}
+              {new Date().getFullYear()}
+              {' '}
+              .
+              {' '}
               {t('footer.rights')}
             </p>
             <div className="flex items-center gap-3">

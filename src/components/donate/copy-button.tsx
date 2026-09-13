@@ -1,15 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckIcon, CopyIcon } from '@/components/ui/icons'
-import { cn } from '@/components/ui/cn'
 import { useLocale } from '@/components/locale-provider'
+import { cn } from '@/components/ui/cn'
+import { CheckIcon, CopyIcon } from '@/components/ui/icons'
 
 /**
  * Address/URL copy button. On click it writes to the clipboard and shows a
  * confirmation icon for 2 seconds.
  */
-export function CopyButton({ text, className }: { text: string; className?: string }) {
+export function CopyButton({ text, className }: { text: string, className?: string }) {
   const { locale } = useLocale()
   const isEn = locale === 'en'
   const [copied, setCopied] = useState(false)
@@ -19,7 +19,8 @@ export function CopyButton({ text, className }: { text: string; className?: stri
       await navigator.clipboard.writeText(text)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch {
+    }
+    catch {
       /* noop */
     }
   }
@@ -40,11 +41,13 @@ export function CopyButton({ text, className }: { text: string; className?: stri
         className,
       )}
     >
-      {copied ? (
-        <CheckIcon size={16} />
-      ) : (
-        <CopyIcon size={16} />
-      )}
+      {copied
+        ? (
+            <CheckIcon size={16} />
+          )
+        : (
+            <CopyIcon size={16} />
+          )}
       <span className="hidden text-xs font-medium sm:inline">
         {copiedLabel}
       </span>

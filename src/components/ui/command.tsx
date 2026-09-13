@@ -7,10 +7,10 @@
  * SearchDialog's own overlay/animated panel.
  */
 
-import * as React from 'react'
 import { Command as CommandPrimitive } from 'cmdk'
-import { SearchIcon } from '@/components/ui/icons'
+import * as React from 'react'
 import { cn } from '@/components/ui/cn'
+import { SearchIcon } from '@/components/ui/icons'
 
 const Command = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive>,
@@ -120,7 +120,7 @@ const CommandItem = React.forwardRef<
 ))
 CommandItem.displayName = CommandPrimitive.Item.displayName
 
-const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
+function CommandShortcut({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       className={cn('ml-auto text-xs tracking-widest text-foreground-500/60', className)}

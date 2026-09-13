@@ -24,8 +24,8 @@ function AuthFormInner() {
 
   // Initial mode comes from ?mode=signup (or ?mode=login) so deep links from
   // the nav header land on the right form. Fall back to 'login'.
-  const initialMode: 'login' | 'signup' =
-    searchParams.get('mode') === 'signup' ? 'signup' : 'login'
+  const initialMode: 'login' | 'signup'
+    = searchParams.get('mode') === 'signup' ? 'signup' : 'login'
   const [mode, setMode] = useState<'login' | 'signup'>(initialMode)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -36,15 +36,15 @@ function AuthFormInner() {
 
   // next param: the safe local path to return to after login
   const rawNext = searchParams.get('next')
-  const nextPath =
-    rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//')
+  const nextPath
+    = rawNext && rawNext.startsWith('/') && !rawNext.startsWith('//')
       ? rawNext
       : '/'
 
   // X (close): going back to a route that requires login creates an infinite loop
   // (e.g. /chat → /login?next=/chat) — in that case, return to the home page
-  const closePath =
-    nextPath === '/chat' || nextPath === '/admin' ? '/' : nextPath
+  const closePath
+    = nextPath === '/chat' || nextPath === '/admin' ? '/' : nextPath
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -63,7 +63,8 @@ function AuthFormInner() {
         }
         router.refresh()
         router.push(nextPath)
-      } else {
+      }
+      else {
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) {
           setError(error.message)
@@ -71,9 +72,11 @@ function AuthFormInner() {
         }
         setNotice(t('auth.registerSuccess'))
       }
-    } catch {
+    }
+    catch {
       setError(isEn ? 'Something went wrong. Please try again.' : 'Bir hata oluştu. Lütfen tekrar dene.')
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -91,9 +94,11 @@ function AuthFormInner() {
       if (error) {
         setError(error.message)
       }
-    } catch {
+    }
+    catch {
       setError(isEn ? 'Something went wrong. Please try again.' : 'Bir hata oluştu. Lütfen tekrar dene.')
-    } finally {
+    }
+    finally {
       setLoading(false)
     }
   }
@@ -177,8 +182,8 @@ function AuthFormInner() {
           {(error || errorParam) && (
             <div className="text-danger text-sm font-medium bg-danger-50 border border-danger-200 rounded-lg p-3 flex items-center gap-2">
               <Icon icon="material-symbols:error" width={16} height={16} />
-              {error ||
-                (errorParam === 'auth'
+              {error
+                || (errorParam === 'auth'
                   ? t('auth.authFailed')
                   : t('auth.genericError'))}
             </div>
@@ -204,7 +209,8 @@ function AuthFormInner() {
           </Button>
         </form>
         <p className="text-center text-sm text-foreground-500">
-          {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}{' '}
+          {mode === 'login' ? t('auth.noAccount') : t('auth.hasAccount')}
+          {' '}
           <button
             type="button"
             className="font-semibold text-primary hover:underline"

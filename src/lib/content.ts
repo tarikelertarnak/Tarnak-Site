@@ -1,20 +1,29 @@
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
-import { cache } from 'react'
-import { unstable_cache } from 'next/cache'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
+import { cache } from 'react'
+import bundledAdminJson from '../../data/admin.json'
+// Cloudflare Workers has no filesystem — content is baked into the worker
+// bundle at build time. Admin edits persist in-memory for the worker lifetime.
+import bundledContentJson from '../../data/content.json'
 
-const DATA_DIR = path.join(process.cwd(), 'data')
-const CONTENT_FILE = path.join(DATA_DIR, 'content.json')
-const ADMIN_FILE = path.join(DATA_DIR, 'admin.json')
+/** Lazy path resolution — process.cwd() can be unavailable/shadowed in Workers. */
+function dataDir(): string {
+  try {
+    return path.join(process.cwd(), 'data')
+  }
+  catch {
+    return 'data'
+  }
+}
 
 /**
  * Module-level TTL cache for the Supabase merge result.
  * Goal: avoid repeating the initial TCP/TLS connection setup (20s+ on this machine)
  * on every request. Cleared by saveContent on admin edits.
  */
-let supabaseMergeCache: { ts: number; data: SiteContent | null } | null = null
+let supabaseMergeCache: { ts: number, data: SiteContent | null } | null = null
 const SUPABASE_CACHE_TTL_MS = 300_000
 
 /**
@@ -167,7 +176,7 @@ export interface SiteContent {
     exploreLabel: string
     connectLabel: string
     emoji: string
-    stats: { label: string; value: string }[]
+    stats: { label: string, value: string }[]
   }
   nav: {
     ctaLabel: string
@@ -249,39 +258,56 @@ export interface SiteContent {
   }
 }
 
+const bundledContent = bundledContentJson as Partial<SiteContent>
+const bundledAdmin = bundledAdminJson as unknown as AdminCredentials
+
+const CONTENT_FILE = () => path.join(dataDir(), 'content.json')
+const ADMIN_FILE = () => path.join(dataDir(), 'admin.json')
+
 async function ensureDataDir() {
-  await fs.mkdir(DATA_DIR, { recursive: true })
+  try {
+    await fs.mkdir(dataDir(), { recursive: true })
+  }
+  catch { /* Workers: no-op */ }
 }
+
+/**
+ * Module-level TTL cache for the merged content result.
+ * The site is server-rendered; content.json is baked into the OpenNext worker
+ * bundle at build time (data/ is copied into the worker), so no ISR cache is
+ * needed on Cloudflare. `cache()` (React) already dedupes per-request.
+ */
+let contentMergeCache: { ts: number, data: SiteContent | null } | null = null
+const CONTENT_CACHE_TTL_MS = 300_000
 
 /**
  * Reads site content (content.json + Supabase merge).
  * React cache makes it run only once per request
  * (layout / page / generateMetadata don't wait again in the same request).
  *
- * Cached for 5 min via unstable_cache (ISR); revalidateTag('content') refreshes
- * it immediately after an edit from the admin panel.
+ * Merged result is cached for 5 min (module-level TTL); saveContent clears it
+ * immediately after an edit from the admin panel.
  */
 export const getContent = cache(async (): Promise<SiteContent> => {
-  const cached = unstable_cache(
-    async () => {
-      await ensureDataDir()
-      let base: SiteContent
-      try {
-        const raw = await fs.readFile(CONTENT_FILE, 'utf-8')
-        const parsed = JSON.parse(raw) as Partial<SiteContent>
-        const defaults = await getDefaultContent()
-        base = mergeContent(defaults, parsed)
-      } catch {
-        const defaults = await getDefaultContent()
-        await saveContent(defaults)
-        base = defaults
-      }
-      return mergeSupabase(base)
-    },
-    ['site-content'],
-    { revalidate: 300, tags: ['content'] },
-  )
-  return cached()
+  if (contentMergeCache && Date.now() - contentMergeCache.ts < CONTENT_CACHE_TTL_MS) {
+    return contentMergeCache.data as SiteContent
+  }
+
+  // fs.readFile works on Node (dev/build-time writes are read live);
+  // on Workers the bundled JSON is the source of truth.
+  let parsed: Partial<SiteContent> | null = null
+  try {
+    const raw = await fs.readFile(CONTENT_FILE(), 'utf-8')
+    parsed = JSON.parse(raw) as Partial<SiteContent>
+  }
+  catch {
+    parsed = null
+  }
+  const defaults = await getDefaultContent()
+  const base: SiteContent = mergeContent(defaults, parsed ?? bundledContent)
+  const merged = await mergeSupabase(base)
+  contentMergeCache = { ts: Date.now(), data: merged }
+  return merged
 })
 
 /**
@@ -330,7 +356,8 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
           .from('projects')
           .select('slug, title, description, tech, repo_url, demo_url, image, featured')
           .order('sort_order', { ascending: true })
-        if (projectError) throw projectError
+        if (projectError)
+          throw projectError
         const dbItems = (dbProjects ?? []).map(p => ({
           title: p.title,
           notice: p.featured ? '[Featured]' : undefined,
@@ -346,7 +373,8 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
             ...merged.projects.items.filter(p => !dbTitles.has(p.title)),
           ]
         }
-      } catch (error) {
+      }
+      catch (error) {
         silent('projects')(error)
       }
     })(),
@@ -365,7 +393,8 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
             href: SKILL_LABEL_LINKS[s.label] ?? '',
           }))
         }
-      } catch (error) {
+      }
+      catch (error) {
         silent('skills')(error)
       }
     })(),
@@ -384,7 +413,8 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
             { label: 'Focus', value: `${dbStats.focus}%` },
           ]
         }
-      } catch (error) {
+      }
+      catch (error) {
         silent('stats')(error)
       }
     })(),
@@ -429,10 +459,18 @@ function mergeContent(defaults: SiteContent, parsed: Partial<SiteContent>): Site
 }
 
 export async function saveContent(content: SiteContent): Promise<void> {
-  await ensureDataDir()
-  await fs.writeFile(CONTENT_FILE, `${JSON.stringify(content, null, 2)}\n`, 'utf-8')
+  try {
+    await ensureDataDir()
+    await fs.writeFile(CONTENT_FILE(), `${JSON.stringify(content, null, 2)}\n`, 'utf-8')
+  }
+  catch {
+    // Cloudflare Workers has no filesystem — content is baked at build time;
+    // the in-memory cache is still refreshed below so the edit takes effect
+    // for the lifetime of this worker instance (until the next deploy).
+  }
   // Refresh the Supabase merge cache after an admin edit
   supabaseMergeCache = null
+  contentMergeCache = null
 }
 
 export interface AdminCredentials {
@@ -441,20 +479,23 @@ export interface AdminCredentials {
 }
 
 export async function getAdmin(): Promise<AdminCredentials> {
-  await ensureDataDir()
   try {
-    const raw = await fs.readFile(ADMIN_FILE, 'utf-8')
+    const raw = await fs.readFile(ADMIN_FILE(), 'utf-8')
     return JSON.parse(raw) as AdminCredentials
-  } catch {
-    const defaults = { username: 'TARIKELER', passwordHash: '' }
-    await saveAdmin(defaults)
-    return defaults
+  }
+  catch {
+    return bundledAdmin
   }
 }
 
 export async function saveAdmin(admin: AdminCredentials): Promise<void> {
-  await ensureDataDir()
-  await fs.writeFile(ADMIN_FILE, `${JSON.stringify(admin, null, 2)}\n`, 'utf-8')
+  try {
+    await ensureDataDir()
+    await fs.writeFile(ADMIN_FILE(), `${JSON.stringify(admin, null, 2)}\n`, 'utf-8')
+  }
+  catch {
+    // Cloudflare Workers: no filesystem. In-memory only until next deploy.
+  }
 }
 
 async function getDefaultContent(): Promise<SiteContent> {
@@ -464,7 +505,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       tagline: 'Yazılımcı & Sistem Mimarisi',
       badge: '',
       description:
-        "Next.js, TypeScript ve yapay zeka ile modern web deneyimleri üretiyorum. Tasarımdan deploy\u2019a kadar uçtan uca çalışırım.",
+        'Next.js, TypeScript ve yapay zeka ile modern web deneyimleri üretiyorum. Tasarımdan deploy\u2019a kadar uçtan uca çalışırım.',
       exploreLabel: 'Projeleri Keşfet',
       connectLabel: 'İletişime Geç',
       emoji: '🚀',
@@ -489,10 +530,10 @@ async function getDefaultContent(): Promise<SiteContent> {
     about: {
       subtitle: 'ABOUT ME',
       title: 'A Glimpse Into My World',
-      description: "Learn more about me, what I do, and what I'm passionate about.",
+      description: 'Learn more about me, what I do, and what I\'m passionate about.',
       whoTitle: 'Who I Am',
       whoText:
-        "I'm a web developer who loves to code and build things. I'm passionate about web development, design, and technology.",
+        'I\'m a web developer who loves to code and build things. I\'m passionate about web development, design, and technology.',
       toolboxTitle: 'My Toolbox',
       toolboxDescription: 'Explore the technologies I use to build projects and websites.',
       toolbox: [
@@ -508,7 +549,7 @@ async function getDefaultContent(): Promise<SiteContent> {
         { label: 'npx create next-app', type: 'command', href: 'npx create-next-app@latest my-app' },
       ],
       beyondTitle: 'Beyond the Code',
-      beyondDescription: "Explore my interests, hobbies, and what I do when I'm not coding.",
+      beyondDescription: 'Explore my interests, hobbies, and what I do when I\'m not coding.',
       interests: [
         {
           label: 'Hardware',
@@ -528,7 +569,7 @@ async function getDefaultContent(): Promise<SiteContent> {
         {
           label: 'Music',
           icon: 'mdi:music',
-          content: "I'm a big fan of music and love discovering new artists and genres.",
+          content: 'I\'m a big fan of music and love discovering new artists and genres.',
         },
         {
           label: 'Cybersecurity',
@@ -599,7 +640,7 @@ async function getDefaultContent(): Promise<SiteContent> {
     projects: {
       subtitle: 'PROJECTS',
       title: 'All Projects',
-      description: "Projects I've built and worked on.",
+      description: 'Projects I\'ve built and worked on.',
       items: [],
     },
     github: {
@@ -630,7 +671,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       footerText: '',
       successTitle: 'Message has been delivered!',
       successText:
-        "Thank you for reaching out! I've received your message and will get back to you as soon as possible.",
+        'Thank you for reaching out! I\'ve received your message and will get back to you as soon as possible.',
       email: '',
       phone: '',
       location: '',

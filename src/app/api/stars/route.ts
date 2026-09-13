@@ -6,21 +6,34 @@ const DATA_DIR = path.join(process.cwd(), 'data')
 const STARS_FILE = path.join(DATA_DIR, 'stars.json')
 
 interface StarsData {
-  [key: string]: { total: number; count: number }
+  [key: string]: { total: number, count: number }
 }
 
+// Cloudflare Workers: no filesystem — writes are in-memory for the worker lifetime.
+let memoryStars: StarsData | null = null
+
 async function readStars(): Promise<StarsData> {
+  if (memoryStars)
+    return memoryStars
   try {
     const raw = await fs.readFile(STARS_FILE, 'utf-8')
-    return JSON.parse(raw) as StarsData
-  } catch {
+    const parsed = JSON.parse(raw) as StarsData
+    memoryStars = parsed
+    return parsed
+  }
+  catch {
+    memoryStars = {}
     return {}
   }
 }
 
 async function writeStars(data: StarsData): Promise<void> {
-  await fs.mkdir(DATA_DIR, { recursive: true })
-  await fs.writeFile(STARS_FILE, `${JSON.stringify(data, null, 2)}\n`, 'utf-8')
+  memoryStars = data
+  try {
+    await fs.mkdir(DATA_DIR, { recursive: true })
+    await fs.writeFile(STARS_FILE, `${JSON.stringify(data, null, 2)}\n`, 'utf-8')
+  }
+  catch { /* Workers: in-memory only */ }
 }
 
 export async function POST(request: Request) {
@@ -45,7 +58,8 @@ export async function POST(request: Request) {
       // Undo the star — total never drops below 0
       existing.total = Math.max(0, existing.total - rating)
       existing.count = Math.max(0, existing.count - 1)
-    } else {
+    }
+    else {
       existing.total += rating
       existing.count += 1
     }
@@ -58,7 +72,8 @@ export async function POST(request: Request) {
       count: existing.count,
       average: existing.count > 0 ? Math.round((existing.total / existing.count) * 10) / 10 : 0,
     })
-  } catch {
+  }
+  catch {
     return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
   }
 }
@@ -97,7 +112,8 @@ export async function GET(request: Request) {
       count: data.count,
       average: data.count > 0 ? Math.round((data.total / data.count) * 10) / 10 : 0,
     })
-  } catch {
+  }
+  catch {
     return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
   }
 }

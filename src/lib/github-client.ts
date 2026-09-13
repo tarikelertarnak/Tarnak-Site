@@ -14,7 +14,7 @@ const API_BASE = 'https://api.github.com'
  */
 async function fetchUserData(
   username: string,
-): Promise<{ profile: GitHubUserProfile | null; repos: GitHubRepo[] }> {
+): Promise<{ profile: GitHubUserProfile | null, repos: GitHubRepo[] }> {
   const res = await fetch(
     `/api/github/?username=${encodeURIComponent(username)}`,
     {
@@ -96,13 +96,13 @@ export async function clientFetchRepoReleases(
   >(
     `${API_BASE}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/releases?per_page=10`,
   )
-  return data.map((release) => ({
+  return data.map(release => ({
     tagName: release.tag_name,
     name: release.name,
     publishedAt: release.published_at,
     body: release.body,
     url: release.html_url,
-    assets: release.assets.map((asset) => ({
+    assets: release.assets.map(asset => ({
       name: asset.name,
       size: asset.size,
       downloadUrl: asset.browser_download_url,
@@ -139,7 +139,7 @@ export async function clientFetchFileContent(
     type: data.type,
     content,
     downloadUrl:
-      data.download_url ??
-      `${API_BASE}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`,
+      data.download_url
+      ?? `${API_BASE}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`,
   }
 }

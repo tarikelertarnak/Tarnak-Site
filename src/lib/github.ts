@@ -1,72 +1,84 @@
 import { Buffer } from 'node:buffer'
 import process from 'node:process'
-import dns from 'node:dns'
-import https from 'node:https'
 
-// On Windows the default DNS resolver tries IPv6 first; this machine has no IPv6
-// route so api.github.com requests were failing with UND_ERR_CONNECT_TIMEOUT.
-// This module loads in the server process (route handler), so this setting makes
-// all GitHub fetch calls IPv4-first. (The same call in next.config.mjs stayed in
-// the CLI process and didn't affect the server process.)
-dns.setDefaultResultOrder('ipv4first')
+// Cloudflare Workers has no node:dns/node:https — the route handlers run on
+// Workers after deploy. There, global fetch is used directly (Workers' own
+// DNS is fast and IPv6-correct). On Node (local dev/build) the DNS-bypass
+// httpsGet below fixed the IPv6-first timeout on this machine.
+const IS_WORKER = typeof navigator !== 'undefined' && navigator.userAgent.includes('Cloudflare')
 
 // ponytail: DNS resolution on this machine can take 15s+, exceeding undici's 10s
 // connect timeout. We cache the IP via dns.resolve4 for 10 minutes and connect
-// directly to the IP with https.request (DNS bypass).
-const dnsCache = new Map<string, { ip: string; ts: number }>()
+// directly to the IP with https.request (DNS bypass). Node only — Workers uses fetch.
+const dnsCache = new Map<string, { ip: string, ts: number }>()
 const DNS_CACHE_TTL = 10 * 60 * 1000
-
-function resolveIPv4(host: string): Promise<string> {
-  const cached = dnsCache.get(host)
-  if (cached && Date.now() - cached.ts < DNS_CACHE_TTL) return Promise.resolve(cached.ip)
-  return new Promise((resolve, reject) => {
-    dns.resolve4(host, (err, addresses) => {
-      if (err) return reject(err)
-      const ip = addresses[0]
-      dnsCache.set(host, { ip, ts: Date.now() })
-      resolve(ip)
-    })
-  })
-}
 
 export function httpsGet(
   url: string,
   headers: Record<string, string>,
   timeoutMs = 30_000,
-): Promise<{ status: number; body: string }> {
-  return new Promise(async (resolve, reject) => {
+): Promise<{ status: number, body: string }> {
+  if (IS_WORKER) {
+    return (async () => {
+      const res = await fetch(url, {
+        headers,
+        signal: AbortSignal.timeout(timeoutMs),
+        cache: 'no-store',
+      })
+      return { status: res.status, body: await res.text() }
+    })()
+  }
+  return (async () => {
+    const dns = await import('node:dns')
+    const https = await import('node:https')
     const parsed = new URL(url)
     let ip: string
     try {
-      ip = await resolveIPv4(parsed.hostname)
-    } catch {
+      const cachedHost = dnsCache.get(parsed.hostname)
+      if (cachedHost && Date.now() - cachedHost.ts < DNS_CACHE_TTL) {
+        ip = cachedHost.ip
+      }
+      else {
+        ip = await new Promise<string>((resolve, reject) => {
+          dns.resolve4(parsed.hostname, (err, addresses) => {
+            if (err)
+              return reject(err)
+            const resolved = addresses[0]
+            dnsCache.set(parsed.hostname, { ip: resolved, ts: Date.now() })
+            resolve(resolved)
+          })
+        })
+      }
+    }
+    catch {
       ip = parsed.hostname
     }
-    const req = https.get(
-      {
-        hostname: ip,
-        port: 443,
-        path: parsed.pathname + parsed.search,
-        headers: { ...headers, Host: parsed.hostname },
-        timeout: timeoutMs,
-      },
-      (res) => {
-        const chunks: Buffer[] = []
-        res.on('data', c => chunks.push(c))
-        res.on('end', () =>
-          resolve({
-            status: res.statusCode ?? 0,
-            body: Buffer.concat(chunks).toString('utf-8'),
-          }),
-        )
-      },
-    )
-    req.on('error', reject)
-    req.on('timeout', () => {
-      req.destroy()
-      reject(new Error(`Timeout after ${timeoutMs}ms`))
+    return new Promise((resolve, reject) => {
+      const req = https.get(
+        {
+          hostname: ip,
+          port: 443,
+          path: parsed.pathname + parsed.search,
+          headers: { ...headers, Host: parsed.hostname },
+          timeout: timeoutMs,
+        },
+        (res) => {
+          const chunks: Buffer[] = []
+          res.on('data', c => chunks.push(c))
+          res.on('end', () =>
+            resolve({
+              status: res.statusCode ?? 0,
+              body: Buffer.concat(chunks).toString('utf-8'),
+            }))
+        },
+      )
+      req.on('error', reject)
+      req.on('timeout', () => {
+        req.destroy()
+        reject(new Error(`Timeout after ${timeoutMs}ms`))
+      })
     })
-  })
+  })()
 }
 
 export interface GitHubRepo {
@@ -141,7 +153,7 @@ export interface GitHubRelease {
   publishedAt: string | null
   body: string | null
   url: string
-  assets: Array<{ name: string; size: number; downloadUrl: string }>
+  assets: Array<{ name: string, size: number, downloadUrl: string }>
 }
 
 const API_BASE = 'https://api.github.com'
@@ -149,12 +161,13 @@ const API_BASE = 'https://api.github.com'
 /** GitHub API requests — DNS bypass via direct IP connection with httpsGet. */
 async function ghFetch(url: string, init?: RequestInit): Promise<Response> {
   const h: Record<string, string> = {
-    Accept: 'application/vnd.github+json',
+    'Accept': 'application/vnd.github+json',
     'User-Agent': 'tarikeler-portfolio',
     ...(init?.headers as Record<string, string> ?? {}),
   }
   const token = process.env.GITHUB_TOKEN
-  if (token) h.Authorization = `Bearer ${token}`
+  if (token)
+    h.Authorization = `Bearer ${token}`
 
   const { status, body } = await httpsGet(url, h, 60_000)
   return new Response(body, { status, headers: { 'Content-Type': 'application/json' } })
@@ -222,12 +235,12 @@ function rewriteMarkdownImages(
     (match, alt, src, text, link) => {
       const url = src || link
       if (
-        !url ||
-        url.startsWith('http') ||
-        url.startsWith('/') ||
-        url.startsWith('#') ||
-        url.startsWith('mailto:') ||
-        url.startsWith('data:')
+        !url
+        || url.startsWith('http')
+        || url.startsWith('/')
+        || url.startsWith('#')
+        || url.startsWith('mailto:')
+        || url.startsWith('data:')
       ) {
         return match
       }
@@ -288,7 +301,7 @@ export async function fetchRepoDetails(
   )
   if (treeRes.ok) {
     const treeData = (await treeRes.json()) as {
-      tree: Array<{ path: string; type: string; size?: number }>
+      tree: Array<{ path: string, type: string, size?: number }>
     }
     tree = treeData.tree
       .filter(entry => entry.type === 'blob' || entry.type === 'tree')
@@ -393,8 +406,8 @@ export async function fetchFileContent(
     type: data.type,
     content,
     downloadUrl:
-      data.download_url ??
-      `${API_BASE}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`,
+      data.download_url
+      ?? `${API_BASE}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`,
   }
 }
 
@@ -415,7 +428,7 @@ export async function fetchRepoReleases(owner: string, repo: string): Promise<Gi
     published_at: string | null
     body: string | null
     html_url: string
-    assets: Array<{ name: string; size: number; browser_download_url: string }>
+    assets: Array<{ name: string, size: number, browser_download_url: string }>
   }>
   return data.map(release => ({
     tagName: release.tag_name,

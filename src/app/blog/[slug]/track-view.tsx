@@ -10,7 +10,8 @@ export function TrackBlogView({ slug }: { slug: string }) {
       const stored = JSON.parse(localStorage.getItem(key) ?? '{}')
       const newViews = (stored.views ?? 0) + 1
       localStorage.setItem(key, JSON.stringify({ ...stored, views: newViews }))
-    } catch {
+    }
+    catch {
       // silent
     }
   }, [slug])

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
-import { getSessionUser } from '@/lib/supabase/session'
 import { getLocale } from '@/lib/i18n-server'
+import { getSessionUser } from '@/lib/supabase/session'
 import Client from './client'
 
 export const metadata = { title: 'Sayfa Düzenleyici' }

@@ -79,10 +79,10 @@
   "contact.name": "Your Name",
   "contact.needContact": "Enter at least one of email or phone.",
   "contact.phone": "Phone",
-  "contact.placeholderEmail": "you@example.com",
-  "contact.placeholderMessage": "Write your message...",
+  "contact.placeholderEmail": "name.surname@company.com",
+  "contact.placeholderMessage": "Your message...",
   "contact.placeholderName": "Your name...",
-  "contact.placeholderPhone": "+90 5XX XXX XX XX",
+  "contact.placeholderPhone": "5XY XXX XX XX",
   "contact.required": "All fields are required.",
   "contact.send": "Send",
   "contact.sendAnother": "New Message",
@@ -93,6 +93,7 @@
   "error.title": "Something went wrong",
   "footer.builtWith": "Built with",
   "footer.follow": "Follow",
+  "footer.discordHandle": "tarikeler.",
   "footer.navigate": "Navigate",
   "footer.rights": "All rights reserved.",
   "github.aboutTitle": "About",
@@ -291,7 +292,15 @@
   "about.infoFirstLanguage": "First Language",
   "about.infoExperience": "Experience",
   "about.infoEmail": "Email",
+  "about.infoDiscord": "Discord",
   "about.infoCardTitle": "Personal Info",
   "about.infoName": "Name",
-  "about.infoTitle": "Title"
+  "about.infoTitle": "Title",
+
+  "country.select": "Select country",
+  "country.search": "Search countries...",
+  "country.clear": "Clear",
+  "country.empty": "‹no matches›",
+  "about.copy": "Copy",
+  "about.copied": "Copied!"
 }

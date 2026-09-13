@@ -10,7 +10,7 @@ import { httpsGet } from '@/lib/github'
 const ALLOWED_PREFIX = 'https://api.github.com/'
 const CACHE_TTL_MS = 10 * 60 * 1000
 
-const cache = new Map<string, { body: string; status: number; ts: number }>()
+const cache = new Map<string, { body: string, status: number, ts: number }>()
 
 export async function GET(req: Request) {
   const target = (new URL(req.url).searchParams.get('url') ?? '').trim()
@@ -31,11 +31,12 @@ export async function GET(req: Request) {
   }
 
   const h: Record<string, string> = {
-    Accept: 'application/vnd.github+json',
+    'Accept': 'application/vnd.github+json',
     'User-Agent': 'tarikeler-portfolio',
   }
   const token = process.env.GITHUB_TOKEN
-  if (token) h.Authorization = `Bearer ${token}`
+  if (token)
+    h.Authorization = `Bearer ${token}`
 
   try {
     const { status, body } = await httpsGet(target, h, 60_000)
@@ -47,7 +48,8 @@ export async function GET(req: Request) {
       status,
       headers: { 'Content-Type': 'application/json' },
     })
-  } catch (err) {
+  }
+  catch (err) {
     console.error('[api/github/proxy] GitHub request failed:', err)
     return NextResponse.json(
       { success: false, message: 'GitHub proxy hatası.' },

@@ -20,13 +20,15 @@ export const Section = React.forwardRef<HTMLDivElement, SectionProps>(
         )}
       >
         <div id={id} className="absolute -top-20 sm:-top-24" />
-        {framed ? (
-          <div className="w-full max-w-6xl rounded-3xl border border-foreground-200/10 bg-background p-4 sm:p-6 lg:p-10">
-            {children}
-          </div>
-        ) : (
-          children
-        )}
+        {framed
+          ? (
+              <div className="w-full max-w-6xl rounded-3xl border border-foreground-200/10 bg-background p-4 sm:p-6 lg:p-10">
+                {children}
+              </div>
+            )
+          : (
+              children
+            )}
       </section>
     )
   },

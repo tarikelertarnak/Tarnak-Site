@@ -15,7 +15,8 @@ export async function GET(req: Request) {
   try {
     const file = await fetchFileContent(owner, repo, path, branch)
     return NextResponse.json({ success: true, file })
-  } catch {
+  }
+  catch {
     return NextResponse.json({ success: false, message: 'Dosya içeriği alınamadı.' }, { status: 500 })
   }
 }

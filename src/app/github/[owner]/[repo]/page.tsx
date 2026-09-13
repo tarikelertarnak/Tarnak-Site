@@ -1,12 +1,12 @@
+import { RepoVisitCounter } from '@/components/github/repo-visit-counter'
 import { Navigation } from '@/components/navigation'
 import { Section, SectionTitle } from '@/components/ui/section'
-import { RepoVisitCounter } from '@/components/github/repo-visit-counter'
-import { getLocalizedContent, getLocale } from '@/lib/i18n-server'
+import { getLocalizedContent } from '@/lib/i18n-server'
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ owner: string; repo: string }>
+  params: Promise<{ owner: string, repo: string }>
 }) {
   const { owner, repo } = await params
   return { title: `${repo} — ${owner} — GitHub — TARIKELER` }
@@ -15,7 +15,7 @@ export async function generateMetadata({
 export default async function GithubRepoPage({
   params,
 }: {
-  params: Promise<{ owner: string; repo: string }>
+  params: Promise<{ owner: string, repo: string }>
 }) {
   const content = await getLocalizedContent()
   const { owner, repo } = await params

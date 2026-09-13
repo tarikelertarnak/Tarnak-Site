@@ -3,11 +3,14 @@
 import type { ReactNode } from 'react'
 import type { SiteContent, ToolboxItem as ToolboxItemType } from '@/lib/content'
 import { Popover } from '@lobehub/ui'
+import { useState } from 'react'
+import { FadeUpSection } from '@/components/fade-up-section'
+import { useT } from '@/components/locale-provider'
 import { BentoBox, BentoBoxItem } from '@/components/ui/bento-box'
 import { Button } from '@/components/ui/button'
-import { Section, SectionTitle } from '@/components/ui/section'
 import {
   BriefcaseIcon,
+  CheckIcon,
   ChevronRightIcon,
   CodeIcon,
   CopyIcon,
@@ -21,16 +24,32 @@ import {
   MusicIcon,
   SchoolIcon,
   ShieldIcon,
-  TerminalIcon,
   socialIcon,
+  TerminalIcon,
   UserIcon,
 } from '@/components/ui/icons'
-import { useT } from '@/components/locale-provider'
-import { FadeUpSection } from '@/components/fade-up-section'
+import { Section, SectionTitle } from '@/components/ui/section'
+
+/** Interest icons — iconify id → SVG (no iconify dependency). */
+const INTEREST_ICONS: Record<string, ReactNode> = {
+  'mdi:laptop': <LaptopIcon size={14} />,
+  'mdi:gamepad-variant': <GamepadIcon size={14} />,
+  'mdi:gym': <DumbbellIcon size={14} />,
+  'mdi:music': <MusicIcon size={14} />,
+  'mdi:shield-lock': <ShieldIcon size={14} />,
+}
 
 export function AboutSection({ content }: { content: SiteContent }) {
   const about = content.about
   const { t } = useT()
+  const [discordCopied, setDiscordCopied] = useState(false)
+
+  const copyDiscord = () => {
+    const handle = t('footer.discordHandle')
+    void navigator.clipboard?.writeText(handle)
+    setDiscordCopied(true)
+    window.setTimeout(() => setDiscordCopied(false), 2000)
+  }
 
   return (
     <Section id="about" className="flex-col pt-16 sm:pt-24 lg:pt-36" framed>
@@ -44,7 +63,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
         />
         {/* Social links */}
         <div className="mb-8 flex flex-row flex-wrap items-center justify-center gap-3">
-          {content.social.map((item) => (
+          {content.social.map(item => (
             <a
               key={item.name}
               href={item.href}
@@ -89,6 +108,31 @@ export function AboutSection({ content }: { content: SiteContent }) {
                   />
                   <InfoRow label={t('about.infoPhone')} value={content.contact.phone} />
                   <InfoRow label={t('about.infoEmail')} value={content.contact.email} />
+                  <InfoRow
+                    label={t('about.infoDiscord')}
+                    value={t('footer.discordHandle')}
+                    action={(
+                      <button
+                        type="button"
+                        onClick={copyDiscord}
+                        aria-label={t('about.copy')}
+                        title={discordCopied ? t('about.copied') : t('about.copy')}
+                        className={`ml-1 inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border transition-colors ${
+                          discordCopied
+                            ? 'border-success/40 bg-success/10 text-success'
+                            : 'border-foreground-200/20 bg-background text-foreground-500 hover:border-primary/50 hover:text-primary'
+                        }`}
+                      >
+                        {discordCopied
+                          ? (
+                              <CheckIcon size={13} />
+                            )
+                          : (
+                              <CopyIcon size={13} />
+                            )}
+                      </button>
+                    )}
+                  />
                   <InfoRow
                     label={t('about.infoFirstLanguage')}
                     value={content.profile.firstLanguage}
@@ -144,7 +188,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
                     {t('about.cvExperience')}
                   </p>
                   <ul className="flex flex-col gap-2.5">
-                    {about.cv.experience.map((entry) => (
+                    {about.cv.experience.map(entry => (
                       <CvEntryItem
                         key={`${entry.company}-${entry.role}`}
                         entry={entry}
@@ -158,7 +202,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
                     {t('about.cvEducation')}
                   </p>
                   <ul className="flex flex-col gap-2.5">
-                    {about.cv.education.map((entry) => (
+                    {about.cv.education.map(entry => (
                       <CvEntryItem
                         key={`${entry.company}-${entry.role}`}
                         entry={entry}
@@ -179,7 +223,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
             </p>
             <div className="flex w-full">
               <ul className="mt-3 sm:mt-4 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 w-full">
-                {about.toolbox.map((item) => (
+                {about.toolbox.map(item => (
                   <ToolboxItem key={item.label} item={item} />
                 ))}
               </ul>
@@ -195,7 +239,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
             </p>
             <div className="flex w-full">
               <ul className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 w-full">
-                {about.interests.map((item) => (
+                {about.interests.map(item => (
                   <InterestsItem
                     key={item.label}
                     icon={INTEREST_ICONS[item.icon] ?? <CodeIcon size={14} />}
@@ -217,7 +261,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
             </p>
             <div className="flex w-full">
               <ul className="mt-3 sm:mt-4 grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 w-full">
-                {about.securityTools.map((item) => (
+                {about.securityTools.map(item => (
                   <ToolboxItem
                     key={item.label}
                     item={{ label: item.label, type: 'link', href: item.href }}
@@ -232,12 +276,23 @@ export function AboutSection({ content }: { content: SiteContent }) {
   )
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  label,
+  value,
+  action,
+}: {
+  label: string
+  value: string
+  action?: ReactNode
+}) {
   return (
     <div className="flex flex-row items-center justify-between gap-3 border-b border-foreground-200/10 py-1.5">
       <span className="text-xs text-foreground-500">{label}</span>
-      <span className="truncate text-right text-xs sm:text-sm font-semibold">
-        {value.trim() || '—'}
+      <span className="flex min-w-0 items-center justify-end gap-1">
+        <span className="truncate text-right text-xs sm:text-sm font-semibold">
+          {value.trim() || '—'}
+        </span>
+        {action}
       </span>
     </div>
   )
@@ -261,7 +316,10 @@ function CvEntryItem({
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-sm font-semibold leading-tight">{entry.role}</p>
         <p className="text-xs text-foreground-500">
-          {entry.company} <span className="mx-1.5 opacity-50">•</span>{' '}
+          {entry.company}
+          {' '}
+          <span className="mx-1.5 opacity-50">•</span>
+          {' '}
           <span className="text-primary/80">{entry.period}</span>
         </p>
         <p className="mt-1 text-xs text-foreground-500 leading-relaxed">
@@ -272,26 +330,21 @@ function CvEntryItem({
   )
 }
 
-/** Interest icons — iconify id → SVG (no iconify dependency). */
-const INTEREST_ICONS: Record<string, ReactNode> = {
-  'mdi:laptop': <LaptopIcon size={14} />,
-  'mdi:gamepad-variant': <GamepadIcon size={14} />,
-  'mdi:gym': <DumbbellIcon size={14} />,
-  'mdi:music': <MusicIcon size={14} />,
-  'mdi:shield-lock': <ShieldIcon size={14} />,
-}
-
 function ToolboxItem({ item }: { item: ToolboxItemType }) {
   const { t } = useT()
   const isCommand = item.type === 'command'
   const href = item.href?.trim() ?? ''
-  const icon = isCommand ? (
-    <TerminalIcon size={14} />
-  ) : href ? (
-    <LinkIcon size={14} />
-  ) : (
-    <CodeIcon size={14} />
-  )
+  const icon = isCommand
+    ? (
+        <TerminalIcon size={14} />
+      )
+    : href
+      ? (
+          <LinkIcon size={14} />
+        )
+      : (
+          <CodeIcon size={14} />
+        )
   const body = (
     <>
       <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">
@@ -306,8 +359,8 @@ function ToolboxItem({ item }: { item: ToolboxItemType }) {
       )}
     </>
   )
-  const chipCls =
-    'group flex flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-lg hover:shadow-primary/5 min-h-[38px]'
+  const chipCls
+    = 'group flex flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-lg hover:shadow-primary/5 min-h-[38px]'
 
   // Command type: clicking copies the command text to the clipboard.
   if (isCommand) {
@@ -316,7 +369,8 @@ function ToolboxItem({ item }: { item: ToolboxItemType }) {
         className={`${chipCls} cursor-pointer`}
         title={href ? t('about.toolboxCopy') : undefined}
         onClick={() => {
-          if (href) void navigator.clipboard?.writeText(href)
+          if (href)
+            void navigator.clipboard?.writeText(href)
         }}
       >
         {body}
@@ -355,11 +409,11 @@ function InterestsItem({
   return (
     <Popover
       placement="bottom"
-      content={
+      content={(
         <div className="max-w-[200px] sm:max-w-[225px] break-words px-1 py-2 text-xs sm:text-sm">
           {content}
         </div>
-      }
+      )}
     >
       <li className="group flex animate-gradient cursor-pointer flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 min-h-[38px]">
         <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">

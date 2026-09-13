@@ -7,7 +7,7 @@ export default function BlogLoading() {
         <span className="h-3 w-72 max-w-full rounded-md shimmer" />
       </div>
       <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2].map(i => (
           <div
             key={i}
             className="flex flex-col gap-3 rounded-large bg-background p-5"

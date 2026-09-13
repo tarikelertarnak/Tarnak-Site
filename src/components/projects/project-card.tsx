@@ -1,14 +1,13 @@
 'use client'
 
-import type { ProjectItem } from '@/lib/content'
 import type { ReactNode } from 'react'
+import type { ProjectItem } from '@/lib/content'
+import { motion } from 'motion/react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
-import { readProjectStats, recordProjectView, recordDownload } from '@/lib/project-stats'
 import { Card, CardBody } from '@/components/ui/card'
-import { StarRating } from '@/components/ui/star-rating'
+import { cn } from '@/components/ui/cn'
 import {
   ArrowUpRightIcon,
   CheckIcon,
@@ -23,7 +22,8 @@ import {
   SearchIcon,
   StarOutlineIcon,
 } from '@/components/ui/icons'
-import { cn } from '@/components/ui/cn'
+import { StarRating } from '@/components/ui/star-rating'
+import { readProjectStats, recordDownload, recordProjectView } from '@/lib/project-stats'
 
 function useProjectStats(title: string) {
   const [views, setViews] = useState(0)
@@ -49,13 +49,19 @@ function useProjectStats(title: string) {
 }
 
 function detectOS(): 'windows' | 'macos' | 'linux' | 'android' | 'ios' {
-  if (typeof navigator === 'undefined') return 'windows'
+  if (typeof navigator === 'undefined')
+    return 'windows'
   const ua = navigator.userAgent
-  if (/Windows/i.test(ua)) return 'windows'
-  if (/Android/i.test(ua)) return 'android'
-  if (/iPhone|iPad|iPod/i.test(ua)) return 'ios'
-  if (/Mac/i.test(ua)) return 'macos'
-  if (/Linux/i.test(ua)) return 'linux'
+  if (/Windows/i.test(ua))
+    return 'windows'
+  if (/Android/i.test(ua))
+    return 'android'
+  if (/iPhone|iPad|iPod/i.test(ua))
+    return 'ios'
+  if (/Mac/i.test(ua))
+    return 'macos'
+  if (/Linux/i.test(ua))
+    return 'linux'
   return 'windows'
 }
 
@@ -86,9 +92,11 @@ interface DownloadComboboxProps {
   anchorRef: React.RefObject<HTMLElement | null>
 }
 
-/** Version / OS selector — search + grouped list.
+/**
+ * Version / OS selector — search + grouped list.
  *  Default: all groups visible. The user's platform is pinned to the top of each group.
- *  Portal: the menu is moved to document.body, so it is not affected by other cards' stacking. */
+ *  Portal: the menu is moved to document.body, so it is not affected by other cards' stacking.
+ */
 function DownloadCombobox({
   options,
   currentUrl,
@@ -98,7 +106,7 @@ function DownloadCombobox({
   const { t } = useT()
   const [query, setQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
-  const [pos, setPos] = useState<{ top: number; left?: number; right?: number } | null>(null)
+  const [pos, setPos] = useState<{ top: number, left?: number, right?: number } | null>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -111,7 +119,8 @@ function DownloadCombobox({
     const GAP = 8
     const calc = () => {
       const el = anchorRef.current
-      if (!el) return
+      if (!el)
+        return
       const r = el.getBoundingClientRect()
       const viewW = window.innerWidth
       const viewH = window.innerHeight
@@ -121,10 +130,12 @@ function DownloadCombobox({
       if (spaceRight >= MENU_W + GAP) {
         // Enough room on the right → open right
         setPos({ top, left: r.right + GAP })
-      } else if (spaceLeft >= MENU_W + GAP) {
+      }
+      else if (spaceLeft >= MENU_W + GAP) {
         // Enough room on the left → open left
         setPos({ top, right: viewW - r.left + GAP })
-      } else {
+      }
+      else {
         // Neither fits → snap to the screen edge (no overflow thanks to max-w)
         setPos({ top, left: Math.max(8, Math.min(r.right + GAP, viewW - MENU_W - 8)) })
       }
@@ -141,7 +152,7 @@ function DownloadCombobox({
   // The user's platform first, then the standard order.
   const sortedOS = useMemo<OSKey[]>(() => {
     const u = detectOS()
-    return [u, ...OS_ORDER.filter((k) => k !== u)]
+    return [u, ...OS_ORDER.filter(k => k !== u)]
   }, [])
 
   // In per-OS mode, group assets by OS; empty in single-URL mode.
@@ -164,7 +175,8 @@ function DownloadCombobox({
     const latest: DownloadOption[] = []
     for (const k of sortedOS) {
       const first = byOS.get(k)?.[0]
-      if (first) latest.push(first)
+      if (first)
+        latest.push(first)
     }
     return { byOS, latest, hasOS, other }
   }, [options, sortedOS])
@@ -206,9 +218,9 @@ function DownloadCombobox({
 
   const latestItems = grouped.latest.filter(matches)
   const totalCount = showGroups
-    ? latestItems.length +
-      sortedOS.reduce((n, k) => n + (grouped.byOS.get(k)?.filter(matches).length ?? 0), 0) +
-      grouped.other.filter(matches).length
+    ? latestItems.length
+    + sortedOS.reduce((n, k) => n + (grouped.byOS.get(k)?.filter(matches).length ?? 0), 0)
+    + grouped.other.filter(matches).length
     : flat.length
 
   return createPortal(
@@ -229,46 +241,51 @@ function DownloadCombobox({
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={e => setQuery(e.target.value)}
             placeholder={t('projects.searchVersion')}
             className="h-8 w-full rounded-lg border border-white/10 bg-white/5 pl-7 pr-2 text-xs text-white outline-none placeholder:text-white/35 focus:border-white/25 focus:ring-0 focus-visible:ring-0"
           />
         </div>
       </div>
       <div className="max-h-64 overscroll-contain overflow-y-auto py-1.5 [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin]">
-        {totalCount === 0 ? (
-          <p className="px-3 py-3 text-center text-xs text-foreground-500">
-            {t('projects.noResultsShort')}
-          </p>
-        ) : showGroups ? (
-          <>
-            {latestItems.length > 0 && (
-              <div>
-                <GroupLabel>{t('projects.latest')}</GroupLabel>
-                {latestItems.map(renderItem)}
-              </div>
-            )}
-            {sortedOS.map((k) => {
-              const list = grouped.byOS.get(k)?.filter(matches) ?? []
-              if (list.length === 0) return null
+        {totalCount === 0
+          ? (
+              <p className="px-3 py-3 text-center text-xs text-foreground-500">
+                {t('projects.noResultsShort')}
+              </p>
+            )
+          : showGroups
+            ? (
+                <>
+                  {latestItems.length > 0 && (
+                    <div>
+                      <GroupLabel>{t('projects.latest')}</GroupLabel>
+                      {latestItems.map(renderItem)}
+                    </div>
+                  )}
+                  {sortedOS.map((k) => {
+                    const list = grouped.byOS.get(k)?.filter(matches) ?? []
+                    if (list.length === 0)
+                      return null
 
-              return (
-                <div key={k}>
-                  <GroupLabel>{OS_LABELS[k]}</GroupLabel>
-                  {list.map(renderItem)}
-                </div>
+                    return (
+                      <div key={k}>
+                        <GroupLabel>{OS_LABELS[k]}</GroupLabel>
+                        {list.map(renderItem)}
+                      </div>
+                    )
+                  })}
+                  {grouped.other.length > 0 && (
+                    <div>
+                      <GroupLabel>{t('projects.other')}</GroupLabel>
+                      {grouped.other.filter(matches).map(renderItem)}
+                    </div>
+                  )}
+                </>
               )
-            })}
-            {grouped.other.length > 0 && (
-              <div>
-                <GroupLabel>{t('projects.other')}</GroupLabel>
-                {grouped.other.filter(matches).map(renderItem)}
-              </div>
-            )}
-          </>
-        ) : (
-          flat.map(renderItem)
-        )}
+            : (
+                flat.map(renderItem)
+              )}
       </div>
     </motion.div>,
     typeof document !== 'undefined' ? document.body : (null as unknown as HTMLElement),
@@ -277,8 +294,10 @@ function DownloadCombobox({
 
 const MEDIA_VIDEO_RE = /\.(mp4|webm|ogg|ogv)(\?|#|$)/i
 
-/** Rectangular media box — multiple media (image/gif/video) + arrow overlays +
- *  bottom toolbar (Previous / Next / Zoom). Zoom → lightbox. */
+/**
+ * Rectangular media box — multiple media (image/gif/video) + arrow overlays +
+ *  bottom toolbar (Previous / Next / Zoom). Zoom → lightbox.
+ */
 function ProjectMedia({
   project,
   isGithub,
@@ -288,7 +307,7 @@ function ProjectMedia({
 }) {
   const { t } = useT()
   const items = useMemo(() => {
-    const media = (project.media ?? []).filter((u) => u.trim())
+    const media = (project.media ?? []).filter(u => u.trim())
     return media.length > 0 ? media : project.image ? [project.image] : []
   }, [project])
   const count = items.length
@@ -296,13 +315,16 @@ function ProjectMedia({
   const [zoomed, setZoomed] = useState(false)
 
   useEffect(() => {
-    if (index >= count) setIndex(Math.max(0, count - 1))
+    if (index >= count)
+      setIndex(Math.max(0, count - 1))
   }, [index, count])
 
   useEffect(() => {
-    if (!zoomed) return
+    if (!zoomed)
+      return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setZoomed(false)
+      if (e.key === 'Escape')
+        setZoomed(false)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -311,15 +333,17 @@ function ProjectMedia({
   if (count === 0) {
     return (
       <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-white/5 ring-1 ring-foreground-200/10">
-        {isGithub ? (
-          <GithubIcon size={44} className="text-primary" />
-        ) : (
-          <img
-            src="/tarnak-white.svg"
-            alt="TARNAK"
-            className="hidden h-16 w-16 object-contain p-1 dark:block"
-          />
-        )}
+        {isGithub
+          ? (
+              <GithubIcon size={44} className="text-primary" />
+            )
+          : (
+              <img
+                src="/tarnak-white.svg"
+                alt="TARNAK"
+                className="hidden h-16 w-16 object-contain p-1 dark:block"
+              />
+            )}
         {!isGithub && (
           <img
             src="/tarnak.svg"
@@ -334,8 +358,8 @@ function ProjectMedia({
   const current = items[Math.min(index, Math.max(0, count - 1))]
   const isVideo = MEDIA_VIDEO_RE.test(current)
   const hasNav = count > 1
-  const prev = () => setIndex((i) => (i - 1 + count) % count)
-  const next = () => setIndex((i) => (i + 1) % count)
+  const prev = () => setIndex(i => (i - 1 + count) % count)
+  const next = () => setIndex(i => (i + 1) % count)
 
   const mediaNode = (src: string, video: boolean, controls: boolean) =>
     video ? (
@@ -348,7 +372,8 @@ function ProjectMedia({
         onClick={(e) => {
           // Native controls are small inside the card — clicking the media also plays/pauses.
           const v = e.currentTarget
-          if (v.paused) void v.play()?.catch(() => {})
+          if (v.paused)
+            void v.play()?.catch(() => {})
           else v.pause()
         }}
         className="h-full w-full object-contain"
@@ -382,7 +407,9 @@ function ProjectMedia({
           </button>
         )}
         <span className="px-1.5 text-xs text-foreground/60">
-          {index + 1}/{count}
+          {index + 1}
+          /
+          {count}
         </span>
         {hasNav && (
           <button
@@ -408,8 +435,8 @@ function ProjectMedia({
       </div>
 
       {/* Lightbox (zoom) */}
-      {zoomed &&
-        createPortal(
+      {zoomed
+        && createPortal(
           <div
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
             onClick={() => setZoomed(false)}
@@ -450,23 +477,25 @@ function ProjectMedia({
             )}
             <div
               className="max-h-[90vh] max-w-[90vw]"
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
             >
-              {isVideo ? (
-                <video
-                  src={current}
-                  controls
-                  autoPlay
-                  playsInline
-                  className="max-h-[90vh] max-w-[90vw] object-contain"
-                />
-              ) : (
-                <img
-                  src={current}
-                  alt={project.title}
-                  className="max-h-[90vh] max-w-[90vw] object-contain"
-                />
-              )}
+              {isVideo
+                ? (
+                    <video
+                      src={current}
+                      controls
+                      autoPlay
+                      playsInline
+                      className="max-h-[90vh] max-w-[90vw] object-contain"
+                    />
+                  )
+                : (
+                    <img
+                      src={current}
+                      alt={project.title}
+                      className="max-h-[90vh] max-w-[90vw] object-contain"
+                    />
+                  )}
             </div>
           </div>,
           document.body,
@@ -490,11 +519,12 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
   const triggerRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
-    if (!comboboxOpen) return
+    if (!comboboxOpen)
+      return
     const onClick = (e: MouseEvent) => {
       if (
-        comboboxRef.current &&
-        !comboboxRef.current.contains(e.target as Node)
+        comboboxRef.current
+        && !comboboxRef.current.contains(e.target as Node)
       ) {
         setComboboxOpen(false)
       }
@@ -508,13 +538,15 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
     const opts: DownloadOption[] = []
     if (project.downloadMode === 'per-os' && project.downloads) {
       for (const [key, url] of Object.entries(project.downloads)) {
-        if (!url) continue
+        if (!url)
+          continue
         const osKey = key as OSKey
         if (osKey in OS_LABELS) {
           opts.push({ label: OS_LABELS[osKey], url, os: osKey })
         }
       }
-    } else if (project.downloadUrl) {
+    }
+    else if (project.downloadUrl) {
       opts.push({ label: t('projects.download'), url: project.downloadUrl })
     }
     // GitHub project: the source-code ZIP is always offered (default when there is no platform file).
@@ -529,14 +561,14 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
 
   // Reset the selection when the project/mode changes; default to the user's platform in per-OS mode.
   useEffect(() => {
-    const opt = downloadOptions.find((o) => o.os === detectOS()) ?? null
+    const opt = downloadOptions.find(o => o.os === detectOS()) ?? null
     setCurrent(opt)
   }, [downloadOptions])
 
   const currentDownloadUrl = current?.url ?? downloadOptions[0]?.url ?? null
 
-  const currentDownloadLabel =
-    current?.label ?? downloadOptions[0]?.label ?? t('projects.download')
+  const currentDownloadLabel
+    = current?.label ?? downloadOptions[0]?.label ?? t('projects.download')
 
   return (
     <Card className="group h-full overflow-visible rounded-2xl border-foreground-200/10 bg-background transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
@@ -563,12 +595,13 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
           {/* Tags */}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {tags.slice(0, 4).map((tag) => (
+              {tags.slice(0, 4).map(tag => (
                 <span
                   key={tag}
                   className="rounded-full bg-foreground-200/10 px-2 py-0.5 text-[10px] font-medium text-foreground-600"
                 >
-                  #{tag}
+                  #
+                  {tag}
                 </span>
               ))}
             </div>
@@ -576,20 +609,22 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
 
           {/* Stats */}
           <div className="mt-auto flex flex-row flex-wrap items-center gap-1.5 text-[11px] text-foreground/75">
-            {isGithub ? (
-              <a
-                href={`${project.srcLink ?? ''}/stargazers`}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="GitHub stars"
-                className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80 transition-colors hover:border-yellow-400/50 hover:text-yellow-400"
-              >
-                <StarOutlineIcon size={12} />
-                {project.stars ?? 0}
-              </a>
-            ) : (
-              <StarRating itemId={project.title} itemType="project" size={14} />
-            )}
+            {isGithub
+              ? (
+                  <a
+                    href={`${project.srcLink ?? ''}/stargazers`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title="GitHub stars"
+                    className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80 transition-colors hover:border-yellow-400/50 hover:text-yellow-400"
+                  >
+                    <StarOutlineIcon size={12} />
+                    {project.stars ?? 0}
+                  </a>
+                )
+              : (
+                  <StarRating itemId={project.title} itemType="project" size={14} />
+                )}
 
             {isGithub && (
               <a
@@ -605,19 +640,19 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
             )}
 
             <span
-                  className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80"
-                  title={t('projects.downloadsTitle')}
-                >
-                  <DownloadIcon size={12} />
-                  {downloads}
-                </span>
-                <span
-                  className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80"
-                  title={t('projects.viewsTitle')}
-                >
-                  <EyeIcon size={12} />
-                  {views}
-                </span>
+              className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80"
+              title={t('projects.downloadsTitle')}
+            >
+              <DownloadIcon size={12} />
+              {downloads}
+            </span>
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80"
+              title={t('projects.viewsTitle')}
+            >
+              <EyeIcon size={12} />
+              {views}
+            </span>
           </div>
 
           {/* Buttons: Open Page → Download → GitHub (only for GitHub projects). */}
@@ -649,7 +684,7 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
                   <button
                     type="button"
                     ref={triggerRef}
-                    onClick={() => setComboboxOpen((o) => !o)}
+                    onClick={() => setComboboxOpen(o => !o)}
                     aria-label={t('projects.selectVersion')}
                     title={t('projects.selectVersion')}
                     className="inline-flex h-9 w-7 items-center justify-center border-l border-black/10 text-black transition-colors hover:bg-black/5"
@@ -664,9 +699,10 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
                     anchorRef={triggerRef}
                     onSelect={(url) => {
                       setComboboxOpen(false)
-                      const opt =
-                        downloadOptions.find((o) => o.url === url) ?? null
-                      if (opt) setCurrent(opt)
+                      const opt
+                        = downloadOptions.find(o => o.url === url) ?? null
+                      if (opt)
+                        setCurrent(opt)
                       trackDownload()
                     }}
                   />
@@ -674,7 +710,7 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
               </div>
             )}
 
-{isGithub && (
+            {isGithub && (
               <a
                 href={project.srcLink}
                 target="_blank"

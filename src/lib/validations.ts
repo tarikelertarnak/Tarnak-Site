@@ -20,19 +20,19 @@ export const contactFormSchema = z
       .max(1000, 'Message must not exceed 1000 characters'),
   })
   .refine(
-    (data) =>
-      data.contactMethod !== 'email' ||
-      z.string().email().safeParse(data.contactValue).success,
+    data =>
+      data.contactMethod !== 'email'
+      || z.string().email().safeParse(data.contactValue).success,
     { message: 'Please enter a valid email address', path: ['contactValue'] },
   )
   .refine(
-    (data) =>
-      data.contactMethod !== 'phone' ||
-      /^[+\d][\d\s().-]{5,}$/.test(data.contactValue.trim()),
+    data =>
+      data.contactMethod !== 'phone'
+      || /^[+\d][\d\s().-]{5,}$/.test(data.contactValue.trim()),
     { message: 'Please enter a valid phone number', path: ['contactValue'] },
   )
 
-export type ContactFormData = {
+export interface ContactFormData {
   name: string
   contactMethod: 'email' | 'phone'
   contactValue: string

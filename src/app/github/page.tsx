@@ -1,6 +1,6 @@
 import { Navigation } from '@/components/navigation'
 import { Section, SectionTitle } from '@/components/ui/section'
-import { getLocalizedContent, getLocale } from '@/lib/i18n-server'
+import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
 
 export async function generateMetadata() {
   const locale = await getLocale()
@@ -25,7 +25,7 @@ export default async function GithubPage() {
             description={
               isEn
                 ? 'GitHub integration will be active soon. For now you can browse repos from the projects page.'
-                : "GitHub entegrasyonu yakında aktif olacak. Şimdilik projeler sayfasından repo'lara göz atabilirsin."
+                : 'GitHub entegrasyonu yakında aktif olacak. Şimdilik projeler sayfasından repo\'lara göz atabilirsin.'
             }
             big
           />

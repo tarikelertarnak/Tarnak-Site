@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
   // Rate limit check
   const now = Date.now()
-  const attempts = (uploadAttempts.get(ip) ?? []).filter((t) => now - t < UPLOAD_LIMIT_MS)
+  const attempts = (uploadAttempts.get(ip) ?? []).filter(t => now - t < UPLOAD_LIMIT_MS)
   if (attempts.length >= UPLOAD_MAX_PER_WINDOW) {
     return NextResponse.json(
       { success: false, message: 'Çok fazla dosya yükledin. Lütfen biraz bekle.' },
@@ -53,7 +53,8 @@ export async function POST(req: Request) {
   let formData: FormData
   try {
     formData = await req.formData()
-  } catch {
+  }
+  catch {
     return NextResponse.json({ success: false, message: 'Form verisi okunamadı.' }, { status: 400 })
   }
 
@@ -73,7 +74,8 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(await file.arrayBuffer())
     const saved = await saveUploadedFile(buffer, file.name, file.type)
     return NextResponse.json({ success: true, file: saved })
-  } catch (error) {
+  }
+  catch (error) {
     const message = error instanceof Error ? error.message : 'Dosya kaydedilemedi.'
     return NextResponse.json({ success: false, message }, { status: 400 })
   }

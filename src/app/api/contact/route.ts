@@ -4,8 +4,8 @@ import { NextResponse } from 'next/server'
 import env from '@/lib/env'
 import { contactFormSchema } from '@/lib/validations'
 
-const supabaseAdmin =
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE
+const supabaseAdmin
+  = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE
     ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE)
     : null
 
@@ -43,7 +43,7 @@ async function sendToDiscord(name: string, email: string, phone: string, message
       embeds: [
         {
           title: 'New Contact Message',
-          color: 0x3b82f6,
+          color: 0x3B82F6,
           fields: [
             { name: 'Name', value: name, inline: true },
             { name: 'Email', value: email || '(belirtilmedi)', inline: true },
@@ -63,7 +63,8 @@ async function sendToDiscord(name: string, email: string, phone: string, message
       throw new Error(`Discord webhook failed: ${response.status}`)
     }
     return true
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to send message to Discord:', error)
     return false
   }
@@ -73,7 +74,8 @@ export async function POST(req: Request) {
   let body: unknown
   try {
     body = await req.json()
-  } catch {
+  }
+  catch {
     return NextResponse.json({ success: false, message: 'Missing Body' }, { status: 400 })
   }
 
@@ -82,10 +84,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: 'Invalid data' }, { status: 400 })
   }
 
-  const contactEmail =
-    values.data.contactMethod === 'email' ? values.data.contactValue.trim() : ''
-  const contactPhone =
-    values.data.contactMethod === 'phone' ? values.data.contactValue.trim() : ''
+  const contactEmail
+    = values.data.contactMethod === 'email' ? values.data.contactValue.trim() : ''
+  const contactPhone
+    = values.data.contactMethod === 'phone' ? values.data.contactValue.trim() : ''
 
   if (aj) {
     const decision = await aj.protect(req, {
@@ -98,17 +100,20 @@ export async function POST(req: Request) {
           { success: false, message: 'Invalid email address. Please check and try again.' },
           { status: 400 },
         )
-      } else if (decision.reason.isRateLimit()) {
+      }
+      else if (decision.reason.isRateLimit()) {
         return NextResponse.json(
           { success: false, message: 'Too many requests. Please wait a few minutes before trying again.' },
           { status: 429 },
         )
-      } else if (decision.reason.isBot()) {
+      }
+      else if (decision.reason.isBot()) {
         return NextResponse.json(
           { success: false, message: 'Automated requests are not allowed. Please try again.' },
           { status: 403 },
         )
-      } else {
+      }
+      else {
         return NextResponse.json(
           { success: false, message: 'Request forbidden. Please try again later.' },
           { status: 403 },
@@ -124,10 +129,10 @@ export async function POST(req: Request) {
     }
 
     if (
-      decision.ip.isHosting() ||
-      decision.ip.isVpn() ||
-      decision.ip.isProxy() ||
-      decision.ip.isRelay()
+      decision.ip.isHosting()
+      || decision.ip.isVpn()
+      || decision.ip.isProxy()
+      || decision.ip.isRelay()
     ) {
       return NextResponse.json(
         { success: false, message: 'Requests from VPNs, proxies, or suspicious networks are not allowed.' },

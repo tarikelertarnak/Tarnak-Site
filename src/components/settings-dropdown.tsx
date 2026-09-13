@@ -1,5 +1,6 @@
 'use client'
 import type { ThemeMode } from '@/components/theme'
+import type { LocalePref } from '@/lib/i18n'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { useLocale, useT } from '@/components/locale-provider'
@@ -8,9 +9,7 @@ import { cn } from '@/components/ui/cn'
 import { Drawer } from '@/components/ui/drawer'
 import {
   AutoIcon,
-  CheckIcon,
   CogIcon,
-  FileIcon,
   FlagEnIcon,
   FlagTrIcon,
   GlobeIcon,
@@ -21,8 +20,6 @@ import {
   ThemeSystemIcon,
   VolumeIcon,
 } from '@/components/ui/icons'
-import { Link } from '@/components/ui/link'
-import type { LocalePref } from '@/lib/i18n'
 
 type DarkIntensity = 'light' | 'standard' | 'dark'
 
@@ -80,7 +77,8 @@ export function SettingsModal({
     setReduceMotion(next)
     try {
       localStorage.setItem(REDUCE_MOTION_KEY, String(next))
-    } catch {
+    }
+    catch {
       /* noop */
     }
     document.documentElement.dataset.reduceMotion = String(next)
@@ -90,7 +88,8 @@ export function SettingsModal({
     setMusicEnabled(next)
     try {
       localStorage.setItem(MUSIC_KEY, String(next))
-    } catch {
+    }
+    catch {
       /* noop */
     }
     window.dispatchEvent(new CustomEvent('site-music-toggle'))
@@ -100,7 +99,8 @@ export function SettingsModal({
     setDarkIntensity(next)
     try {
       localStorage.setItem(DARK_INTENSITY_KEY, next)
-    } catch {
+    }
+    catch {
       /* noop */
     }
     document.documentElement.dataset.darkIntensity = next
@@ -121,7 +121,8 @@ export function SettingsModal({
     for (const k of ownKeys) {
       try {
         localStorage.removeItem(k)
-      } catch {
+      }
+      catch {
         /* noop */
       }
     }
@@ -130,35 +131,36 @@ export function SettingsModal({
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
         if (
-          key &&
-          (key.startsWith('star-state:') ||
-            key.startsWith('project-stats:') ||
-            key.startsWith('blog-stats:'))
+          key
+          && (key.startsWith('star-state:')
+            || key.startsWith('project-stats:')
+            || key.startsWith('blog-stats:'))
         ) {
           toDelete.push(key)
         }
       }
-      toDelete.forEach((k) => localStorage.removeItem(k))
-    } catch {
+      toDelete.forEach(k => localStorage.removeItem(k))
+    }
+    catch {
       /* noop */
     }
     onOpenChange(false)
     router.refresh()
   }, [t, onOpenChange, router])
 
-  const themeOptions: { value: ThemeMode; icon: React.ReactNode; label: string }[] = [
+  const themeOptions: { value: ThemeMode, icon: React.ReactNode, label: string }[] = [
     { value: 'auto', icon: <ThemeSystemIcon size={16} />, label: t('settings.auto') },
     { value: 'light', icon: <SunIcon size={16} />, label: t('settings.light') },
     { value: 'dark', icon: <MoonIcon size={16} />, label: t('settings.dark') },
   ]
 
-  const intensityOptions: { value: DarkIntensity; label: string }[] = [
+  const intensityOptions: { value: DarkIntensity, label: string }[] = [
     { value: 'light', label: t('settings.darkIntensityLight') },
     { value: 'standard', label: t('settings.darkIntensityStandard') },
     { value: 'dark', label: t('settings.darkIntensityIntense') },
   ]
 
-  const localeOptions: { value: LocalePref; icon?: React.ReactNode; label: string }[] = [
+  const localeOptions: { value: LocalePref, icon?: React.ReactNode, label: string }[] = [
     { value: 'auto', icon: <AutoIcon size={16} />, label: t('settings.auto') },
     { value: 'tr', icon: <FlagTrIcon size={16} />, label: 'Türkçe' },
     { value: 'en', icon: <FlagEnIcon size={16} />, label: 'English' },
@@ -177,7 +179,7 @@ export function SettingsModal({
           <RadioGroup
             options={themeOptions}
             value={theme}
-            onChange={(v) => setTheme(v as ThemeMode)}
+            onChange={v => setTheme(v as ThemeMode)}
           />
         </Section>
 
@@ -186,7 +188,7 @@ export function SettingsModal({
           <RadioGroup
             options={localeOptions}
             value={pref}
-            onChange={(v) => setPref(v as LocalePref)}
+            onChange={v => setPref(v as LocalePref)}
           />
         </Section>
 
@@ -198,7 +200,7 @@ export function SettingsModal({
           <RadioGroup
             options={intensityOptions}
             value={darkIntensity}
-            onChange={(v) => applyDarkIntensity(v as DarkIntensity)}
+            onChange={v => applyDarkIntensity(v as DarkIntensity)}
           />
         </Section>
 
@@ -262,7 +264,7 @@ function RadioGroup<T extends string>({
   value,
   onChange,
 }: {
-  options: { value: T; label: string; icon?: React.ReactNode }[]
+  options: { value: T, label: string, icon?: React.ReactNode }[]
   value: T
   onChange: (v: T) => void
 }) {

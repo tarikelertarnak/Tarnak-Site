@@ -5,7 +5,7 @@ import { getAdmin, saveAdmin } from '@/lib/content'
 // Simple brute-force protection (in-memory): lock per IP for 15 min after 5 failed attempts
 const MAX_ATTEMPTS = 5
 const LOCKOUT_MS = 15 * 60 * 1000
-const attempts = new Map<string, { count: number; lockedUntil: number }>()
+const attempts = new Map<string, { count: number, lockedUntil: number }>()
 
 function getClientIp(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for')
@@ -41,7 +41,8 @@ export async function POST(req: Request) {
     const nextCount = (record?.count ?? 0) + 1
     if (nextCount >= MAX_ATTEMPTS) {
       attempts.set(ip, { count: 0, lockedUntil: now + LOCKOUT_MS })
-    } else {
+    }
+    else {
       attempts.set(ip, { count: nextCount, lockedUntil: 0 })
     }
     return NextResponse.json(

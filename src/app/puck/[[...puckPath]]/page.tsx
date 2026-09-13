@@ -15,6 +15,7 @@ export default async function PuckViewPage({
   const { embed } = await searchParams
   const page = puckPath[0] || 'home'
   const data = await getPuckPage(page)
-  if (!data) notFound()
+  if (!data)
+    notFound()
   return <Client data={data as Record<string, unknown>} embed={embed === '1'} />
 }

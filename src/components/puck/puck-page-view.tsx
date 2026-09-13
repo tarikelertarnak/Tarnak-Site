@@ -2,9 +2,9 @@
 
 /** Public view of a Puck page — used on the / and /puck/* routes. */
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
 import { Render } from '@measured/puck'
+import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { config } from '@/lib/puck/config'
 
 export function PuckPageView({
@@ -18,7 +18,8 @@ export function PuckPageView({
   useEffect(() => {
     setIsClient(true)
   }, [])
-  if (!isClient) return null
+  if (!isClient)
+    return null
 
   return (
     <main id="main" className="min-h-screen bg-white text-black dark:bg-black dark:text-white">

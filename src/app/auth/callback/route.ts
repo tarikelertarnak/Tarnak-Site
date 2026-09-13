@@ -1,4 +1,5 @@
-import { NextResponse, type NextRequest } from 'next/server'
+import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 /** Restricts the next parameter to a safe local path — open redirect protection. */
@@ -6,11 +7,11 @@ function safeNextPath(raw: string | null): string {
   const value = raw ?? '/'
   // Only relative, local paths are accepted (//host, /\\host, scheme:... rejected)
   if (
-    value.startsWith('/') &&
-    !value.startsWith('//') &&
-    !value.startsWith('/\\') &&
-    !value.includes('\\') &&
-    !/^[a-z][a-z0-9+.-]*:/i.test(value)
+    value.startsWith('/')
+    && !value.startsWith('//')
+    && !value.startsWith('/\\')
+    && !value.includes('\\')
+    && !/^[a-z][a-z0-9+.-]*:/i.test(value)
   ) {
     return value.slice(0, 500)
   }

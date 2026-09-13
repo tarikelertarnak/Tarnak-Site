@@ -1,8 +1,19 @@
-import { NextResponse } from 'next/server'
-import { revalidatePath } from 'next/cache'
-import { isAdminUser } from '@/lib/supabase/session'
-import { deletePost, upsertPost } from '@/lib/blog'
 import type { BlogPost } from '@/lib/content'
+import { revalidatePath } from 'next/cache'
+import { NextResponse } from 'next/server'
+import { clearPostsCache, deletePost, upsertPost } from '@/lib/blog'
+import { isAdminUser } from '@/lib/supabase/session'
+
+/** ISR invalidation — safe no-op on Cloudflare Workers (no ISR cache there). */
+function invalidateBlog(slug?: string) {
+  try {
+    revalidatePath('/', 'layout')
+    revalidatePath('/blog')
+    if (slug)
+      revalidatePath(`/blog/${slug}`)
+  }
+  catch { /* Workers: no-op */ }
+}
 
 export async function POST(req: Request) {
   const admin = await isAdminUser()
@@ -16,13 +27,13 @@ export async function POST(req: Request) {
   if (action === 'upsert') {
     const post = body?.post as BlogPost | undefined
     if (
-      !post ||
-      typeof post.id !== 'string' ||
-      typeof post.title !== 'string' ||
-      typeof post.slug !== 'string' ||
-      typeof post.date !== 'string' ||
-      typeof post.excerpt !== 'string' ||
-      typeof post.content !== 'string'
+      !post
+      || typeof post.id !== 'string'
+      || typeof post.title !== 'string'
+      || typeof post.slug !== 'string'
+      || typeof post.date !== 'string'
+      || typeof post.excerpt !== 'string'
+      || typeof post.content !== 'string'
     ) {
       return NextResponse.json({ success: false, message: 'Geçersiz yazı verisi.' }, { status: 400 })
     }
@@ -31,9 +42,8 @@ export async function POST(req: Request) {
     }
 
     await upsertPost(post)
-    revalidatePath('/', 'layout')
-    revalidatePath('/blog')
-    revalidatePath(`/blog/${post.slug}`)
+    clearPostsCache()
+    invalidateBlog(post.slug)
     return NextResponse.json({ success: true, message: 'Yazı kaydedildi.' })
   }
 
@@ -44,8 +54,8 @@ export async function POST(req: Request) {
     }
 
     await deletePost(id)
-    revalidatePath('/', 'layout')
-    revalidatePath('/blog')
+    clearPostsCache()
+    invalidateBlog()
     return NextResponse.json({ success: true, message: 'Yazı silindi.' })
   }
 

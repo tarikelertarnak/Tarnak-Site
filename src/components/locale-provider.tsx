@@ -1,14 +1,16 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
+import type { Locale, LocalePref } from '@/lib/i18n'
 import { useRouter } from 'next/navigation'
+import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import {
   detectLocale,
+
   LOCALE_COOKIE,
+
   resolveLocale,
   t,
-  type Locale,
-  type LocalePref,
 } from '@/lib/i18n'
 
 interface LocaleContextValue {
@@ -44,7 +46,8 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       setPrefState(next)
       try {
         document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; SameSite=Lax`
-      } catch {
+      }
+      catch {
         /* noop */
       }
       router.refresh()

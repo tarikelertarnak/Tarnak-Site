@@ -1,8 +1,10 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, Fragment, useMemo, useRef, useState } from 'react'
+import type { GitHubRepo } from '@/lib/github'
 import { AnimatePresence, motion } from 'motion/react'
+import { useRouter } from 'next/navigation'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useT } from '@/components/locale-provider'
 import {
   Command,
   CommandEmpty,
@@ -12,10 +14,8 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
-import { useT } from '@/components/locale-provider'
 import { CloseIcon, GithubIcon, SearchIcon } from '@/components/ui/icons'
 import { clientFetchUserRepos } from '@/lib/github-client'
-import type { GitHubRepo } from '@/lib/github'
 
 // ─── Types ──────────────────────────────────────────────────────────
 
@@ -29,7 +29,7 @@ interface SearchResult {
 
 // ─── Static navigation items ────────────────────────────────────────
 
-const NAV_ITEMS: { title: string; titleEn: string; titleTr: string; href: string }[] = [
+const NAV_ITEMS: { title: string, titleEn: string, titleTr: string, href: string }[] = [
   { title: 'Home', titleEn: 'Home', titleTr: 'Ana Sayfa', href: '/' },
   { title: 'Projects', titleEn: 'Projects', titleTr: 'Projeler', href: '/projects/' },
   { title: 'Blog', titleEn: 'Blog', titleTr: 'Blog', href: '/blog/' },
@@ -40,7 +40,7 @@ const NAV_ITEMS: { title: string; titleEn: string; titleTr: string; href: string
 
 // ─── Blog demo data (hardcoded) ────────────────────────────────────
 
-const BLOG_POSTS: { title: string; slug: string; excerpt: string }[] = [
+const BLOG_POSTS: { title: string, slug: string, excerpt: string }[] = [
   { title: 'Building a Portfolio with Next.js', slug: 'building-portfolio-nextjs', excerpt: 'How I built this portfolio site from scratch' },
   { title: 'TypeScript Tips & Tricks', slug: 'typescript-tips-tricks', excerpt: 'Advanced TypeScript patterns for everyday use' },
   { title: 'React Server Components', slug: 'react-server-components', excerpt: 'Understanding RSC and when to use them' },
@@ -51,10 +51,12 @@ const BLOG_POSTS: { title: string; slug: string; excerpt: string }[] = [
 function fuzzyMatch(query: string, text: string): boolean {
   const q = query.toLowerCase()
   const t = text.toLowerCase()
-  if (t.includes(q)) return true
+  if (t.includes(q))
+    return true
   let qi = 0
   for (let i = 0; i < t.length && qi < q.length; i++) {
-    if (t[i] === q[qi]) qi++
+    if (t[i] === q[qi])
+      qi++
   }
   return qi === q.length
 }
@@ -97,8 +99,10 @@ export function SearchDialog() {
   // ── Fetch repos on open ────────────────────────────────────────
 
   useEffect(() => {
-    if (!open) return
-    if (repos.length > 0) return
+    if (!open)
+      return
+    if (repos.length > 0)
+      return
 
     setReposLoading(true)
     clientFetchUserRepos(GITHUB_USERNAME)
@@ -119,7 +123,8 @@ export function SearchDialog() {
   // ── Body scroll lock ───────────────────────────────────────────
 
   useEffect(() => {
-    if (!open) return
+    if (!open)
+      return
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = prev }
@@ -129,11 +134,12 @@ export function SearchDialog() {
 
   const groups = useMemo(() => {
     const q = query.trim()
-    const out: { label: string; items: SearchResult[] }[] = []
+    const out: { label: string, items: SearchResult[] }[] = []
 
     const navItems: SearchResult[] = NAV_ITEMS
-      .filter(item => {
-        if (!q) return true
+      .filter((item) => {
+        if (!q)
+          return true
         const label = locale === 'tr' ? item.titleTr : item.titleEn
         return fuzzyMatch(q, label) || fuzzyMatch(q, item.titleEn)
       })
@@ -153,8 +159,9 @@ export function SearchDialog() {
     }
 
     const projectItems: SearchResult[] = repos
-      .filter(repo => {
-        if (!q) return true
+      .filter((repo) => {
+        if (!q)
+          return true
         return fuzzyMatch(q, repo.name) || fuzzyMatch(q, repo.description ?? '')
       })
       .map(repo => ({
@@ -184,8 +191,9 @@ export function SearchDialog() {
     }
 
     const blogItems: SearchResult[] = BLOG_POSTS
-      .filter(post => {
-        if (!q) return true
+      .filter((post) => {
+        if (!q)
+          return true
         return fuzzyMatch(q, post.title) || fuzzyMatch(q, post.excerpt)
       })
       .map(post => ({
@@ -251,7 +259,8 @@ export function SearchDialog() {
                 <Command
                   className="bg-transparent"
                   onKeyDown={(e) => {
-                    if (e.key === 'Escape') setOpen(false)
+                    if (e.key === 'Escape')
+                      setOpen(false)
                   }}
                 >
                   {/* Search input + close (X, within focus ring) */}
@@ -274,22 +283,24 @@ export function SearchDialog() {
                   {/* Results */}
                   <CommandList>
                     <CommandEmpty>
-                      {reposLoading ? (
-                        <div className="flex items-center justify-center py-8">
-                          <div className="h-5 w-5 animate-spin rounded-full border-2 border-foreground-200/20 border-t-primary" />
-                          <span className="ml-2 text-sm text-foreground-500">
-                            {t('common.loading') || 'Loading...'}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center py-8 text-center">
-                          <SearchIcon size={28} className="mb-3 text-foreground-500/40" />
-                          <p className="text-sm text-foreground-500">
-                            {t('search.noResults') || 'No results found'}
-                          </p>
-                          <p className="mt-1 text-xs text-foreground-500/60">{query}</p>
-                        </div>
-                      )}
+                      {reposLoading
+                        ? (
+                            <div className="flex items-center justify-center py-8">
+                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-foreground-200/20 border-t-primary" />
+                              <span className="ml-2 text-sm text-foreground-500">
+                                {t('common.loading') || 'Loading...'}
+                              </span>
+                            </div>
+                          )
+                        : (
+                            <div className="flex flex-col items-center justify-center py-8 text-center">
+                              <SearchIcon size={28} className="mb-3 text-foreground-500/40" />
+                              <p className="text-sm text-foreground-500">
+                                {t('search.noResults') || 'No results found'}
+                              </p>
+                              <p className="mt-1 text-xs text-foreground-500/60">{query}</p>
+                            </div>
+                          )}
                     </CommandEmpty>
                     {groups.map((group, gi) => (
                       <Fragment key={group.label}>
