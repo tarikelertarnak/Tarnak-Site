@@ -158,7 +158,7 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
     successText:
       'Thanks for reaching out! I received your message and will get back to you as soon as possible.',
     email: 'tarikelertarnak@gmail.com',
-    phone: '+90 5518958715',
+    phone: '+90 5518957215',
     location:
       'https://www.google.com/maps/place/Fetih,+S%C3%B6nmez+Sk.+No:5,+42030+Karatay%2FKonya/@37.8750305,32.5391801,17z/data=!4m6!3m5!1s0x14d09ab31a659e3d:0x594d704ce1aa1698!8m2!3d37.8750305!4d32.5391801!16s%2Fg%2F11c4h6twdh?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D',
     locationYandex:
