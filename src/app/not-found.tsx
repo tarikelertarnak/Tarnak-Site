@@ -10,14 +10,9 @@ export default async function NotFound() {
     <div className="min-h-screen w-full relative">
       <Navigation content={content} />
       <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center gap-6 px-4 sm:px-6 py-28 sm:py-36 text-center">
-        <svg viewBox="0 0 24 24" width={72} height={72} fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" className="text-primary/70">
-          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
-          <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-          <path d="m9 15 2 2 4-4" />
+        <svg viewBox="0 0 24 24" width={112} height={112} fill="currentColor" fillRule="evenodd" clipRule="evenodd" className="text-primary/80" aria-hidden="true">
+          <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2a7.95 7.95 0 0 1 4.9 1.7L12.6 10H9.4L7.1 5.72A7.96 7.96 0 0 1 12 4ZM5.72 7.1 10 9.4v3.2l-5.28 2.28A7.96 7.96 0 0 1 5.72 7.1Zm.63 10.36A7.95 7.95 0 0 1 4 12h4.3l1.3 4.3-3.25 1.16Zm3.3.44L12 15.6l2.35 2.3A7.9 7.9 0 0 1 12 19a7.9 7.9 0 0 1-2.35-.1Zm4.3-.44L20 13.1a8 8 0 0 1-1.29 4.74L14.3 17.4 13.95 17.46Zm3.53-6.34 1.06-3.5A7.96 7.96 0 0 1 20 12h-4.3l-.34-4.7 2.32.76Zm.38-6.4A8 8 0 0 1 20.8 9.2h-4.13L15.2 4.9a7.93 7.93 0 0 1 2.34.02ZM12 11.3l1.6 1.6L12 14.5l-1.6-1.6 1.6-1.6Z" />
         </svg>
-        <p className="animate-gradient bg-gradient-to-r from-[#FBBF24] to-[#00C950] bg-size-300 bg-clip-text text-6xl sm:text-8xl font-black text-transparent">
-          404
-        </p>
         <h1 className="text-2xl sm:text-3xl font-bold">{t(locale, 'notFound.title')}</h1>
         <p className="max-w-md text-foreground-500 text-sm sm:text-base">
           {t(locale, 'notFound.desc')}

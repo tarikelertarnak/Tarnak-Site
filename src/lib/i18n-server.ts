@@ -4,20 +4,23 @@ import { cookies, headers } from 'next/headers'
 import { getContent } from '@/lib/content'
 import {
   detectLocale,
-
   LOCALE_COOKIE,
-
   resolveLocale,
+  localeDirection,
 } from '@/lib/i18n'
 import { enContentOverlay } from '@/lib/i18n-content-en'
+import { esContentOverlay } from '@/lib/i18n-content-es'
+import { deContentOverlay } from '@/lib/i18n-content-de'
+import { frContentOverlay } from '@/lib/i18n-content-fr'
+import { jaContentOverlay } from '@/lib/i18n-content-ja'
+import { ptContentOverlay } from '@/lib/i18n-content-pt'
+import { ruContentOverlay } from '@/lib/i18n-content-ru'
 
 /**
  * Server-side locale: stored preference wins, otherwise accept-language
  * (Turkish default).
  */
 export async function getLocale(): Promise<Locale> {
-  // cookies()/headers() prerender (static export) sırasında hata fırlatabilir —
-  // o durumda varsayılan locale'ye dön (HTTP isteği dışındaki ortamlar için güvenli).
   let pref: LocalePref | undefined
   let lang: string | undefined
   try {
@@ -25,9 +28,14 @@ export async function getLocale(): Promise<Locale> {
     lang = (await headers()).get('accept-language') ?? undefined
   }
   catch {
-    // statik export / prerender: cookie ve header yok, varsayılan kullanılır
+    // static export / prerender: no cookie or header, use default
   }
   return resolveLocale(pref, detectLocale(lang))
+}
+
+/** Get the text direction for the current locale. */
+export function getLocaleDirection(locale: Locale): 'ltr' | 'rtl' {
+  return localeDirection(locale)
 }
 
 type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] }
@@ -57,12 +65,21 @@ function mergeContent<T extends object>(
   return out as T
 }
 
-/** Content localization — Turkish base content, English via overlay. */
+/** Per-locale content overlays. Turkish needs no overlay (base content). */
+const contentOverlays: Partial<Record<Locale, DeepPartial<SiteContent>>> = {
+  en: enContentOverlay,
+  es: esContentOverlay,
+  de: deContentOverlay,
+  fr: frContentOverlay,
+  ja: jaContentOverlay,
+  pt: ptContentOverlay,
+  ru: ruContentOverlay,
+}
+
+/** Content localization — Turkish base content, others via overlay. */
 export function localizeContent(content: SiteContent, locale: Locale): SiteContent {
-  if (locale === 'en') {
-    return mergeContent(content, enContentOverlay)
-  }
-  return content
+  const overlay = contentOverlays[locale]
+  return overlay ? mergeContent(content, overlay) : content
 }
 
 /** Server components: localized content for the current locale. */

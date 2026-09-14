@@ -2,13 +2,12 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AuthForm } from '@/components/auth/auth-form'
 import { Navigation } from '@/components/navigation'
-import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
+import { getLocalizedContent } from '@/lib/i18n-server'
 import { getSessionUser } from '@/lib/supabase/session'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const locale = await getLocale()
   return {
-    title: locale === 'en' ? 'Login | TARIK ELER - TARNAK' : 'Giriş | TARIK ELER - TARNAK',
+    title: 'Giriş | TARIK ELER - TARNAK',
   }
 }
 

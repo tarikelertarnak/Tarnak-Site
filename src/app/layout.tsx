@@ -11,7 +11,7 @@ import { SkipLink } from '@/components/skip-link'
 import { ThemeInitScript } from '@/components/theme-init-script'
 import { TopBar } from '@/components/top-bar'
 import { getContent } from '@/lib/content'
-import { getLocale } from '@/lib/i18n-server'
+import { getLocale, getLocaleDirection } from '@/lib/i18n-server'
 import '@fontsource/montserrat/400.css'
 import '@fontsource/montserrat/500.css'
 import '@fontsource/montserrat/600.css'
@@ -93,7 +93,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const initialThemeClass = defaultTheme === 'light' ? 'light' : 'dark'
 
   return (
-    <html lang={locale} suppressHydrationWarning className={initialThemeClass}>
+    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass}>
       <body className="min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
         <ThemeInitScript defaultTheme={safeDefaultTheme} />
         <Providers

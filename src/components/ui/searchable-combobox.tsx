@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -11,6 +12,8 @@ import {
 interface SearchableComboboxOption {
   value: string
   label: string
+  /** Optional leading icon (flags, etc.) shown in trigger + list. */
+  icon?: ReactNode
 }
 
 interface SearchableComboboxProps {
@@ -87,6 +90,7 @@ export function SearchableCombobox({
 
   const triggerText = multiple ? placeholder : optionsLabel(options, selected) || placeholder
   const hasSelection = multiple ? (badge ?? 0) > 0 : selected.length > 0
+  const selectedOption = multiple ? undefined : options.find(o => o.value === selected[0])
 
   return (
     <div ref={rootRef} className="relative">
@@ -104,6 +108,7 @@ export function SearchableCombobox({
             : 'border-foreground-200/15 text-foreground/85 hover:border-primary/40'
         }`}
       >
+        {selectedOption?.icon}
         <span className="max-w-[12rem] truncate">{triggerText}</span>
         {multiple && (badge ?? 0) > 0 && (
           <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
@@ -195,6 +200,7 @@ export function SearchableCombobox({
                       size={13}
                       className={active ? '' : 'opacity-0'}
                     />
+                    {o.icon}
                     <span className="truncate">{o.label}</span>
                   </button>
                 </li>

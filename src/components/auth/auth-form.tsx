@@ -20,7 +20,6 @@ function AuthFormInner() {
   const searchParams = useSearchParams()
   const { t } = useT()
   const { locale } = useLocale()
-  const isEn = locale === 'en'
 
   // Initial mode comes from ?mode=signup (or ?mode=login) so deep links from
   // the nav header land on the right form. Fall back to 'login'.
@@ -74,7 +73,7 @@ function AuthFormInner() {
       }
     }
     catch {
-      setError(isEn ? 'Something went wrong. Please try again.' : 'Bir hata oluştu. Lütfen tekrar dene.')
+      setError(t('auth.genericError'))
     }
     finally {
       setLoading(false)
@@ -96,7 +95,7 @@ function AuthFormInner() {
       }
     }
     catch {
-      setError(isEn ? 'Something went wrong. Please try again.' : 'Bir hata oluştu. Lütfen tekrar dene.')
+      setError(t('auth.genericError'))
     }
     finally {
       setLoading(false)

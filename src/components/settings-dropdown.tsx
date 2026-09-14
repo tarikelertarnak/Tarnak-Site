@@ -1,6 +1,7 @@
 'use client'
 import type { ThemeMode } from '@/components/theme'
-import type { LocalePref } from '@/lib/i18n'
+import type { Locale, LocalePref } from '@/lib/i18n'
+import { LOCALES } from '@/lib/i18n'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { useLocale, useT } from '@/components/locale-provider'
@@ -10,8 +11,6 @@ import { Drawer } from '@/components/ui/drawer'
 import {
   AutoIcon,
   CogIcon,
-  FlagEnIcon,
-  FlagTrIcon,
   GlobeIcon,
   MoonIcon,
   RefreshCwIcon,
@@ -20,6 +19,8 @@ import {
   ThemeSystemIcon,
   VolumeIcon,
 } from '@/components/ui/icons'
+import { SearchableCombobox } from '@/components/ui/searchable-combobox'
+import { flagIcons } from '@/components/ui/flag-icons'
 
 type DarkIntensity = 'light' | 'standard' | 'dark'
 
@@ -27,6 +28,37 @@ const MUSIC_KEY = 'site-music-enabled'
 const REDUCE_MOTION_KEY = 'site-reduce-motion'
 const DARK_INTENSITY_KEY = 'site-dark-intensity'
 const THEME_KEY = 'site-theme'
+
+/** Native names for each locale, shown in the language picker. */
+const NATIVE_NAMES: Record<Locale, string> = {
+  tr: 'Türkçe',
+  en: 'English',
+  es: 'Español',
+  de: 'Deutsch',
+  ja: '日本語',
+  fr: 'Français',
+  pt: 'Português',
+  ru: 'Русский',
+  it: 'Italiano',
+  zh: '中文',
+  nl: 'Nederlands',
+  pl: 'Polski',
+  ko: '한국어',
+  ar: 'العربية',
+  id: 'Bahasa Indonesia',
+  vi: 'Tiếng Việt',
+  fa: 'فارسی',
+  uk: 'Українська',
+  th: 'ไทย',
+  cs: 'Čeština',
+  hu: 'Magyar',
+  ro: 'Română',
+  sv: 'Svenska',
+  el: 'Ελληνικά',
+  he: 'עברית',
+}
+
+const LOCALES_ALL: readonly Locale[] = [...LOCALES]
 
 function readLocal<T extends string>(
   key: string,
@@ -161,9 +193,15 @@ export function SettingsModal({
   ]
 
   const localeOptions: { value: LocalePref, icon?: React.ReactNode, label: string }[] = [
-    { value: 'auto', icon: <AutoIcon size={16} />, label: t('settings.auto') },
-    { value: 'tr', icon: <FlagTrIcon size={16} />, label: 'Türkçe' },
-    { value: 'en', icon: <FlagEnIcon size={16} />, label: 'English' },
+    { value: 'auto', icon: <AutoIcon size={16} />, label: t('lang.auto') ?? t('settings.auto') },
+    ...LOCALES_ALL.map((l) => {
+      const Flag = flagIcons[l]
+      return {
+        value: l,
+        icon: Flag ? <Flag size={16} /> : undefined,
+        label: NATIVE_NAMES[l],
+      }
+    }),
   ]
 
   return (
@@ -185,11 +223,20 @@ export function SettingsModal({
 
         {/* Language */}
         <Section title={t('settings.language')} icon={<GlobeIcon size={16} />}>
-          <RadioGroup
+          <SearchableCombobox
             options={localeOptions}
-            value={pref}
-            onChange={v => setPref(v as LocalePref)}
+            selected={[pref]}
+            onSelect={(v) => setPref(v as LocalePref)}
+            onClear={() => setPref('auto')}
+            placeholder={t('settings.languageLabel')}
+            searchPlaceholder={t('country.search')}
+            ariaLabel={t('settings.languageLabel')}
+            showAllOption
+            allLabel={t('lang.auto') ?? t('settings.auto')}
           />
+          <p className="px-1 text-[11px] leading-snug text-foreground/50">
+            {t('settings.auto')}
+          </p>
         </Section>
 
         {/* Dark theme intensity */}
