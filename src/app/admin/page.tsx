@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { AdminPanel } from '@/components/admin/admin-panel'
+import { getPosts } from '@/lib/blog'
 import { getMessages } from '@/lib/chat'
 import { getContent } from '@/lib/content'
 import { getLocale } from '@/lib/i18n-server'
@@ -38,9 +39,10 @@ export default async function AdminPage() {
       </main>
     )
   }
-  const [content, messages] = await Promise.all([
+  const [content, messages, blogPosts] = await Promise.all([
     getContent(),
     getMessages(),
+    getPosts('tr'),
   ])
   return (
     <main id="main" className="min-h-screen w-full px-4 sm:px-6 py-8">
@@ -48,6 +50,7 @@ export default async function AdminPage() {
       <AdminPanel
         initialContent={content}
         initialMessages={messages}
+        initialBlogPosts={blogPosts}
         username={user.email ?? user.username ?? 'admin'}
       />
       {' '}

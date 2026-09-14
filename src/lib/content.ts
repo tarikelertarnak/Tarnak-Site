@@ -102,7 +102,7 @@ export interface ProjectItem {
   /**
    * Download mode:
    * - 'global' → same downloadUrl used on all OSes
-   * - 'per-os' → separate URL for downloads.{windows,android,linux}
+   * - 'per-os' → separate URL for downloads.{windows,macos,linux,ios,android}
    */
   downloadMode?: 'global' | 'per-os'
   /** Single download link/file path in global mode */
@@ -110,8 +110,10 @@ export interface ProjectItem {
   /** Separate link/file path per OS in per-os mode */
   downloads?: {
     windows?: string
-    android?: string
+    macos?: string
     linux?: string
+    ios?: string
+    android?: string
   }
   /** Tags (for filtering/searching) */
   tags?: string[]
@@ -162,6 +164,7 @@ export interface CvEntry {
 }
 
 export interface CvData {
+  href: string
   summary: string
   experience: CvEntry[]
   education: CvEntry[]
@@ -594,6 +597,7 @@ async function getDefaultContent(): Promise<SiteContent> {
         { name: 'Mythora.de', role: 'Operations' },
       ],
       cv: {
+        href: '/cv/tarikeler-cv.pdf',
         summary:
           'Web developer building modern, end-to-end web experiences with Next.js, TypeScript and AI. From design to deploy — I ship products people use.',
         experience: [

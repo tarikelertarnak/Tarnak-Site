@@ -92,6 +92,9 @@ try {
     # Eski içeriği temizle (nojekyll korunur), yeni out/ içeriğini kopyala
     Get-ChildItem -LiteralPath $work -Force | Where-Object { $_.Name -ne '.git' } | Remove-Item -Recurse -Force
     Copy-Item (Join-Path $out '*') $work -Recurse -Force
+    # .nojekyll ZORUNLU: GitHub Pages Jekyll'i çalıştırırsa `_` ile başlayan
+    # dizinleri (_next/) yayınlamaz → tüm CSS/JS 404 → site çıplak kalır.
+    Set-Content -LiteralPath (Join-Path $work '.nojekyll') -Value '' -NoNewline
 
     Push-Location $work
     git add -A

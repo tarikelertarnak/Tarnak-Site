@@ -76,6 +76,7 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
       'Siber güvenliğe tutkulu biriyim. Yeni teknikler öğrenmeyi ve güvenlik zorluklarının üstesinden gelmeyi seviyorum.',
     teamTitle: 'EKİBİMİZ',
     cv: {
+      href: '/cv/tarikeler-cv.pdf',
       summary:
         'Next.js, TypeScript ve yapay zeka ile modern, uçtan uca web deneyimleri üreten web geliştirici. Tasarımdan deploy\u2019a — insanların kullandığı ürünler geliştiriyorum.',
       experience: [

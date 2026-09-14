@@ -1,4 +1,5 @@
 import { CopyButton } from '@/components/donate/copy-button'
+import { WatchAdSection } from '@/components/donate/watch-ad-section'
 import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
 
@@ -138,6 +139,11 @@ export default async function DonatePage() {
               ))}
             </div>
           </div>
+        </Section>
+
+        {/* Watch ad — support without money */}
+        <Section className="flex-col pb-16 sm:pb-20" id="reklam-izle">
+          <WatchAdSection isEn={isEn} />
         </Section>
 
         {/* Description */}

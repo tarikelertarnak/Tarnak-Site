@@ -134,7 +134,7 @@ export function HeroSection({ content }: { content: SiteContent }) {
             </Button>
             <Button
               className="font-semibold text-sm sm:text-base px-6 py-3 !bg-foreground !text-background hover:!bg-foreground/90"
-              href="/cv/tarikeler-cv.pdf"
+              href={content.about.cv.href ?? '/cv/tarikeler-cv.pdf'}
               target="_blank"
               rel="noopener noreferrer"
               startContent={<EyeIcon size={18} />}

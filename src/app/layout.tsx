@@ -34,30 +34,45 @@ export async function generateMetadata(): Promise<Metadata> {
   const name = content.hero.name || 'TARIK ELER'
   const title = `${name} - TARNAK`
   const description
-    = 'TARIK ELER - TARNAK (Tarnak) - Web developer & creator. Next.js, TypeScript ve yapay zeka üzerine projeler geliştiriyorum. Projelerim, yeteneklerim ve iletişim bilgilerim.'
+    = 'TARIK ELER - TARNAK (Tarnak) - Web developer & creator. Next.js, TypeScript ve yapay zeka üzerine projeler geliştiriyorum. Projelerim, yeteneklerim ve iletişim bilgilerim. Tarık Eler, tarikeler, elertarik, tarık eler tarnak, tarikelertarnak.'
+  const keywords = [
+    'TARIK ELER',
+    'TARNAK',
+    'Tarık Eler',
+    'TARIKELER',
+    'TARIKELER-TARNAK',
+    'Tarnak',
+    'tarikeler',
+    'tarık',
+    'eler',
+    'tarıkeler',
+    'elertarik',
+    'tarık eler',
+    'eler tarık',
+    'tarık eler tarnak',
+    'tarikelertarnak',
+    'tarik eler',
+    'tarik eler tarnak',
+    'TARIK ELER TARNAK',
+    'web developer',
+    'Next.js',
+    'TypeScript',
+    'yazılım geliştirici',
+    'portfolio',
+    'kişisel site',
+  ]
 
   return {
     metadataBase: new URL(SITE_URL),
     title,
     description,
-    keywords: [
-      'TARIK ELER',
-      'TARNAK',
-      'Tarık Eler',
-      'TARIKELER',
-      'TARIKELER-TARNAK',
-      'Tarnak',
-      'tarikeler',
-      'web developer',
-      'Next.js',
-      'TypeScript',
-      'yazılım geliştirici',
-    ],
+    keywords,
     authors: [{ name: 'TARIK ELER - TARNAK', url: SITE_URL }],
     creator: 'TARIK ELER - TARNAK',
     publisher: 'TARIK ELER - TARNAK',
-    robots: { index: true, follow: true },
+    robots: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
     alternates: { canonical: '/' },
+    formatDetection: { email: false, address: false, telephone: false },
     icons: {
       icon: [
         { url: '/tarnak-white.svg', type: 'image/svg+xml' },
@@ -73,6 +88,15 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       locale: 'tr_TR',
+      images: [
+        { url: `${SITE_URL}/tarnak-256.png`, width: 256, height: 256, alt: 'TARNAK logo' },
+      ],
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      images: [`${SITE_URL}/tarnak-256.png`],
     },
   }
 }
@@ -96,6 +120,35 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass} data-theme={initialThemeData}>
       <body className="min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
+        {/* SEO — Person + WebSite structured data (Google / Yandex rich snippets) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              {
+                '@context': 'https://schema.org',
+                '@type': 'Person',
+                name: 'TARIK ELER - TARNAK',
+                alternateName: ['TARNAK', 'Tarnak', 'tarikeler', 'elertarik', 'Tarık Eler'],
+                url: SITE_URL,
+                image: `${SITE_URL}/tarnak-256.png`,
+                sameAs: [
+                  'https://github.com/TARIKELER-TARNAK',
+                  'https://tarikelertarnak.pages.dev',
+                ],
+                knowsAbout: ['Next.js', 'TypeScript', 'Web Development', 'React', 'Yapay Zeka'],
+              },
+              {
+                '@context': 'https://schema.org',
+                '@type': 'WebSite',
+                name: 'TARIK ELER - TARNAK',
+                alternateName: ['TARNAK', 'tarikelertarnak', 'tarikeler'],
+                url: SITE_URL,
+                inLanguage: ['tr', 'en'],
+              },
+            ]),
+          }}
+        />
         <ThemeInitScript defaultTheme={safeDefaultTheme} />
         <Providers
           backgroundImage={content.settings?.backgroundImage || ''}
