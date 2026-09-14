@@ -8,32 +8,47 @@ import type {
 const API_BASE = 'https://api.github.com'
 
 /**
- * User profile + repo list fetched through the server-side /api/github proxy:
- * GITHUB_TOKEN is used (higher rate limit), the response is cached for 10 min
- * on the server, and no direct CORS request goes to GitHub from the browser.
+ * User profile + repo list.
+ *
+ * Static export (GitHub Pages): no /api/* routes exist, so a build-time
+ * snapshot at /github-data.json is read instead. It is regenerated on every
+ * build by scripts/fetch-github-data.cjs (prebuild hook).
+ *
+ * Server-rendered (Cloudflare/OpenNext): the /api/github proxy is used so
+ * GITHUB_TOKEN stays server-side and responses are cached.
  */
 async function fetchUserData(
   username: string,
 ): Promise<{ profile: GitHubUserProfile | null, repos: GitHubRepo[] }> {
-  const res = await fetch(
+  // Same-origin /api/github exists only in SSR deployments (Cloudflare).
+  // In static export it returns 404 — fall back to the build-time snapshot.
+  const apiRes = await fetch(
     `/api/github/?username=${encodeURIComponent(username)}`,
-    {
-      // Don't get stuck loading if network is slow/unreachable — error after 30s
-      signal: AbortSignal.timeout(30_000),
-    },
+    { signal: AbortSignal.timeout(15_000) },
   )
-  if (!res.ok) {
-    throw new Error(`GitHub hatası: ${res.status}`)
+  if (apiRes.ok) {
+    const data = (await apiRes.json()) as {
+      success: boolean
+      profile: GitHubUserProfile | null
+      repos: GitHubRepo[] | null
+    }
+    if (data.success) {
+      return { profile: data.profile, repos: data.repos ?? [] }
+    }
+    throw new Error('GitHub verisi alınamadı.')
   }
-  const data = (await res.json()) as {
+  // 404 (static export) — use the build-time snapshot.
+  const snap = (await (await fetch('/github-data.json', {
+    signal: AbortSignal.timeout(15_000),
+  })).json()) as {
     success: boolean
     profile: GitHubUserProfile | null
     repos: GitHubRepo[] | null
   }
-  if (!data.success) {
+  if (!snap.success) {
     throw new Error('GitHub verisi alınamadı.')
   }
-  return { profile: data.profile, repos: data.repos ?? [] }
+  return { profile: snap.profile, repos: snap.repos ?? [] }
 }
 
 async function getJSON<T>(url: string): Promise<T> {

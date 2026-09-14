@@ -20,7 +20,7 @@ interface UseContactFormReturn {
   resetForm: () => void
   isFormValid: boolean
   switchContactMethod: (method: 'email' | 'phone') => void
-  /** Selected country ISO2 for the phone field (default "TR"). */
+  /** Selected country ISO2 for the phone field (timezone-detected, fallback "tr"). */
   country: string
   setCountry: (iso2: string) => void
 }
@@ -32,6 +32,80 @@ const initialFormData: ContactFormData = {
   message: '',
 }
 
+// IANA timezone → ISO2 (lowercase, matches COUNTRIES). Device timezone is
+// derived from the user's location — zero permissions, no external API.
+// ponytail: explicit map for common zones only; add more if a region matters.
+const TIMEZONE_COUNTRY: Record<string, string> = {
+  'Europe/Istanbul': 'tr',
+  'Europe/London': 'gb',
+  'Europe/Paris': 'fr',
+  'Europe/Berlin': 'de',
+  'Europe/Madrid': 'es',
+  'Europe/Rome': 'it',
+  'Europe/Amsterdam': 'nl',
+  'Europe/Brussels': 'be',
+  'Europe/Zurich': 'ch',
+  'Europe/Vienna': 'at',
+  'Europe/Warsaw': 'pl',
+  'Europe/Stockholm': 'se',
+  'Europe/Helsinki': 'fi',
+  'Europe/Oslo': 'no',
+  'Europe/Copenhagen': 'dk',
+  'Europe/Lisbon': 'pt',
+  'Europe/Athens': 'gr',
+  'Europe/Bucharest': 'ro',
+  'Europe/Prague': 'cz',
+  'Europe/Budapest': 'hu',
+  'Europe/Kyiv': 'ua',
+  'Europe/Moscow': 'ru',
+  'America/New_York': 'us',
+  'America/Chicago': 'us',
+  'America/Denver': 'us',
+  'America/Los_Angeles': 'us',
+  'America/Toronto': 'ca',
+  'America/Mexico_City': 'mx',
+  'America/Sao_Paulo': 'br',
+  'America/Argentina/Buenos_Aires': 'ar',
+  'America/Santiago': 'cl',
+  'America/Bogota': 'co',
+  'America/Lima': 'pe',
+  'America/Caracas': 've',
+  'Asia/Dubai': 'ae',
+  'Asia/Riyadh': 'sa',
+  'Asia/Tokyo': 'jp',
+  'Asia/Shanghai': 'cn',
+  'Asia/Hong_Kong': 'hk',
+  'Asia/Taipei': 'tw',
+  'Asia/Seoul': 'kr',
+  'Asia/Kolkata': 'in',
+  'Asia/Karachi': 'pk',
+  'Asia/Bangkok': 'th',
+  'Asia/Singapore': 'sg',
+  'Asia/Jakarta': 'id',
+  'Asia/Manila': 'ph',
+  'Asia/Tehran': 'ir',
+  'Australia/Sydney': 'au',
+  'Africa/Cairo': 'eg',
+  'Africa/Lagos': 'ng',
+  'Africa/Johannesburg': 'za',
+}
+
+/** Detect the visitor's country from the device timezone (fallback 'tr'). */
+function detectCountry(): string {
+  if (typeof window === 'undefined')
+    return 'tr'
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const iso2 = tz && TIMEZONE_COUNTRY[tz]
+    if (iso2 && COUNTRIES.some(c => c.iso2 === iso2))
+      return iso2
+  }
+  catch {
+    // fall through to default
+  }
+  return 'tr'
+}
+
 export function useContactForm(): UseContactFormReturn {
   const [formData, setFormData] = useState<ContactFormData>(initialFormData)
   const [errors, setErrors] = useState<FormErrors>({})
@@ -40,7 +114,7 @@ export function useContactForm(): UseContactFormReturn {
   const [touchedFields, setTouchedFields] = useState<Set<keyof ContactFormData>>(
     new Set(),
   )
-  const [country, setCountry] = useState('TR')
+  const [country, setCountry] = useState(detectCountry)
 
   const validateField = useCallback(
     (field: keyof ContactFormData, value: string, showError = false) => {

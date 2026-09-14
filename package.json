@@ -8,6 +8,7 @@
     "url": ""
   },
   "scripts": {
+    "prebuild": "node scripts/fetch-github-data.cjs",
     "dev": "next dev --turbopack",
     "dev:fast": "next dev --turbopack --no-preinstall",
     "build": "next build",

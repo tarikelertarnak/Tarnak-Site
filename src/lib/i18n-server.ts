@@ -16,8 +16,17 @@ import { enContentOverlay } from '@/lib/i18n-content-en'
  * (Turkish default).
  */
 export async function getLocale(): Promise<Locale> {
-  const pref = (await cookies()).get(LOCALE_COOKIE)?.value as LocalePref | undefined
-  const lang = (await headers()).get('accept-language') ?? undefined
+  // cookies()/headers() prerender (static export) sırasında hata fırlatabilir —
+  // o durumda varsayılan locale'ye dön (HTTP isteği dışındaki ortamlar için güvenli).
+  let pref: LocalePref | undefined
+  let lang: string | undefined
+  try {
+    pref = (await cookies()).get(LOCALE_COOKIE)?.value as LocalePref | undefined
+    lang = (await headers()).get('accept-language') ?? undefined
+  }
+  catch {
+    // statik export / prerender: cookie ve header yok, varsayılan kullanılır
+  }
   return resolveLocale(pref, detectLocale(lang))
 }
 

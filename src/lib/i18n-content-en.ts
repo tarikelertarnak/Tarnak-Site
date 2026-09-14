@@ -116,16 +116,6 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
         srcLink: 'https://github.com/TARIKELER-TARNAK/Player',
         image: '',
       },
-      {
-        title: 'Media Player Test',
-        description:
-          'Multi-media player test with GIF and video — temporary demo project for the media player.',
-        projectLink: '/',
-        image: '/demo/test-computer.gif',
-        media: ['/demo/test-computer.gif', '/demo/big-buck-bunny.mp4'],
-        updatedAt: '2026-09-08T23:15:01.276Z',
-        tags: ['media', 'test'],
-      },
     ],
   },
   github: {

@@ -3,6 +3,16 @@ import { Navigation } from '@/components/navigation'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { getLocalizedContent } from '@/lib/i18n-server'
 
+export async function generateStaticParams(): Promise<
+  Array<{ owner: string; repo: string }>
+> {
+  // Static export için bilinen repoları üret (TARIKELER-TARNAK hesabı)
+  return [
+    { owner: 'TARIKELER-TARNAK', repo: 'tarnak' },
+    { owner: 'TARIKELER-TARNAK', repo: 'blog-site' },
+  ]
+}
+
 export async function generateMetadata({
   params,
 }: {
