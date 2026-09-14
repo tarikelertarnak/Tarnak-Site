@@ -69,8 +69,8 @@ export function HeroSection({ content }: { content: SiteContent }) {
                 'text-5xl sm:text-7xl md:text-7xl lg:text-8xl',
               ].join(' ')}
             >
-              <span className="block pl-1">{name}</span>
-              <span className="block pl-1 mt-1 text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-foreground/50 tracking-widest">
+<span className="block pl-1">{name}</span>
+              <span className="block pl-1 mt-1 text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-foreground/80 tracking-widest">
                 {' '}
                 — TARNAK
                 {' '}
@@ -79,12 +79,12 @@ export function HeroSection({ content }: { content: SiteContent }) {
           </motion.div>
 
           {/* Typewriter */}
-          <motion.div variants={item} className="mt-6 sm:mt-7">
+          <motion.div variants={item} className="mt-6 sm:mt-7 text-foreground-600">
             <TypewriterEffect
               sentences={[tagline]}
               className="text-lg sm:text-xl md:text-2xl font-semibold"
-              color="#a1a1aa"
-              cursorColor="#3b82f6"
+              color="currentColor"
+              cursorColor="#2563eb"
               typingSpeed={60}
               deletingSpeed={30}
               pauseDuration={3000}
@@ -133,7 +133,7 @@ export function HeroSection({ content }: { content: SiteContent }) {
               {t('hero.feedback')}
             </Button>
             <Button
-              className="font-semibold text-sm sm:text-base px-6 py-3 !bg-white !text-black hover:!bg-white/90"
+              className="font-semibold text-sm sm:text-base px-6 py-3 !bg-foreground !text-background hover:!bg-foreground/90"
               href="/cv/tarikeler-cv.pdf"
               target="_blank"
               rel="noopener noreferrer"

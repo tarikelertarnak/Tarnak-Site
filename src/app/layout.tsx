@@ -91,9 +91,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // SSR first paint: .dark/.light class is baked on <html> → no white FOUC.
   // auto/system → dark (site design is dark); ThemeInitScript sets the real preference at parse time.
   const initialThemeClass = defaultTheme === 'light' ? 'light' : 'dark'
+  const initialThemeData = initialThemeClass
 
   return (
-    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass}>
+    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass} data-theme={initialThemeData}>
       <body className="min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
         <ThemeInitScript defaultTheme={safeDefaultTheme} />
         <Providers

@@ -1,11 +1,11 @@
 /**
- * i18n — 26 dil (Turkish default) + Auto detection.
+ * i18n — 25 dil + Auto detection (English default).
  *
  * detectLocale() reads the browser/accept-language; resolveLocale() combines
  * the user preference (cookie) with the detected language; both fall back to
- * Turkish. The site content stays Turkish-first (data/content.json); each
- * locale gets a content overlay (src/lib/i18n-content-*.ts) and a UI
- * dictionary (extra dicts in src/i18n/extra.ts).
+ * English (the international default — a visitor whose language is not
+ * supported sees English, not Turkish). Turkish is still detected whenever
+ * the visitor's browser language or country is Turkey.
  */
 
 /* ------------------------------------------------------------------ */
@@ -42,16 +42,32 @@ const LANG_TABLE: Record<string, Locale> = {
   ro: 'ro', sv: 'sv', el: 'el', he: 'he',
 }
 
-function cleanLocale(s?: string | null): Locale {
+function cleanLocale(s?: string | null): Locale | undefined {
   if (!s)
-    return 'tr'
+    return undefined
   const base = s.toLowerCase().split(/[_-]/)[0]
-  return LANG_TABLE[base] ?? 'tr'
+  return LANG_TABLE[base]
 }
 
 /** Detect from a language tag (`navigator.language` / `accept-language`). */
 export function detectLocale(lang?: string): Locale {
-  return cleanLocale(lang)
+  return cleanLocale(lang) ?? 'en'
+}
+
+/** ISO country code (from CF-IPCountry / timezone) → best locale for that country. */
+const COUNTRY_LOCALE: Record<string, Locale> = {
+  TR: 'tr', DE: 'de', FR: 'fr', ES: 'es', AT: 'de', CH: 'de', BE: 'nl', NL: 'nl',
+  PT: 'pt', BR: 'pt', IT: 'it', RU: 'ru', UA: 'uk', PL: 'pl', CZ: 'cs', HU: 'hu',
+  RO: 'ro', SE: 'sv', GR: 'el', JP: 'ja', KR: 'ko', CN: 'zh', TW: 'zh', HK: 'zh',
+  AR: 'ar', SA: 'ar', AE: 'ar', EG: 'ar', ID: 'id', VN: 'vi', TH: 'th', IL: 'he',
+  IR: 'fa',
+}
+
+/** Detect from a country/region code — used for location-based auto-detect. */
+export function detectLocaleFromCountry(country?: string | null): Locale | undefined {
+  if (!country)
+    return undefined
+  return COUNTRY_LOCALE[country.toUpperCase()]
 }
 
 /** Combine stored preference with detection (works on server and client). */
@@ -59,7 +75,7 @@ export function resolveLocale(pref?: LocalePref, detected?: Locale): Locale {
   if (pref && pref !== 'auto' && LOCALES.includes(pref as Locale)) {
     return pref as Locale
   }
-  return detected ?? 'tr'
+  return detected ?? 'en'
 }
 
 /** Direction of a locale ('rtl' for Arabic/Persian/Hebrew). */

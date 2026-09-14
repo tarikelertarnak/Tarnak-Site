@@ -107,7 +107,16 @@ export function TopBar() {
                 alt="TARNAK"
                 width={28}
                 height={28}
-                className={`shrink-0 transition-all duration-300 ${
+                className={`hidden shrink-0 dark:block transition-all duration-300 ${
+                  scrolled ? 'h-6 w-6' : 'h-7 w-7 sm:h-7 sm:w-7'
+                }`}
+              />
+              <img
+                src="/tarnak.svg"
+                alt="TARNAK"
+                width={28}
+                height={28}
+                className={`block shrink-0 dark:hidden transition-all duration-300 ${
                   scrolled ? 'h-6 w-6' : 'h-7 w-7 sm:h-7 sm:w-7'
                 }`}
               />

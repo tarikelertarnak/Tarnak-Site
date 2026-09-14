@@ -129,19 +129,14 @@ export function ArrowUpRightIcon({ size = 14, className }: IconProps) {
   )
 }
 
-/** Enlarge (expand) — four-direction expand icon, provided by the user. */
+/** Enlarge (expand) — four-direction expand icon (lucide maximize-2 via icons0). */
 export function MaximizeIcon({ size = 24, className }: IconProps) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size * (666 / 680)}
-      height={size}
-      viewBox="0 0 666 680"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="m338 272l70 69c4 4 8 6 14 6c5 0 9-2 13-6l119-118l72 72c23 22 40 13 40-18V51c0-19-16-37-38-37H402c-32 0-40 17-17 40l72 72l-119 118c-3 4-5 9-5 14c0 6 2 10 5 14M0 416v227c0 19 16 37 38 37h225c32 0 41-17 18-40l-72-72l119-119c3-4 5-8 5-14c0-5-2-9-5-13l-70-70c-4-3-8-5-14-5c-5 0-10 2-14 5L112 471l-72-72c-23-22-40-14-40 17" />
+    <svg {...base(size, className)}>
+      <path d="M15 3h6v6" />
+      <path d="m21 3-7 7" />
+      <path d="M3 21l7-7" />
+      <path d="M9 21H3v-6" />
     </svg>
   )
 }
@@ -369,22 +364,25 @@ export function StarOutlineIcon({ size = 16, className }: IconProps) {
   )
 }
 
-/** Experience/CV icon (active project, folder). */
+/** Experience/CV icon (briefcase, lucide briefcase-business via icons0). */
 export function BriefcaseIcon({ size = 16, className }: IconProps) {
   return (
     <svg {...base(size, className)}>
-      <path d="M4 8h18v2h10V4 4h18v1h12M10 3v4h6M5 3v1" />
-      <path d="M4 8l12 10h8M10 5v7h7M12 5v6h8V6 2h11M5 3v3" />
+      <path d="M12 12h.01" />
+      <path d="M16 6V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+      <path d="m2 13 18.15-1a18.15 18.15 0 0 1-18.15 1Z" />
+      <rect x="2" y="6" width="20" height="14" rx="2" />
     </svg>
   )
 }
 
-/** Education icon (diploma + mortarboard). */
+/** Education icon (graduation cap, lucide via icons0). */
 export function SchoolIcon({ size = 16, className }: IconProps) {
   return (
     <svg {...base(size, className)}>
-      <path d="M5 8h14v3h4M4 5h10v2h9V3 3h12v1h7M4 4h5v2h8" />
-      <path d="M6 6h8M3 3v11h4v5h9V6 1h10V4 2l2 0h5" />
+      <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" />
+      <path d="M22 10v6" />
+      <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />
     </svg>
   )
 }
@@ -418,21 +416,23 @@ export function RefreshIcon({ size = 16, className }: IconProps) {
   )
 }
 
-/** Back arrow / arrow icon. */
+/** Back arrow (lucide arrow-left via icons0). */
 export function ArrowLeftIcon({ size = 16, className }: IconProps) {
   return (
     <svg {...base(size, className)}>
-      <path d="M18 4l18 0M3 12l18 0M5 8h20M12 8h5" />
+      <path d="m12 19-7-7 7-7" />
+      <path d="M19 12H5" />
     </svg>
   )
 }
 
-/** Error badge (circle + exclamation point). */
+/** Error badge (circle + exclamation, lucide circle-alert via icons0). */
 export function ErrorIcon({ size = 16, className }: IconProps) {
   return (
     <svg {...base(size, className)}>
       <circle cx="12" cy="12" r="10" />
-      <path d="M9.8 7.3a5.2 6.7-6.7 6.7-6.7l11.8-6.7 4.3-9.2-3.5.2-3.5-4.4M7.8 12v4" />
+      <path d="M12 8v4" />
+      <path d="M12 16h.01" />
     </svg>
   )
 }

@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers'
 import { getContent } from '@/lib/content'
 import {
   detectLocale,
+  detectLocaleFromCountry,
   LOCALE_COOKIE,
   resolveLocale,
   localeDirection,
@@ -17,20 +18,23 @@ import { ptContentOverlay } from '@/lib/i18n-content-pt'
 import { ruContentOverlay } from '@/lib/i18n-content-ru'
 
 /**
- * Server-side locale: stored preference wins, otherwise accept-language
- * (Turkish default).
+ * Server-side locale: stored preference wins, otherwise location (country
+ * from Cloudflare's CF-IPCountry header) → accept-language → English.
  */
 export async function getLocale(): Promise<Locale> {
   let pref: LocalePref | undefined
   let lang: string | undefined
+  let country: string | undefined
   try {
     pref = (await cookies()).get(LOCALE_COOKIE)?.value as LocalePref | undefined
+    country = (await headers()).get('cf-ipcountry') ?? undefined
     lang = (await headers()).get('accept-language') ?? undefined
   }
   catch {
     // static export / prerender: no cookie or header, use default
   }
-  return resolveLocale(pref, detectLocale(lang))
+  // Location first (reliable at the edge), then browser language preference.
+  return resolveLocale(pref, detectLocaleFromCountry(country) ?? detectLocale(lang))
 }
 
 /** Get the text direction for the current locale. */
