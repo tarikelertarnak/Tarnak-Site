@@ -7,6 +7,14 @@ dns.setDefaultResultOrder('ipv4first')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // GitHub Pages statik export: EXPORT_MODE=1 iken next build "out/" üretir.
+  // OpenNext (Workers/Cloudflare) build'ini etkilemez — export ekstra moddur.
+  // Admin bileşenleri API route'larından tip import eder; export'ta API hariç
+  // tutulduğundan type-check kırılır → ignoreBuildErrors sadece export'ta aktif.
+  ...(process.env.EXPORT_MODE === '1' ? {
+    output: 'export',
+    typescript: { ignoreBuildErrors: true },
+  } : {}),
   trailingSlash: true,
   // Turbopack, lightningcss'in native .node require'ını bundle edemiyor
   // (Cannot find module / could not resolve ...win32-x64-msvc.node).
