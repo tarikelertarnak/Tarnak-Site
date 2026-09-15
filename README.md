@@ -20,3 +20,5 @@ See the LICENSE file for details.
 
 Copyright (c) 2025 Ricardo Pernack (https://mangoapi.dev/)
 
+
+<!-- rebuild-tetik: 2026-09-16 02:27 force-rebuild after 73769ad (scripts/patch-lightningcss.cjs artik tree'de; Pages install+postinstall YESIL olmali) -->
