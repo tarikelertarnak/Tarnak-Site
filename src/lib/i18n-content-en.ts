@@ -27,7 +27,7 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
   },
   nav: {
     ctaLabel: 'GitHub',
-    githubRepo: 'https://github.com/TARIKELER-TARNAK',
+    githubRepo: 'https://github.com/tarikelertarnak',
     items: [
       { title: 'Projects', href: '/projects' },
       { title: 'Blog', href: '/blog' },
@@ -53,7 +53,7 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
     teamTitle: 'OUR TEAM',
     team: [
       { name: 'TARIKELER', role: 'Founder' },
-      { name: 'TARIKELER-TARNAK', role: 'Infrastructure' },
+      { name: 'tarikelertarnak', role: 'Infrastructure' },
       { name: 'Fruity Dev', role: 'DevOps' },
       { name: 'PixelShield', role: 'Security' },
       { name: 'Mythora.de', role: 'Operations' },
@@ -112,8 +112,8 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
         notice: '[Featured]',
         description:
           'Music player app — queue-based playlist, search, volume control.',
-        projectLink: 'https://github.com/TARIKELER-TARNAK/Player',
-        srcLink: 'https://github.com/TARIKELER-TARNAK/Player',
+        projectLink: 'https://github.com/tarikelertarnak/Player',
+        srcLink: 'https://github.com/tarikelertarnak/Player',
         image: '',
       },
     ],
@@ -155,7 +155,7 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
       'https://yandex.com.tr/maps/101474/konya/?ll=32.539234%2C37.875019&mode=whatshere&utm_source=share&whatshere%5Bpoint%5D=32.539225%2C37.875038&whatshere%5Bzoom%5D=17&z=21',
   },
   settings: {
-    githubUsername: 'TARIKELER-TARNAK',
+    githubUsername: 'tarikelertarnak',
     defaultTheme: 'system',
     backgroundImage: '',
   },

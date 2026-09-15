@@ -200,7 +200,7 @@ export function WatchAdSection({ isEn = false }: WatchAdSectionProps) {
                 {t('Sponsor bağlantısı: TARNAK — TARIK ELER', 'Sponsor link: TARNAK — TARIK ELER')}
               </p>
               <a
-                href="https://github.com/TARIKELER-TARNAK"
+                href="https://github.com/tarikelertarnak"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={finishAd}

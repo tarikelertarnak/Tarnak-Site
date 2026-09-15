@@ -21,7 +21,8 @@ import './globals.css'
 
 export const revalidate = 300
 
-const SITE_URL = 'https://tarikeler-tarnak.github.io'
+// Build-time env ile ezilebilir (deploy-cloudflare.ps1 pages.dev, deploy-gh-pages.ps1 github.io set eder)
+const SITE_URL = process.env.SITE_URL || 'https://tarikelertarnak.github.io'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -40,7 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
     'TARNAK',
     'Tarık Eler',
     'TARIKELER',
-    'TARIKELER-TARNAK',
+    'tarikelertarnak',
     'Tarnak',
     'tarikeler',
     'tarık',
@@ -89,14 +90,14 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       locale: 'tr_TR',
       images: [
-        { url: `${SITE_URL}/tarnak-256.png`, width: 256, height: 256, alt: 'TARNAK logo' },
+        { url: `${SITE_URL}/tarnak-logo-512.png`, width: 512, height: 512, alt: 'TARNAK logo' },
       ],
     },
     twitter: {
       card: 'summary',
       title,
       description,
-      images: [`${SITE_URL}/tarnak-256.png`],
+      images: [`${SITE_URL}/tarnak-logo-512.png`],
     },
   }
 }
@@ -131,10 +132,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 name: 'TARIK ELER - TARNAK',
                 alternateName: ['TARNAK', 'Tarnak', 'tarikeler', 'elertarik', 'Tarık Eler'],
                 url: SITE_URL,
-                image: `${SITE_URL}/tarnak-256.png`,
+                image: `${SITE_URL}/tarnak-logo-512.png`,
                 sameAs: [
-                  'https://github.com/TARIKELER-TARNAK',
+                  'https://github.com/tarikelertarnak',
                   'https://tarikelertarnak.pages.dev',
+                  'https://tarikelertarnak.github.io',
                 ],
                 knowsAbout: ['Next.js', 'TypeScript', 'Web Development', 'React', 'Yapay Zeka'],
               },

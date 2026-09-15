@@ -6,10 +6,10 @@ import { getLocalizedContent } from '@/lib/i18n-server'
 export async function generateStaticParams(): Promise<
   Array<{ owner: string; repo: string }>
 > {
-  // Static export için bilinen repoları üret (TARIKELER-TARNAK hesabı)
+  // Static export için bilinen repoları üret (tarikelertarnak hesabı)
   return [
-    { owner: 'TARIKELER-TARNAK', repo: 'tarnak' },
-    { owner: 'TARIKELER-TARNAK', repo: 'blog-site' },
+    { owner: 'tarikelertarnak', repo: 'tarnak' },
+    { owner: 'tarikelertarnak', repo: 'blog-site' },
   ]
 }
 

@@ -45,7 +45,7 @@ export const jaContentOverlay: DeepPartial<SiteContent> = {
     teamTitle: 'チーム',
     team: [
       { name: 'TARIKELER', role: '創業者' },
-      { name: 'TARIKELER-TARNAK', role: 'インフラ' },
+      { name: 'tarikelertarnak', role: 'インフラ' },
       { name: 'Fruity Dev', role: 'DevOps' },
       { name: 'PixelShield', role: 'セキュリティ' },
       { name: 'Mythora.de', role: '運営' },
@@ -129,7 +129,7 @@ export const jaContentOverlay: DeepPartial<SiteContent> = {
       'お問い合わせありがとうございます！メッセージを受け取りました。できるだけ早く返信します。',
   },
   settings: {
-    githubUsername: 'TARIKELER-TARNAK',
+    githubUsername: 'tarikelertarnak',
     defaultTheme: 'system',
     backgroundImage: '',
   },

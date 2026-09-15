@@ -4,7 +4,7 @@
  * TopBar — fixed top bar with sidebar toggle, brand, and search trigger.
  *
  * The Sidebar (left panel) is closed by default on desktop. Users click the
- * hamburger icon to slide it in. This mirrors the live site (tarikeler-tarnak.github.io)
+ * hamburger icon to slide it in. This mirrors the live site (tarikelertarnak.github.io)
  * which uses a top-bar pattern instead of always-visible sidebar.
  */
 

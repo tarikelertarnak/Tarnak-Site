@@ -5,7 +5,7 @@ import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
 
 export async function generateStaticParams(): Promise<Array<{ owner: string }>> {
   // Static export için bilinen owner'ları üret
-  return [{ owner: 'TARIKELER-TARNAK' }]
+  return [{ owner: 'tarikelertarnak' }]
 }
 
 export async function generateMetadata({

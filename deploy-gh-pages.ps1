@@ -11,7 +11,7 @@
 
 $ErrorActionPreference = 'Stop'
 $site = Split-Path -Parent $MyInvocation.MyCommand.Path
-$pagesRepo = 'TARIKELER-TARNAK/TARIKELER-TARNAK.github.io'
+$pagesRepo = 'tarikelertarnak/tarikelertarnak.github.io'
 $work = Join-Path $env:TEMP 'opencode\ghpages-repo'
 # GitHub Pages statik olduğu için dinamik (force-dynamic / route handler) parçalar
 # export build'inden geçici hariç tutulur. Site ziyaretçi yüzü (home/about/blog/
@@ -73,9 +73,11 @@ try {
     Write-Host "==> [2/5] Statik export build (EXPORT_MODE=1)"
     Push-Location $site
     $env:EXPORT_MODE = '1'
+    $env:SITE_URL = 'https://tarikelertarnak.github.io'
     npm run build
     if ($LASTEXITCODE -ne 0) { throw "next build başarısız (exit $LASTEXITCODE)" }
     Remove-Item Env:\EXPORT_MODE -ErrorAction SilentlyContinue
+    Remove-Item Env:\SITE_URL -ErrorAction SilentlyContinue
     Pop-Location
 
     $out = Join-Path $site 'out'
@@ -108,7 +110,7 @@ try {
         git push origin main
         if ($LASTEXITCODE -ne 0) { Pop-Location; throw 'push başarısız' }
         Pop-Location
-        Write-Host "==> [5/5] YAYINLANDI: https://tarikeler-tarnak.github.io/"
+        Write-Host "==> [5/5] YAYINLANDI: https://tarikelertarnak.github.io/"
     }
 }
 finally {

@@ -46,7 +46,7 @@ export const frContentOverlay: DeepPartial<SiteContent> = {
     teamTitle: 'NOTRE ÉQUIPE',
     team: [
       { name: 'TARIKELER', role: 'Fondateur' },
-      { name: 'TARIKELER-TARNAK', role: 'Infrastructure' },
+      { name: 'tarikelertarnak', role: 'Infrastructure' },
       { name: 'Fruity Dev', role: 'DevOps' },
       { name: 'PixelShield', role: 'Sécurité' },
       { name: 'Mythora.de', role: 'Opérations' },
@@ -130,7 +130,7 @@ export const frContentOverlay: DeepPartial<SiteContent> = {
       'Merci pour votre message ! Je l’ai bien reçu et je vous répondrai dès que possible.',
   },
   settings: {
-    githubUsername: 'TARIKELER-TARNAK',
+    githubUsername: 'tarikelertarnak',
     defaultTheme: 'system',
     backgroundImage: '',
   },

@@ -516,7 +516,7 @@ async function getDefaultContent(): Promise<SiteContent> {
     },
     nav: {
       ctaLabel: 'GitHub',
-      githubRepo: 'https://github.com/TARIKELER-TARNAK',
+      githubRepo: 'https://github.com/tarikelertarnak',
       items: [
         { title: 'Projects', href: '/projects' },
         { title: 'Blog', href: '/blog' },
@@ -525,7 +525,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       ],
     },
     social: [
-      { name: 'GitHub', href: 'https://github.com/TARIKELER-TARNAK', icon: 'mdi:github' },
+      { name: 'GitHub', href: 'https://github.com/tarikelertarnak', icon: 'mdi:github' },
       { name: 'Instagram', href: 'https://www.instagram.com/', icon: 'mdi:instagram' },
       { name: 'YouTube', href: 'https://www.youtube.com/', icon: 'mdi:youtube' },
       { name: 'TikTok', href: 'https://www.tiktok.com/', icon: 'ic:baseline-tiktok' },
@@ -591,7 +591,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       teamTitle: 'THE TEAM',
       team: [
         { name: 'TARIKELER', role: 'Founder' },
-        { name: 'TARIKELER-TARNAK', role: 'Infra' },
+        { name: 'tarikelertarnak', role: 'Infra' },
         { name: 'Fruity Dev', role: 'DevOps' },
         { name: 'PixelShield', role: 'Security' },
         { name: 'Mythora.de', role: 'Operations' },
@@ -682,7 +682,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       locationYandex: '',
     },
     settings: {
-      githubUsername: 'TARIKELER-TARNAK',
+      githubUsername: 'tarikelertarnak',
       defaultTheme: 'dark',
       backgroundImage: '',
     },

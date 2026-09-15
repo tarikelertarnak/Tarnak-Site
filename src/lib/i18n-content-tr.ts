@@ -22,7 +22,7 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
   },
   nav: {
     ctaLabel: 'GitHub',
-    githubRepo: 'https://github.com/TARIKELER-TARNAK',
+    githubRepo: 'https://github.com/tarikelertarnak',
     items: [
       { title: 'Projeler', href: '/projects' },
       { title: 'Blog', href: '/blog' },

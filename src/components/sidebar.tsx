@@ -10,7 +10,7 @@
  *   - User presses Escape
  *   - User toggles again
  *
- * This matches the live site pattern (tarikeler-tarnak.github.io) — sidebar
+ * This matches the live site pattern (tarikelertarnak.github.io) — sidebar
  * is opt-in, not always visible. Pages no longer need `md:ml-[240px]` since
  * the sidebar overlays content.
  */
