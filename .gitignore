@@ -52,3 +52,5 @@ next-env.d.ts
 .wrangler/
 *.log
 !progress.md
+
+# trivial Pages rebuild trigger (bu satir her push'ta degisir -> Pages queue'su yeniden tazelenir)
