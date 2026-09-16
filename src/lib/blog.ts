@@ -1,4 +1,5 @@
 import type { BlogPost } from '@/lib/content'
+import type { Locale } from '@/lib/i18n'
 import { randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -6,8 +7,6 @@ import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 
 const DATA_DIR = path.join(process.cwd(), 'data')
 const BLOG_FILE = path.join(DATA_DIR, 'blog', 'posts.json')
-
-type Locale = 'tr' | 'en'
 
 /** Localization: if locale is 'en' and an _en variant exists, title/excerpt/content become English. */
 function localizePost(post: BlogPost, locale: Locale): BlogPost {

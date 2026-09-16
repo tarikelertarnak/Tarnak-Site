@@ -36,7 +36,7 @@ const CONTRIBUTORS: Contributor[] = [
     role: 'Kurucu & Ana Geliştirici',
     roleEn: 'Founder & Lead Developer',
     roleIcon: 'crown',
-    link: 'https://github.com/TARIKELER-TARNAK',
+    link: 'https://github.com/tarikelertarnak',
   },
 ]
 

@@ -61,7 +61,7 @@ function fuzzyMatch(query: string, text: string): boolean {
   return qi === q.length
 }
 
-const GITHUB_USERNAME = 'TARIKELER-TARNAK'
+const GITHUB_USERNAME = 'tarikelertarnak'
 
 // ─── Component ──────────────────────────────────────────────────────
 

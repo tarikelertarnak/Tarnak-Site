@@ -37,10 +37,27 @@ yarn-error.log*
 # vercel
 .vercel
 
-# güvenlik: veri dosyaları ve DB script'leri repo'ya girmesin
+# güvenlik: veri dosyaları repo'ya girmesin
 /data/
-/scripts/
 /public/uploads/
+
+# scripts/: toptan yasaklamak build'i kiriyordu.
+# package.json -> postinstall "node scripts/patch-lightningcss.cjs"
+# package.json -> prebuild    "node scripts/fetch-github-data.cjs"
+# Cloudflare Pages klonunda bu dosyalar bulunamayinca build patliyordu.
+# Cozum: klasoru toptan yasaklamak yerine, SIR ICEREN script'leri tek tek disla.
+/scripts/
+!/scripts/patch-lightningcss.cjs
+!/scripts/fetch-github-data.cjs
+!/scripts/gen-countries.cjs
+!/scripts/check-country-map.cjs
+
+# Bunlar sir/sema iceriyor — repoda kalmasin (SUPABASE_DB_PW kullanirlar)
+scripts/pg-test.mjs
+scripts/apply-schema.mjs
+scripts/verify-schema.mjs
+scripts/auth-config-check.mjs
+scripts/schema.sql
 
 # typescript
 *.tsbuildinfo
@@ -52,3 +69,5 @@ next-env.d.ts
 .wrangler/
 *.log
 !progress.md
+
+# trivial Pages rebuild trigger (bu satir her push'ta degisir -> Pages queue'su yeniden tazelenir)

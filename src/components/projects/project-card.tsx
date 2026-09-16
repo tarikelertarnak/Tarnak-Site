@@ -93,7 +93,7 @@ interface DownloadComboboxProps {
 }
 
 /**
- * Version / OS selector — search + grouped list.
+ * Version / OS selector — search + grouped list with MULTI-SELECT (batch download).
  *  Default: all groups visible. The user's platform is pinned to the top of each group.
  *  Portal: the menu is moved to document.body, so it is not affected by other cards' stacking.
  */
@@ -105,6 +105,7 @@ function DownloadCombobox({
 }: DownloadComboboxProps) {
   const { t } = useT()
   const [query, setQuery] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const inputRef = useRef<HTMLInputElement>(null)
   const [pos, setPos] = useState<{ top: number, left?: number, right?: number } | null>(null)
 
@@ -186,23 +187,62 @@ function DownloadCombobox({
 
   const renderItem = (opt: DownloadOption) => {
     const isCurrent = opt.url === currentUrl
+    const isSelected = selected.has(opt.url)
+    const toggle = (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setSelected((prev) => {
+        const next = new Set(prev)
+        if (isSelected)
+          next.delete(opt.url)
+        else
+          next.add(opt.url)
+        return next
+      })
+    }
     return (
-      <a
+      <div
         key={opt.url}
-        href={opt.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => onSelect(opt.url)}
+        role="option"
+        aria-selected={isSelected}
         className={cn(
-          'mx-1.5 my-0.5 flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors',
-          isCurrent
-            ? 'bg-primary/15 font-medium text-primary'
+          'mx-1.5 my-0.5 flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors',
+          isSelected
+            ? 'bg-primary/15 text-white'
             : 'text-white/75 hover:bg-white/[0.06] hover:text-white',
         )}
       >
-        <span className="truncate">{opt.label}</span>
-        {isCurrent && <CheckIcon size={14} className="shrink-0 text-primary" />}
-      </a>
+        {/* Select checkbox — multi-select (batch download) */}
+        <button
+          type="button"
+          onClick={toggle}
+          onMouseDown={e => e.stopPropagation()}
+          aria-label={isSelected ? 'Kaldır' : 'Seç'}
+          className={cn(
+            'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
+            isSelected
+              ? 'border-primary bg-primary text-white'
+              : 'border-white/25 bg-transparent hover:border-white/50',
+          )}
+        >
+          {isSelected && <CheckIcon size={11} />}
+        </button>
+        {/* Label */}
+        <span className="min-w-0 flex-1 truncate">{opt.label}</span>
+        {/* Open & download */}
+        <a
+          href={opt.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => onSelect(opt.url)}
+          className={cn(
+            'shrink-0 transition-colors',
+            isCurrent ? 'text-primary' : 'text-white/50 hover:text-white',
+          )}
+        >
+          <DownloadIcon size={14} />
+        </a>
+      </div>
     )
   }
 
@@ -247,45 +287,81 @@ function DownloadCombobox({
           />
         </div>
       </div>
-      <div className="max-h-64 overscroll-contain overflow-y-auto py-1.5 [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin]">
+<div className="max-h-64 overscroll-contain overflow-y-auto py-1.5 [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin]">
         {totalCount === 0
           ? (
               <p className="px-3 py-3 text-center text-xs text-foreground-500">
                 {t('projects.noResultsShort')}
               </p>
             )
-          : showGroups
-            ? (
-                <>
-                  {latestItems.length > 0 && (
-                    <div>
-                      <GroupLabel>{t('projects.latest')}</GroupLabel>
-                      {latestItems.map(renderItem)}
-                    </div>
-                  )}
-                  {sortedOS.map((k) => {
-                    const list = grouped.byOS.get(k)?.filter(matches) ?? []
-                    if (list.length === 0)
-                      return null
+          : (
+              <>
+                {/* Batch download bar — visible when at least one is selected */}
+                {selected.size > 0 && (
+                  <div className="mx-1.5 mb-1.5 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-2">
+                    <span className="min-w-0 flex-1 truncate text-xs font-semibold text-primary">
+                      {selected.size} seçildi
+                    </span>
+                    <button
+                      type="button"
+                      onMouseDown={e => e.stopPropagation()}
+                      onClick={() => {
+                        // Open all selected in new tabs (batch download)
+                        for (const url of selected) {
+                          window.open(url, '_blank', 'noopener,noreferrer')
+                        }
+                        setSelected(new Set())
+                        onSelect([...selected][0] ?? '')
+                      }}
+                      className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+                    >
+                      ↓ Toplu İndir
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={e => e.stopPropagation()}
+                      onClick={() => setSelected(new Set())}
+                      aria-label="Temizle"
+                      className="shrink-0 rounded-md border border-white/20 px-1.5 py-1 text-[11px] text-white/70 transition-colors hover:text-white"
+                    >
+                      <CloseIcon size={12} />
+                    </button>
+                  </div>
+                )}
+                {showGroups
+                  ? (
+                      <>
+                        {latestItems.length > 0 && (
+                          <div>
+                            <GroupLabel>{t('projects.latest')}</GroupLabel>
+                            {latestItems.map(renderItem)}
+                          </div>
+                        )}
+                        {sortedOS.map((k) => {
+                          const list = grouped.byOS.get(k)?.filter(matches) ?? []
+                          if (list.length === 0)
+                            return null
 
-                    return (
-                      <div key={k}>
-                        <GroupLabel>{OS_LABELS[k]}</GroupLabel>
-                        {list.map(renderItem)}
-                      </div>
+                          return (
+                            <div key={k}>
+                              <GroupLabel>{OS_LABELS[k]}</GroupLabel>
+                              {list.map(renderItem)}
+                            </div>
+                          )
+                        })}
+                        {grouped.other.length > 0 && (
+                          <div>
+                            <GroupLabel>{t('projects.other')}</GroupLabel>
+                            {grouped.other.filter(matches).map(renderItem)}
+                          </div>
+                        )}
+                      </>
                     )
-                  })}
-                  {grouped.other.length > 0 && (
-                    <div>
-                      <GroupLabel>{t('projects.other')}</GroupLabel>
-                      {grouped.other.filter(matches).map(renderItem)}
-                    </div>
-                  )}
-                </>
-              )
-            : (
-                flat.map(renderItem)
-              )}
+                  : (
+                      flat.map(renderItem)
+                    )}
+              </>
+            )}
       </div>
     </motion.div>,
     typeof document !== 'undefined' ? document.body : (null as unknown as HTMLElement),
@@ -522,8 +598,7 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
   const { t } = useT()
   const tags = project.tags ?? []
 
-  const [current, setCurrent] = useState<DownloadOption | null>(null)
-  const [comboboxOpen, setComboboxOpen] = useState(false)
+const [comboboxOpen, setComboboxOpen] = useState(false)
   const comboboxRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
@@ -566,18 +641,23 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
       })
     }
     return opts
-  }, [project, t])
+    // ponytail: downloadOptions rebuilds when `t` identity changes (i18n context);
+    // it is memoized on the projection data that actually matters:
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project.downloadMode, project.downloadUrl, project.downloads, project.srcLink])
 
-  // Reset the selection when the project/mode changes; default to the user's platform in per-OS mode.
-  useEffect(() => {
-    const opt = downloadOptions.find(o => o.os === detectOS()) ?? null
-    setCurrent(opt)
-  }, [downloadOptions])
+  // Default selection = user's platform (per-OS only); derived, no setState loop.
+  const defaultOption = useMemo(
+    () => downloadOptions.find(o => o.os === detectOS()) ?? null,
+    [downloadOptions],
+  )
+  const [current, setCurrent] = useState<DownloadOption | null>(null)
+  const selectedCurrent = current ?? defaultOption
 
-  const currentDownloadUrl = current?.url ?? downloadOptions[0]?.url ?? null
+  const currentDownloadUrl = selectedCurrent?.url ?? downloadOptions[0]?.url ?? null
 
   const currentDownloadLabel
-    = current?.label ?? downloadOptions[0]?.label ?? t('projects.download')
+    = selectedCurrent?.label ?? downloadOptions[0]?.label ?? t('projects.download')
 
   return (
     <Card className="group h-full overflow-visible rounded-2xl border-foreground-200/10 bg-background transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">

@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import type {
+  BlogPost,
   ChatMessage,
   InterestItem,
   ProjectItem,
@@ -29,10 +30,12 @@ type SaveStatus = { type: 'success' | 'error', text: string } | null
 export function AdminPanel({
   initialContent,
   initialMessages,
+  initialBlogPosts,
   username,
 }: {
   initialContent: SiteContent
   initialMessages: ChatMessage[]
+  initialBlogPosts?: BlogPost[]
   username: string
 }) {
   const router = useRouter()
@@ -391,7 +394,7 @@ const clearMessages = async () => {
 
   const setProjectDownloadOs = (
     index: number,
-    os: 'windows' | 'android' | 'linux',
+    os: 'windows' | 'macos' | 'linux' | 'ios' | 'android',
     value: string,
   ) => {
     setContent((prev) => {
@@ -1169,6 +1172,201 @@ const clearMessages = async () => {
                       <AddButton onPress={addSecurityTool} label="Araç Ekle" />
                     </div>
                   </PanelCard>
+                  <PanelCard title="CV (Özgeçmiş)">
+                    <Field label="CV Dosya Yolu">
+                      <Input
+                        variant="faded"
+                        placeholder="/cv/tarikeler-cv.pdf"
+                        value={content.about.cv?.href ?? '/cv/tarikeler-cv.pdf'}
+                        onValueChange={value =>
+                          setAbout('cv', {
+                            ...(content.about.cv ?? {}),
+                            href: value,
+                          } as any)}
+                      />
+                    </Field>
+                    <Field label="CV Özeti (Summary)">
+                      <Textarea
+                        variant="faded"
+                        minRows={3}
+                        value={content.about.cv?.summary ?? ''}
+                        onValueChange={value =>
+                          setAbout('cv', {
+                            ...(content.about.cv ?? {}),
+                            summary: value,
+                          } as any)}
+                      />
+                    </Field>
+                    <p className="mt-3 text-xs text-foreground-500">
+                      CV PDF dosyasını <code>public/cv/tarikeler-cv.pdf</code>
+                      konumuna koy; yukarıdaki yolu bu dosyaya göre ayarla.
+                      Özgeçmiş verisi aşağıdan güncellenir.
+                    </p>
+                    <div className="mt-3 space-y-2">
+                      <h4 className="text-sm font-semibold">Deneyim</h4>
+                      {(content.about.cv?.experience ?? []).map((entry, index) => (
+                        <ItemCard
+                          key={index}
+                          title={`Deneyim #${index + 1}`}
+                          onRemove={() =>
+                            setAbout('cv', {
+                              ...(content.about.cv ?? {}),
+                              experience: (content.about.cv?.experience ?? []).filter(
+                                (_, i) => i !== index,
+                              ),
+                            } as any)}
+                        >
+                          <Grid>
+                            <Field label="Rol / Görev">
+                              <Input
+                                variant="faded"
+                                value={entry.role}
+                                onValueChange={value =>
+                                  setAbout('cv', {
+                                    ...(content.about.cv ?? {}),
+                                    experience: (content.about.cv?.experience ?? []).map(
+                                      (e, i) => (i === index ? { ...e, role: value } : e),
+                                    ),
+                                  } as any)}
+                              />
+                            </Field>
+                            <Field label="Şirket">
+                              <Input
+                                variant="faded"
+                                value={entry.company}
+                                onValueChange={value =>
+                                  setAbout('cv', {
+                                    ...(content.about.cv ?? {}),
+                                    experience: (content.about.cv?.experience ?? []).map(
+                                      (e, i) => (i === index ? { ...e, company: value } : e),
+                                    ),
+                                  } as any)}
+                              />
+                            </Field>
+                            <Field label="Dönem">
+                              <Input
+                                variant="faded"
+                                value={entry.period}
+                                onValueChange={value =>
+                                  setAbout('cv', {
+                                    ...(content.about.cv ?? {}),
+                                    experience: (content.about.cv?.experience ?? []).map(
+                                      (e, i) => (i === index ? { ...e, period: value } : e),
+                                    ),
+                                  } as any)}
+                              />
+                            </Field>
+                            <Field label="Açıklama">
+                              <Input
+                                variant="faded"
+                                value={entry.description}
+                                onValueChange={value =>
+                                  setAbout('cv', {
+                                    ...(content.about.cv ?? {}),
+                                    experience: (content.about.cv?.experience ?? []).map(
+                                      (e, i) => (i === index ? { ...e, description: value } : e),
+                                    ),
+                                  } as any)}
+                              />
+                            </Field>
+                          </Grid>
+                        </ItemCard>
+                      ))}
+                      <AddButton
+                        onPress={() =>
+                          setAbout('cv', {
+                            ...(content.about.cv ?? {}),
+                            experience: [
+                              ...(content.about.cv?.experience ?? []),
+                              { role: '', company: '', period: '', description: '' },
+                            ],
+                          } as any)}
+                        label="Deneyim Ekle"
+                      />
+                    </div>
+                    <div className="mt-4 space-y-2">
+                      <h4 className="text-sm font-semibold">Eğitim</h4>
+                      {(content.about.cv?.education ?? []).map((entry, index) => (
+                        <ItemCard
+                          key={index}
+                          title={`Eğitim #${index + 1}`}
+                          onRemove={() =>
+                            setAbout('cv', {
+                              ...(content.about.cv ?? {}),
+                              education: (content.about.cv?.education ?? []).filter(
+                                (_, i) => i !== index,
+                              ),
+                            } as any)}
+                        >
+                          <Grid>
+                            <Field label="Rol / Bölüm">
+                              <Input
+                                variant="faded"
+                                value={entry.role}
+                                onValueChange={value =>
+                                  setAbout('cv', {
+                                    ...(content.about.cv ?? {}),
+                                    education: (content.about.cv?.education ?? []).map(
+                                      (e, i) => (i === index ? { ...e, role: value } : e),
+                                    ),
+                                  } as any)}
+                              />
+                            </Field>
+                            <Field label="Kurum">
+                              <Input
+                                variant="faded"
+                                value={entry.company}
+                                onValueChange={value =>
+                                  setAbout('cv', {
+                                    ...(content.about.cv ?? {}),
+                                    education: (content.about.cv?.education ?? []).map(
+                                      (e, i) => (i === index ? { ...e, company: value } : e),
+                                    ),
+                                  } as any)}
+                              />
+                            </Field>
+                            <Field label="Dönem">
+                              <Input
+                                variant="faded"
+                                value={entry.period}
+                                onValueChange={value =>
+                                  setAbout('cv', {
+                                    ...(content.about.cv ?? {}),
+                                    education: (content.about.cv?.education ?? []).map(
+                                      (e, i) => (i === index ? { ...e, period: value } : e),
+                                    ),
+                                  } as any)}
+                              />
+                            </Field>
+                            <Field label="Açıklama">
+                              <Input
+                                variant="faded"
+                                value={entry.description}
+                                onValueChange={value =>
+                                  setAbout('cv', {
+                                    ...(content.about.cv ?? {}),
+                                    education: (content.about.cv?.education ?? []).map(
+                                      (e, i) => (i === index ? { ...e, description: value } : e),
+                                    ),
+                                  } as any)}
+                              />
+                            </Field>
+                          </Grid>
+                        </ItemCard>
+                      ))}
+                      <AddButton
+                        onPress={() =>
+                          setAbout('cv', {
+                            ...(content.about.cv ?? {}),
+                            education: [
+                              ...(content.about.cv?.education ?? []),
+                              { role: '', company: '', period: '', description: '' },
+                            ],
+                          } as any)}
+                        label="Eğitim Ekle"
+                      />
+                    </div>
+                  </PanelCard>
                 </div>
               ),
             },
@@ -1356,7 +1554,7 @@ const clearMessages = async () => {
                                   onChange={() =>
                                     setProjectDownloadMode(index, 'per-os')}
                                 />
-                                İşletim sistemine özel (Windows / Android / Linux)
+                                İşletim sistemine özel (Windows / macOS / Linux / iOS / Android)
                               </label>
                             </div>
                             {(item.downloadMode ?? 'global') === 'global'
@@ -1386,15 +1584,15 @@ const clearMessages = async () => {
                                           )}
                                       />
                                     </Field>
-                                    <Field label="Android">
+                                    <Field label="macOS">
                                       <Input
                                         variant="faded"
-                                        placeholder="/downloads/app.apk"
-                                        value={item.downloads?.android || ''}
+                                        placeholder="/downloads/app.dmg"
+                                        value={item.downloads?.macos || ''}
                                         onValueChange={value =>
                                           setProjectDownloadOs(
                                             index,
-                                            'android',
+                                            'macos',
                                             value,
                                           )}
                                       />
@@ -1406,6 +1604,28 @@ const clearMessages = async () => {
                                         value={item.downloads?.linux || ''}
                                         onValueChange={value =>
                                           setProjectDownloadOs(index, 'linux', value)}
+                                      />
+                                    </Field>
+                                    <Field label="iOS">
+                                      <Input
+                                        variant="faded"
+                                        placeholder="https://apps.apple.com/..."
+                                        value={item.downloads?.ios || ''}
+                                        onValueChange={value =>
+                                          setProjectDownloadOs(index, 'ios', value)}
+                                      />
+                                    </Field>
+                                    <Field label="Android">
+                                      <Input
+                                        variant="faded"
+                                        placeholder="/downloads/app.apk"
+                                        value={item.downloads?.android || ''}
+                                        onValueChange={value =>
+                                          setProjectDownloadOs(
+                                            index,
+                                            'android',
+                                            value,
+                                          )}
                                       />
                                     </Field>
                                   </Grid>
@@ -1504,6 +1724,18 @@ const clearMessages = async () => {
               ),
             },
 {
+              key: 'blog',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:post-outline" width={15} height={15} />
+                  Blog Yazıları
+                </span>
+              ),
+              children: (
+                <BlogManager onStatus={setStatus} saving={saving} initialPosts={initialBlogPosts ?? []} />
+              ),
+            },
+            {
               key: 'messages',
               label: (
                 <span className="inline-flex items-center gap-1.5">
@@ -1861,5 +2093,207 @@ function PasswordCard() {
         </Button>
       </div>
     </PanelCard>
+  )
+}
+
+interface BlogManagerProps {
+  onStatus: (s: SaveStatus) => void
+  saving: boolean
+}
+
+/**
+ * Blog yazıları CRUD — /api/admin/blog (upsert + delete) üzerinden çalışır.
+ * Yazılar data/blog/posts.json'a yazılır; statik export'ta build zamanında dahil olur.
+ */
+function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPosts: BlogPost[] }) {
+  const [posts, setPosts] = useState<any[]>(initialPosts)
+  const [editing, setEditing] = useState<any | null>(null)
+
+  const savePost = async () => {
+    if (!editing?.title?.trim() || !editing?.slug?.trim())
+      return
+    onStatus(null)
+    const res = await fetch('/api/admin/blog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'upsert', post: editing }),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      onStatus({ type: 'error', text: json?.message || 'Kaydedilemedi' })
+      return
+    }
+    onStatus({ type: 'success', text: 'Yazı kaydedildi' })
+    setPosts(prev =>
+      [...prev.filter((p: any) => p.id !== editing.id), { ...editing }])
+    setEditing(null)
+  }
+
+  const removePost = async (post: any) => {
+    if (!window.confirm(`"${post.title}" silinsin mi?`))
+      return
+    const res = await fetch('/api/admin/blog', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id: post.id }),
+    })
+    if (!res.ok) {
+      onStatus({ type: 'error', text: 'Silinemedi' })
+      return
+    }
+    onStatus({ type: 'success', text: 'Yazı silindi' })
+    setPosts(prev => prev.filter((p: any) => p.id !== post.id))
+    if (editing?.id === post.id)
+      setEditing(null)
+  }
+
+  const toSlug = (s: string) =>
+    s.toLocaleLowerCase('tr').replace(/[^a-z0-9ığüşöç\s-]/g, '').trim().replace(/\s+/g, '-')
+
+  const emptyPost = () => ({
+    id: `post-${Date.now()}`,
+    title: '',
+    slug: '',
+    date: new Date().toISOString().slice(0, 10),
+    excerpt: '',
+    content: '',
+    badge: '',
+    tags: [] as string[],
+  })
+
+  return (
+    <div className="space-y-4 pt-4">
+      <div className="flex flex-row items-center justify-between">
+        <p className="text-sm text-foreground-500">
+          {posts.length} yazı
+        </p>
+        {!editing && (
+          <Button
+            size="sm"
+            color="primary"
+            variant="bordered"
+            onPress={() => setEditing(emptyPost())}
+          >
+            + Yeni Yazı
+          </Button>
+        )}
+      </div>
+
+      {editing && (
+        <PanelCard title={posts.some((p: any) => p.id === editing.id) ? 'Yazıyı Düzenle' : 'Yeni Yazı'}>
+          <div className="space-y-3">
+            <Grid>
+              <Field label="Başlık *">
+                <Input
+                  variant="faded"
+                  placeholder="Yazı başlığı"
+                  value={editing.title || ''}
+                  onValueChange={(v) => {
+                    const next = { ...editing, title: v }
+                    if (!editing.slug)
+                      next.slug = toSlug(v)
+                    setEditing(next)
+                  }}
+                />
+              </Field>
+              <Field label="Slug (URL) *">
+                <Input
+                  variant="faded"
+                  placeholder="yazi-url"
+                  value={editing.slug || ''}
+                  onValueChange={v => setEditing({ ...editing, slug: toSlug(v) || v })}
+                />
+              </Field>
+              <Field label="Tarih">
+                <Input
+                  variant="faded"
+                  type="date"
+                  value={editing.date || ''}
+                  onValueChange={v => setEditing({ ...editing, date: v })}
+                />
+              </Field>
+              <Field label="Rozet (opsiyonel)">
+                <Input
+                  variant="faded"
+                  placeholder="Yeni"
+                  value={editing.badge || ''}
+                  onValueChange={v => setEditing({ ...editing, badge: v })}
+                />
+              </Field>
+            </Grid>
+            <Field label="Özet (excerpt)">
+              <Textarea
+                variant="faded"
+                minRows={2}
+                placeholder="Listede görünen kısa özet"
+                value={editing.excerpt || ''}
+                onValueChange={v => setEditing({ ...editing, excerpt: v })}
+              />
+            </Field>
+            <Field label="İçerik (markdown destekli)">
+              <Textarea
+                variant="faded"
+                minRows={10}
+                placeholder="Yazı içeriği…"
+                value={editing.content || ''}
+                onValueChange={v => setEditing({ ...editing, content: v })}
+              />
+            </Field>
+            <div className="flex flex-row gap-2">
+              <Button
+                color="primary"
+                size="sm"
+                onPress={savePost}
+                isDisabled={!editing.title?.trim() || !editing.slug?.trim()}
+              >
+                Kaydet
+              </Button>
+              <Button
+                variant="bordered"
+                size="sm"
+                onPress={() => setEditing(null)}
+              >
+                Vazgeç
+              </Button>
+            </div>
+          </div>
+        </PanelCard>
+      )}
+
+      {!editing && (
+        <div className="flex flex-col gap-2">
+          {posts.length === 0 && (
+            <p className="text-sm text-foreground-500">
+              Henüz yazı yok. "Yeni Yazı" ile başla.
+            </p>
+          )}
+          {posts.map((post: any) => (
+            <div
+              key={post.id}
+              className="flex flex-row items-center gap-3 rounded-lg border border-foreground-200/10 bg-background px-3 py-2.5"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-foreground">
+                  {post.title}
+                </p>
+                <p className="truncate text-xs text-foreground-500">
+                  {post.date}
+                  {' '}
+                  ·
+                  {' '}
+                  /blog/{post.slug}
+                </p>
+              </div>
+              <Button size="sm" variant="light" onPress={() => setEditing({ ...post })}>
+                Düzenle
+              </Button>
+              <Button size="sm" color="danger" variant="light" onPress={() => removePost(post)}>
+                Sil
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

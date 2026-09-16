@@ -22,7 +22,7 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
   },
   nav: {
     ctaLabel: 'GitHub',
-    githubRepo: 'https://github.com/TARIKELER-TARNAK',
+    githubRepo: 'https://github.com/tarikelertarnak',
     items: [
       { title: 'Projeler', href: '/projects' },
       { title: 'Blog', href: '/blog' },
@@ -76,6 +76,7 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
       'Siber güvenliğe tutkulu biriyim. Yeni teknikler öğrenmeyi ve güvenlik zorluklarının üstesinden gelmeyi seviyorum.',
     teamTitle: 'EKİBİMİZ',
     cv: {
+      href: '/cv/tarikeler-cv.pdf',
       summary:
         'Next.js, TypeScript ve yapay zeka ile modern, uçtan uca web deneyimleri üreten web geliştirici. Tasarımdan deploy\u2019a — insanların kullandığı ürünler geliştiriyorum.',
       experience: [

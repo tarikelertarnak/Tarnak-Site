@@ -181,7 +181,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
                   <Button
                     size="sm"
                     color="primary"
-                    href="/cv/tarikeler-cv.pdf"
+                    href={about.cv.href ?? '/cv/tarikeler-cv.pdf'}
                     target="_blank"
                     startContent={<DownloadIcon size={16} />}
                   >
@@ -190,7 +190,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
                   <Button
                     size="sm"
                     variant="bordered"
-                    href="/cv/tarikeler-cv.pdf"
+                    href={about.cv.href ?? '/cv/tarikeler-cv.pdf'}
                     target="_blank"
                     startContent={<EyeIcon size={16} />}
                   >

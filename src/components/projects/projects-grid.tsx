@@ -49,7 +49,7 @@ const GITHUB_DOWNLOAD_OVERRIDES: Record<string, Partial<ProjectItem>> = {
     downloadMode: 'per-os',
     downloads: {
       windows:
-        'https://github.com/TARIKELER-TARNAK/OfficeSetupWizard/releases/download/v1.0.0/OfficeSetupWizard.exe',
+        'https://github.com/tarikelertarnak/OfficeSetupWizard/releases/download/v1.0.0/OfficeSetupWizard.exe',
     },
   },
 }
@@ -63,8 +63,8 @@ const REPO_DESCRIPTIONS_TR: Record<string, string> = {
   'TarnakLua-Roblox': 'Roblox için Lua araçları ve scriptleri.',
   'Scribd-Download':
     'Scribd belge indirici tarayıcı eklentisi - yüksek kaliteli PDF dışa aktarımı.',
-  'TARIKELER-TARNAK': 'GitHub profil README\'si.',
-  'TARIKELER-TARNAK.github.io': 'Kişisel portfolyo web sitesi.',
+  'tarikelertarnak': 'GitHub profil README\'si.',
+  'tarikelertarnak.github.io': 'Kişisel portfolyo web sitesi.',
   'AI-Jailbreak': 'AI model güvenlik sınır testleri için prompt koleksiyonu.',
   'OfficeSetupWizard':
     'Tek tıkla Microsoft Office LTSC Professional Plus 2024 kurulum ve aktivasyonu (Office Deployment Tool sarmalayıcısı).',

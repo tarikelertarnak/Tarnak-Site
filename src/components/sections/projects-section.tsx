@@ -40,7 +40,7 @@ export function ProjectsSection({
             {t('projects.viewAll')}
           </Button>
           <Button
-            href="https://github.com/TARIKELER-TARNAK?tab=repositories"
+            href="https://github.com/tarikelertarnak?tab=repositories"
             target="_blank"
             rel="noopener noreferrer"
             color="primary"

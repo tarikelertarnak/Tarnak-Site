@@ -20,10 +20,12 @@ const SCRIPT = `
       : t === 'dark';
     root.classList.toggle('dark', dark);
     root.classList.toggle('light', !dark);
+    root.setAttribute('data-theme', dark ? 'dark' : 'light');
     root.style.colorScheme = dark ? 'dark' : 'light';
   } catch(e) {
     var r = document.documentElement;
     r.classList.add('dark'); r.classList.remove('light');
+    r.setAttribute('data-theme', 'dark');
     r.style.colorScheme = 'dark';
   }
 })();
