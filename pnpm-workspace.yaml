@@ -1,5 +1,6 @@
 packages:
   - "."
+
 allowBuilds:
   '@heroui/shared-utils': true
   '@tailwindcss/oxide': true

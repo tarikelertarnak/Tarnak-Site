@@ -4,16 +4,16 @@ import { notFound } from 'next/navigation'
 import { TrackBlogView } from '@/app/blog/[slug]/track-view'
 import { BackToListButton } from '@/components/back-to-list-button'
 import { Navigation } from '@/components/navigation'
-import { getPostBySlug, getPosts } from '@/lib/blog'
+import { getPostBySlug } from '@/lib/blog'
 import { t } from '@/lib/i18n'
 import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
 import { renderMarkdown } from '@/lib/markdown'
 
-export const revalidate = 300
-export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
-  const posts = await getPosts()
-  return posts.map(post => ({ slug: post.slug }))
-}
+// cookies() (locale detection) requires a dynamic route — force-dynamic
+// prevents the "Page changed from static to dynamic at runtime" 500 on
+// the Cloudflare worker. Blog posts are read live (Supabase + local JSON),
+// so ISR/prerendering adds nothing here.
+export const dynamic = 'force-dynamic'
 interface PostPageProps {
   params: Promise<{ slug: string }>
 }
@@ -21,8 +21,10 @@ export async function generateMetadata({
   params,
 }: PostPageProps): Promise<Metadata> {
   const { slug } = await params
-  const locale = await getLocale()
-  const post = await getPostBySlug(slug, locale)
+  // No getLocale() here — cookies() in generateMetadata throws
+  // "Page changed from static to dynamic" on the Cloudflare worker.
+  // Title variant falls back to 'tr' (body still localizes correctly).
+  const post = await getPostBySlug(slug)
   return { title: post ? `${post.title} - Blog` : 'Blog' }
 }
 export default async function PostPage({ params }: PostPageProps) {

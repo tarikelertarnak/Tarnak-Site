@@ -32,7 +32,7 @@ export default async function ProjectsPage() {
           {/* GitHub Projects button */}
           <div className="mx-auto mb-8 flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-2">
             <a
-              href="https://github.com/TARIKELER-TARNAK?tab=repositories"
+              href="https://github.com/tarikelertarnak?tab=repositories"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-[#e5e7eb] px-4 py-2 text-sm font-medium text-black no-underline transition-colors hover:bg-[#d1d5db] hover:text-black"

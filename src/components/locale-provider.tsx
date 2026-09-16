@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import {
   detectLocale,
+  detectLocaleFromCountry,
 
   LOCALE_COOKIE,
 
@@ -40,7 +41,21 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const value = useMemo<LocaleContextValue>(() => {
-    const detected = detectLocale(typeof navigator !== 'undefined' ? navigator.language : 'tr')
+    // Client-side auto-detect: browser language first, then its region code
+    // (mirrors the server's accept-language + CF-IPCountry order).
+    let detected = detectLocale(typeof navigator !== 'undefined' ? navigator.language : undefined)
+    if (typeof navigator !== 'undefined') {
+      try {
+        // "pt-BR" → region "BR" → pt; "en-US" → region not in map → keep 'en'.
+        const region = (navigator.language.split('-')[1] || '').toUpperCase()
+        if (region) {
+          detected = detectLocaleFromCountry(region) ?? detected
+        }
+      }
+      catch {
+        /* locale unavailable — keep browser-language result */
+      }
+    }
     const locale = resolveLocale(pref, detected)
     const setPref = (next: LocalePref) => {
       setPrefState(next)

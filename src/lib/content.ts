@@ -102,7 +102,7 @@ export interface ProjectItem {
   /**
    * Download mode:
    * - 'global' → same downloadUrl used on all OSes
-   * - 'per-os' → separate URL for downloads.{windows,android,linux}
+   * - 'per-os' → separate URL for downloads.{windows,macos,linux,ios,android}
    */
   downloadMode?: 'global' | 'per-os'
   /** Single download link/file path in global mode */
@@ -110,8 +110,10 @@ export interface ProjectItem {
   /** Separate link/file path per OS in per-os mode */
   downloads?: {
     windows?: string
-    android?: string
+    macos?: string
     linux?: string
+    ios?: string
+    android?: string
   }
   /** Tags (for filtering/searching) */
   tags?: string[]
@@ -162,6 +164,7 @@ export interface CvEntry {
 }
 
 export interface CvData {
+  href: string
   summary: string
   experience: CvEntry[]
   education: CvEntry[]
@@ -513,7 +516,7 @@ async function getDefaultContent(): Promise<SiteContent> {
     },
     nav: {
       ctaLabel: 'GitHub',
-      githubRepo: 'https://github.com/TARIKELER-TARNAK',
+      githubRepo: 'https://github.com/tarikelertarnak',
       items: [
         { title: 'Projects', href: '/projects' },
         { title: 'Blog', href: '/blog' },
@@ -522,7 +525,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       ],
     },
     social: [
-      { name: 'GitHub', href: 'https://github.com/TARIKELER-TARNAK', icon: 'mdi:github' },
+      { name: 'GitHub', href: 'https://github.com/tarikelertarnak', icon: 'mdi:github' },
       { name: 'Instagram', href: 'https://www.instagram.com/', icon: 'mdi:instagram' },
       { name: 'YouTube', href: 'https://www.youtube.com/', icon: 'mdi:youtube' },
       { name: 'TikTok', href: 'https://www.tiktok.com/', icon: 'ic:baseline-tiktok' },
@@ -588,12 +591,13 @@ async function getDefaultContent(): Promise<SiteContent> {
       teamTitle: 'THE TEAM',
       team: [
         { name: 'TARIKELER', role: 'Founder' },
-        { name: 'TARIKELER-TARNAK', role: 'Infra' },
+        { name: 'tarikelertarnak', role: 'Infra' },
         { name: 'Fruity Dev', role: 'DevOps' },
         { name: 'PixelShield', role: 'Security' },
         { name: 'Mythora.de', role: 'Operations' },
       ],
       cv: {
+        href: '/cv/tarikeler-cv.pdf',
         summary:
           'Web developer building modern, end-to-end web experiences with Next.js, TypeScript and AI. From design to deploy — I ship products people use.',
         experience: [
@@ -678,7 +682,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       locationYandex: '',
     },
     settings: {
-      githubUsername: 'TARIKELER-TARNAK',
+      githubUsername: 'tarikelertarnak',
       defaultTheme: 'dark',
       backgroundImage: '',
     },

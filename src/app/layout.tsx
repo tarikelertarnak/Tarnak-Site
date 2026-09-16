@@ -11,7 +11,7 @@ import { SkipLink } from '@/components/skip-link'
 import { ThemeInitScript } from '@/components/theme-init-script'
 import { TopBar } from '@/components/top-bar'
 import { getContent } from '@/lib/content'
-import { getLocale } from '@/lib/i18n-server'
+import { getLocale, getLocaleDirection } from '@/lib/i18n-server'
 import '@fontsource/montserrat/400.css'
 import '@fontsource/montserrat/500.css'
 import '@fontsource/montserrat/600.css'
@@ -21,7 +21,8 @@ import './globals.css'
 
 export const revalidate = 300
 
-const SITE_URL = 'https://tarikeler-tarnak.github.io'
+// Build-time env ile ezilebilir (deploy-cloudflare.ps1 pages.dev, deploy-gh-pages.ps1 github.io set eder)
+const SITE_URL = process.env.SITE_URL || 'https://tarikelertarnak.github.io'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -34,30 +35,45 @@ export async function generateMetadata(): Promise<Metadata> {
   const name = content.hero.name || 'TARIK ELER'
   const title = `${name} - TARNAK`
   const description
-    = 'TARIK ELER - TARNAK (Tarnak) - Web developer & creator. Next.js, TypeScript ve yapay zeka üzerine projeler geliştiriyorum. Projelerim, yeteneklerim ve iletişim bilgilerim.'
+    = 'TARIK ELER - TARNAK (Tarnak) - Web developer & creator. Next.js, TypeScript ve yapay zeka üzerine projeler geliştiriyorum. Projelerim, yeteneklerim ve iletişim bilgilerim. Tarık Eler, tarikeler, elertarik, tarık eler tarnak, tarikelertarnak.'
+  const keywords = [
+    'TARIK ELER',
+    'TARNAK',
+    'Tarık Eler',
+    'TARIKELER',
+    'tarikelertarnak',
+    'Tarnak',
+    'tarikeler',
+    'tarık',
+    'eler',
+    'tarıkeler',
+    'elertarik',
+    'tarık eler',
+    'eler tarık',
+    'tarık eler tarnak',
+    'tarikelertarnak',
+    'tarik eler',
+    'tarik eler tarnak',
+    'TARIK ELER TARNAK',
+    'web developer',
+    'Next.js',
+    'TypeScript',
+    'yazılım geliştirici',
+    'portfolio',
+    'kişisel site',
+  ]
 
   return {
     metadataBase: new URL(SITE_URL),
     title,
     description,
-    keywords: [
-      'TARIK ELER',
-      'TARNAK',
-      'Tarık Eler',
-      'TARIKELER',
-      'TARIKELER-TARNAK',
-      'Tarnak',
-      'tarikeler',
-      'web developer',
-      'Next.js',
-      'TypeScript',
-      'yazılım geliştirici',
-    ],
+    keywords,
     authors: [{ name: 'TARIK ELER - TARNAK', url: SITE_URL }],
     creator: 'TARIK ELER - TARNAK',
     publisher: 'TARIK ELER - TARNAK',
-    robots: { index: true, follow: true },
+    robots: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
     alternates: { canonical: '/' },
+    formatDetection: { email: false, address: false, telephone: false },
     icons: {
       icon: [
         { url: '/tarnak-white.svg', type: 'image/svg+xml' },
@@ -73,6 +89,15 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       locale: 'tr_TR',
+      images: [
+        { url: `${SITE_URL}/tarnak-logo-512.png`, width: 512, height: 512, alt: 'TARNAK logo' },
+      ],
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+      images: [`${SITE_URL}/tarnak-logo-512.png`],
     },
   }
 }
@@ -91,10 +116,41 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // SSR first paint: .dark/.light class is baked on <html> → no white FOUC.
   // auto/system → dark (site design is dark); ThemeInitScript sets the real preference at parse time.
   const initialThemeClass = defaultTheme === 'light' ? 'light' : 'dark'
+  const initialThemeData = initialThemeClass
 
   return (
-    <html lang={locale} suppressHydrationWarning className={initialThemeClass}>
+    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass} data-theme={initialThemeData}>
       <body className="min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
+        {/* SEO — Person + WebSite structured data (Google / Yandex rich snippets) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              {
+                '@context': 'https://schema.org',
+                '@type': 'Person',
+                name: 'TARIK ELER - TARNAK',
+                alternateName: ['TARNAK', 'Tarnak', 'tarikeler', 'elertarik', 'Tarık Eler'],
+                url: SITE_URL,
+                image: `${SITE_URL}/tarnak-logo-512.png`,
+                sameAs: [
+                  'https://github.com/tarikelertarnak',
+                  'https://tarikelertarnak.pages.dev',
+                  'https://tarikelertarnak.github.io',
+                ],
+                knowsAbout: ['Next.js', 'TypeScript', 'Web Development', 'React', 'Yapay Zeka'],
+              },
+              {
+                '@context': 'https://schema.org',
+                '@type': 'WebSite',
+                name: 'TARIK ELER - TARNAK',
+                alternateName: ['TARNAK', 'tarikelertarnak', 'tarikeler'],
+                url: SITE_URL,
+                inLanguage: ['tr', 'en'],
+              },
+            ]),
+          }}
+        />
         <ThemeInitScript defaultTheme={safeDefaultTheme} />
         <Providers
           backgroundImage={content.settings?.backgroundImage || ''}
