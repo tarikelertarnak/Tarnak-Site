@@ -16,7 +16,9 @@ const aj = env.ARCJET_KEY
         protectSignup({
           email: {
             mode: 'LIVE',
-            block: ['DISPOSABLE', 'NO_MX_RECORDS', 'INVALID'],
+            // Arcjet 1.13'te `block` -> `deny` olarak yeniden adlandirildi.
+            // (1.0.0-beta.11'de `block` idi; build bunu TS2353 ile yakaladi.)
+            deny: ['DISPOSABLE', 'NO_MX_RECORDS', 'INVALID'],
           },
           bots: {
             mode: 'LIVE',
@@ -90,54 +92,64 @@ export async function POST(req: Request) {
     = values.data.contactMethod === 'phone' ? values.data.contactValue.trim() : ''
 
   if (aj) {
-    const decision = await aj.protect(req, {
-      email: contactEmail,
-    })
+    try {
+      const decision = await aj.protect(req, {
+        email: contactEmail,
+      })
 
-    if (decision.isDenied()) {
-      if (decision.reason.isEmail()) {
-        return NextResponse.json(
-          { success: false, message: 'Invalid email address. Please check and try again.' },
-          { status: 400 },
-        )
+      if (decision.isDenied()) {
+        if (decision.reason.isEmail()) {
+          return NextResponse.json(
+            { success: false, message: 'Invalid email address. Please check and try again.' },
+            { status: 400 },
+          )
+        }
+        else if (decision.reason.isRateLimit()) {
+          return NextResponse.json(
+            { success: false, message: 'Too many requests. Please wait a few minutes before trying again.' },
+            { status: 429 },
+          )
+        }
+        else if (decision.reason.isBot()) {
+          return NextResponse.json(
+            { success: false, message: 'Automated requests are not allowed. Please try again.' },
+            { status: 403 },
+          )
+        }
+        else {
+          return NextResponse.json(
+            { success: false, message: 'Request forbidden. Please try again later.' },
+            { status: 403 },
+          )
+        }
       }
-      else if (decision.reason.isRateLimit()) {
+
+      if (decision.ip.hasAsn() && decision.ip.asnType === 'hosting') {
         return NextResponse.json(
-          { success: false, message: 'Too many requests. Please wait a few minutes before trying again.' },
-          { status: 429 },
-        )
-      }
-      else if (decision.reason.isBot()) {
-        return NextResponse.json(
-          { success: false, message: 'Automated requests are not allowed. Please try again.' },
+          { success: false, message: 'Requests from hosting providers are not allowed.' },
           { status: 403 },
         )
       }
-      else {
+
+      if (
+        decision.ip.isHosting()
+        || decision.ip.isVpn()
+        || decision.ip.isProxy()
+        || decision.ip.isRelay()
+      ) {
         return NextResponse.json(
-          { success: false, message: 'Request forbidden. Please try again later.' },
+          { success: false, message: 'Requests from VPNs, proxies, or suspicious networks are not allowed.' },
           { status: 403 },
         )
       }
     }
-
-    if (decision.ip.hasAsn() && decision.ip.asnType === 'hosting') {
-      return NextResponse.json(
-        { success: false, message: 'Requests from hosting providers are not allowed.' },
-        { status: 403 },
-      )
-    }
-
-    if (
-      decision.ip.isHosting()
-      || decision.ip.isVpn()
-      || decision.ip.isProxy()
-      || decision.ip.isRelay()
-    ) {
-      return NextResponse.json(
-        { success: false, message: 'Requests from VPNs, proxies, or suspicious networks are not allowed.' },
-        { status: 403 },
-      )
+    catch (err) {
+      // Arcjet bir AG servisi. Ulasilamazsa / transport hatasi verirse istegi
+      // DUSURMEYIZ. Eskiden bu cagri try/catch DISINDAYDI: tek bir hata tum
+      // POST'u 500 yapiyor ve iletisim formu tamamen kiriliyordu.
+      // Burada bilincli olarak fail-open secildi — guvenlik kuralindan once
+      // erisilebilirlik. Supheli istekler yine Discord'a dusup elle gorulur.
+      console.warn('[api/contact] Arcjet kontrolu atlandi (fail-open):', err)
     }
   }
 
