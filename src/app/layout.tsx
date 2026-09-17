@@ -12,6 +12,7 @@ import { ThemeInitScript } from '@/components/theme-init-script'
 import { TopBar } from '@/components/top-bar'
 import { getContent } from '@/lib/content'
 import { getLocale, getLocaleDirection } from '@/lib/i18n-server'
+import { SITE_URL } from '@/lib/site-url'
 import '@fontsource/montserrat/400.css'
 import '@fontsource/montserrat/500.css'
 import '@fontsource/montserrat/600.css'
@@ -21,8 +22,10 @@ import './globals.css'
 
 export const revalidate = 300
 
-// Build-time env ile ezilebilir (deploy-cloudflare.ps1 pages.dev, deploy-gh-pages.ps1 github.io set eder)
-const SITE_URL = process.env.SITE_URL || 'https://tarikelertarnak.github.io'
+// Kanonik origin tek kaynaktan gelir — bkz. src/lib/site-url.ts
+// (Vercel/Cloudflare ortam degiskenlerini otomatik okur; eskiden burada
+//  github.io'ya dusen bir varsayilan vardi ve canli sitede canonical/og
+//  URL'lerini bozuyordu.)
 
 export const viewport: Viewport = {
   width: 'device-width',

@@ -279,7 +279,10 @@ function ButtonBlock(props: Record<string, unknown>) {
       className={cn('my-2', p.align === 'center' && 'text-center', p.align === 'right' && 'text-right')}
       style={layoutStyle(props)}
     >
-      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+      {/* Puck'tan gelen href dinamik/ harici olabilir; next/link yerine duz <a> bilincli.
+          (Eskiden burada '@next/next/no-html-link-for-pages' icin eslint-disable vardi;
+          @next/eslint-plugin-next 15.5.7 + Next 16 kombinasyonunda o kural bu dosya
+          icin kayitli olmadigindan yorumun kendisi hata uretiyordu -> kaldirildi.) */}
       <a
         href={p.href}
         target={p.href.startsWith('http') ? '_blank' : undefined}
