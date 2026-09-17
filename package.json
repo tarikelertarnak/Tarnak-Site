@@ -8,7 +8,7 @@
     "url": ""
   },
   "scripts": {
-    "prebuild": "node scripts/fetch-github-data.cjs",
+    "prebuild": "node -e \"const fs=require('fs');const f='scripts/fetch-github-data.cjs';if(fs.existsSync(f)){require('./'+f)}else{console.log('[prebuild] scripts/fetch-github-data.cjs yok (eski branch) - atlandi, committed snapshot kullanilir')}\"",
     "dev": "next dev --turbopack",
     "dev:fast": "next dev --turbopack --no-preinstall",
     "build": "next build",
@@ -19,7 +19,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "postinstall": "node scripts/patch-lightningcss.cjs"
+    "postinstall": "node -e \"const fs=require('fs');const f='scripts/patch-lightningcss.cjs';if(fs.existsSync(f)){require('./'+f)}else{console.log('[postinstall] scripts/patch-lightningcss.cjs yok (eski branch) - atlandi')}\""
   },
   "dependencies": {
     "@ant-design/nextjs-registry": "^1.3.0",
