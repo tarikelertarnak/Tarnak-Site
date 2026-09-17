@@ -7,12 +7,46 @@ const MAX_ATTEMPTS = 5
 const LOCKOUT_MS = 15 * 60 * 1000
 const attempts = new Map<string, { count: number, lockedUntil: number }>()
 
+/**
+ * Map boyutunu sinirla. Eskiden sinirsiz buyuyordu: saldirgan her istekte
+ * farkli (sahte) IP gondererek bellegi sisirebiliyordu. Cloudflare Workers'ta
+ * bellek limiti 128MB — asilirsa worker duser (DoS).
+ */
+const MAX_TRACKED_IPS = 5000
+
+function pruneAttempts(now: number) {
+  if (attempts.size <= MAX_TRACKED_IPS)
+    return
+  // 1) Suresi dolmus kilitleri at
+  for (const [ip, rec] of attempts) {
+    if (rec.lockedUntil !== 0 && rec.lockedUntil < now)
+      attempts.delete(ip)
+  }
+  // 2) Hala buyukse en eski kayitlardan temizle (Map ekleme sirasini korur)
+  while (attempts.size > MAX_TRACKED_IPS) {
+    const oldest = attempts.keys().next().value
+    if (oldest === undefined)
+      break
+    attempts.delete(oldest)
+  }
+}
+
 function getClientIp(req: Request): string {
+  // Cloudflare kendi header'ini yazar; istemci bu degeri EZEMEZ.
+  // x-forwarded-for'a GUVENILMEZ: Cloudflare onu SONUNA ekler, istemcinin
+  // gonderdigi sahte deger BASA gelir. Eskiden ilk deger alindigi icin
+  // saldirgan her istekte farkli sahte IP gonderip 5-deneme kilidini
+  // tamamen atlatabiliyordu.
+  const cf = req.headers.get('cf-connecting-ip')?.trim()
+  if (cf && /^\d{1,3}(\.\d{1,3}){3}$/.test(cf)) {
+    return cf
+  }
+  // Yerel dev / CF disi ortam: XFF'in SON degeri (Cloudflare'in ekledigi).
   const forwarded = req.headers.get('x-forwarded-for')
   if (forwarded) {
-    const first = forwarded.split(',')[0].trim()
-    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(first)) {
-      return first
+    const last = forwarded.split(',').pop()?.trim()
+    if (last && /^\d{1,3}(\.\d{1,3}){3}$/.test(last)) {
+      return last
     }
   }
   return 'local'
@@ -21,6 +55,7 @@ function getClientIp(req: Request): string {
 export async function POST(req: Request) {
   const ip = getClientIp(req)
   const now = Date.now()
+  pruneAttempts(now)
   const record = attempts.get(ip)
 
   if (record && record.lockedUntil > now) {
@@ -62,6 +97,10 @@ export async function POST(req: Request) {
   const res = NextResponse.json({ success: true })
   res.cookies.set('admin_session', token, {
     httpOnly: true,
+    // secure: uretimde ZORUNLU — cookie'nin HTTP uzerinden gonderilmesini
+    // engeller (ag dinleyicisi oturumu calabilirdi). Yerel dev HTTP oldugu
+    // icin kosullu birakildi.
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 60 * 60 * 24 * 7,
