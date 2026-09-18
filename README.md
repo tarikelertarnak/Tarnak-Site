@@ -25,3 +25,5 @@ Copyright (c) 2025 Ricardo Pernack (https://mangoapi.dev/)
 
 
 <!-- Pages rebuild trigger 2026-09-16 04:20 UTC: 23:47 build i hala eski (scripts'siz) commit kale'niyor; bu push kuyruga 73769ad'i sokar -->
+
+<!-- Pages rebuild trigger 2026-09-16 07:38 UTC: script artik hem master hem main in tree sinde; Pages hangi production branch e bagliysa onu build eder (main de kapatildi) -->

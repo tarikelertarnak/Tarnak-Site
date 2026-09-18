@@ -57,6 +57,10 @@ async function main() {
 }
 
 main().catch(err => {
-  console.error('fetch-github-data failed:', err.message)
-  process.exit(1)
+  // Build'i KIRMA. public/github-data.json commit'te oldugu icin API'ye
+  // ulasilamasa da site calisir. Cloudflare'de GITHUB_TOKEN yoksa 60 istek/saat
+  // limiti kolayca dolar; eskiden process.exit(1) build'i patlatiyordu.
+  console.error('fetch-github-data: GitHub verisi alinamadi ->', err.message)
+  console.error('Commited public/github-data.json snapshot kullanilacak; build DEVAM ediyor.')
+  process.exit(0)
 })

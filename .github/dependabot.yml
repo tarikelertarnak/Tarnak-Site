@@ -3,4 +3,27 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "monday"
+    # Ayni anda acik PR sayisini sinirla. Eskiden limit yoktu ve tarama gunluktu ->
+    # 6 branch birikti; her biri Cloudflare'de ayri preview build tetikliyor,
+    # basarisiz olanlar paneli dolduruyordu.
+    open-pull-requests-limit: 2
+    groups:
+      # Minor/patch guncellemelerini TEK PR'da topla (branch + preview seli azalsin).
+      minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # react + react-dom AYNI surum olmak ZORUNDA. React runtime'i uyumsuz
+      # surumlerde hata verir ("Incompatible React versions").
+      # Dependabot bunu garanti edemiyor: 'multi-7f19880bf6' PR'i
+      # react 19.3.0 + react-dom 19.1.0 yapti -> bozuk PR.
+      # Cozum: bu aileyi otomatik guncellemeden cikar; IKISINI BIRDEN elle bump et.
+      - dependency-name: "react"
+      - dependency-name: "react-dom"
+      - dependency-name: "@types/react"
+      - dependency-name: "@types/react-dom"

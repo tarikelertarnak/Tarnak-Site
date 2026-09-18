@@ -1,0 +1,39 @@
+{
+  "home": {
+    "root": {
+      "props": {
+        "title": "TARNAK"
+      }
+    },
+    "zones": {},
+    "content": [
+      {
+        "props": {
+          "tagline": "Görsel düzenleyici aktif",
+          "id": "hero1",
+          "description": "",
+          "name": "TARNAK"
+        },
+        "type": "HeroBlock"
+      },
+      {
+        "props": {
+          "level": "h2",
+          "id": "h1",
+          "text": "Hoş Geldiniz",
+          "align": "left"
+        },
+        "type": "HeadingBlock"
+      },
+      {
+        "props": {
+          "size": "base",
+          "id": "p1",
+          "text": "Bu içerik yönetici panelindeki Sayfa Düzenleyici ile oluşturuldu.",
+          "align": "left"
+        },
+        "type": "ParagraphBlock"
+      }
+    ]
+  }
+}

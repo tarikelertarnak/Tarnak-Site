@@ -18,13 +18,6 @@ export interface SessionUser {
 }
 
 /**
- * TEMPORARY (dev): The `dev-role` cookie selected in the Settings panel's
- * "Developer (temporary)" section switches to admin/user mode without a session.
- * After testing, the relevant block in getSessionUser + the section in
- * settings-dropdown.tsx will be removed.
- */
-
-/**
  * Returns the user from the Supabase session (with profile).
  * Returns null if there is no session.
  */
@@ -57,37 +50,11 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     /* fall through to the flows below if the admin session can't be verified */
   }
 
-  // TEMPORARY (dev): role selected in settings — to be removed later.
-  try {
-    const devRole = (await cookies()).get('dev-role')?.value
-    if (devRole === 'admin') {
-      return {
-        id: 'dev-admin',
-        email: 'admin@local',
-        username: 'admin',
-        fullName: 'Admin (dev)',
-        avatarUrl: null,
-        role: 'admin',
-        roles: ['admin'],
-        permissions: effectivePermissions(['admin']),
-      }
-    }
-    if (devRole === 'user') {
-      return {
-        id: 'dev-user',
-        email: 'user@local',
-        username: 'user',
-        fullName: 'Kullanıcı (dev)',
-        avatarUrl: null,
-        role: 'user',
-        roles: ['user'],
-        permissions: effectivePermissions(['user']),
-      }
-    }
-  }
-  catch {
-    /* fall to the normal flow if the cookie can't be read */
-  }
+  // GUVENLIK: 'dev-role' cookie ile rol degistirme ozelligi KALDIRILDI.
+  // Kimlik dogrulama bypass'i olusturuyordu: tarayici konsolundan
+  // `dev-role=admin` yazan HERKES sifresiz tam admin yetkisi aliyordu
+  // (permissions: effectivePermissions(['admin'])). Bir daha EKLENMEMELI.
+  // Dev'de rol testi gerekiyorsa gercek bir kullanici + RLS ile yapilmali.
 
   const supabase = await createClient()
   const {
