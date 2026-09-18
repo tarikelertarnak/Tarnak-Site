@@ -17,8 +17,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: 'Tüm alanları doldur.' }, { status: 400 })
   }
 
-  if (newPassword.length < 4) {
-    return NextResponse.json({ success: false, message: 'Yeni şifre en az 4 karakter olmalı.' }, { status: 400 })
+  // Min 8 karakter. Eskiden 4'tu — cevrimici brute-force'a karsi cok zayif
+  // (login'de 5-deneme kilidi var ama kilit atlatilabilir/kalici degil).
+  if (newPassword.length < 8) {
+    return NextResponse.json({ success: false, message: 'Yeni şifre en az 8 karakter olmalı.' }, { status: 400 })
   }
 
   const admin = await getAdmin()

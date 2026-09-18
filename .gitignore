@@ -38,7 +38,6 @@ yarn-error.log*
 .vercel
 
 # güvenlik: veri dosyaları repo'ya girmesin
-/data/
 /public/uploads/
 
 # scripts/: toptan yasaklamak build'i kiriyordu.

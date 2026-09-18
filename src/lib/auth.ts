@@ -61,11 +61,12 @@ export async function verifyCredentials(
 ): Promise<{ ok: boolean, needsRehash: boolean }> {
   const admin = await getAdmin()
   const userOk = safeEqual(username, admin.username)
-  if (!userOk)
-    return { ok: false, needsRehash: false }
+  // Kullanici adi yanlissa bile sifre dogrulamasini CALISTIR (erken donus YOK).
+  // Eskiden erken donuluyordu -> yanit suresi kisaliyordu -> saldirgan dogru
+  // kullanici adini zamanlamadan ayirt edebiliyordu (username enumeration).
   const passOk = await verifyPassword(password, admin.passwordHash)
-  const needsRehash = passOk && !admin.passwordHash.startsWith('$2')
-  return { ok: passOk, needsRehash }
+  const needsRehash = passOk && userOk && !admin.passwordHash.startsWith('$2')
+  return { ok: passOk && userOk, needsRehash }
 }
 
 function sign(data: string): string {
@@ -95,7 +96,10 @@ export function verifySessionToken(token: string | undefined): string | null {
   }
   const [username, expires, signature] = parts
   const payload = `${username}.${expires}`
-  if (signSync(payload) !== signature) {
+  // Sabit-zamanli karsilastirma. Eskiden '!==' kullaniliyordu: JS string
+  // karsilastirmasi ilk farkli byte'ta durur, bu yuzden imza byte byte
+  // tahmin edilebilirdi (timing attack). safeEqual zaten yukarida tanimli.
+  if (!safeEqual(signSync(payload), signature)) {
     return null
   }
   if (Date.now() > Number(expires)) {

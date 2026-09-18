@@ -61,6 +61,19 @@ const nextConfig = {
           { key: 'Content-Disposition', value: 'attachment' },
         ],
       },
+      {
+        // public/ altındaki statik varlıklar.
+        // Next varsayılan olarak `public, max-age=0, must-revalidate` gönderir;
+        // yani her ziyarette her görsel için yeniden doğrulama isteği gider.
+        // Bu varlıklar hash'siz olduğu için agresif cache riskli — ama
+        // 1 gün + 7 gün stale-while-revalidate dengeli: tekrar ziyaretlerde
+        // anında yüklenir, içerik değişirse en geç 1 gün içinde tazelenir.
+        source: '/:path*.:ext(png|jpg|jpeg|webp|avif|gif|svg|ico|woff|woff2)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+        ],
+      },
     ]
   },
 }
