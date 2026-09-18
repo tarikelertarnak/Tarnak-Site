@@ -11,19 +11,5 @@ My portfolio website built with Next.js and React.
    ```sh
    pnpm dev
    ```
-   
-Or visit https://mangoapi.dev to see the live version.
-
-## License
-This project is licensed under the GNU General Public License v3.0 (GPL-3.0).
-See the LICENSE file for details.
-
-Copyright (c) 2025 Ricardo Pernack (https://mangoapi.dev/)
-
-
-<!-- rebuild-tetik: 2026-09-16 02:27 force-rebuild after 73769ad (scripts/patch-lightningcss.cjs artik tree'de; Pages install+postinstall YESIL olmali) -->
-
-
-<!-- Pages rebuild trigger 2026-09-16 04:20 UTC: 23:47 build i hala eski (scripts'siz) commit kale'niyor; bu push kuyruga 73769ad'i sokar -->
-
-<!-- Pages rebuild trigger 2026-09-16 07:38 UTC: script artik hem master hem main in tree sinde; Pages hangi production branch e bagliysa onu build eder (main de kapatildi) -->
+    
+Or visit https://tarikelertarnak.pages.dev/ to see the live version.

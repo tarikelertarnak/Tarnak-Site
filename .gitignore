@@ -69,4 +69,26 @@ next-env.d.ts
 *.log
 !progress.md
 
-# trivial Pages rebuild trigger (bu satir her push'ta degisir -> Pages queue'su yeniden tazelenir)
+# dev scripts / watchdog
+dev-watchdog.ps1
+dev-watchdog.log
+start-dev.cmd
+format-minified.js
+
+# screenshots / proof images (root level)
+puck-*.png
+cdp-*.png
+cdp2-*.png
+cdp3-*.png
+home-github.png
+login-check.png
+login-next.png
+
+# rebuild trigger files
+.pages-rebuild.counter
+.pages-rebuild.md
+.rebuild-trigger
+rebuild-trigger.md
+
+# generated lockfiles (keep pnpm-lock.yaml only)
+package-lock.json

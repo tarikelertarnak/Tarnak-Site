@@ -5,10 +5,22 @@
     "name": "Tarık Eler",
     "bio": "Tarık Eler (Tarnak) - Developer · AI & Machine Learning · desktop apps · Türkiye",
     "avatarUrl": "https://avatars.githubusercontent.com/u/184168415?v=4",
-    "publicRepos": 10,
+    "publicRepos": 11,
     "followers": 1
   },
   "repos": [
+    {
+      "name": "Tarnak-Site",
+      "fullName": "tarikelertarnak/Tarnak-Site",
+      "description": "Tarnak portfolio site — Next.js 15 / OpenNext / Clouflare Pages",
+      "url": "https://github.com/tarikelertarnak/Tarnak-Site",
+      "language": "TypeScript",
+      "stars": 0,
+      "forks": 0,
+      "watchers": 0,
+      "topics": [],
+      "updatedAt": "2026-09-18T02:48:48Z"
+    },
     {
       "name": "tarikelertarnak.github.io",
       "fullName": "tarikelertarnak/tarikelertarnak.github.io",
