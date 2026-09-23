@@ -75,7 +75,10 @@ export async function POST(req: Request) {
 
     const content = await getContent()
     content.profile.profileImage = `/uploads/${filename}`
-    await saveContent(content)
+    const saved = await saveContent(content)
+    if (!saved.ok) {
+      return NextResponse.json({ success: false, message: saved.error || 'İçerik kaydedilemedi.' }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,

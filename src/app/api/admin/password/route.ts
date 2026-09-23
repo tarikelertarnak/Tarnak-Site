@@ -30,7 +30,16 @@ export async function POST(req: Request) {
   }
 
   const newHash = await hashPassword(newPassword)
-  await saveAdmin({ username: admin.username, passwordHash: newHash })
+  const saved = await saveAdmin({ username: admin.username, passwordHash: newHash })
+
+  if (!saved.ok) {
+    // "Şifre güncellendi." demek YANLIŞ olurdu: yazim basarisizsa ESKI sifre
+    // gecerli kalir. Kullanici bunu bilmeli.
+    return NextResponse.json(
+      { success: false, message: saved.error || 'Şifre kaydedilemedi.' },
+      { status: 500 },
+    )
+  }
 
   return NextResponse.json({ success: true, message: 'Şifre güncellendi.' })
 }

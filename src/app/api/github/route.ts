@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { fetchUserProfile, fetchUserRepos } from '@/lib/github'
+import { fetchUserProfile, fetchUserRepos, isGitHubNotFound } from '@/lib/github'
 
 interface GithubUserData {
   profile: Awaited<ReturnType<typeof fetchUserProfile>> | null
@@ -43,18 +43,41 @@ export async function GET(req: Request) {
   }
 
   // Fetch both requests in parallel; if one fails, the other still returns
+  let notFound = false
   const [profile, repos] = await Promise.all([
     fetchUserProfile(username).catch((error) => {
       console.error(`[api/github] failed to fetch profile (${username}):`, error)
+      if (isGitHubNotFound(error)) {
+        notFound = true
+      }
       return null
     }),
     fetchUserRepos(username).catch((error) => {
       console.error(`[api/github] failed to fetch repos (${username}):`, error)
+      if (isGitHubNotFound(error)) {
+        notFound = true
+      }
       return null
     }),
   ])
 
   if (!profile && !repos) {
+    // Kullanici YOK (404) ile "GitHub'a ulasilamadi" AYNI sey degildir.
+    // Eskiden ikisi de 500 + "sonra tekrar deneyin" donuyordu; yanlis
+    // kullanici adi yazan kullanici sonsuza kadar bosuna denerdi.
+    if (notFound) {
+      // Kisa TTL ile onbellekle: yanlis ad her istekte GitHub'a gitmesin,
+      // ama kullanici duzeltince 30 sn icinde kendine gelsin.
+      cache = { username, data: null, ts: Date.now() }
+      return NextResponse.json(
+        {
+          success: false,
+          notFound: true,
+          message: `"${username}" adlı GitHub kullanıcısı bulunamadı. Yönetim panelinden GitHub kullanıcı adını kontrol et.`,
+        },
+        { status: 404 },
+      )
+    }
     cache = { username, data: null, ts: Date.now() }
     return NextResponse.json(
       { success: false, message: 'GitHub\'a bağlanılamadı. Lütfen daha sonra tekrar deneyin.' },

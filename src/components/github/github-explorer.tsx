@@ -2,8 +2,8 @@
 
 import type { GitHubRepo, GitHubUserProfile } from '@/lib/github'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ErrorState } from '@/components/error-state'
 import { useLocale, useT } from '@/components/locale-provider'
-import { Button } from '@/components/ui/button'
 import { Card, CardBody } from '@/components/ui/card'
 import { SearchIcon } from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
@@ -278,50 +278,12 @@ export function GithubExplorer({ username }: { username: string }) {
       </div>
 
       {error && !loading && (
-        <div className="flex flex-col items-center gap-3 rounded-2xl border border-danger/30 bg-danger/5 px-6 py-8 text-center">
-          <svg
-            viewBox="0 0 24 24"
-            width={40}
-            height={40}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-            className="text-danger"
-          >
-            <path d="M17.5 19a4.5 4.5 0 1 0 0-9c-.27 0-.54.02-.8.07A6 6 0 0 0 4 13a4 4 0 0 0 1 7.87" />
-            <path d="M12 13v4" />
-            <path d="M12 17h.01" />
-          </svg>
-          <p className="text-danger text-sm font-medium max-w-md">{error}</p>
-          <Button
-            size="sm"
-            color="primary"
-            onPress={() => load()}
-            startContent={(
-              <svg
-                viewBox="0 0 24 24"
-                width={16}
-                height={16}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                <path d="M16 16h5v5" />
-              </svg>
-            )}
-          >
-            {t('github.retry')}
-          </Button>
-        </div>
+        <ErrorState
+          error={error}
+          onRetry={() => void load()}
+          retrying={loading}
+          iconSize={72}
+        />
       )}
 
       {loading && (

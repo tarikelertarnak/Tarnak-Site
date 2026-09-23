@@ -209,9 +209,9 @@ export function Sidebar() {
         <span className="truncate text-sm font-bold tracking-tight text-foreground">
           TARIK ELER
           <span className="text-white/30"> — </span>
-          <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text font-black text-transparent">
-            TARNAK
-          </span>
+          {/* Ayni duzeltme top-bar.tsx'te de var: cyan diger mavilerle
+              uyusmuyordu → artik `primary`. */}
+          <span className="font-black text-primary">TARNAK</span>
         </span>
       </div>
 

@@ -75,7 +75,10 @@ export async function POST(req: Request) {
 
     const content = await getContent()
     content.settings.backgroundImage = `/uploads/${filename}`
-    await saveContent(content)
+    const saved = await saveContent(content)
+    if (!saved.ok) {
+      return NextResponse.json({ success: false, message: saved.error || 'İçerik kaydedilemedi.' }, { status: 500 })
+    }
 
     return NextResponse.json({
       success: true,
@@ -97,7 +100,10 @@ export async function DELETE() {
   try {
     const content = await getContent()
     content.settings.backgroundImage = ''
-    await saveContent(content)
+    const saved = await saveContent(content)
+    if (!saved.ok) {
+      return NextResponse.json({ success: false, message: saved.error || 'İçerik kaydedilemedi.' }, { status: 500 })
+    }
     return NextResponse.json({ success: true, message: 'Arka plan görseli kaldırıldı.' })
   }
   catch {

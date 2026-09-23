@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSessionToken, hashPassword, verifyCredentials } from '@/lib/auth'
+import { clientIp } from '@/lib/client-ip'
 import { getAdmin, saveAdmin } from '@/lib/content'
 
 // Simple brute-force protection (in-memory): lock per IP for 15 min after 5 failed attempts
@@ -31,29 +32,17 @@ function pruneAttempts(now: number) {
   }
 }
 
-function getClientIp(req: Request): string {
-  // Cloudflare kendi header'ini yazar; istemci bu degeri EZEMEZ.
-  // x-forwarded-for'a GUVENILMEZ: Cloudflare onu SONUNA ekler, istemcinin
-  // gonderdigi sahte deger BASA gelir. Eskiden ilk deger alindigi icin
-  // saldirgan her istekte farkli sahte IP gonderip 5-deneme kilidini
-  // tamamen atlatabiliyordu.
-  const cf = req.headers.get('cf-connecting-ip')?.trim()
-  if (cf && /^\d{1,3}(\.\d{1,3}){3}$/.test(cf)) {
-    return cf
-  }
-  // Yerel dev / CF disi ortam: XFF'in SON degeri (Cloudflare'in ekledigi).
-  const forwarded = req.headers.get('x-forwarded-for')
-  if (forwarded) {
-    const last = forwarded.split(',').pop()?.trim()
-    if (last && /^\d{1,3}(\.\d{1,3}){3}$/.test(last)) {
-      return last
-    }
-  }
-  return 'local'
-}
+/**
+ * Istemci IP'si — paylasilan `lib/client-ip` kullanilir.
+ *
+ * Not: buradaki kopya eskiden `cf-connecting-ip`'i KOSULSUZ guveniyordu.
+ * Vercel'de (production) `cf-connecting-ip` PLATFORM tarafindan yazilmaz →
+ * istemci bu header'i kendisi gonderebilir → 5-deneme kilidi atlatilabilirdi.
+ * Paylasilan surum XFF'in SON degerini (platform yazar) tercih eder.
+ */
 
 export async function POST(req: Request) {
-  const ip = getClientIp(req)
+  const ip = clientIp(req)
   const now = Date.now()
   pruneAttempts(now)
   const record = attempts.get(ip)
@@ -90,7 +79,12 @@ export async function POST(req: Request) {
   attempts.delete(ip)
   if (ok.needsRehash) {
     const admin = await getAdmin()
-    await saveAdmin({ username: admin.username, passwordHash: await hashPassword(password) })
+    const migrated = await saveAdmin({ username: admin.username, passwordHash: await hashPassword(password) })
+    if (!migrated.ok) {
+      // ONEMLI: hash yukseltmesi kalici olamadi ama GIRIS BASARILI olmali —
+      // kullanici zaten dogrulandi. Sadece uyar; login'i bloklama.
+      console.warn('[api/admin/login] bcrypt yukseltmesi kalici yazilamadi:', migrated.error)
+    }
   }
 
   const token = createSessionToken(username)

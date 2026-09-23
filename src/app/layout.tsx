@@ -161,7 +161,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         >
           <AntdRegistry>
             <EmotionStyleRegistry>
-              <LocaleProvider>
+              <LocaleProvider detectedLocale={locale}>
                 <SkipLink />
                 <TopBar />
                 <Sidebar />

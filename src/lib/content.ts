@@ -461,19 +461,44 @@ function mergeContent(defaults: SiteContent, parsed: Partial<SiteContent>): Site
   }
 }
 
-export async function saveContent(content: SiteContent): Promise<void> {
+/**
+ * Kalicilastirma sonucu.
+ *
+ * ⚠️ Neden var: `saveContent`/`saveAdmin` yalnizca YEREL dosya sistemine
+ * yaziyor ve hatayi yutuyordu. Production **Vercel** (`Server: Vercel`) ve
+ * Vercel'de proje dizini SALT-OKUNURDUR (`/tmp` disinda). Yani canlida yazim
+ * `EROFS` ile duser, hata yutulur ve API yine de "Kaydedildi." der →
+ * kullanici kaydettigini sanar, degisiklik KAYBOLUR.
+ *
+ * Artik yazimin gercekten basarili olup olmadigi donduruluyor. Platformdan
+ * bagimsiz: yazim calisiyorsa (yerel dev) sonuc ok:true, calismiyorsa
+ * ok:false ve SEBEBI.
+ */
+export interface PersistResult {
+  ok: boolean
+  error?: string
+}
+
+export async function saveContent(content: SiteContent): Promise<PersistResult> {
+  let result: PersistResult
   try {
     await ensureDataDir()
     await fs.writeFile(CONTENT_FILE(), `${JSON.stringify(content, null, 2)}\n`, 'utf-8')
+    result = { ok: true }
   }
-  catch {
-    // Cloudflare Workers has no filesystem — content is baked at build time;
-    // the in-memory cache is still refreshed below so the edit takes effect
-    // for the lifetime of this worker instance (until the next deploy).
+  catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    console.error('[content] saveContent yazamadi:', detail)
+    result = {
+      ok: false,
+      error: `İçerik kalıcı olarak yazılamadı (${detail}). `
+        + 'Sunucu dosya sistemi salt-okunur olabilir (Vercel) — değişiklik yeniden deploy sonrası kaybolur.',
+    }
   }
   // Refresh the Supabase merge cache after an admin edit
   supabaseMergeCache = null
   contentMergeCache = null
+  return result
 }
 
 export interface AdminCredentials {
@@ -491,13 +516,20 @@ export async function getAdmin(): Promise<AdminCredentials> {
   }
 }
 
-export async function saveAdmin(admin: AdminCredentials): Promise<void> {
+export async function saveAdmin(admin: AdminCredentials): Promise<PersistResult> {
   try {
     await ensureDataDir()
     await fs.writeFile(ADMIN_FILE(), `${JSON.stringify(admin, null, 2)}\n`, 'utf-8')
+    return { ok: true }
   }
-  catch {
-    // Cloudflare Workers: no filesystem. In-memory only until next deploy.
+  catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    console.error('[content] saveAdmin yazamadi:', detail)
+    return {
+      ok: false,
+      error: `Şifre kalıcı olarak kaydedilemedi (${detail}). `
+        + 'Sunucu dosya sistemi salt-okunur olabilir (Vercel) — ESKİ ŞİFRE geçerli kalmaya devam eder.',
+    }
   }
 }
 

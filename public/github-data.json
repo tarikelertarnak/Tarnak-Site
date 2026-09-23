@@ -10,6 +10,36 @@
   },
   "repos": [
     {
+      "name": "ActivaterWindows",
+      "fullName": "tarikelertarnak/ActivaterWindows",
+      "description": null,
+      "url": "https://github.com/tarikelertarnak/ActivaterWindows",
+      "language": "Batchfile",
+      "stars": 1,
+      "forks": 0,
+      "watchers": 1,
+      "topics": [],
+      "updatedAt": "2026-09-22T09:43:18Z"
+    },
+    {
+      "name": "AI-Jailbreak",
+      "fullName": "tarikelertarnak/AI-Jailbreak",
+      "description": "AI model safety-limit testing prompt collection.",
+      "url": "https://github.com/tarikelertarnak/AI-Jailbreak",
+      "language": "JavaScript",
+      "stars": 6,
+      "forks": 1,
+      "watchers": 6,
+      "topics": [
+        "ai",
+        "llm",
+        "prompt",
+        "red-team",
+        "security"
+      ],
+      "updatedAt": "2026-09-21T04:32:41Z"
+    },
+    {
       "name": "Tarnak-Site",
       "fullName": "tarikelertarnak/Tarnak-Site",
       "description": "Tarnak portfolio site — Next.js 15 / OpenNext / Clouflare Pages",
@@ -19,7 +49,7 @@
       "forks": 0,
       "watchers": 0,
       "topics": [],
-      "updatedAt": "2026-09-18T17:54:55Z"
+      "updatedAt": "2026-09-18T18:07:09Z"
     },
     {
       "name": "tarikelertarnak.github.io",
@@ -49,24 +79,6 @@
       "watchers": 0,
       "topics": [],
       "updatedAt": "2026-09-11T10:21:16Z"
-    },
-    {
-      "name": "AI-Jailbreak",
-      "fullName": "tarikelertarnak/AI-Jailbreak",
-      "description": "AI model safety-limit testing prompt collection.",
-      "url": "https://github.com/tarikelertarnak/AI-Jailbreak",
-      "language": "JavaScript",
-      "stars": 5,
-      "forks": 1,
-      "watchers": 5,
-      "topics": [
-        "ai",
-        "llm",
-        "prompt",
-        "red-team",
-        "security"
-      ],
-      "updatedAt": "2026-09-09T03:26:05Z"
     },
     {
       "name": "Accentra",
@@ -162,26 +174,6 @@
       "watchers": 3,
       "topics": [],
       "updatedAt": "2026-09-04T13:24:15Z"
-    },
-    {
-      "name": "OfficeSetupWizard",
-      "fullName": "tarikelertarnak/OfficeSetupWizard",
-      "description": "One-click Microsoft Office LTSC Professional Plus 2024 installation & activation (Office Deployment Tool wrapper).",
-      "url": "https://github.com/tarikelertarnak/OfficeSetupWizard",
-      "language": "Python",
-      "stars": 3,
-      "forks": 0,
-      "watchers": 3,
-      "topics": [
-        "automation",
-        "deployment",
-        "gui",
-        "office",
-        "python",
-        "tkinter",
-        "windows"
-      ],
-      "updatedAt": "2026-09-04T13:24:14Z"
     },
     {
       "name": "Player",

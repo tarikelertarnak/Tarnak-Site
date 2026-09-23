@@ -17,6 +17,7 @@ export interface InputProps {
   'isInvalid'?: boolean
   'errorMessage'?: ReactNode
   'required'?: boolean
+  'isDisabled'?: boolean
   'maxLength'?: number
   'placeholder'?: string
   'size'?: 'sm' | 'md' | 'lg'
@@ -40,6 +41,7 @@ export function Input({
   isInvalid,
   errorMessage,
   required,
+  isDisabled,
   maxLength,
   placeholder,
   size,
@@ -72,6 +74,7 @@ export function Input({
         ref={inputRef}
         type={effectiveType}
         variant={inputVariant}
+        disabled={isDisabled}
         value={value}
         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           onChange?.(e)

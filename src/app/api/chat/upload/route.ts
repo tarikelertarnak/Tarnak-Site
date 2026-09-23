@@ -1,24 +1,13 @@
 import { Buffer } from 'node:buffer'
 import { NextResponse } from 'next/server'
 import { MAX_UPLOAD_BYTES, saveUploadedFile } from '@/lib/chat'
+import { clientIp } from '@/lib/client-ip'
 import { getSessionUser, hasSessionPermission } from '@/lib/supabase/session'
 
 // Simple in-memory rate limit: max 5 files per IP within 60 s
 const UPLOAD_LIMIT_MS = 60_000
 const UPLOAD_MAX_PER_WINDOW = 5
 const uploadAttempts = new Map<string, number[]>()
-
-function getClientIp(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for')
-  if (forwarded) {
-    const first = forwarded.split(',')[0].trim()
-    // Must match an IP address format (prevents header spoofing)
-    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(first)) {
-      return first
-    }
-  }
-  return 'local'
-}
 
 export async function POST(req: Request) {
   // File upload is only available to logged-in users with the files.upload permission
@@ -36,7 +25,7 @@ export async function POST(req: Request) {
     )
   }
 
-  const ip = getClientIp(req)
+  const ip = clientIp(req)
 
   // Rate limit check
   const now = Date.now()

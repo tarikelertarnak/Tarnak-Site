@@ -263,20 +263,15 @@ html[data-reduce-motion="true"] *::after {
     scroll-behavior: auto !important;
 }
 
-/* Karanlık tema yoğunluğu — sadece dark modda uygulanır.
-   "light" yoğunluk = arka plan açık gri ton (siyaha göre daha az kontrast).
-   "standard" = mevcut davranış (siyah arka plan).
-   "dark" = saf siyah / daha düşük değer. Sadece dark modda anlamlı. */
-html.dark[data-dark-intensity="light"] {
-    --heroui-background: 240 6% 12%;
-    background-color: #16161a;
-}
-html.dark[data-dark-intensity="standard"] {
+/* Karanlık tema arka planı — STANDART ve SABİT.
+   Eskiden "Karanlık tema yoğunluğu" ayarına bağlıydı (light/standard/dark) ve
+   `--heroui-background` değişkeninin TEK tanımı o üç kuraldı. Ayar kaldırıldığı
+   için değişkeni burada sabitliyoruz: aksi halde attribute hiç set edilmediğinde
+   `--heroui-background` tanımsız kalır ve HeroUI bileşenleri kendi varsayılanına
+   düşerdi (yani ayarı kaldırmak görünümü istemeden DEĞİŞTİRİRDİ).
+   Değerler eski "standard" seçeneğiyle birebir aynı. */
+html.dark {
     --heroui-background: 240 10% 4%;
-    background-color: #000000;
-}
-html.dark[data-dark-intensity="dark"] {
-    --heroui-background: 0 0% 0%;
     background-color: #000000;
 }
 

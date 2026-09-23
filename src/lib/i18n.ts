@@ -78,6 +78,20 @@ export function resolveLocale(pref?: LocalePref, detected?: Locale): Locale {
   return detected ?? 'en'
 }
 
+/**
+ * Tip koruyucu: bu deger gecerli bir dil tercihi mi?
+ *
+ * Neden gerekli: LocaleProvider cerezden okurken bir ara yalnizca
+ * `tr | en | auto` kabul ediyordu. Combobox 25 dil sundugu icin kullanici
+ * "Deutsch" sectiginde cerez `de` oluyor, sayfa yenilenince bu beyaz liste
+ * onu reddedip `auto`ya dusuyordu → secim KAYBOLUYORDU. Artik tek kaynak
+ * burasi: LOCALES listesi.
+ */
+export function isLocalePref(value: unknown): value is LocalePref {
+  return typeof value === 'string'
+    && (value === 'auto' || LOCALES.includes(value as Locale))
+}
+
 /** Direction of a locale ('rtl' for Arabic/Persian/Hebrew). */
 export function localeDirection(locale: Locale): 'ltr' | 'rtl' {
   return RTL_LOCALES.has(locale) ? 'rtl' : 'ltr'

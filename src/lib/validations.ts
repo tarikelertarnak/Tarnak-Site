@@ -154,6 +154,12 @@ export const contentSchema = z.object({
       .optional(),
     cv: z
       .object({
+        // ⚠️ `href` OLMALIYDI. Admin panelinde CV baglantisi DUZENLENEBILIR
+        // (admin-panel.tsx "CV Linki" alani), ama semada olmadigi icin Zod
+        // bu alani PARSE SIRASINDA SESSIZCE SILIYORDU → kaydetmede
+        // `/cv/tarikeler-cv.pdf` varsayilanina geri donuyordu. Yani
+        // kullanici CV linkini degistirip kaydediyor, degisiklik KALMIYORDU.
+        href: z.string().max(500).optional(),
         summary: z.string().max(5000),
         experience: z.array(cvEntry).max(20),
         education: z.array(cvEntry).max(20),

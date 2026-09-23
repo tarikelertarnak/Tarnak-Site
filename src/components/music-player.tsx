@@ -179,6 +179,7 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
               <button
                 type="button"
                 onClick={togglePlay}
+                aria-label={isPlaying ? (isEn ? 'Pause' : 'Duraklat') : isEn ? 'Play' : 'Oynat'}
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary transition-all hover:bg-primary/25"
               >
                 <Icon icon={isPlaying ? 'mdi:pause' : 'mdi:play'} width={18} height={18} />
@@ -187,6 +188,7 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
                 <button
                   type="button"
                   onClick={() => audioRef.current && (audioRef.current.currentTime = 0)}
+                  aria-label={isEn ? 'Restart' : 'Başa sar'}
                   className="text-foreground-500 hover:text-foreground transition-colors"
                 >
                   <Icon icon="mdi:skip-backward" width={16} height={16} />

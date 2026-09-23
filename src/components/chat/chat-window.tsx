@@ -508,6 +508,7 @@ function ProfileAvatar({
         height={size}
         className="rounded-full object-cover"
         style={{ width: size, height: size }}
+        loading="lazy"
       />
     )
   }
@@ -550,6 +551,7 @@ function MessageBubble({
                     src={profile.profileImage}
                     alt=""
                     className="h-4 w-4 rounded-full object-cover"
+                    loading="lazy"
                   />
                 )
               : (
@@ -597,6 +599,7 @@ function MessageFile({
           src={file.url}
           alt={file.name}
           className="max-h-64 rounded-xl object-contain"
+          loading="lazy"
         />
       </a>
     )

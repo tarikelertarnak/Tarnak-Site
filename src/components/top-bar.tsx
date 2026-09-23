@@ -122,9 +122,11 @@ export function TopBar() {
               />
               <span className="inline">TARIK ELER</span>
               <span className="inline text-foreground/30">—</span>
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text font-black text-transparent">
-                TARNAK
-              </span>
+              {/* ⚠️ Eskiden `from-blue-400 to-cyan-400` gradient'i vardi:
+                  cyan sitedeki diger mavilerle UYUSMUYORDU. Artik tum mavi
+                  vurgularla ayni kaynak: `primary` (dark #3b82f6 /
+                  light #2563eb). */}
+              <span className="font-black text-primary">TARNAK</span>
             </a>
           </div>
 

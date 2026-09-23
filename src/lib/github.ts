@@ -13,6 +13,31 @@ const IS_WORKER = typeof navigator !== 'undefined' && navigator.userAgent.includ
 const dnsCache = new Map<string, { ip: string, ts: number }>()
 const DNS_CACHE_TTL = 10 * 60 * 1000
 
+/**
+ * GitHub API hatasi — HTTP durum kodunu TASIR.
+ *
+ * Neden gerekli: `fetchUserProfile`/`fetchUserRepos` eskiden duz `Error`
+ * firlatiyordu, bu yuzden cagiran taraf "kullanici YOK (404)" ile
+ * "GitHub'a ulasilamadi (ag/5xx)" durumunu AYIRT EDEMIYORDU. Ikisi de
+ * kullaniciya ayni mesaji gosteriyordu: "GitHub'a baglanilamadi, sonra
+ * tekrar deneyin." Oysa 404'te sorun ag degil, YANLIS KULLANICI ADI'dir —
+ * kullanici sonsuza kadar "tekrar dener" ve hicbir zaman duzelmez.
+ */
+export class GitHubApiError extends Error {
+  readonly status: number
+
+  constructor(status: number, context = '') {
+    super(`GitHub hatası: ${status}${context ? ` (${context})` : ''}`)
+    this.name = 'GitHubApiError'
+    this.status = status
+  }
+}
+
+/** Hata "kullanici/veri bulunamadi" mi? (404) */
+export function isGitHubNotFound(error: unknown): boolean {
+  return error instanceof GitHubApiError && error.status === 404
+}
+
 export function httpsGet(
   url: string,
   headers: Record<string, string>,
@@ -191,7 +216,7 @@ export async function fetchUserRepos(username: string): Promise<GitHubRepo[]> {
     { headers: headers(), cache: 'no-store' },
   )
   if (!res.ok) {
-    throw new Error(`GitHub hatası: ${res.status}`)
+    throw new GitHubApiError(res.status, `repos: ${username}`)
   }
   const reposRaw = (await res.json()) as Array<{
     name: string
@@ -264,7 +289,7 @@ export async function fetchRepoDetails(
     { headers: headers(), cache },
   )
   if (!repoRes.ok) {
-    throw new Error(`GitHub hatası: ${repoRes.status}`)
+    throw new GitHubApiError(repoRes.status, `repo: ${owner}/${repo}`)
   }
   const repoData = (await repoRes.json()) as {
     description: string | null
@@ -349,7 +374,7 @@ export async function fetchUserProfile(username: string): Promise<GitHubUserProf
     cache: 'no-store',
   })
   if (!res.ok) {
-    throw new Error(`GitHub hatası: ${res.status}`)
+    throw new GitHubApiError(res.status, `profile: ${username}`)
   }
   const data = (await res.json()) as {
     login: string
@@ -382,7 +407,7 @@ export async function fetchFileContent(
     { headers: headers(), cache: 'no-store' },
   )
   if (!res.ok) {
-    throw new Error(`GitHub hatası: ${res.status}`)
+    throw new GitHubApiError(res.status, `contents: ${owner}/${repo}/${path}`)
   }
   const data = (await res.json()) as {
     name: string
@@ -420,7 +445,7 @@ export async function fetchRepoReleases(owner: string, repo: string): Promise<Gi
     if (res.status === 404) {
       return []
     }
-    throw new Error(`GitHub hatası: ${res.status}`)
+    throw new GitHubApiError(res.status, `releases: ${owner}/${repo}`)
   }
   const data = (await res.json()) as Array<{
     tag_name: string

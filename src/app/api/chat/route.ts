@@ -1,6 +1,7 @@
 import type { ChatFile } from '@/lib/content'
 import { NextResponse } from 'next/server'
 import { addMessage, deleteMessage, getMessages } from '@/lib/chat'
+import { clientIp } from '@/lib/client-ip'
 import {
   getSessionUser,
   hasSessionPermission,
@@ -10,18 +11,6 @@ import {
 
 const COOLDOWN_MS = 10_000
 const lastPostAt = new Map<string, number>()
-
-function getClientIp(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for')
-  if (forwarded) {
-    const first = forwarded.split(',')[0].trim()
-    // Must match an IP address format (prevents header spoofing)
-    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(first)) {
-      return first
-    }
-  }
-  return 'local'
-}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
@@ -91,7 +80,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, message: 'Gönderildi!', data: message })
   }
 
-  const ip = getClientIp(req)
+  const ip = clientIp(req)
   const now = Date.now()
   const last = lastPostAt.get(ip) ?? 0
   if (now - last < COOLDOWN_MS) {

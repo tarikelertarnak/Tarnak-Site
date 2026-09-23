@@ -1,9 +1,10 @@
 'use client'
 
-import type { FormEvent, ReactNode } from 'react'
+import type { FormEvent } from 'react'
 import type { SiteContent } from '@/lib/content'
 import { motion } from 'motion/react'
 import { useRef } from 'react'
+import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
@@ -13,7 +14,6 @@ import {
   ArrowLeftIcon,
   ChatIcon,
   ErrorIcon,
-  GlobeIcon,
   SendIcon,
 } from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
@@ -21,95 +21,15 @@ import { Section, SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { useContactForm } from '@/hooks/use-contact-form'
 
-interface ContactCardProps {
-  icon: ReactNode
-  label: string
-  value: string
-  href?: string
-  /** Extra content to show instead of value (e.g. map buttons) */
-  actions?: ReactNode
-}
-
-/** Contact card — plain view (no link) when empty; clickable when filled. */
-function ContactCard({
-  icon,
-  label,
-  value,
-  href,
-  actions,
-}: ContactCardProps) {
-  const inner = (
-    <>
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground-500">
-          {label}
-        </p>
-        {actions ?? (
-          <p className="truncate text-sm font-medium text-foreground">
-            {value.trim() || '—'}
-          </p>
-        )}
-      </div>
-    </>
-  )
-  const cls
-    = 'flex w-full items-center gap-3 rounded-xl border border-foreground-200/10 bg-background p-3.5 transition-colors'
-  if (href) {
-    return (
-      <a
-        href={href}
-        target={href.startsWith('mailto:') || href.startsWith('tel:') ? undefined : '_blank'}
-        rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
-        className={`${cls} no-underline hover:border-primary/40`}
-      >
-        {inner}
-      </a>
-    )
-  }
-  return <div className={cls}>{inner}</div>
-}
-
-function MailIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={20}
-      height={20}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <rect width="20" height="16" x="2" y="4" rx="2" />
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-    </svg>
-  )
-}
-
-function PhoneIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={20}
-      height={20}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-    </svg>
-  )
-}
+/**
+ * Iletisim karti / yerel ikonlar KALDIRILDI.
+ *
+ * Eskiden e-posta, telefon ve konum uc ayri kart olarak ciziliyordu; her
+ * biri ayri bir kutu kapliyor, konumun harita baglantilari da kartin icinde
+ * sikisiyordu. Artik hepsi tek bir aranabilir acilir menude
+ * (`ContactQuickMenu`) — kopyala butonlari ve Instagram/GitHub gibi tum
+ * sosyal kanallarla birlikte.
+ */
 
 export function ContactSection({ content }: { content: SiteContent }) {
   const { t } = useT()
@@ -212,64 +132,11 @@ export function ContactSection({ content }: { content: SiteContent }) {
           big
         />
       </FadeUpSection>
-      {/* Contact cards */}
+      {/* Iletisim yollari — tek aranabilir acilir menu (e-posta, telefon,
+          konum ve tum sosyal kanallar + kopyala butonlari). */}
       <FadeUpSection className="w-full">
-        <div className="mx-auto flex w-full max-w-6xl flex-wrap justify-center gap-3">
-          <div className="w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)]">
-            <ContactCard
-              icon={<MailIcon />}
-              label={t('contact.cardEmail')}
-              value={content.contact.email ?? ''}
-              href={
-                content.contact.email
-                  ? `mailto:${content.contact.email.trim()}`
-                  : undefined
-              }
-            />
-          </div>
-          <div className="w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)]">
-            <ContactCard
-              icon={<PhoneIcon />}
-              label={t('contact.cardPhone')}
-              value={content.contact.phone ?? ''}
-              href={
-                content.contact.phone
-                  ? `tel:${content.contact.phone.replace(/[\s-]/g, '')}`
-                  : undefined
-              }
-            />
-          </div>
-          <div className="w-full sm:w-[calc(50%-0.375rem)] lg:w-[calc(33.333%-0.5rem)]">
-            <ContactCard
-              icon={<GlobeIcon size={20} />}
-              label={t('contact.cardLocation')}
-              value=""
-              actions={(
-                <div className="flex flex-row flex-wrap gap-1.5">
-                  {content.contact.location && (
-                    <a
-                      href={content.contact.location}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary no-underline transition-colors hover:bg-primary/20"
-                    >
-                      {t('contact.mapsGoogle')}
-                    </a>
-                  )}
-                  {content.contact.locationYandex && (
-                    <a
-                      href={content.contact.locationYandex}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="rounded-full border border-foreground-200/25 bg-background px-2.5 py-1 text-[11px] font-semibold text-foreground/85 no-underline transition-colors hover:border-primary/40 hover:text-foreground"
-                    >
-                      {t('contact.mapsYandex')}
-                    </a>
-                  )}
-                </div>
-              )}
-            />
-          </div>
+        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <ContactQuickMenu content={content} />
         </div>
       </FadeUpSection>
       <FadeUpSection className="flex w-full justify-center">

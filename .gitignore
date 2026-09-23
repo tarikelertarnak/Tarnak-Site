@@ -45,11 +45,24 @@ yarn-error.log*
 # package.json -> prebuild    "node scripts/fetch-github-data.cjs"
 # Cloudflare Pages klonunda bu dosyalar bulunamayinca build patliyordu.
 # Cozum: klasoru toptan yasaklamak yerine, SIR ICEREN script'leri tek tek disla.
-/scripts/
+#
+# ⚠️ DIKKAT — neden `/scripts/*` ve `/scripts/` DEGIL:
+# `/scripts/` klasorun KENDISINI disliyor. Git, dislanan klasorun icine inmez,
+# bu yuzden altindaki `!` istisnalari HICBIR ZAMAN calismaz (git dokumani:
+# "It is not possible to re-include a file if a parent directory of that file
+# is excluded"). Mevcut 4 dosya yalnizca ZATEN TAKIPLI olduklari icin repoda
+# duruyordu; istisna satirlari fiilen no-op idi. `/scripts/*` ise dosyalari
+# dislar ama klasore iner — boylece istisnalar gercekten isler.
+/scripts/*
 !/scripts/patch-lightningcss.cjs
 !/scripts/fetch-github-data.cjs
 !/scripts/gen-countries.cjs
 !/scripts/check-country-map.cjs
+# Reklam semasi sir ICERMEZ (SUPABASE_DB_PW kullanmaz) — repoda kalsin ki
+# baska bir makinede/clone'da sema kaybolmasin.
+!/scripts/schema-ads.sql
+# Onarim migration'i — sir icermez, surumlenmeli.
+!/scripts/schema-fixes.sql
 
 # Bunlar sir/sema iceriyor — repoda kalmasin (SUPABASE_DB_PW kullanirlar)
 scripts/pg-test.mjs

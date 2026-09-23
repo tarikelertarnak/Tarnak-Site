@@ -87,18 +87,33 @@ function toDbPost(post: BlogPost): Record<string, unknown> {
 // ---------- SUPABASE (primary) ----------
 
 /**
- * Module-level TTL cache — no repeated fetch per page.
- * When the Supabase call times out it silently falls back to the local file
- * (no console warning; DNS is slow on this machine and it fails on first request).
- * Cleared by upsertPost/deletePost so admin edits show up immediately.
+ * Onbellek — PROCESS GENELINDE paylasilir (modul seviyesinde DEGIL).
+ *
+ * ⚠️ NEDEN `globalThis`: onceden `let supabasePostsCache` modul seviyesindeydi.
+ * Next.js'te route handler (`/api/admin/blog`) ile sayfa (`/blog`) AYRI modul
+ * ornekleri olabiliyor → route'un cagirdigi `clearPostsCache()` sayfanin
+ * onbellegine ULASMIYORDU. Olculdu: panelden yayinlanan yazi sitede
+ * **76 saniye sonra** gorundu; silinen yazi da ayni sure boyunca gorunmeye
+ * devam etti. `globalThis` ayni process icindeki tum moduller tarafindan
+ * paylasildigi icin admin yazimi onbellegi ANINDA temizler.
+ *
+ * TTL yine de var: cok ornekli (multi-instance) dagitimlarda baska bir
+ * instance'in onbellegi buradan temizlenemez — TTL onun ust siniri.
  */
-let supabasePostsCache: { ts: number, data: BlogPost[] } | null = null
-const SUPABASE_POSTS_TTL_MS = 300_000
+const POSTS_TTL_MS = 60_000
+
+interface PostsCache {
+  ts: number
+  data: BlogPost[]
+}
+
+const globalForPosts = globalThis as unknown as { __tarnakPostsCache?: PostsCache | null }
 
 async function fetchPostsMerged(): Promise<BlogPost[]> {
   const now = Date.now()
-  if (supabasePostsCache && now - supabasePostsCache.ts < SUPABASE_POSTS_TTL_MS) {
-    return supabasePostsCache.data
+  const cached = globalForPosts.__tarnakPostsCache
+  if (cached && now - cached.ts < POSTS_TTL_MS) {
+    return cached.data
   }
 
   const local = await getLocalPosts()
@@ -138,7 +153,7 @@ async function fetchPostsMerged(): Promise<BlogPost[]> {
     }
   }
 
-  supabasePostsCache = { ts: now, data: merged }
+  globalForPosts.__tarnakPostsCache = { ts: now, data: merged }
   return merged
 }
 
@@ -157,14 +172,44 @@ export async function getPostBySlug(
   return found ? localizePost(found, locale) : null
 }
 
-/** Invalidates the module-level post cache (admin edits). */
+/** Invalidates the post cache (admin edits) — process genelinde gecerli. */
 export function clearPostsCache(): void {
-  supabasePostsCache = null
+  globalForPosts.__tarnakPostsCache = null
 }
 
-export async function upsertPost(post: BlogPost): Promise<void> {
+/**
+ * Yazma sonucu.
+ *
+ * Neden var: `upsertPost`/`deletePost` eskiden Supabase hatasini YALNIZCA
+ * `console.error` ile yazip yutuyordu ve `void` donuyordu. Route da kosulsuz
+ * `{ success: true, message: 'Yazı kaydedildi.' }` dondugu icin **yazim
+ * basarisiz olsa bile panel "kaydedildi" diyordu** — kullanici yazisinin
+ * yayinlandigini saniyordu. Iletisim formundaki sessiz kayipla ayni sinif hata.
+ */
+export interface PostWriteResult {
+  ok: boolean
+  /** Kalici katman (Supabase) yapilandirilmis miydi */
+  supabaseConfigured: boolean
+  supabaseOk: boolean
+  localOk: boolean
+  /**
+   * Silinecek/guncellenecek kayit YOKTU.
+   *
+   * ⚠️ Bu ayrim sart: "kayit yok" bir ISTEK hatasidir (404), "yazamadim" bir
+   * SUNUCU hatasidir (500). Ikisini ayni kodla dondurmek yanlis yonlendirir —
+   * GitHub route'unda tam bu hatayi duzeltmistik, sonra burada tekrarladim
+   * (api-health-scan bunu 500 olarak yakaladi).
+   */
+  notFound?: boolean
+  error?: string
+}
+
+export async function upsertPost(post: BlogPost): Promise<PostWriteResult> {
+  const supabase = getSupabase()
+  let supabaseOk = false
+  let error: string | undefined
+
   try {
-    const supabase = getSupabase()
     if (supabase) {
       const existing = await supabase
         .from('posts')
@@ -174,54 +219,109 @@ export async function upsertPost(post: BlogPost): Promise<void> {
 
       const dbPost = toDbPost(post)
 
-      if (existing.data) {
-        const { error } = await supabase.from('posts').update(dbPost).eq('id', existing.data.id)
-        if (error) {
-          console.error('Supabase upsertPost update failed:', error.message)
-        }
-      }
-      else {
-        const { error } = await supabase.from('posts').insert(dbPost)
-        if (error) {
-          console.error('Supabase upsertPost insert failed:', error.message)
-        }
+      const res = existing.data
+        ? await supabase.from('posts').update(dbPost).eq('id', existing.data.id)
+        : await supabase.from('posts').insert(dbPost)
+
+      supabaseOk = !res.error
+      if (res.error) {
+        error = `${res.error.code || ''} ${res.error.message}`.trim()
+        console.error('[blog] upsertPost Supabase hatasi:', error)
       }
     }
 
-    // Also write to the local fallback file (so it works without Supabase)
-    await upsertLocalPost(post)
+    const localOk = await upsertLocalPost(post)
+
+    // KARAR: Supabase yapilandirilmissa KALICI katman odur (production'da
+    // yerel dosya kalici degil — Vercel'de salt-okunur/ephemeral, Workers'ta
+    // dosya sistemi yok). Bu yuzden Supabase yazimi basarisizsa islem
+    // BASARISIZ sayilir, "yerel dosyaya yazdim" diye basarili denmez.
+    if (supabase) {
+      return { ok: supabaseOk, supabaseConfigured: true, supabaseOk, localOk, error }
+    }
+    return {
+      ok: localOk,
+      supabaseConfigured: false,
+      supabaseOk: false,
+      localOk,
+      error: localOk ? undefined : 'Yerel yedek dosyaya yazilamadi.',
+    }
   }
   finally {
     clearPostsCache()
   }
 }
 
-export async function deletePost(id: string): Promise<void> {
+export async function deletePost(id: string): Promise<PostWriteResult> {
+  const supabase = getSupabase()
+  let supabaseOk = false
+  let notFound = false
+  let error: string | undefined
+
   try {
-    const supabase = getSupabase()
     if (supabase) {
       // id can be either a UUID or a numeric string
       const numericId = Number(id)
       if (Number.isInteger(numericId) && numericId > 0) {
-        const { error } = await supabase.from('posts').delete().eq('id', numericId)
-        if (error) {
-          console.error('Supabase deletePost failed:', error.message)
+        // `.select('id')` ile GERCEKTEN silinen satiri dondur → "kayit yok"
+        // durumunu "sildim" sanmayalim.
+        const res = await supabase.from('posts').delete().eq('id', numericId).select('id')
+        supabaseOk = !res.error
+        if (res.error) {
+          error = `${res.error.code || ''} ${res.error.message}`.trim()
+          console.error('[blog] deletePost Supabase hatasi:', error)
+        }
+        else if (!res.data || res.data.length === 0) {
+          notFound = true
+          error = `Silinecek yazı bulunamadı (id=${id}).`
         }
       }
       else {
-        // If UUID, find the slug from the local record
+        // UUID: slug'i yerel kayittan bulup ona gore sil
         const local = await getLocalPosts()
         const post = local.find(p => p.id === id)
         if (post) {
-          const { error } = await supabase.from('posts').delete().eq('slug', post.slug)
-          if (error) {
-            console.error('Supabase deletePost by slug failed:', error.message)
+          const res = await supabase.from('posts').delete().eq('slug', post.slug).select('id')
+          supabaseOk = !res.error
+          if (res.error) {
+            error = `${res.error.code || ''} ${res.error.message}`.trim()
+            console.error('[blog] deletePost (slug) Supabase hatasi:', error)
           }
+          else if (!res.data || res.data.length === 0) {
+            notFound = true
+            error = `Silinecek yazı bulunamadı (slug=${post.slug}).`
+          }
+        }
+        else {
+          // Eskiden burada SESSIZCE hicbir sey yapilmiyordu ama API
+          // "Yazı silindi." diyordu → yazi veritabaninda KALIYORDU.
+          notFound = true
+          error = `Silinecek yazı bulunamadı (id=${id}). Hiçbir kayıt silinmedi.`
+          console.warn('[blog] deletePost:', error)
         }
       }
     }
 
-    await deleteLocalPost(id)
+    // Kayit yoksa yerel dosyayi da bosuna yazmayalim
+    const localOk = notFound ? false : await deleteLocalPost(id)
+
+    if (supabase) {
+      return {
+        ok: supabaseOk && !notFound,
+        supabaseConfigured: true,
+        supabaseOk,
+        localOk,
+        notFound,
+        error,
+      }
+    }
+    return {
+      ok: localOk,
+      supabaseConfigured: false,
+      supabaseOk: false,
+      localOk,
+      error: localOk ? undefined : 'Yerel yedek dosya guncellenemedi.',
+    }
   }
   finally {
     clearPostsCache()
@@ -250,9 +350,9 @@ async function getLocalPosts(): Promise<BlogPost[]> {
   }
 }
 
-async function upsertLocalPost(post: BlogPost): Promise<void> {
+async function upsertLocalPost(post: BlogPost): Promise<boolean> {
   if (!HAS_FS)
-    return
+    return false
   try {
     const posts = await getLocalPosts()
     const index = posts.findIndex(p => p.id === post.id)
@@ -263,19 +363,27 @@ async function upsertLocalPost(post: BlogPost): Promise<void> {
       posts.push(post)
     }
     await fs.writeFile(BLOG_FILE, `${JSON.stringify(posts, null, 2)}\n`, 'utf-8')
+    return true
   }
-  catch { /* no-op on Workers */ }
+  catch (error) {
+    console.warn('[blog] yerel yedek dosyaya yazilamadi:', error)
+    return false
+  }
 }
 
-async function deleteLocalPost(id: string): Promise<void> {
+async function deleteLocalPost(id: string): Promise<boolean> {
   if (!HAS_FS)
-    return
+    return false
   try {
     const posts = await getLocalPosts()
     const next = posts.filter(p => p.id !== id)
     await fs.writeFile(BLOG_FILE, `${JSON.stringify(next, null, 2)}\n`, 'utf-8')
+    return true
   }
-  catch { /* no-op on Workers */ }
+  catch (error) {
+    console.warn('[blog] yerel yedek dosya guncellenemedi:', error)
+    return false
+  }
 }
 
 export function newPostId(): string {

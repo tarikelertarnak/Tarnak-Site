@@ -25,7 +25,15 @@ export async function generateMetadata({
   // "Page changed from static to dynamic" on the Cloudflare worker.
   // Title variant falls back to 'tr' (body still localizes correctly).
   const post = await getPostBySlug(slug)
-  return { title: post ? `${post.title} - Blog` : 'Blog' }
+  if (!post) {
+    // ⚠️ Olculdu: bu sayfa var olmayan bir slug icin `notFound()` cagirmasina
+    // ragmen HTTP **200** donuyor (Next.js yaniti stream etmeye basladiktan
+    // sonra durum kodu degistirilemiyor). 200 + "bulunamadi" ekrani arama
+    // motorlari icin "soft 404"tur ve indekslenebilir. Durum kodunu buradan
+    // duzeltemiyoruz, ama indekslemeyi kapatabiliyoruz.
+    return { title: 'Blog', robots: { index: false, follow: false } }
+  }
+  return { title: `${post.title} - Blog` }
 }
 export default async function PostPage({ params }: PostPageProps) {
   const { slug } = await params

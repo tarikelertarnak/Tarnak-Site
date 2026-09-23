@@ -30,7 +30,16 @@ export async function POST(req: Request) {
     ...parsed.data,
     about: {
       ...parsed.data.about,
-      cv: parsed.data.about?.cv ?? current.about.cv,
+      // `cv.href` panelde duzenlenebilir; gonderilmediyse MEVCUT degeri koru.
+      // Eskiden `parsed.data.about?.cv ?? current.about.cv` yaziyordu: semada
+      // `href` olmadigi icin parse edilen nesne href'siz geliyordu ve her
+      // kaydetmede CV linki varsayilana geri donuyordu (sessiz veri kaybi).
+      cv: parsed.data.about?.cv
+        ? {
+            ...parsed.data.about.cv,
+            href: parsed.data.about.cv.href ?? current.about.cv?.href,
+          }
+        : current.about.cv,
     },
     // Contact card values are not edited in the admin panel — keep the current values
     contact: {
@@ -46,7 +55,15 @@ export async function POST(req: Request) {
   }
 
   // Admin body passes the schema fully + completes cv with the current value → full SiteContent
-  await saveContent(contentToSave as unknown as SiteContent)
+  const saved = await saveContent(contentToSave as unknown as SiteContent)
+
+  if (!saved.ok) {
+    // Sessizce "Kaydedildi." DEME — yazim basarisizsa degisiklik KALICI DEGIL.
+    return NextResponse.json(
+      { success: false, message: saved.error || 'İçerik kaydedilemedi.' },
+      { status: 500 },
+    )
+  }
 
   // Clear the ISR cache: content changed, must reflect immediately
   try {

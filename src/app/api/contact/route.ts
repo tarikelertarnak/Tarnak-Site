@@ -2,6 +2,7 @@ import arcjet, { protectSignup } from '@arcjet/next'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import env from '@/lib/env'
+import { isMissingColumnError } from '@/lib/postgrest'
 import { contactFormSchema } from '@/lib/validations'
 
 const supabaseAdmin
@@ -34,10 +35,19 @@ const aj = env.ARCJET_KEY
     })
   : null
 
+/**
+ * Discord'a bildirim gonderir.
+ *
+ * ⚠️ Eskiden webhook tanimsizken `true` donuyordu. Bu "basarili" demekti ve
+ * POST sonunda `if (!sent) 500` kontrolunu atlatiyordu — yani hicbir yere
+ * kaydedilmeyen bir mesaj icin kullaniciya "Message sent successfully!"
+ * deniyordu. Artik durustce `false` doner; POST basarisi "en az bir kanal
+ * calisti" kuralina baglandi.
+ */
 async function sendToDiscord(name: string, email: string, phone: string, message: string) {
   if (!env.DISCORD_WEBHOOK_URL) {
-    console.warn('⚠️ DISCORD_WEBHOOK_URL not set, message could not be sent to the webhook.')
-    return true
+    console.warn('⚠️ DISCORD_WEBHOOK_URL tanimli degil — Discord bildirimi atlandi.')
+    return false
   }
 
   try {
@@ -70,6 +80,62 @@ async function sendToDiscord(name: string, email: string, phone: string, message
     console.error('Failed to send message to Discord:', error)
     return false
   }
+}
+
+/**
+ * Mesaji Supabase'e kaydeder.
+ *
+ * ⚠️ BULUNAN GERCEK HATA: `messages` tablosunda `phone` kolonu YOKTU
+ * (PostgREST 42703), ama burada `phone` insert ediliyordu. Insert her
+ * seferinde dusuyor, hata yalnizca console.error'a yaziliyordu — yani
+ * ILETISIM FORMU MESAJLARI VERITABANINA HIC KAYDEDILMIYORDU.
+ *
+ * Cozum: once `phone` ile denenir; kolon yoksa telefon bilgisi body'ye
+ * eklenerek tekrar denenir. Boylece bilgi HICBIR durumda kaybolmaz.
+ * `scripts/schema-fixes.sql` uygulandiginda ikinci adim hic calismaz.
+ */
+async function saveMessage(params: {
+  name: string
+  email: string
+  phone: string
+  message: string
+}): Promise<boolean> {
+  if (!supabaseAdmin) {
+    console.warn('[api/contact] Supabase yapilandirilmamis — mesaj kaydedilemedi.')
+    return false
+  }
+
+  const base = {
+    name: params.name,
+    email: params.email,
+    subject: 'İletişim Formu',
+    body: params.message,
+  }
+
+  const first = params.phone ? { ...base, phone: params.phone } : base
+  let { error } = await supabaseAdmin.from('messages').insert(first)
+
+  // ⚠️ BURADA `error.code === '42703'` YAZMAYIN. Olculdu: PostgREST eksik
+  // kolonda `PGRST204` donduruyor ("Could not find the 'phone' column of
+  // 'messages' in the schema cache"), `42703` DEGIL. Bu kontrol yalnizca
+  // 42703'e bakarken telefonla gonderilen mesajlar 500 alip KAYBOLUYORDU.
+  // Paylasilan yardimci iki kodu da tanir.
+  if (isMissingColumnError(error)) {
+    console.warn(
+      `[api/contact] messages.phone kolonu yok (${error?.code}) — telefon bilgisi body icine ekleniyor. `
+      + 'Kalici cozum: scripts/schema-fixes.sql dosyasini Supabase SQL Editor\'de calistir.',
+    )
+    const body = params.phone
+      ? `${params.message}\n\n---\nTelefon: ${params.phone}`
+      : params.message
+    ;({ error } = await supabaseAdmin.from('messages').insert({ ...base, body }))
+  }
+
+  if (error) {
+    console.error('[api/contact] Supabase kaydi basarisiz:', error.code, error.message)
+    return false
+  }
+  return true
 }
 
 export async function POST(req: Request) {
@@ -153,31 +219,20 @@ export async function POST(req: Request) {
     }
   }
 
-  const sent = await sendToDiscord(
-    values.data.name,
-    contactEmail,
-    contactPhone,
-    values.data.message,
-  )
+  // Iki kanal birbirinden bagimsiz. Basari kurali: EN AZ BIRI calistiysa
+  // mesaj kaydedilmistir. Eskiden yalnizca Discord sonucuna bakiliyordu ve
+  // webhook tanimsizken o da yanlislikla `true` donuyordu.
+  const [discordOk, dbOk] = await Promise.all([
+    sendToDiscord(values.data.name, contactEmail, contactPhone, values.data.message),
+    saveMessage({
+      name: values.data.name,
+      email: contactEmail,
+      phone: contactPhone,
+      message: values.data.message,
+    }),
+  ])
 
-  // Also save to the Supabase messages table (if present; RLS allows public insert)
-  if (supabaseAdmin) {
-    const { error: insertError } = await supabaseAdmin
-      .from('messages')
-      .insert({
-        name: values.data.name,
-        email: contactEmail,
-        phone: contactPhone,
-        subject: 'İletişim Formu',
-        body: values.data.message,
-      })
-
-    if (insertError) {
-      console.error('Supabase message insert failed:', insertError.message)
-    }
-  }
-
-  if (!sent) {
+  if (!discordOk && !dbOk) {
     return NextResponse.json(
       { success: false, message: 'Failed to send message. Please try again later.' },
       { status: 500 },

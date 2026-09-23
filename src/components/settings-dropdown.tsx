@@ -22,12 +22,10 @@ import {
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { flagIcons } from '@/components/ui/flag-icons'
 
-type DarkIntensity = 'light' | 'standard' | 'dark'
-
 const MUSIC_KEY = 'site-music-enabled'
 const REDUCE_MOTION_KEY = 'site-reduce-motion'
-const DARK_INTENSITY_KEY = 'site-dark-intensity'
 const THEME_KEY = 'site-theme'
+const LOCALE_COOKIE = 'site-locale'
 
 /** Native names for each locale, shown in the language picker. */
 const NATIVE_NAMES: Record<Locale, string> = {
@@ -83,12 +81,11 @@ export function SettingsModal({
 }) {
   const { theme, setTheme } = useTheme()
   const { t } = useT()
-  const { pref, setPref } = useLocale()
+  const { pref, setPref, detected } = useLocale()
   const router = useRouter()
 
   const [reduceMotion, setReduceMotion] = useState<boolean>(false)
   const [musicEnabled, setMusicEnabled] = useState<boolean>(true)
-  const [darkIntensity, setDarkIntensity] = useState<DarkIntensity>('standard')
 
   useEffect(() => {
     if (!open) {
@@ -99,9 +96,6 @@ export function SettingsModal({
     )
     setMusicEnabled(
       readLocal(MUSIC_KEY, ['true', 'false'] as const, 'true') === 'true',
-    )
-    setDarkIntensity(
-      readLocal(DARK_INTENSITY_KEY, ['light', 'standard', 'dark'] as const, 'standard'),
     )
   }, [open])
 
@@ -127,29 +121,14 @@ export function SettingsModal({
     window.dispatchEvent(new CustomEvent('site-music-toggle'))
   }, [])
 
-  const applyDarkIntensity = useCallback((next: DarkIntensity) => {
-    setDarkIntensity(next)
-    try {
-      localStorage.setItem(DARK_INTENSITY_KEY, next)
-    }
-    catch {
-      /* noop */
-    }
-    document.documentElement.dataset.darkIntensity = next
-  }, [])
-
   const resetLocal = useCallback(() => {
     const confirmMsg = t('settings.resetConfirm')
     if (typeof window === 'undefined' || !window.confirm(confirmMsg)) {
       return
     }
-    const ownKeys = [
-      THEME_KEY,
-      REDUCE_MOTION_KEY,
-      MUSIC_KEY,
-      DARK_INTENSITY_KEY,
-      'music-player-closed',
-    ]
+
+    // 1) Kendi localStorage anahtarlarimiz
+    const ownKeys = [THEME_KEY, REDUCE_MOTION_KEY, MUSIC_KEY, 'music-player-closed']
     for (const k of ownKeys) {
       try {
         localStorage.removeItem(k)
@@ -158,6 +137,8 @@ export function SettingsModal({
         /* noop */
       }
     }
+
+    // 2) Istatistik anahtarlari (prefix taramasi)
     try {
       const toDelete: string[] = []
       for (let i = 0; i < localStorage.length; i++) {
@@ -176,9 +157,32 @@ export function SettingsModal({
     catch {
       /* noop */
     }
+
+    // 3) DOM'a uygulanmis anlik durumu geri al.
+    //    Eskiden yalnizca localStorage siliniyordu; attribute ve tema sinifi
+    //    oldugu gibi kaliyordu → "sifirla" sozu tam tutmuyordu.
+    try {
+      document.documentElement.removeAttribute('data-reduce-motion')
+    }
+    catch {
+      /* noop */
+    }
+
+    // 4) Tema ve dil tercihini de sifirla. Dil bir CEREZDE tutuluyor ve
+    //    eskiden hic temizlenmiyordu; sifirlama sonrasi dil eski secimde
+    //    kaliyordu.
+    setTheme('auto')
+    try {
+      document.cookie = `${LOCALE_COOKIE}=auto; path=/; max-age=31536000; SameSite=Lax`
+    }
+    catch {
+      /* noop */
+    }
+    setPref('auto')
+
     onOpenChange(false)
     router.refresh()
-  }, [t, onOpenChange, router])
+  }, [t, onOpenChange, router, setTheme, setPref])
 
   const themeOptions: { value: ThemeMode, icon: React.ReactNode, label: string }[] = [
     { value: 'auto', icon: <ThemeSystemIcon size={16} />, label: t('settings.auto') },
@@ -186,14 +190,13 @@ export function SettingsModal({
     { value: 'dark', icon: <MoonIcon size={16} />, label: t('settings.dark') },
   ]
 
-  const intensityOptions: { value: DarkIntensity, label: string }[] = [
-    { value: 'light', label: t('settings.darkIntensityLight') },
-    { value: 'standard', label: t('settings.darkIntensityStandard') },
-    { value: 'dark', label: t('settings.darkIntensityIntense') },
-  ]
+  // "Otomatik" secilirse hangi dilin kullanilacagini ETIKETIN ICINDE gosteriyoruz:
+  // "Otomatik (Türkçe)". `detected` tarayici dilinden (ve bolgeden) hesaplanan
+  // gercek sonuctur — yani etiket tahmin degil, olculmus deger.
+  const autoLabel = `${t('lang.auto')} (${NATIVE_NAMES[detected]})`
 
   const localeOptions: { value: LocalePref, icon?: React.ReactNode, label: string }[] = [
-    { value: 'auto', icon: <AutoIcon size={16} />, label: t('lang.auto') ?? t('settings.auto') },
+    { value: 'auto', icon: <AutoIcon size={16} />, label: autoLabel },
     ...LOCALES_ALL.map((l) => {
       const Flag = flagIcons[l]
       return {
@@ -223,6 +226,13 @@ export function SettingsModal({
 
         {/* Language */}
         <Section title={t('settings.language')} icon={<GlobeIcon size={16} />}>
+          {/*
+            `showAllOption` KALDIRILDI: combobox hem "Tümü" butonunu hem de
+            listedeki 'auto' secenegini "Otomatik" olarak gosteriyordu →
+            ekranda ayni isim IKI KEZ cikiyordu. Artik tek bir 'auto' secenegi
+            var; temizlemek isteyen de ayni secenegi secer (ikisi de
+            setPref('auto') cagiriyordu, yani bir sey kaybolmadi).
+          */}
           <SearchableCombobox
             options={localeOptions}
             selected={[pref]}
@@ -231,23 +241,6 @@ export function SettingsModal({
             placeholder={t('settings.languageLabel')}
             searchPlaceholder={t('country.search')}
             ariaLabel={t('settings.languageLabel')}
-            showAllOption
-            allLabel={t('lang.auto') ?? t('settings.auto')}
-          />
-          <p className="px-1 text-[11px] leading-snug text-foreground/50">
-            {t('settings.auto')}
-          </p>
-        </Section>
-
-        {/* Dark theme intensity */}
-        <Section
-          title={t('settings.darkIntensity')}
-          icon={<MoonIcon size={16} />}
-        >
-          <RadioGroup
-            options={intensityOptions}
-            value={darkIntensity}
-            onChange={v => applyDarkIntensity(v as DarkIntensity)}
           />
         </Section>
 

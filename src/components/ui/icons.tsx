@@ -476,6 +476,51 @@ export function UpdateIcon({ size = 16, className }: IconProps) {
   )
 }
 
+/**
+ * IconPark "file-question" (outline) — 404 / "sayfa bulunamadi" sayfasi icin.
+ *
+ * Tarık `npx shadcn@latest add @icons0/icon-park-outline/file-question`
+ * istedi; ancak bu projede shadcn kurulu DEGIL (`components.json` yok) ve
+ * `@icons0` registry'si tanimli degil → komut "Unknown registry" veriyor.
+ * Ayni ikon Iconify'in `icon-park-outline` setinden alindi ve projenin kendi
+ * inline-SVG sistemine eklendi: harici bagimlilik yok, CDN beklenmiyor
+ * (Iconify'in bos ikon sorununa da cozum — bkz. dosya basi).
+ */
+export function FileQuestionIcon({ size = 24, className }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 48 48"
+      className={className}
+      aria-hidden="true"
+    >
+      <g fill="none">
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={4}
+          d="M10 44h28a2 2 0 0 0 2-2V14H30V4H10a2 2 0 0 0-2 2v36a2 2 0 0 0 2 2M30 4l10 10"
+        />
+        <path
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={4}
+          d="M24 31v-3c2.21 0 4-2.015 4-4.5S26.21 19 24 19s-4 2.015-4 4.5"
+        />
+        <path
+          fill="currentColor"
+          fillRule="evenodd"
+          d="M24 39a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5"
+          clipRule="evenodd"
+        />
+      </g>
+    </svg>
+  )
+}
+
 export function socialIcon(name: string, size: number, className?: string) {
   switch (name) {
     case 'mdi:github':
@@ -576,6 +621,46 @@ export function GlobeIcon({ size = 18, className }: IconProps) {
       <circle cx="12" cy="12" r="10" />
       <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
       <path d="M2 12h20" />
+    </svg>
+  )
+}
+
+/**
+ * Envelope icon. `filled` uses the solid variant (for small badges);
+ * default is the stroked outline used across the site.
+ * (Once duplicated locally in contact-section.tsx — now shared.)
+ */
+export function MailIcon({ size = 20, className, filled = false }: IconProps & { filled?: boolean }) {
+  if (filled) {
+    return (
+      <svg {...fillBase(size, className)}>
+        <path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2zm-2 0l-8 5l-8-5zm0 12H4V8l8 5l8-5z" />
+      </svg>
+    )
+  }
+  return (
+    <svg {...base(size, className)}>
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </svg>
+  )
+}
+
+/** Phone / handset icon. */
+export function PhoneIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  )
+}
+
+/** Map pin / location marker icon. */
+export function MapPinIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
     </svg>
   )
 }

@@ -17,7 +17,8 @@ import { Divider } from 'antd'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { ChatPanel } from '@/components/admin/chat-panel'
-
+import { DataManager } from '@/components/admin/data-manager'
+import { OverviewPanel } from '@/components/admin/overview-panel'
 import { UsersPanel } from '@/components/admin/users-panel'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -46,6 +47,10 @@ export function AdminPanel({
   const [backgroundUploading, setBackgroundUploading] = useState(false)
   const backgroundFileRef = useRef<HTMLInputElement>(null)
   const [githubRepos, setGithubRepos] = useState<GitHubRepo[]>([])
+  // Sekme kontrollu: "Genel Bakis"taki tablo kartlari "Veri Yonetimi"
+  // sekmesine ve ilgili tabloya atlayabilsin diye activeKey'i biz tutuyoruz.
+  const [tab, setTab] = useState('overview')
+  const [dataResource, setDataResource] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     const username = content.settings.githubUsername
@@ -526,7 +531,26 @@ const clearMessages = async () => {
         <Tabs
           size="large"
           className="w-full min-w-max"
+          activeKey={tab}
+          onChange={setTab}
           items={[
+            {
+              key: 'overview',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:view-dashboard-outline" width={15} height={15} />
+                  Genel Bakış
+                </span>
+              ),
+              children: (
+                <OverviewPanel
+                  onNavigate={(key) => {
+                    setDataResource(key)
+                    setTab('data')
+                  }}
+                />
+              ),
+            },
             {
               key: 'profile',
               label: (
@@ -1770,6 +1794,16 @@ const clearMessages = async () => {
                   />
                 </div>
               ),
+            },
+            {
+              key: 'data',
+              label: (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon icon="mdi:database-cog-outline" width={15} height={15} />
+                  Veri Yönetimi
+                </span>
+              ),
+              children: <DataManager key={dataResource} initialResource={dataResource} />,
             },
             {
               key: 'settings',

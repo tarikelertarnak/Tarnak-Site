@@ -418,6 +418,7 @@ function ProjectMedia({
                 src="/tarnak-white.svg"
                 alt="TARNAK"
                 className="hidden h-16 w-16 object-contain p-1 dark:block"
+                loading="lazy"
               />
             )}
         {!isGithub && (
@@ -425,6 +426,7 @@ function ProjectMedia({
             src="/tarnak.svg"
             alt="TARNAK"
             className="block h-16 w-16 object-contain p-1 dark:hidden"
+            loading="lazy"
           />
         )}
       </div>
@@ -462,6 +464,7 @@ const mediaNode = (src: string, video: boolean, controls: boolean) =>
         title={t('projects.zoom')}
         onClick={() => setZoomed(true)}
         className="h-full w-full cursor-zoom-in object-contain"
+        loading="lazy"
       />
     )
 

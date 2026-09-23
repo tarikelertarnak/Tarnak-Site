@@ -5,6 +5,17 @@ import dns from 'node:dns'
 // IPv4'ü önce çözmek bunu kökten çözer (tüm sunucu sürecinde geçerli: dev + prod).
 dns.setDefaultResultOrder('ipv4first')
 
+// Google AdSense yalnizca NEXT_PUBLIC_ADSENSE_CLIENT tanimliysa CSP'ye eklenir.
+// Boylece reklam agi baglanmadigi surece politika dar kalir; "ileride lazim olur"
+// diye kalici olarak genisletmeyiz.
+const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || ''
+const AD_SCRIPT_SRC = ADSENSE_CLIENT
+  ? ' https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com'
+  : ''
+const AD_FRAME_SRC = ADSENSE_CLIENT
+  ? ' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com'
+  : ''
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // GitHub Pages statik export: EXPORT_MODE=1 iken next build "out/" üretir.
@@ -40,12 +51,12 @@ const nextConfig = {
             // inline script (tema init) ve HeroUI/iconify için pragmatik CSP
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              `script-src 'self' 'unsafe-inline' 'unsafe-eval'${AD_SCRIPT_SRC}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data: https:",
               "connect-src 'self' https: wss:",
-              "frame-src 'self'",
+              `frame-src 'self'${AD_FRAME_SRC}`,
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
