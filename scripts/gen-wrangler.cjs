@@ -11,7 +11,7 @@ const config = {
     run_worker_first: true,
   },
   compatibility_date: "2026-09-15",
-  compatibility_flags: ["nodejs_compat", "nodejs_compat_v2"],
+  compatibility_flags: ["nodejs_compat"],
   pages_build_output_dir: ".open-next",
 };
 
