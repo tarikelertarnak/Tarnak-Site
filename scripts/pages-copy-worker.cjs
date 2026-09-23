@@ -26,7 +26,10 @@ if (fs.existsSync(handlerPath)) {
   if (code.includes('globalThis.__nb')) {
     code = code.replace(/import \* as __nb_\w+ from "[^"]+";\n/g, '').replace(/globalThis\.__nb = \[[^\]]*\];\n/, '');
   }
-  // 1) next-server runtime modules (CJS compiled bundles) — force into graph
+  // 1) next-server runtime modules (CJS compiled bundles) — force into graph.
+  // Only the turbo + base server runtimes are used; importing all 13 ~3.3MB
+  // blows the 25MiB Pages bundle limit.
+  const NEEDED = new Set(['app-page-turbo.runtime.prod.js', 'app-route-turbo.runtime.prod.js', 'pages-turbo.runtime.prod.js', 'pages-api-turbo.runtime.prod.js', 'server.runtime.prod.js']);
   const nextServerDir = path.join(openNextDir, 'server-functions', 'default', 'node_modules');
   const nextPkg = (() => {
     if (fs.existsSync(path.join(nextServerDir, 'next'))) return 'next';
@@ -40,7 +43,7 @@ if (fs.existsSync(handlerPath)) {
   if (nextPkg) {
     const compiled = path.join(nextServerDir, nextPkg, 'dist', 'compiled', 'next-server');
     if (fs.existsSync(compiled)) {
-      for (const file of fs.readdirSync(compiled).filter((f) => f.endsWith('.runtime.prod.js'))) {
+      for (const file of fs.readdirSync(compiled).filter((f) => f.endsWith('.runtime.prod.js') && NEEDED.has(f))) {
         imported.push(`import * as __ns_${file.replace(/[^a-zA-Z0-9]/g, '_')} from "${path.posix.join('next/dist/compiled/next-server', file)}";`);
       }
     }
