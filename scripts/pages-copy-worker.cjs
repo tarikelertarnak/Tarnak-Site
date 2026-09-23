@@ -93,6 +93,14 @@ if (fs.existsSync(handlerPath)) {
     code = code.replace(re, 'require(/* webpackIgnore: true */ $1$2)');
     if (code !== before) console.log(`[pages-copy-worker] webpackIgnore'd dev-only require (${pat})`);
   }
+  // 4) bare builtin requires (require("module")) must become require("node:module")
+  // to match the isomorphic imports above — workerd requires identical specifiers.
+  const BUILTIN_BARE = ['assert','async_hooks','buffer','child_process','constants','crypto','events','fs','http','http2','https','module','os','path','process','stream','string_decoder','timers','tty','url','util','vm','zlib'];
+  for (const b of BUILTIN_BARE) {
+    const before = code;
+    code = code.replace(new RegExp(String.raw`require\((['"])${b}(['"])\)`, 'g'), `require($1node:${b}$2)`);
+    if (code !== before) console.log(`[pages-copy-worker] bare require("${b}") -> node:${b}`);
+  }
   fs.writeFileSync(handlerPath, code);
   console.log(`[pages-copy-worker] injected ${imported.length} isomorphic imports (nodejs_compat_v2 dynamic require fix)`);
 } else {
