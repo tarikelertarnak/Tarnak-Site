@@ -22,7 +22,12 @@ try {
 const handlerPath = path.join(openNextDir, 'server-functions', 'default', 'handler.mjs');
 if (fs.existsSync(handlerPath)) {
   let code = fs.readFileSync(handlerPath, 'utf8');
+  // workerd isomorphic require rule: a runtime `require("X")` only resolves when
+  // X is ALREADY in the worker's module graph as a live (non-tree-shaken) import.
+  // esbuild drops unused imports, so every import must be referenced from a
+  // global array with its actual symbol (globalThis.__iso).
   const imported = [];
+  let isoRefs = [];
   if (code.includes('globalThis.__nb')) {
     code = code.replace(/import \* as __nb_\w+ from "[^"]+";\n/g, '').replace(/globalThis\.__nb = \[[^\]]*\];\n/, '');
   }
@@ -64,9 +69,17 @@ if (fs.existsSync(handlerPath)) {
   }
   // 2) node builtins
   for (const b of ['assert','async_hooks','buffer','child_process','constants','crypto','events','fs','http','http2','https','module','os','path','process','stream','string_decoder','timers','tty','url','util','vm','zlib']) {
-    imported.push(`import * as __nb_${b.replace(/[^a-zA-Z0-9]/g, '_')} from "node:${b}";`);
+    const sym = `__nb_${b.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    imported.push(`import * as ${sym} from "node:${b}";`);
+    isoRefs.push(sym);
   }
-  const block = imported.join('\n') + `\nglobalThis.__nb = [${imported.map(() => '1').join(',')}];\n`;
+  // tie every import to a live symbol so esbuild keeps the whole graph
+  const nextServerSyms = [];
+  for (const line of imported) {
+    const m = line.match(/^import \* as (\w+) from/);
+    if (m && m[1] && !isoRefs.includes(m[1])) nextServerSyms.push(m[1]);
+  }
+  const block = imported.join('\n') + `\nglobalThis.__iso = [${[...isoRefs, ...nextServerSyms].join(',')}] || 0;\n`;
   code = block + code.replace(/^import\s/m, '// isomorphic imports injected\nimport ');
   // 3) dev-only/optional requires (react-dom development builds, picocolors...):
   // mark webpackIgnore so the bundler leaves them unresolved; they are only
