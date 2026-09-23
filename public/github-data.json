@@ -10,6 +10,18 @@
   },
   "repos": [
     {
+      "name": "Tarnak-Site",
+      "fullName": "tarikelertarnak/Tarnak-Site",
+      "description": "Tarnak portfolio site — Next.js 15 / OpenNext / Clouflare Pages",
+      "url": "https://github.com/tarikelertarnak/Tarnak-Site",
+      "language": "TypeScript",
+      "stars": 0,
+      "forks": 0,
+      "watchers": 0,
+      "topics": [],
+      "updatedAt": "2026-09-23T22:31:57Z"
+    },
+    {
       "name": "ActivaterWindows",
       "fullName": "tarikelertarnak/ActivaterWindows",
       "description": null,
@@ -38,18 +50,6 @@
         "security"
       ],
       "updatedAt": "2026-09-21T04:32:41Z"
-    },
-    {
-      "name": "Tarnak-Site",
-      "fullName": "tarikelertarnak/Tarnak-Site",
-      "description": "Tarnak portfolio site — Next.js 15 / OpenNext / Clouflare Pages",
-      "url": "https://github.com/tarikelertarnak/Tarnak-Site",
-      "language": "TypeScript",
-      "stars": 0,
-      "forks": 0,
-      "watchers": 0,
-      "topics": [],
-      "updatedAt": "2026-09-18T18:07:09Z"
     },
     {
       "name": "tarikelertarnak.github.io",
