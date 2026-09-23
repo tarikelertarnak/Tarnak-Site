@@ -56,3 +56,37 @@ if (fs.existsSync(handlerPath)) {
 } else {
   console.log('[pages-copy-worker] handler.mjs not found — nothing to patch');
 }
+
+// Pages' bundler resolves optional/dev-only requires (critters, otel, react-dom
+// development builds) against the output node_modules. OpenNext only copies
+// files actually bundled, so copy these here so the bundler can resolve them.
+function ensureModule(destName, extra) {
+  const dest = path.join(openNextDir, 'server-functions', 'default', 'node_modules', destName);
+  if (fs.existsSync(dest)) return;
+  const siteRoot = path.resolve(__dirname, '..');
+  const srcs = [path.join(siteRoot, 'node_modules', destName), path.join(siteRoot, 'node_modules', 'next', 'node_modules', destName), path.join(siteRoot, 'node_modules', 'next', 'dist', 'compiled', destName)];
+  for (const s of srcs) {
+    if (fs.existsSync(s)) {
+      fs.cpSync(s, dest, { recursive: true, force: true });
+      console.log(`[pages-copy-worker] resolved ${destName} -> copied from ${path.relative(siteRoot, s)}`);
+      return;
+    }
+  }
+  console.log(`[pages-copy-worker] WARN: ${destName} not found to copy (bundler may fail)`);
+}
+ensureModule('critters');
+ensureModule('@opentelemetry/api');
+// react-dom dev-only cjs builds (literals only reachable when NODE_ENV != production)
+{
+  const dest = path.join(openNextDir, 'server-functions', 'default', 'node_modules', 'react-dom', 'cjs');
+  const siteRoot = path.resolve(__dirname, '..');
+  const srcCjs = path.join(siteRoot, 'node_modules', 'react-dom', 'cjs');
+  for (const file of ['react-dom-server.browser.development.js', 'react-dom-server-legacy.browser.development.js', 'react-dom-server.browser.production.js', 'react-dom-server-legacy.browser.production.js', 'react-dom-server.node.development.js', 'react-dom-server.node.production.js']) {
+    const full = path.join(srcCjs, file);
+    if (fs.existsSync(full) && !fs.existsSync(path.join(dest, file))) {
+      fs.mkdirSync(dest, { recursive: true });
+      fs.copyFileSync(full, path.join(dest, file));
+      console.log(`[pages-copy-worker] copied react-dom/cjs/${file}`);
+    }
+  }
+}
