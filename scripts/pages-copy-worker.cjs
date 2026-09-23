@@ -19,3 +19,23 @@ try {
   console.error('[pages-copy-worker] copy failed:', e.message);
   process.exit(1);
 }
+
+// Patch handler.mjs: prefix-less node builtin requires (require("fs")) fail in
+// Pages' bundler with nodejs_compat v1. Rewrite to node: prefix so esbuild
+// treats them as external builtins.
+const BUILTINS = ['assert','async_hooks','buffer','child_process','cluster','console','constants','crypto','dgram','diagnostics_channel','dns','domain','events','fs','http','http2','https','inspector','module','net','os','path','perf_hooks','process','punycode','querystring','readline','repl','stream','string_decoder','sys','timers','tls','trace_events','tty','url','util','v8','vm','wasi','worker_threads','zlib'];
+const handlerPath = path.join(openNextDir, 'server-functions', 'default', 'handler.mjs');
+if (fs.existsSync(handlerPath)) {
+  let code = fs.readFileSync(handlerPath, 'utf8');
+  let patched = 0;
+  for (const b of BUILTINS) {
+    const re = new RegExp(`require\\((['"])(${b})(['"])\\)`, 'g');
+    const before = code;
+    code = code.replace(re, `require($1node:${b}$3)`);
+    if (code !== before) patched++;
+  }
+  fs.writeFileSync(handlerPath, code);
+  console.log(`[pages-copy-worker] patched ${patched} node builtin requires with node: prefix in handler.mjs`);
+} else {
+  console.log('[pages-copy-worker] handler.mjs not found — nothing to patch');
+}
