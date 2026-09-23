@@ -76,12 +76,13 @@ function ensureModule(destName, extra) {
 }
 ensureModule('critters');
 ensureModule('@opentelemetry/api');
+ensureModule('picocolors');
 // react-dom dev-only cjs builds (literals only reachable when NODE_ENV != production)
 {
   const dest = path.join(openNextDir, 'server-functions', 'default', 'node_modules', 'react-dom', 'cjs');
   const siteRoot = path.resolve(__dirname, '..');
   const srcCjs = path.join(siteRoot, 'node_modules', 'react-dom', 'cjs');
-  for (const file of ['react-dom-server.browser.development.js', 'react-dom-server-legacy.browser.development.js', 'react-dom-server.browser.production.js', 'react-dom-server-legacy.browser.production.js', 'react-dom-server.node.development.js', 'react-dom-server.node.production.js']) {
+  for (const file of ['react-dom-server.browser.development.js', 'react-dom-server-legacy.browser.development.js', 'react-dom-server.browser.production.js', 'react-dom-server-legacy.browser.production.js', 'react-dom-server.node.development.js', 'react-dom-server.node.production.js', 'react-dom-server.edge.development.js', 'react-dom-server.edge.production.js']) {
     const full = path.join(srcCjs, file);
     if (fs.existsSync(full) && !fs.existsSync(path.join(dest, file))) {
       fs.mkdirSync(dest, { recursive: true });
