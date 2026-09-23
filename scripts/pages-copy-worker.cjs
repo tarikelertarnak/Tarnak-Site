@@ -51,6 +51,18 @@ if (fs.existsSync(handlerPath)) {
   }
   const block = imported.join('\n') + `\nglobalThis.__nb = [${imported.map(() => '1').join(',')}];\n`;
   code = block + code.replace(/^import\s/m, '// isomorphic imports injected\nimport ');
+  // 3) dev-only/optional requires (react-dom development builds, picocolors...):
+  // mark webpackIgnore so the bundler leaves them unresolved; they are only
+  // reachable when NODE_ENV !== 'production' or inside try/catch.
+  for (const pat of [
+    String.raw`require\((['"])\./cjs/react-dom-server[^'"]*development\.js(['"])\)`,
+    String.raw`require\((['"])picocolors(['"])\)`,
+  ]) {
+    const re = new RegExp(pat, 'g');
+    const before = code;
+    code = code.replace(re, 'require(/* webpackIgnore: true */ $1$2)');
+    if (code !== before) console.log(`[pages-copy-worker] webpackIgnore'd dev-only require (${pat})`);
+  }
   fs.writeFileSync(handlerPath, code);
   console.log(`[pages-copy-worker] injected ${imported.length} isomorphic imports (nodejs_compat_v2 dynamic require fix)`);
 } else {
@@ -65,7 +77,10 @@ function ensureModule(destName, extra) {
   if (fs.existsSync(dest)) return;
   const siteRoot = path.resolve(__dirname, '..');
   const srcs = [path.join(siteRoot, 'node_modules', destName), path.join(siteRoot, 'node_modules', 'next', 'node_modules', destName), path.join(siteRoot, 'node_modules', 'next', 'dist', 'compiled', destName)];
-  for (const s of srcs) {
+  // pnpm layout: .pnpm/<name>@<ver>/node_modules/<name>
+  const pnpmDirs = [];
+  try { pnpmDirs.push(...fs.readdirSync(path.join(siteRoot, 'node_modules', '.pnpm')).filter((d) => d.startsWith(destName + '@')).map((d) => path.join(siteRoot, 'node_modules', '.pnpm', d, 'node_modules', destName))); } catch {}
+  for (const s of [...srcs, ...pnpmDirs]) {
     if (fs.existsSync(s)) {
       fs.cpSync(s, dest, { recursive: true, force: true });
       console.log(`[pages-copy-worker] resolved ${destName} -> copied from ${path.relative(siteRoot, s)}`);
