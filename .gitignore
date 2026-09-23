@@ -105,3 +105,4 @@ rebuild-trigger.md
 
 # generated lockfiles (keep pnpm-lock.yaml only)
 package-lock.json
+wrangler.json
