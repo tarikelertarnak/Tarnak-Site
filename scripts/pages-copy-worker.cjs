@@ -1,17 +1,12 @@
-// Cloudflare Pages requires the OpenNext worker at the OUTPUT ROOT as `_worker.js`.
-// opennextjs-cloudflare build emits `.open-next/worker.js` only, so Pages deploys
-// it as static assets-only -> every route 404s. Copy worker.js -> _worker.js.
+#!/usr/bin/env node
+// Copy OpenNext output worker to Pages _worker.js + patch for workerd runtime.
 const fs = require('fs');
 const path = require('path');
 
-const openNextDir = path.join(__dirname, '..', '.open-next');
+const openNextDir = path.resolve(__dirname, '..', '.open-next');
 const src = path.join(openNextDir, 'worker.js');
 const dst = path.join(openNextDir, '_worker.js');
 
-if (!fs.existsSync(src)) {
-  console.error(`[pages-copy-worker] MISSING ${src} — opennext:build did not run?`);
-  process.exit(0);
-}
 try {
   fs.copyFileSync(src, dst);
   console.log(`[pages-copy-worker] copied worker.js -> _worker.js (${fs.statSync(dst).size} bytes)`);
@@ -20,55 +15,44 @@ try {
   process.exit(1);
 }
 
-// Patch handler.mjs: prefix-less node builtin requires (require("fs")) fail in
-// Pages' bundler with nodejs_compat v1. Rewrite to node: prefix so esbuild
-// treats them as external builtins.
-const BUILTINS = ['assert','async_hooks','buffer','child_process','cluster','console','constants','crypto','dgram','diagnostics_channel','dns','domain','events','fs','http','http2','https','inspector','module','net','os','path','perf_hooks','process','punycode','querystring','readline','repl','stream','string_decoder','sys','timers','tls','trace_events','tty','url','util','v8','vm','wasi','worker_threads','zlib'];
+// workerd isomorphic require rule: a runtime `require("X")` (dynamic require)
+// only resolves when X is already present in the worker's module graph.
+// On nodejs_compat_v2 every node builtin and the next-server runtime modules
+// must be force-imported so dynamic requires resolve at runtime.
 const handlerPath = path.join(openNextDir, 'server-functions', 'default', 'handler.mjs');
 if (fs.existsSync(handlerPath)) {
   let code = fs.readFileSync(handlerPath, 'utf8');
-  let patched = 0;
-  for (const b of BUILTINS) {
-    const re = new RegExp(`require\\((['"])(${b})(['"])\\)`, 'g');
-    const before = code;
-    code = code.replace(re, `require($1node:${b}$3)`);
-    if (code !== before) patched++;
+  const imported = [];
+  if (code.includes('globalThis.__nb')) {
+    code = code.replace(/import \* as __nb_\w+ from "[^"]+";\n/g, '').replace(/globalThis\.__nb = \[[^\]]*\];\n/, '');
   }
+  // 1) next-server runtime modules (CJS compiled bundles) — force into graph
+  const nextServerDir = path.join(openNextDir, 'server-functions', 'default', 'node_modules');
+  const nextPkg = (() => {
+    if (fs.existsSync(path.join(nextServerDir, 'next'))) return 'next';
+    const pnpm = path.join(nextServerDir, '.pnpm');
+    if (fs.existsSync(pnpm)) {
+      const d = fs.readdirSync(pnpm).find((x) => x.startsWith('next@16.') || x.startsWith('next@'));
+      if (d) return path.join('.pnpm', d, 'node_modules', 'next');
+    }
+    return null;
+  })();
+  if (nextPkg) {
+    const compiled = path.join(nextServerDir, nextPkg, 'dist', 'compiled', 'next-server');
+    if (fs.existsSync(compiled)) {
+      for (const file of fs.readdirSync(compiled).filter((f) => f.endsWith('.runtime.prod.js'))) {
+        imported.push(`import * as __ns_${file.replace(/[^a-zA-Z0-9]/g, '_')} from "${path.posix.join('next/dist/compiled/next-server', file)}";`);
+      }
+    }
+  }
+  // 2) node builtins
+  for (const b of ['assert','async_hooks','buffer','child_process','constants','crypto','events','fs','http','http2','https','module','os','path','process','stream','string_decoder','timers','tty','url','util','vm','zlib']) {
+    imported.push(`import * as __nb_${b.replace(/[^a-zA-Z0-9]/g, '_')} from "node:${b}";`);
+  }
+  const block = imported.join('\n') + `\nglobalThis.__nb = [${imported.map(() => '1').join(',')}];\n`;
+  code = block + code.replace(/^import\s/m, '// isomorphic imports injected\nimport ');
   fs.writeFileSync(handlerPath, code);
-  console.log(`[pages-copy-worker] patched ${patched} node builtin requires with node: prefix in handler.mjs`);
-  // workerd isomorphic require: dynamic require("node:fs") only works when the
-  // module is already part of the worker's module graph. Force-reference every
-  // node builtin as an import so runtime requires resolve.
-  const importBlock = [
-    `import * as __nb_fs from "node:fs";`,
-    `import * as __nb_path from "node:path";`,
-    `import * as __nb_os from "node:os";`,
-    `import * as __nb_crypto from "node:crypto";`,
-    `import * as __nb_url from "node:url";`,
-    `import * as __nb_vm from "node:vm";`,
-    `import * as __nb_stream from "node:stream";`,
-    `import * as __nb_util from "node:util";`,
-    `import * as __nb_module from "node:module";`,
-    `import * as __nb_http from "node:http";`,
-    `import * as __nb_https from "node:https";`,
-    `import * as __nb_tty from "node:tty";`,
-    `import * as __nb_async_hooks from "node:async_hooks";`,
-    `import * as __nb_buffer from "node:buffer";`,
-    `import * as __nb_process from "node:process";`,
-    `import * as __nb_events from "node:events";`,
-    `import * as __nb_timers from "node:timers";`,
-    `import * as __nb_assert from "node:assert";`,
-    `import * as __nb_constants from "node:constants";`,
-    `import * as __nb_child_process from "node:child_process";`,
-    `import * as __nb_zlib from "node:zlib";`,
-    `import * as __nb_string_decoder from "node:string_decoder";`,
-    `globalThis.__nb = [__nb_fs,__nb_path,__nb_os,__nb_crypto,__nb_url,__nb_vm,__nb_stream,__nb_util,__nb_module,__nb_http,__nb_https,__nb_tty,__nb_async_hooks,__nb_buffer,__nb_process,__nb_events,__nb_timers,__nb_assert,__nb_constants,__nb_child_process,__nb_zlib,__nb_string_decoder];`
-  ].join('\n');
-  if (!code.includes('globalThis.__nb')) {
-    code = importBlock + '\n' + code;
-    fs.writeFileSync(handlerPath, code);
-    console.log(`[pages-copy-worker] injected isomorphic builtin imports (workerd dynamic require fix)`);
-  }
+  console.log(`[pages-copy-worker] injected ${imported.length} isomorphic imports (nodejs_compat_v2 dynamic require fix)`);
 } else {
   console.log('[pages-copy-worker] handler.mjs not found — nothing to patch');
 }
