@@ -47,6 +47,20 @@ if (fs.existsSync(handlerPath)) {
         imported.push(`import * as __ns_${file.replace(/[^a-zA-Z0-9]/g, '_')} from "${path.posix.join('next/dist/compiled/next-server', file)}";`);
       }
     }
+    // opennext .external.js wrappers — also must be in the isomorphic module graph.
+    const extCandidates = [
+      'build/adapter/setup-node-env.external.js',
+      'server/require-hook.js',
+      'server/node-environment.js',
+      'server/node-environment-extensions/console-file.js',
+      'server/dev/browser-logs/file-logger.js',
+    ];
+    const nextReal = path.join(nextServerDir, nextPkg);
+    for (const rel of extCandidates) {
+      if (fs.existsSync(path.join(nextReal, 'dist', rel))) {
+        imported.push(`import * as __ext_${rel.replace(/[^a-zA-Z0-9]/g, '_')} from "next/dist/${rel}";`);
+      }
+    }
   }
   // 2) node builtins
   for (const b of ['assert','async_hooks','buffer','child_process','constants','crypto','events','fs','http','http2','https','module','os','path','process','stream','string_decoder','timers','tty','url','util','vm','zlib']) {
