@@ -19,12 +19,3 @@ try {
   console.error('[pages-copy-worker] copy failed:', e.message);
   process.exit(1);
 }
-
-// Remove OpenNext's server-functions dir from the Pages output: Pages would
-// otherwise detect them as Pages Functions and try to bundle handler.mjs,
-// which fails on node builtins ("Could not resolve async_hooks/fs/...").
-const serverFunctionsDir = path.join(openNextDir, 'server-functions');
-if (fs.existsSync(serverFunctionsDir)) {
-  fs.rmSync(serverFunctionsDir, { recursive: true, force: true });
-  console.log('[pages-copy-worker] removed .open-next/server-functions (Pages Functions bundling bypass)');
-}
