@@ -10,16 +10,57 @@
   },
   "repos": [
     {
+      "name": "tarikelertarnak.github.io",
+      "fullName": "tarikelertarnak/tarikelertarnak.github.io",
+      "description": "Personal portfolio website.",
+      "url": "https://github.com/tarikelertarnak/tarikelertarnak.github.io",
+      "language": "HTML",
+      "stars": 3,
+      "forks": 0,
+      "watchers": 3,
+      "topics": [
+        "github-pages",
+        "html",
+        "personal-website",
+        "portfolio"
+      ],
+      "updatedAt": "2026-09-24T17:13:01Z"
+    },
+    {
       "name": "Tarnak-Site",
       "fullName": "tarikelertarnak/Tarnak-Site",
       "description": "Tarnak portfolio site — Next.js 15 / OpenNext / Clouflare Pages",
       "url": "https://github.com/tarikelertarnak/Tarnak-Site",
       "language": "TypeScript",
-      "stars": 0,
+      "stars": 1,
       "forks": 0,
-      "watchers": 0,
+      "watchers": 1,
       "topics": [],
-      "updatedAt": "2026-09-24T00:10:44Z"
+      "updatedAt": "2026-09-24T16:57:51Z"
+    },
+    {
+      "name": "TARIKELER-TARNAK",
+      "fullName": "tarikelertarnak/TARIKELER-TARNAK",
+      "description": "GitHub profile README",
+      "url": "https://github.com/tarikelertarnak/TARIKELER-TARNAK",
+      "language": null,
+      "stars": 3,
+      "forks": 0,
+      "watchers": 3,
+      "topics": [],
+      "updatedAt": "2026-09-24T16:46:42Z"
+    },
+    {
+      "name": "db-public",
+      "fullName": "tarikelertarnak/db-public",
+      "description": "Tarnak OpenCode dagitim paketi (PUBLIC)",
+      "url": "https://github.com/tarikelertarnak/db-public",
+      "language": null,
+      "stars": 1,
+      "forks": 0,
+      "watchers": 1,
+      "topics": [],
+      "updatedAt": "2026-09-24T15:30:56Z"
     },
     {
       "name": "ActivaterWindows",
@@ -27,11 +68,11 @@
       "description": null,
       "url": "https://github.com/tarikelertarnak/ActivaterWindows",
       "language": "Batchfile",
-      "stars": 1,
+      "stars": 2,
       "forks": 0,
-      "watchers": 1,
+      "watchers": 2,
       "topics": [],
-      "updatedAt": "2026-09-22T09:43:18Z"
+      "updatedAt": "2026-09-24T15:30:56Z"
     },
     {
       "name": "AI-Jailbreak",
@@ -50,35 +91,6 @@
         "security"
       ],
       "updatedAt": "2026-09-21T04:32:41Z"
-    },
-    {
-      "name": "tarikelertarnak.github.io",
-      "fullName": "tarikelertarnak/tarikelertarnak.github.io",
-      "description": "Personal portfolio website.",
-      "url": "https://github.com/tarikelertarnak/tarikelertarnak.github.io",
-      "language": "HTML",
-      "stars": 3,
-      "forks": 0,
-      "watchers": 3,
-      "topics": [
-        "github-pages",
-        "html",
-        "personal-website",
-        "portfolio"
-      ],
-      "updatedAt": "2026-09-15T18:15:39Z"
-    },
-    {
-      "name": "db-public",
-      "fullName": "tarikelertarnak/db-public",
-      "description": "Tarnak OpenCode dagitim paketi (PUBLIC)",
-      "url": "https://github.com/tarikelertarnak/db-public",
-      "language": null,
-      "stars": 0,
-      "forks": 0,
-      "watchers": 0,
-      "topics": [],
-      "updatedAt": "2026-09-11T10:21:16Z"
     },
     {
       "name": "Accentra",
@@ -162,18 +174,6 @@
         "scribd"
       ],
       "updatedAt": "2026-09-04T13:24:17Z"
-    },
-    {
-      "name": "TARIKELER-TARNAK",
-      "fullName": "tarikelertarnak/TARIKELER-TARNAK",
-      "description": "GitHub profile README",
-      "url": "https://github.com/tarikelertarnak/TARIKELER-TARNAK",
-      "language": null,
-      "stars": 3,
-      "forks": 0,
-      "watchers": 3,
-      "topics": [],
-      "updatedAt": "2026-09-04T13:24:15Z"
     },
     {
       "name": "Player",

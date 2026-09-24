@@ -16,6 +16,15 @@ const AD_FRAME_SRC = ADSENSE_CLIENT
   ? ' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com'
   : ''
 
+// Google Sign-In ("Google ile devam et"): gsi/client script'i + hesap seçici
+// iframe'i accounts.google.com'dan yüklenir. GOOGLE_CLIENT_ID tanımlıysa ve
+// ayrıca adını GOOGLE_ENABLED ile tasdik edersek... daha güzeli: client id
+// gömülüyse (NEXT_PUBLIC_GOOGLE_CLIENT_ID doluysa) izinleri ekle — böylece
+// "ileride lazım olur" diye varsayılan politikayı genişletmeyiz.
+const GOOGLE_SIGNIN = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
+  ? ' https://accounts.google.com'
+  : ''
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // GitHub Pages statik export: EXPORT_MODE=1 iken next build "out/" üretir.
@@ -51,12 +60,12 @@ const nextConfig = {
             // inline script (tema init) ve HeroUI/iconify için pragmatik CSP
             value: [
               "default-src 'self'",
-              `script-src 'self' 'unsafe-inline' 'unsafe-eval'${AD_SCRIPT_SRC}`,
+              `script-src 'self' 'unsafe-inline' 'unsafe-eval'${AD_SCRIPT_SRC}${GOOGLE_SIGNIN}`,
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data: https:",
               "connect-src 'self' https: wss:",
-              `frame-src 'self'${AD_FRAME_SRC}`,
+              `frame-src 'self'${AD_FRAME_SRC}${GOOGLE_SIGNIN}`,
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
