@@ -222,7 +222,8 @@ ensureModule('picocolors');
     exclude: [
       '/_next/*',
       '/*.png', '/*.jpg', '/*.jpeg', '/*.webp', '/*.avif', '/*.gif',
-      '/*.svg', '/*.ico', '/*.woff', '/*.woff2', '/*.txt', '/*.html',
+      '/*.svg', '/*.ico', '/*.woff', '/*.woff2', '/*.txt',
+      '/googlefe5d57c4dfcfcedd.html',
       '/cv/*',
       '/projects/*.png', '/projects/*.jpg', '/projects/*.jpeg',
       '/projects/*.webp', '/projects/*.gif', '/projects/*.svg',
