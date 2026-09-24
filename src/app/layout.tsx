@@ -77,6 +77,9 @@ export async function generateMetadata(): Promise<Metadata> {
     publisher: 'Tarık Eler (Tarnak)',
     robots: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
     alternates: { canonical: '/' },
+    other: {
+      'google-site-verification': 'googlefe5d57c4dfcfcedd.html',
+    },
     formatDetection: { email: false, address: false, telephone: false },
     icons: {
       icon: [
