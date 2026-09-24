@@ -120,9 +120,6 @@ function AuthFormInner() {
             {t('auth.login')}
           </Button>
         </form>
-        <p className="text-center text-xs text-foreground-500">
-          {t('auth.adminOnly')}
-        </p>
       </CardBody>
     </Card>
   )

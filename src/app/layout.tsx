@@ -35,10 +35,11 @@ export const viewport: Viewport = {
 
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getContent()
-  const name = content.hero.name || 'TARIK ELER'
-  const title = `${name} - TARNAK`
+  const name = content.hero.name || 'Tarık Eler'
+  // Kullanıcı isteği (2026-09-24): title'da marka + unvan net geçsin.
+  const title = 'Tarık Eler (Tarnak) | Web Developer'
   const description
-    = 'TARIK ELER - TARNAK (Tarnak) - Web developer & creator. Next.js, TypeScript ve yapay zeka üzerine projeler geliştiriyorum. Projelerim, yeteneklerim ve iletişim bilgilerim. Tarık Eler, tarikeler, elertarik, tarık eler tarnak, tarikelertarnak.'
+    = 'Tarık Eler (Tarnak) — web developer ve içerik üretici. Next.js, TypeScript ve yapay zeka ile modern web projeleri geliştiriyorum. Portfolio, blog ve projelerim: tarik eler, tarikelertarnak, tarnak.'
   const keywords = [
     'TARIK ELER',
     'TARNAK',
@@ -71,36 +72,38 @@ export async function generateMetadata(): Promise<Metadata> {
     title,
     description,
     keywords,
-    authors: [{ name: 'TARIK ELER - TARNAK', url: SITE_URL }],
-    creator: 'TARIK ELER - TARNAK',
-    publisher: 'TARIK ELER - TARNAK',
+    authors: [{ name: 'Tarık Eler (Tarnak)', url: SITE_URL }],
+    creator: 'Tarık Eler (Tarnak)',
+    publisher: 'Tarık Eler (Tarnak)',
     robots: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
     alternates: { canonical: '/' },
     formatDetection: { email: false, address: false, telephone: false },
     icons: {
       icon: [
-        { url: '/tarnak-white.svg', type: 'image/svg+xml' },
-        { url: '/tarnak-256.png', sizes: '256x256', type: 'image/png' },
-        { url: '/tarnak-128.png', sizes: '128x128', type: 'image/png' },
+        { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
+        { url: '/favicon.svg', type: 'image/svg+xml' },
+        { url: '/logo.png', sizes: '512x512', type: 'image/png' },
       ],
-      apple: '/tarnak-256.png',
+      apple: [
+        { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+      ],
     },
     openGraph: {
       type: 'website',
       url: `${SITE_URL}/`,
-      siteName: 'TARIK ELER - TARNAK',
+      siteName: 'Tarık Eler (Tarnak)',
       title,
       description,
       locale: 'tr_TR',
       images: [
-        { url: `${SITE_URL}/tarnak-logo-512.png`, width: 512, height: 512, alt: 'TARNAK logo' },
+        { url: `${SITE_URL}/tarik-eler-tarnak-logo.png`, width: 512, height: 512, alt: 'Tarık Eler Tarnak logosu' },
       ],
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title,
       description,
-      images: [`${SITE_URL}/tarnak-logo-512.png`],
+      images: [`${SITE_URL}/tarik-eler-tarnak-logo.png`],
     },
   }
 }
@@ -132,16 +135,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               {
                 '@context': 'https://schema.org',
                 '@type': 'Person',
-                name: 'TARIK ELER - TARNAK',
-                alternateName: ['TARNAK', 'Tarnak', 'tarikeler', 'elertarik', 'Tarık Eler'],
+                name: 'Tarık Eler',
+                alternateName: ['Tarnak', 'TARIK ELER', 'tarikeler', 'elertarik', 'tarık eler'],
                 url: SITE_URL,
-                image: `${SITE_URL}/tarnak-logo-512.png`,
-                logo: `${SITE_URL}/tarnak-logo-512.png`,
+                image: `${SITE_URL}/tarik-eler-tarnak-logo.png`,
+                logo: `${SITE_URL}/tarik-eler-tarnak-logo.png`,
+                jobTitle: 'Web Developer',
                 // 2026-09-24: github.io siteleri yayindan kaldirildi — sameAs'ta
                 // sadece AKTIF adresler kalir (arama motorlarına olu baglantilar
                 // bildirmeyiz; bunlar sinyal kirletir).
                 sameAs: [
                   'https://github.com/tarikelertarnak',
+                  'https://github.com/TARIKELER-TARNAK',
                   'https://tarikelertarnak.pages.dev',
                 ],
                 knowsAbout: ['Next.js', 'TypeScript', 'Web Development', 'React', 'Yapay Zeka'],
@@ -149,8 +154,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               {
                 '@context': 'https://schema.org',
                 '@type': 'WebSite',
-                name: 'TARIK ELER - TARNAK',
-                alternateName: ['TARNAK', 'tarikelertarnak', 'tarikeler', 'tarık eler'],
+                name: 'Tarık Eler (Tarnak)',
+                alternateName: ['Tarnak', 'tarikelertarnak', 'tarikeler', 'tarık eler'],
                 url: SITE_URL,
                 inLanguage: ['tr', 'en'],
                 // Sitelinks arama kutusu: "tarik eler chat" gibi aramalar sitenin

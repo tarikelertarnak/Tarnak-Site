@@ -32,5 +32,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified,
     changeFrequency: r.changeFrequency,
     priority: r.priority,
+    // Image sitemap — görsel aramada logo çıksın diye ana sayfaya logo eklendi
+    // (Google image sitemap: <image:image><image:loc>...).
+    ...(r.path === '/'
+      ? {
+          images: [
+            siteUrl('/tarik-eler-tarnak-logo.png'),
+            siteUrl('/logo.png'),
+            siteUrl('/tarnak-white.svg'),
+          ],
+        }
+      : {}),
   }))
 }
