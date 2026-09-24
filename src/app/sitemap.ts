@@ -4,15 +4,10 @@ import { siteUrl } from '@/lib/site-url'
 /**
  * Dinamik sitemap.
  *
- * Neden: public/sitemap.xml elle yazilmisti ve icindeki 9 URL'in TAMAMI
- * `https://tarikelertarnak.github.io` adresine isaret ediyordu. Canli site
- * mxngo.dev oldugu icin arama motorlarina yanlis kanonik adres bildiriliyordu.
- *
- * Burada SITE_URL kullanildigi icin her hedef kendi dogru adresini uretir:
- * Vercel -> mxngo.dev, GitHub Pages -> github.io, Cloudflare -> pages.dev.
- *
- * Not: `/chat` listeden CIKARILDI — robots.txt onu Disallow ediyor; hem
- * engellenip hem sitemap'te yer alan bir URL celiskili ve zararli bir sinyaldir.
+ * 2026-09-24 (kullanici istegi): TEK yayin adresi https://tarikelertarnak.pages.dev.
+ * SITEMAP'a tum indexlenebilir rotalar eklendi (/chat + /reklam dahil — artik
+ * robots.txt'te Disallow degiller). /admin, /login, /api, /puck gizli oldugundan
+ * listede yok. Blog yazilari varsa dinamik eklenir.
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date()
@@ -24,9 +19,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }> = [
     { path: '/', changeFrequency: 'weekly', priority: 1.0 },
     { path: '/projects', changeFrequency: 'weekly', priority: 0.9 },
-    { path: '/about', changeFrequency: 'monthly', priority: 0.8 },
     { path: '/blog', changeFrequency: 'weekly', priority: 0.8 },
-    { path: '/donate', changeFrequency: 'monthly', priority: 0.6 },
+    { path: '/chat', changeFrequency: 'monthly', priority: 0.7 },
+    { path: '/reklam', changeFrequency: 'monthly', priority: 0.6 },
     { path: '/github', changeFrequency: 'weekly', priority: 0.6 },
     { path: '/search', changeFrequency: 'monthly', priority: 0.4 },
     { path: '/credits', changeFrequency: 'monthly', priority: 0.3 },

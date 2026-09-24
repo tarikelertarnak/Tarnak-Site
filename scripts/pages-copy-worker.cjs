@@ -182,3 +182,54 @@ ensureModule('picocolors');
     }
   }
 }
+
+// Flatten OpenNext assets/ into the output root — Pages serves static files from
+// the deploy directory root ("/"), so /assets/_next/... URLs would 404 (Next.js
+// emits absolute /_next/static/... links). Copy everything from assets/ up one
+// level, skipping conflicts and the _worker.js marker.
+{
+  const assetsDir = path.join(openNextDir, 'assets');
+  if (fs.existsSync(assetsDir)) {
+    let n = 0;
+    for (const entry of fs.readdirSync(assetsDir)) {
+      const from = path.join(assetsDir, entry);
+      const to = path.join(openNextDir, entry);
+      if (fs.existsSync(to)) continue; // don't clobber worker/server-functions
+      fs.cpSync(from, to, { recursive: true });
+      n++;
+    }
+    console.log(`[pages-copy-worker] flattened ${n} asset entries to output root (static URLs /... now correct)`);
+  }
+  // After flattening, the original assets/ tree is redundant (its content lives
+  // at the root now). Remove it so the deploy doesn't create stray /assets/* URLs.
+  // Content is already copied above; this is a post-copy cleanup, not data loss.
+  if (fs.existsSync(assetsDir)) {
+    fs.rmSync(assetsDir, { recursive: true, force: true });
+    console.log('[pages-copy-worker] removed assets/ after flatten (content is at root)');
+  }
+}
+
+// _routes.json: without it, Pages advanced mode (_worker.js present) routes
+// EVERY request into the worker, and static files (CSS/images) 404 — the worker
+// never serves them. Excluding static paths returns those to Pages' asset
+// service. Page routes (/reklam /blog /projects + dynamic) stay on the worker;
+// only extension-based assets, /_next/*, /uploads/* and /cv/* are excluded.
+{
+  const routesPath = path.join(openNextDir, '_routes.json');
+  const routes = {
+    version: 1,
+    include: ['/*'],
+    exclude: [
+      '/_next/*',
+      '/*.png', '/*.jpg', '/*.jpeg', '/*.webp', '/*.avif', '/*.gif',
+      '/*.svg', '/*.ico', '/*.woff', '/*.woff2',
+      '/cv/*',
+      '/projects/*.png', '/projects/*.jpg', '/projects/*.jpeg',
+      '/projects/*.webp', '/projects/*.gif', '/projects/*.svg',
+      '/uploads/*',
+      '/github-data.json',
+    ],
+  };
+  fs.writeFileSync(routesPath, JSON.stringify(routes, null, 2) + '\n');
+  console.log('[pages-copy-worker] wrote _routes.json (static assets -> Pages service, routes -> worker)');
+}

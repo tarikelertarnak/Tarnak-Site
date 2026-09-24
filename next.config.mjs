@@ -30,7 +30,7 @@ const nextConfig = {
   // Turbopack, lightningcss'in native .node require'ını bundle edemiyor
   // (Cannot find module / could not resolve ...win32-x64-msvc.node).
   // External bırakınca Node kendi require'ıyla (düzgün çalışan) yüklüyor.
-  serverExternalPackages: ['lightningcss'],
+  serverExternalPackages: ['lightningcss', 'sharp'],
   images: {
     unoptimized: true,
   },

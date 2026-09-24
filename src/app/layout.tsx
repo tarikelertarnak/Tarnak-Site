@@ -136,10 +136,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 alternateName: ['TARNAK', 'Tarnak', 'tarikeler', 'elertarik', 'Tarık Eler'],
                 url: SITE_URL,
                 image: `${SITE_URL}/tarnak-logo-512.png`,
+                logo: `${SITE_URL}/tarnak-logo-512.png`,
+                // 2026-09-24: github.io siteleri yayindan kaldirildi — sameAs'ta
+                // sadece AKTIF adresler kalir (arama motorlarına olu baglantilar
+                // bildirmeyiz; bunlar sinyal kirletir).
                 sameAs: [
                   'https://github.com/tarikelertarnak',
                   'https://tarikelertarnak.pages.dev',
-                  'https://tarikelertarnak.github.io',
                 ],
                 knowsAbout: ['Next.js', 'TypeScript', 'Web Development', 'React', 'Yapay Zeka'],
               },
@@ -147,9 +150,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 '@context': 'https://schema.org',
                 '@type': 'WebSite',
                 name: 'TARIK ELER - TARNAK',
-                alternateName: ['TARNAK', 'tarikelertarnak', 'tarikeler'],
+                alternateName: ['TARNAK', 'tarikelertarnak', 'tarikeler', 'tarık eler'],
                 url: SITE_URL,
                 inLanguage: ['tr', 'en'],
+                // Sitelinks arama kutusu: "tarik eler chat" gibi aramalar sitenin
+                // arama alanina yonlensin (Google sitelinks/searchbox).
+                potentialAction: {
+                  '@type': 'SearchAction',
+                  target: `${SITE_URL}/search?q={search_term_string}`,
+                  'query-input': 'required name=search_term_string',
+                },
               },
             ]),
           }}
