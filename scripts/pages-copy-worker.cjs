@@ -79,7 +79,7 @@ if (fs.existsSync(handlerPath)) {
     const m = line.match(/^import \* as (\w+) from/);
     if (m && m[1] && !isoRefs.includes(m[1])) nextServerSyms.push(m[1]);
   }
-  const block = imported.join('\n') + `\nglobalThis.__iso = [${[...isoRefs, ...nextServerSyms].join(',')}] || 0;\n`;
+  const block = imported.join('\n') + `\nglobalThis.__iso = [${[...isoRefs, ...nextServerSyms].join(',')}] || 0;\nimport { createRequire as __crr } from "node:module";\nglobalThis.require = globalThis.require || __crr(import.meta.url);\n`;
   code = block + code.replace(/^import\s/m, '// isomorphic imports injected\nimport ');
   // 3) dev-only/optional requires (react-dom development builds, picocolors...):
   // mark webpackIgnore so the bundler leaves them unresolved; they are only
