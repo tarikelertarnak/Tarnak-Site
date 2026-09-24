@@ -1,29 +1,38 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 
 /**
- * Returns the number of columns the project/blog grid will render at the current viewport.
- * Mirrors Tailwind `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` so a "+1 row" reveal
- * adds exactly one full row of cards (no orphan trailing card).
+ * Returns the number of columns the grid actually renders, measured from the
+ * grid element itself via `getComputedStyle(grid).gridTemplateColumns`
+ * (user spec 2026-09-24) watched with a ResizeObserver.
  *
- * SSR defaults to 3 (lg+) to match the desktop-first initial render; the value is
- * re-evaluated in an effect on mount and on every breakpoint crossing.
+ * Works for any CSS grid regardless of breakpoint classes (projects:
+ * sm:grid-cols-2 lg:grid-cols-3, blog: md:grid-cols-2). SSR/initial: 3 (desktop-first);
+ * corrected on first measure + on every resize.
+ *
+ * Pass the element via a state-setter ref: `<div ref={setEl}>` so mount/unmount
+ * of conditionally-rendered grids is tracked too.
  */
-export function useGridCols(): number {
+export function useComputedGridCols(el: HTMLDivElement | null): number {
   const [cols, setCols] = useState(3)
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) {
+    if (!el) {
       return
     }
-    const mqLg = window.matchMedia('(min-width: 1024px)')
-    const mqSm = window.matchMedia('(min-width: 640px)')
-    const update = () => setCols(mqLg.matches ? 3 : mqSm.matches ? 2 : 1)
-    update()
-    mqLg.addEventListener('change', update)
-    mqSm.addEventListener('change', update)
-    return () => {
-      mqLg.removeEventListener('change', update)
-      mqSm.removeEventListener('change', update)
+    const measure = () => {
+      const n = getComputedStyle(el)
+        .gridTemplateColumns.split(' ')
+        .filter(Boolean)
+        .length
+      if (n > 0) {
+        setCols(n)
+      }
     }
-  }, [])
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [el])
   return cols
 }

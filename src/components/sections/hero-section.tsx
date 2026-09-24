@@ -7,6 +7,7 @@ import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import {
+  ChatIcon,
   EyeIcon,
   socialIcon,
 } from '@/components/ui/icons'
@@ -131,6 +132,13 @@ export function HeroSection({ content }: { content: SiteContent }) {
               href="#contact"
             >
               {t('hero.feedback')}
+            </Button>
+            <Button
+              className="font-semibold text-sm sm:text-base px-6 py-3 !bg-foreground !text-background hover:!bg-foreground/90"
+              href="/chat"
+              startContent={<ChatIcon size={18} />}
+            >
+              {t('nav.chat')}
             </Button>
             <Button
               className="font-semibold text-sm sm:text-base px-6 py-3 !bg-foreground !text-background hover:!bg-foreground/90"

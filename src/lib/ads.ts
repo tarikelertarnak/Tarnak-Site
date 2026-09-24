@@ -33,6 +33,10 @@ export interface AdSlot {
   sponsor: string
   durationSeconds: number
   placement: AdPlacement
+  /** Bin gosterim geliri (USD) — secim agirligi. Yoksa/0 ise en dusuk oncelik. */
+  cpm?: number
+  /** Gunluk gosterim ust siniri. Yoksa/0 ise sinirsiz. */
+  maxDailyViews?: number
 }
 
 export interface AdStats {
@@ -51,92 +55,25 @@ export interface AdPick {
 }
 
 // -------------------------------------------------------------
-// Yerlesik varsayilan reklamlar (schema-ads.sql seed'i ile ayni)
+// Yerlesik varsayilan reklamlar (tablo yoksa / okunamazsa dusulen son cay).
+//
+// Sahte "kendi kendine sponsor" birimleri (pixelshield, mythora, fruity-dev,
+// portfolio, donate-timed) kaldirildi — bunlar gercek sponsor degildi.
+// Gercek sponsorlar yalnizca DB'deki ad_slots tablosundan gelir; tablo yoksa
+// yalnizca AdSense slotu kalir (client ID tanimli degilse bos durum handled).
 // -------------------------------------------------------------
 const DEFAULT_SLOTS: AdSlot[] = [
   {
-    id: 'pixelshield',
-    title: 'PixelShield',
-    description: 'Gorsel guvenlik araci — projeyi incele',
-    kind: 'image',
-    imageUrl: '/projects/pixelshield.png',
-    targetUrl: '/projects',
-    html: null,
-    sponsor: 'PixelShield',
-    durationSeconds: 15,
-    placement: 'ads-page',
-  },
-  {
-    id: 'mythora',
-    title: 'Mythora',
-    description: 'Oyun projesi — destek ol',
-    kind: 'image',
-    imageUrl: '/projects/mythora.png',
-    targetUrl: '/projects',
-    html: null,
-    sponsor: 'Mythora',
-    durationSeconds: 15,
-    placement: 'ads-page',
-  },
-  {
-    id: 'fruity-dev',
-    title: 'Fruity Dev',
-    description: 'Arac projesi — goz at',
-    kind: 'image',
-    imageUrl: '/projects/fruity-dev.png',
-    targetUrl: '/projects',
-    html: null,
-    sponsor: 'Fruity Dev',
-    durationSeconds: 15,
-    placement: 'ads-page',
-  },
-  {
-    id: 'portfolio',
-    title: 'Portfolyo',
-    description: 'Tum projelerime goz at',
-    kind: 'image',
-    imageUrl: '/projects/portfolio.png',
-    targetUrl: '/projects',
-    html: null,
-    sponsor: 'TARNAK',
-    durationSeconds: 15,
-    placement: 'ads-page',
-  },
-  {
-    id: 'donate-timed',
-    title: 'PixelShield',
-    description: '15 saniyelik sponsor tanitimi',
-    kind: 'image',
-    imageUrl: '/projects/pixelshield.png',
-    targetUrl: '/projects',
-    html: null,
-    sponsor: 'PixelShield',
-    durationSeconds: 15,
-    placement: 'donate',
-  },
-  {
-    id: 'sponsor-link',
-    title: 'GitHub Sponsors',
-    description: 'Aylik destek ile projelerin gelisimini sagla',
-    kind: 'link',
+    id: 'adsense-main',
+    title: 'AdSense',
+    description: null,
+    kind: 'adsense',
     imageUrl: null,
-    targetUrl: 'https://github.com/sponsors/tarikelertarnak',
+    targetUrl: null,
     html: null,
-    sponsor: 'GitHub Sponsors',
-    durationSeconds: 10,
-    placement: 'donate',
-  },
-  {
-    id: 'banner-github',
-    title: 'GitHub',
-    description: 'Acik kaynak projelerime yildiz ver',
-    kind: 'link',
-    imageUrl: null,
-    targetUrl: 'https://github.com/tarikelertarnak',
-    html: null,
-    sponsor: 'GitHub',
-    durationSeconds: 8,
-    placement: 'banner',
+    sponsor: 'Google AdSense',
+    durationSeconds: 15,
+    placement: 'ads-page',
   },
 ]
 
@@ -162,6 +99,8 @@ interface AdSlotRow {
   sponsor: string | null
   duration_seconds: number | null
   placement: string
+  cpm: number | null
+  max_daily_views: number | null
 }
 
 const KINDS: AdKind[] = ['image', 'html', 'link', 'adsense']
@@ -181,6 +120,8 @@ function mapRow(row: AdSlotRow): AdSlot {
     // Sinirlari burada da uygula — DB check'i atlatilmis olsa bile
     durationSeconds: Number.isFinite(duration) ? Math.min(Math.max(duration, 5), 120) : 15,
     placement: (row.placement as AdPlacement) || 'ads-page',
+    cpm: row.cpm == null || !Number.isFinite(row.cpm) ? undefined : Math.max(Number(row.cpm), 0),
+    maxDailyViews: row.max_daily_views == null ? undefined : Math.max(Number(row.max_daily_views), 0),
   }
 }
 
@@ -192,7 +133,7 @@ export async function getSlots(
   if (db) {
     const { data, error } = await db
       .from('ad_slots')
-      .select('slug,title,description,kind,image_url,target_url,html,sponsor,duration_seconds,placement')
+      .select('slug,title,description,kind,image_url,target_url,html,sponsor,duration_seconds,placement,cpm,max_daily_views')
       .eq('placement', placement)
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
@@ -209,14 +150,45 @@ export async function getSlots(
   return { slots: DEFAULT_SLOTS.filter(s => s.placement === placement), source: 'fallback' }
 }
 
-/** Agirlikli rastgele secim — ayni reklamin surekli cikmasini engeller. */
+/**
+ * cpm-agirlikli secim — rastgelelik ayri, saf fonksiyona birakilmistir
+ * (test edilebilir: roll sabit verilir).
+ *
+ * weights[i] = slot i'nin agirligi (cpm, USD). cpm <= 0 olanlar EN DUSUK
+ * oncelikte: pozitif cpm'li baska slot varken secime girmez, hic pozitif yoksa
+ * hepsi esit sansla secilir.
+ * roll: [0, 1) arasi. Cent (cpm * 100) cinsinden islem, kusurlu sayi
+ * hatalarini onler (0.1 + 0.2 != 0.3 gibi).
+ */
+export function weightedIndexOf(weights: number[], roll: number): number {
+  if (weights.length === 0)
+    return -1
+  const positive = weights
+    .map((w, i) => ({ w, i }))
+    .filter(x => x.w > 0)
+  const pool = positive.length > 0 ? positive : weights.map((w, i) => ({ w: Math.max(w, 0), i }))
+  const cents = pool.map(x => Math.round(x.w * 100))
+  const total = cents.reduce((a, b) => a + b, 0)
+  if (total <= 0) {
+    const idx = Math.floor(roll * pool.length)
+    return idx >= 0 && idx < pool.length ? pool[idx].i : -1
+  }
+  const r = roll * total
+  let acc = 0
+  for (let i = 0; i < pool.length; i++) {
+    acc += cents[i]
+    if (r < acc)
+      return pool[i].i
+  }
+  return pool[pool.length - 1].i
+}
+
+/** Agirlikli rastgele secim — cpm'i yuksek olan daha sik cikar. */
 export function pickSlot(slots: AdSlot[]): AdSlot | null {
   if (slots.length === 0)
     return null
-  if (slots.length === 1)
-    return slots[0]
-  const idx = crypto.randomInt(0, slots.length)
-  return slots[idx]
+  const idx = weightedIndexOf(slots.map(s => s.cpm ?? 0), Math.random())
+  return idx >= 0 ? slots[idx] : null
 }
 
 // -------------------------------------------------------------
@@ -422,10 +394,57 @@ export async function getStats(): Promise<AdStats> {
   }
 }
 
+/**
+ * Bugunku gosterim sayilari (slot_slug -> adet).
+ *
+ * completed=false kayitlar DAHIL: reklam verilmis ama izlenme tamamlanmamis
+ * olsa bile bu bir gosterimdir ve gunluk limiti tuketir.
+ * Tablo yoksa/okunamazsa bos harita doner -> limit filtresi pasif kalir.
+ */
+export async function getTodayViewCounts(): Promise<Map<string, number>> {
+  const db = adminClient()
+  const empty = new Map<string, number>()
+  if (!db)
+    return empty
+
+  const dayStart = new Date()
+  dayStart.setHours(0, 0, 0, 0)
+
+  const { data, error } = await db
+    .from('ad_views')
+    .select('slot_slug')
+    .gte('created_at', dayStart.toISOString())
+
+  if (error || !data) {
+    if (error)
+      console.warn(`[ads] gunluk gosterim sayaci okunamadi (${error.code || '?'}):`, error.message)
+    return empty
+  }
+
+  const counts = new Map<string, number>()
+  for (const row of data) {
+    const slug = (row as { slot_slug: string }).slot_slug
+    counts.set(slug, (counts.get(slug) ?? 0) + 1)
+  }
+  return counts
+}
+
+/** Gunluk limit filtresi: maxDailyViews asan slot secime girmez. */
+function withinDailyLimit(slot: AdSlot, counts: Map<string, number>): boolean {
+  const limit = slot.maxDailyViews
+  return !(limit && limit > 0 && (counts.get(slot.id) ?? 0) >= limit)
+}
+
 /** Tek cagride slot + token + istatistik (sayfa ilk yuklemesi icin). */
 export async function getAdPick(placement: AdPlacement): Promise<AdPick | null> {
-  const [{ slots }, stats] = await Promise.all([getSlots(placement), getStats()])
-  const slot = pickSlot(slots)
+  const [{ slots }, stats, counts] = await Promise.all([
+    getSlots(placement),
+    getStats(),
+    getTodayViewCounts(),
+  ])
+  // Limiti asan sponsorlari secimden cikar; limiti olmayanlar serbest kalir.
+  const eligible = slots.filter(s => withinDailyLimit(s, counts))
+  const slot = pickSlot(eligible)
   if (!slot)
     return null
   return { slot, token: issueViewToken(slot.id, slot.durationSeconds, slot.kind), stats }

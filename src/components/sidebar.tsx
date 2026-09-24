@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import {
+  ChatIcon,
   CogIcon,
   FolderIcon,
   HouseIcon,
@@ -109,6 +110,7 @@ const SIDEBAR_WIDTH = 260
 
 const NAV_LINKS: NavItem[] = [
   { key: 'home', labelKey: 'nav.home', href: '/', icon: HouseIcon },
+  { key: 'chat', labelKey: 'nav.chat', href: '/chat', icon: ChatIcon },
   { key: 'projects', labelKey: 'nav.projects', href: '/projects', icon: FolderIcon },
   { key: 'blog', labelKey: 'nav.blog', href: '/blog', icon: NewspaperIcon },
   { key: 'about', labelKey: 'nav.about', href: '/about', icon: UserIcon },

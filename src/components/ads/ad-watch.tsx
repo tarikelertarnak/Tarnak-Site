@@ -1,9 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
-
-import { AdSenseScript, AdSlotCard } from '@/components/ads/ad-slot'
 import type { AdSlot, AdStats } from '@/lib/ads'
+
+import type { Locale } from '@/lib/i18n'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { AdSenseScript, AdSlotCard } from '@/components/ads/ad-slot'
+import { t as i18nT } from '@/lib/i18n'
 
 /**
  * /reklam sayfasinin istemci tarafi.
@@ -35,7 +37,8 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
   const [tabHidden, setTabHidden] = useState(false)
   const submitted = useRef(false)
 
-  const t = useCallback((tr: string, en: string) => (isEn ? en : tr), [isEn])
+  const locale: Locale = isEn ? 'en' : 'tr'
+  const t = useCallback((key: string) => i18nT(locale, key), [locale])
 
   const load = useCallback(async () => {
     setPhase('loading')
@@ -53,7 +56,7 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
       const ban = await banRes.json().catch(() => null)
 
       if (!one?.ok || !one.slot) {
-        setMessage(one?.message || t('Şu an gösterilecek reklam yok.', 'No ad available right now.'))
+        setMessage(one?.message || t('ads.noAd'))
         setPhase('error')
         return
       }
@@ -68,7 +71,7 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
       setPhase('idle')
     }
     catch {
-      setMessage(t('Sunucuya ulaşılamadı.', 'Could not reach the server.'))
+      setMessage(t('ads.serverError'))
       setPhase('error')
     }
   }, [t])
@@ -121,15 +124,15 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
       // tekrar denemesini isteriz.
       if (data?.reason === 'expired') {
         await load()
-        setMessage(t('Reklam oturumu yenilendi — lütfen tekrar başlat.', 'Ad session refreshed — please start again.'))
+        setMessage(t('ads.refreshed'))
         return
       }
 
-      setMessage(data?.message || t('Kayıt doğrulanamadı.', 'Could not verify the view.'))
+      setMessage(data?.message || t('ads.verifyFailed'))
       setPhase('error')
     }
     catch {
-      setMessage(t('Bağlantı hatası.', 'Network error.'))
+      setMessage(t('ads.networkError'))
       setPhase('error')
     }
   }, [token, duration, t, load])
@@ -150,38 +153,33 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
       {/* Baslik */}
       <div className="mb-6 text-center">
         <h1 className="inline-flex items-center gap-3 border-b-4 border-primary pb-3 text-2xl font-black uppercase tracking-tight text-primary sm:text-3xl lg:text-4xl">
-          📺 {t('REKLAM İZLE — DESTEK OL', 'WATCH AN AD — SUPPORT')}
+          📺
+          {t('ads.watchHeader')}
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-sm text-foreground/65">
-          {t(
-            'Para harcamadan destek olmak istersen reklamları izleyebilirsin. Reklamlar yalnızca bu sayfada ve destek bölümünde gösterilir — sitenin geri kalanında reklam yoktur.',
-            'If you want to support without spending money, you can watch ads. Ads appear only on this page and in the support section — the rest of the site has no ads.',
-          )}
+          {t('ads.intro')}
         </p>
       </div>
 
       {/* Istatistik seridi */}
       <div className="mb-6 grid grid-cols-3 gap-3">
         <StatBox
-          label={t('Toplam izlenme', 'Total views')}
+          label={t('ads.totalViews')}
           value={totalLabel}
         />
         <StatBox
-          label={t('Bugün', 'Today')}
+          label={t('ads.today')}
           value={stats && stats.source === 'db' ? String(stats.todayViews) : '—'}
         />
         <StatBox
-          label={t('Tamamlanan', 'Completed')}
+          label={t('ads.completed')}
           value={stats && stats.source === 'db' ? String(stats.completedViews) : '—'}
         />
       </div>
 
       {stats?.source === 'fallback' && (
         <p className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-center text-xs text-amber-500">
-          {t(
-            'Sayaç geçici olarak yerel modda: reklam tabloları henüz veritabanında oluşturulmadı. Şema uygulandığında bu sayaç kalıcı ve tüm ziyaretçiler için ortak olur.',
-            'Counter is in local mode: the ad tables are not created in the database yet. Once the schema is applied this counter becomes persistent and shared across visitors.',
-          )}
+          {t('ads.fallbackCounter')}
         </p>
       )}
 
@@ -197,7 +195,7 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
         <div className="flex flex-col gap-4 rounded-2xl border border-primary/25 bg-background/60 p-4 shadow-lg shadow-primary/5 sm:p-6">
           {phase === 'loading' && (
             <div className="flex min-h-[280px] items-center justify-center">
-              <p className="text-sm text-foreground/55">{t('Reklam yükleniyor…', 'Loading ad…')}</p>
+              <p className="text-sm text-foreground/55">{t('ads.loading')}</p>
             </div>
           )}
 
@@ -210,7 +208,7 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
                 onClick={() => void load()}
                 className="rounded-lg border border-foreground-200/20 px-4 py-2 text-sm text-foreground/80 transition-colors hover:border-primary/40"
               >
-                {t('Tekrar dene', 'Try again')}
+                {t('ads.tryAgain')}
               </button>
             </div>
           )}
@@ -231,7 +229,7 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
                     onClick={() => { submitted.current = false; setPhase('running') }}
                     className="w-full rounded-xl bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-90"
                   >
-                    ▶ {t('Reklamı başlat', 'Start the ad')} · {duration}s
+                    {`▶ ${t('ads.start')} · ${duration}s`}
                   </button>
                   {message && (
                     <p className="text-center text-xs text-amber-500">{message}</p>
@@ -247,8 +245,8 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
                     </div>
                     <p className="min-w-0 flex-1 text-xs text-foreground/65">
                       {tabHidden
-                        ? t('⏸ Sekme arka planda — sayaç durdu. Devam etmek için bu sekmeye dön.', '⏸ Tab is in background — timer paused. Return to this tab to continue.')
-                        : t('Reklam oynatılıyor… lütfen bitmesini bekle. Teşekkürler!', 'Ad is playing… please wait. Thank you!')}
+                        ? t('ads.tabHidden')
+                        : t('ads.playing')}
                     </p>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-foreground-200/15">
@@ -262,7 +260,7 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
                     onClick={() => { setRemaining(duration); setPhase('idle') }}
                     className="self-center text-xs text-foreground/50 underline-offset-2 hover:underline"
                   >
-                    {t('İptal', 'Cancel')}
+                    {t('ads.cancel')}
                   </button>
                 </div>
               )}
@@ -271,14 +269,14 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
                 <div className="flex flex-col items-center gap-3 py-2 text-center">
                   <span className="text-4xl">🎉</span>
                   <p className="text-base font-semibold text-foreground">
-                    {t('Teşekkürler! Destek oldun.', 'Thank you! You supported.')}
+                    {t('ads.thanks')}
                   </p>
                   <button
                     type="button"
                     onClick={() => void load()}
                     className="rounded-lg border border-foreground-200/20 px-5 py-2 text-sm text-foreground/80 transition-colors hover:border-primary/40"
                   >
-                    {t('Başka reklam izle', 'Watch another ad')}
+                    {t('ads.watchAnother')}
                   </button>
                 </div>
               )}
@@ -298,7 +296,7 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
       {grid.length > 0 && (
         <div className="mt-8">
           <p className="mb-3 text-xs font-bold uppercase tracking-widest text-foreground/40">
-            {t('Sponsorlar', 'Sponsors')}
+            {t('ads.sponsors')}
           </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {grid.map(s => (
@@ -309,10 +307,7 @@ export function AdWatch({ isEn = false }: AdWatchProps) {
       )}
 
       <p className="mt-8 text-center text-xs text-foreground/45">
-        {t(
-          'Destek olmak istemiyorsan bu sayfayı kapatabilirsin — site tamamen ücretsiz ve reklamsız çalışmaya devam eder.',
-          'If you don\'t want to support, you can close this page — the site stays completely free and works without ads.',
-        )}
+        {t('ads.footerNote')}
       </p>
     </div>
   )

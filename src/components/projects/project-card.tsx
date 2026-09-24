@@ -84,6 +84,53 @@ interface DownloadOption {
   os?: OSKey
 }
 
+/** /github/<owner>/<repo> veya github.com/<owner>/<repo> kalıbından repo kimliği çıkarır. GitHub değilse null. */
+function parseGitHubRepo(link: string | undefined): { owner: string, repo: string } | null {
+  if (!link)
+    return null
+  const m = link.match(/(?:\/github\/|github\.com\/)([^/?#]+)\/([^/?#]+)/i)
+  return m ? { owner: m[1], repo: m[2] } : null
+}
+
+/** Release asset adından hedef platform — bilinmeyenler (zip/yml/blockmap vb.) OS'siz kalır. */
+function assetOS(name: string): OSKey | undefined {
+  const n = name.toLowerCase()
+  if (n.endsWith('.exe'))
+    return 'windows'
+  if (n.endsWith('.dmg'))
+    return 'macos'
+  if (n.endsWith('.appimage') || n.endsWith('.deb') || n.endsWith('.rpm'))
+    return 'linux'
+  if (n.endsWith('.apk'))
+    return 'android'
+  if (n.includes('ios'))
+    return 'ios'
+  return undefined
+}
+
+interface ReleaseDto {
+  tagName: string
+  assets: Array<{ name: string, downloadUrl: string }>
+}
+
+/** Her release'i TAG önekiyle ayrıştırır: "v1.0.0 — Player-1.0.0-mac-arm64.dmg". */
+function releaseOptions(releases: ReleaseDto[]): DownloadOption[] {
+  const opts: DownloadOption[] = []
+  for (const release of releases) {
+    for (const asset of release.assets) {
+      const isSourceZip = asset.name === 'Source code (zip)'
+      const isSourceTar = asset.name === 'Source code (tar.gz)'
+      const label = isSourceZip ? 'Source (zip)' : isSourceTar ? 'Source (tar.gz)' : asset.name
+      opts.push({
+        label: `${release.tagName} — ${label}`,
+        url: asset.downloadUrl,
+        os: isSourceZip || isSourceTar ? undefined : assetOS(asset.name),
+      })
+    }
+  }
+  return opts
+}
+
 interface DownloadComboboxProps {
   options: DownloadOption[]
   currentUrl: string | null
@@ -605,6 +652,36 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
   const comboboxRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
 
+  // GitHub projesi: srcLink/projectLink'ten repo kimliği çıkarılır.
+  const githubRepo = useMemo(
+    () => parseGitHubRepo(project.srcLink ?? project.projectLink),
+    [project.srcLink, project.projectLink],
+  )
+  // GitHub release asset'leri (kart başına 1 kez fetch). Hata/boşsa mevcut statik indirme davranışı korunur.
+  const [releaseAssetOptions, setReleaseAssetOptions] = useState<DownloadOption[] | null>(null)
+
+  useEffect(() => {
+    if (!githubRepo)
+      return
+    let cancelled = false
+    fetch(
+      `/api/github/releases?owner=${encodeURIComponent(githubRepo.owner)}&repo=${encodeURIComponent(githubRepo.repo)}`,
+      { signal: AbortSignal.timeout(15_000) },
+    )
+      .then(res => (res.ok
+        ? res.json() as Promise<{ success?: boolean, releases?: ReleaseDto[] }>
+        : null))
+      .then((data) => {
+        if (cancelled || !data?.success || !data.releases)
+          return
+        const withAssets = data.releases.filter(r => r.assets.length > 0)
+        if (withAssets.length > 0)
+          setReleaseAssetOptions(releaseOptions(withAssets))
+      })
+      .catch(() => { /* sessizce mevcut davranışa düş */ })
+    return () => { cancelled = true }
+  }, [githubRepo])
+
   useEffect(() => {
     if (!comboboxOpen)
       return
@@ -623,6 +700,9 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
   // Collect the downloadable URLs
   const downloadOptions = useMemo<DownloadOption[]>(() => {
     const opts: DownloadOption[] = []
+    // GitHub release asset'leri varsa öne gelir; yoksa mevcut statik davranış korunur.
+    if (releaseAssetOptions && releaseAssetOptions.length > 0)
+      opts.push(...releaseAssetOptions)
     if (project.downloadMode === 'per-os' && project.downloads) {
       for (const [key, url] of Object.entries(project.downloads)) {
         if (!url)
@@ -647,7 +727,7 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
     // ponytail: downloadOptions rebuilds when `t` identity changes (i18n context);
     // it is memoized on the projection data that actually matters:
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.downloadMode, project.downloadUrl, project.downloads, project.srcLink])
+  }, [project.downloadMode, project.downloadUrl, project.downloads, project.srcLink, releaseAssetOptions])
 
   // Default selection = user's platform (per-OS only); derived, no setState loop.
   const defaultOption = useMemo(

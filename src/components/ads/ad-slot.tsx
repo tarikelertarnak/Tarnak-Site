@@ -1,9 +1,11 @@
 'use client'
 
+import type { AdSlot } from '@/lib/ads'
+import type { Locale } from '@/lib/i18n'
+
 import Script from 'next/script'
 import { useEffect, useRef } from 'react'
-
-import type { AdSlot } from '@/lib/ads'
+import { t as i18nT } from '@/lib/i18n'
 
 /**
  * Tek bir reklam birimini cizer.
@@ -52,7 +54,8 @@ export function AdSlotCard({
     }
   }, [slot.kind, slot.id])
 
-  const t = (tr: string, en: string) => (isEn ? en : tr)
+  const locale: Locale = isEn ? 'en' : 'tr'
+  const t = (key: string) => i18nT(locale, key)
 
   const frame
     = variant === 'stage'
@@ -108,13 +111,10 @@ export function AdSlotCard({
           <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
             <span className="text-2xl">📢</span>
             <p className="text-xs font-semibold text-foreground/70">
-              {t('Reklam alanı hazır', 'Ad slot ready')}
+              {t('ads.slotReady')}
             </p>
             <p className="max-w-[220px] text-[11px] text-foreground/45">
-              {t(
-                'Google AdSense yayıncı kimliği eklendiğinde burada gerçek reklam görünür.',
-                'A real ad appears here once a Google AdSense publisher ID is added.',
-              )}
+              {t('ads.slotReadyDesc')}
             </p>
           </div>
         )
@@ -143,7 +143,9 @@ export function AdSlotCard({
       >
         <span className="text-2xl">🔗</span>
         <span className="text-sm font-semibold text-primary">{slot.title}</span>
-        <span className="text-[11px] text-foreground/55">{t('Sponsor bağlantısı', 'Sponsor link')} ↗</span>
+        <span className="text-[11px] text-foreground/55">
+          {`${t('ads.sponsorLink')} ↗`}
+        </span>
       </a>
     )
   }
@@ -155,7 +157,7 @@ export function AdSlotCard({
       {/* Sponsor etiketi — seffaflik: reklam oldugu acikca belli olsun */}
       <div className="flex items-center justify-between gap-2 border-b border-foreground-200/10 px-3 py-1.5">
         <span className="truncate text-[10px] font-bold uppercase tracking-widest text-foreground/40">
-          {t('Reklam', 'Ad')}
+          {t('ads.label')}
         </span>
         <span className="truncate text-[10px] font-semibold text-foreground/50">
           {slot.sponsor}

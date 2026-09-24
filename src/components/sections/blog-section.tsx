@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { StarRating } from '@/components/ui/star-rating'
+import { useComputedGridCols } from '@/lib/use-grid-cols'
 
 type SortKey = 'newest' | 'oldest' | 'az' | 'za' | 'views'
 
@@ -29,9 +30,10 @@ const SORT_LABEL_KEYS: Record<SortKey, string> = {
   views: 'blog.sortViews',
 }
 
-// The initial value is 4 so it divides evenly across both 1 and 2 columns:
+// VisibleCount initial = cols*2 (ilk batch) — kullanıcı grid spesifikasyonu (2026-09-24):
+// alignedVisible = min(ceil(visibleCount/cols)*cols, toplam), remaining, nextCount = min(remaining, cols*2).
+// visibleCount asla düşmez; remaining===0 veya toplam ≤ ilk batch ise buton yok.
 const INITIAL_POST_COUNT = 4
-const POST_INCREMENT = 4 // Or 2
 
 /** localStorage counters for blog cards (slug-based). */
 function useBlogStats(slug: string) {
@@ -73,6 +75,8 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [sort, setSort] = useState<SortKey>('newest')
   const [visibleCount, setVisibleCount] = useState(INITIAL_POST_COUNT)
+  const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null)
+  const cols = useComputedGridCols(gridEl)
 
   const allTags = useMemo(() => {
     const set = new Set<string>()
@@ -133,16 +137,16 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
     return list
   }, [posts, query, activeTags, sort, locale])
 
-  const shown = filtered.slice(0, visibleCount)
-
-  const handleShowMore = () => {
-    setVisibleCount(prev => Math.min(prev + POST_INCREMENT, filtered.length))
-  }
-
-  // Show the button only when cards actually remain and the next click adds at least 1 new card
-  // (no empty clicks).
-  const hasMore = shown.length < filtered.length
-  const remaining = filtered.length - shown.length
+  // Kullanıcı grid spesifikasyonu (2026-09-24) — projeler grid'iyle aynı mantık.
+  const batchSize = Math.max(2, cols * 2)
+  const visible = Math.min(
+    Math.ceil(visibleCount / Math.max(1, cols)) * cols,
+    filtered.length,
+  )
+  const remaining = filtered.length - visible
+  const nextCount = Math.min(remaining, batchSize)
+  const shown = filtered.slice(0, visible)
+  const hasMore = remaining > 0
 
   const dateFmt = (date: string) =>
     new Date(date).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-GB', {
@@ -257,7 +261,10 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
               <p className="text-center text-foreground-500">{t('blog.empty')}</p>
             )
           : (
-              <div className="grid w-full max-w-6xl grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+              <div
+                ref={setGridEl}
+                className="grid w-full max-w-6xl grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+              >
                 {shown.map(post => (
                   <a key={post.id} href={`/blog/${post.slug}`} className="group">
                     <div className="flex h-full flex-col gap-3 rounded-3xl border border-foreground-200/15 bg-background p-5 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-primary/30 group-hover:shadow-xl group-hover:shadow-primary/5">
@@ -312,16 +319,17 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
 
         {hasMore && (
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-6">
-            <Button
+<Button
               variant="solid"
               color="primary"
-              onPress={handleShowMore}
+              onPress={() =>
+                setVisibleCount(c => Math.min(c + nextCount, filtered.length))}
               endContent={<ChevronDownIcon size={18} />}
             >
               {t('projects.showMore')}
               {' '}
               (
-              {remaining}
+              {nextCount}
               )
             </Button>
           </div>

@@ -1,11 +1,15 @@
+import type { AdSlot } from '@/lib/ads'
+
 import { describe, expect, it } from 'vitest'
 
 import {
-  isViewComplete,
   issueViewToken,
+  isViewComplete,
+  pickSlot,
   requiredWatchSeconds,
   verifyViewToken,
   viewTokenState,
+  weightedIndexOf,
 } from '@/lib/ads'
 
 /**
@@ -50,7 +54,11 @@ describe('issueViewToken / verifyViewToken', () => {
 
     // Saldirgan suresi 15 sn yerine 0 sn yapip imzayi yeniden kullanmayi dener
     const forgedBody = Buffer.from(JSON.stringify({
-      s: 'pixelshield', d: 0, k: 'image', t: Date.now(), n: 'sahte',
+      s: 'pixelshield',
+      d: 0,
+      k: 'image',
+      t: Date.now(),
+      n: 'sahte',
     })).toString('base64url')
 
     expect(verifyViewToken(`${forgedBody}.${sig}`)).toBeNull()
@@ -81,7 +89,7 @@ describe('requiredWatchSeconds', () => {
 })
 
 describe('isViewComplete', () => {
-  it('ANINDA tamamlama REDDEDILIYOR', () => {
+  it('aNINDA tamamlama REDDEDILIYOR', () => {
     const token = issueViewToken('x', DURATION, 'image')
     const payload = verifyViewToken(token)!
     expect(isViewComplete(payload, payload.issuedAt)).toBe(false)
@@ -145,5 +153,76 @@ describe('viewTokenState — istemciye NEDEN reddedildigi soylenebilsin', () => 
   it('yeterli sure gectiyse ok', () => {
     const payload = verifyViewToken(issueViewToken('x', DURATION, 'image'))!
     expect(viewTokenState(payload, payload.issuedAt + DURATION * 1000)).toBe('ok')
+  })
+})
+
+describe('weightedIndexOf — cpm agirlikli secim (saf fonksiyon)', () => {
+  it('bos liste -1 dondurur', () => {
+    expect(weightedIndexOf([], 0.5)).toBe(-1)
+  })
+
+  it('tek eleman her zaman secilir', () => {
+    expect(weightedIndexOf([2.5], 0)).toBe(0)
+    expect(weightedIndexOf([2.5], 0.99)).toBe(0)
+  })
+
+  it('cpm yuksek olan daha genis aralikta secilir (cent hassasiyeti)', () => {
+    // [1.00, 3.00] -> cent [100, 300], toplam 400
+    expect(weightedIndexOf([1, 3], 0)).toBe(0)
+    expect(weightedIndexOf([1, 3], 0.24)).toBe(0)
+    expect(weightedIndexOf([1, 3], 0.25)).toBe(1)
+    expect(weightedIndexOf([1, 3], 0.99)).toBe(1)
+    // kesirli cpm: [0.50, 1.50] -> cent [50, 150], toplam 200
+    expect(weightedIndexOf([0.5, 1.5], 0.24)).toBe(0)
+    expect(weightedIndexOf([0.5, 1.5], 0.26)).toBe(1)
+  })
+
+  it('cpm 0/null olanlar EN DUSUK oncelikte: pozitif cpm varken asla secilmez', () => {
+    // sadece 1. indeksin cpm'i pozitif -> roll ne olursa olsun o secilir
+    expect(weightedIndexOf([0, 5, 0], 0)).toBe(1)
+    expect(weightedIndexOf([0, 5, 0], 0.999)).toBe(1)
+    expect(weightedIndexOf([undefined as unknown as number, 5, 0], 0.5)).toBe(1)
+  })
+
+  it('hepsi sifir / cpm yoksa esit sansla secilir (uniform), gecerli indeks doner', () => {
+    for (const roll of [0, 0.25, 0.5, 0.75, 0.999]) {
+      const idx = weightedIndexOf([0, 0, 0], roll)
+      expect(idx).toBeGreaterThanOrEqual(0)
+      expect(idx).toBeLessThan(3)
+    }
+    expect(weightedIndexOf([0, 0], 0)).toBe(0)
+    expect(weightedIndexOf([0, 0], 0.999)).toBe(1)
+  })
+})
+
+describe('pickSlot — AdSlot listesinden agirlikli secim', () => {
+  const makeSlot = (id: string, cpm?: number): AdSlot => ({
+    id,
+    title: id,
+    description: null,
+    kind: 'image',
+    imageUrl: null,
+    targetUrl: null,
+    html: null,
+    sponsor: 'T',
+    durationSeconds: 15,
+    placement: 'ads-page',
+    cpm,
+  })
+
+  it('bos liste null dondurur', () => {
+    expect(pickSlot([])).toBeNull()
+  })
+
+  it('tek slot her zaman o slot', () => {
+    expect(pickSlot([makeSlot('a')])?.id).toBe('a')
+  })
+
+  it('cpm verilen slotlar arasindan birini dondurur', () => {
+    const slots = [makeSlot('a', 1), makeSlot('b', 3), makeSlot('c')]
+    for (let i = 0; i < 50; i++) {
+      const picked = pickSlot(slots)
+      expect(slots.some(s => s.id === picked?.id)).toBe(true)
+    }
   })
 })

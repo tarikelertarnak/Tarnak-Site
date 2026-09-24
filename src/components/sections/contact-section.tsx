@@ -12,7 +12,6 @@ import { Card, CardBody, CardFooter } from '@/components/ui/card'
 import { CountrySelect } from '@/components/ui/country-select'
 import {
   ArrowLeftIcon,
-  ChatIcon,
   ErrorIcon,
   SendIcon,
 } from '@/components/ui/icons'
@@ -232,14 +231,6 @@ export function ContactSection({ content }: { content: SiteContent }) {
                 </p>
               )}
               <div className="flex w-full sm:w-auto sm:ml-auto items-center justify-center gap-2">
-                <Button
-                  href="/chat"
-                  color="primary"
-                  startContent={<ChatIcon size={18} />}
-                  className="font-semibold w-full sm:w-auto"
-                >
-                  {t('contact.chatCta')}
-                </Button>
                 <Button
                   type="submit"
                   color="primary"

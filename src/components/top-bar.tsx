@@ -12,6 +12,7 @@ import { motion } from 'motion/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
+import { LoginIcon } from '@/components/ui/icons'
 
 export function TopBar() {
   const { t } = useT()
@@ -130,8 +131,24 @@ export function TopBar() {
             </a>
           </div>
 
-          {/* Right: edit (admin) + search trigger (command palette) */}
+          {/* Right: login (guest) / edit (admin) + search trigger (command palette) */}
           <div className="flex shrink-0 items-center gap-2">
+            {adminChecked && !isAdmin && pathname !== '/login' && (
+              <button
+                type="button"
+                onClick={openSidebar}
+                aria-label={t('nav.login')}
+                title={t('nav.login')}
+                className={`flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 text-primary transition-colors hover:border-primary/50 hover:bg-primary/20 ${
+                  scrolled ? 'h-8 px-2.5' : 'h-9 px-3'
+                }`}
+              >
+                <LoginIcon size={scrolled ? 14 : 16} />
+                <span className="hidden font-medium sm:inline">
+                  {t('nav.login')}
+                </span>
+              </button>
+            )}
             {adminChecked && isAdmin && !pathname.startsWith('/admin') && (
               <button
                 type="button"

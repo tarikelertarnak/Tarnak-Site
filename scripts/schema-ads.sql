@@ -34,7 +34,11 @@ create table if not exists public.ad_slots (
                      check (duration_seconds between 5 and 120),
   placement        text not null default 'ads-page'
                      check (placement in ('ads-page', 'donate', 'banner')),
-  -- Ayni yerlesimde birden fazla reklam varsa secim agirligi
+  -- Bin gosterim geliri (USD) — secim agirligi (yuksek cpm daha sik secilir)
+  cpm              numeric(10,2) not null default 0,
+  -- Gunluk gosterim ust siniri. NULL = sinirsiz; satir eklerken 10 (varsayilan).
+  max_daily_views  int default 10,
+  -- Ayni yerlesimde birden fazla reklam varsa secim agirligi (geriye donuk)
   weight           int not null default 1 check (weight between 1 and 100),
   is_active        boolean not null default true,
   sort_order       int not null default 0,
@@ -44,6 +48,14 @@ create table if not exists public.ad_slots (
 
 create index if not exists ad_slots_pick_idx
   on public.ad_slots (placement, is_active, sort_order);
+
+-- -------------------------------------------------------------
+-- 1b. YENI KOLONLAR (2026-09-24) — tablo DAHA ONCE olusturulduysa
+--     kolonlar bu iki ALTER ile guvenle eklenir; kolon zaten varsa
+--     `if not exists` sessizce gecer.
+-- -------------------------------------------------------------
+alter table public.ad_slots add column if not exists cpm numeric(10,2) not null default 0;
+alter table public.ad_slots add column if not exists max_daily_views int default 10;
 
 -- -------------------------------------------------------------
 -- 2. IZLEME KAYITLARI
@@ -119,25 +131,23 @@ create policy "admin can read ad views" on public.ad_views
 -- -------------------------------------------------------------
 -- 5. BASLANGIC REKLAMLARI
 -- -------------------------------------------------------------
--- Bunlar kendi projelerine isaret eden "kendi kendine sponsor" birimleri.
--- Gercek reklam agi (AdSense) baglaninca kind='adsense' birimleri ekle.
+-- Sahte "kendi kendine sponsor" birimleri gercek sponsor degildi ve
+-- KALDIRILDI. Daha once uygulanmis ortamlarda kalan satirlar silinir
+-- (ad_views icin FK `on delete set null` — gecmis izlenme kayitlari durur).
+delete from public.ad_slots
+  where slug in ('pixelshield', 'mythora', 'fruity-dev', 'portfolio', 'donate-timed');
+
+-- Gercek sponsorlar admin panelinden ad_slots tablosuna eklenir. Bu seed
+-- yalnizca baslangic noktasidir: AdSense birimi + github destek baglantilari.
 insert into public.ad_slots
-  (slug, title, description, kind, image_url, target_url, sponsor, duration_seconds, placement, sort_order)
+  (slug, title, description, kind, image_url, target_url, sponsor, duration_seconds, placement, cpm, sort_order)
 values
-  ('pixelshield',  'PixelShield',  'Gorsel guvenlik araci — projeyi incele',
-   'image', '/projects/pixelshield.png', '/projects', 'PixelShield', 15, 'ads-page', 1),
-  ('mythora',      'Mythora',      'Oyun projesi — destek ol',
-   'image', '/projects/mythora.png', '/projects', 'Mythora', 15, 'ads-page', 2),
-  ('fruity-dev',   'Fruity Dev',   'Arac projesi — goz at',
-   'image', '/projects/fruity-dev.png', '/projects', 'Fruity Dev', 15, 'ads-page', 3),
-  ('portfolio',    'Portfolyo',    'Tum projelerime goz at',
-   'image', '/projects/portfolio.png', '/projects', 'TARNAK', 15, 'ads-page', 4),
-  ('donate-timed', 'PixelShield', '15 saniyelik sponsor tanitimi',
-   'image', '/projects/pixelshield.png', '/projects', 'PixelShield', 15, 'donate', 1),
-  ('sponsor-link', 'GitHub Sponsors', 'Aylik destek ile projelerin gelisimini sagla',
-   'link', null, 'https://github.com/sponsors/tarikelertarnak', 'GitHub Sponsors', 10, 'donate', 2),
-  ('banner-github', 'GitHub', 'Acik kaynak projelerime yildiz ver',
-   'link', null, 'https://github.com/tarikelertarnak', 'GitHub', 8, 'banner', 1)
+  ('adsense-main',   'AdSense',        null,
+   'adsense', null, null, 'Google AdSense', 15, 'ads-page', 0, 1),
+  ('sponsor-link',   'GitHub Sponsors', 'Aylik destek ile projelerin gelisimini sagla',
+   'link', null, 'https://github.com/sponsors/tarikelertarnak', 'GitHub Sponsors', 10, 'donate', 0, 2),
+  ('banner-github',  'GitHub',          'Acik kaynak projelerime yildiz ver',
+   'link', null, 'https://github.com/tarikelertarnak', 'GitHub', 8, 'banner', 0, 1)
 on conflict (slug) do nothing;
 
 -- -------------------------------------------------------------

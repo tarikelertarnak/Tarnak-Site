@@ -36,8 +36,8 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getContent()
   const name = content.hero.name || 'Tarık Eler'
-  // Kullanıcı isteği (2026-09-24): title'da marka + unvan net geçsin.
-  const title = 'Tarık Eler (Tarnak) | Web Developer'
+  // Kullanıcı isteği (2026-09-24): tab title'da yalnız marka görünsün — unvan YOK.
+  const title = 'Tarık Eler (Tarnak)'
   const description
     = 'Tarık Eler (Tarnak) — web developer ve içerik üretici. Next.js, TypeScript ve yapay zeka ile modern web projeleri geliştiriyorum. Portfolio, blog ve projelerim: tarik eler, tarikelertarnak, tarnak.'
   const keywords = [
