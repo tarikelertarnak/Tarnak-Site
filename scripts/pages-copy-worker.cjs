@@ -106,10 +106,39 @@ if (fs.existsSync(handlerPath)) {
   // 5) neutralize next/dist/server/require-hook.js: it patches module.prototype
   // for webpack userland plugins — workerd has no CJS "module" builtin, so the
   // whole hook is inert (webpack userland plugins don't run in Pages either).
-  code = code.replace(/const mod = require\(['"]node:module['"]\);/, 'const mod = null;');
-  code = code.replace(/const mod = require\(['"]module['"]\);/, 'const mod = null;');
-  code = code.replace(/mod\.prototype\.require/g, '(mod||{}).prototype.require');
-  code = code.replace(/mod\._resolveFilename/g, '(mod||{})._resolveFilename');
+  // NOTE: this file is bundled AS A FILE, so textual patches on handler.mjs do
+  // NOT reach it. Patch the physical file in the output tree instead.
+  const outRoot = path.dirname(handlerPath); // .open-next/server-functions/default
+  const requireHookCandidates = [];
+  const walkPnpm = (base) => {
+    try {
+      for (const d of fs.readdirSync(base)) {
+        if (d.startsWith('next@16')) {
+          const p = path.join(base, d, 'node_modules', 'next', 'dist', 'server', 'require-hook.js');
+          if (fs.existsSync(p)) requireHookCandidates.push(p);
+          const p2 = path.join(base, d, 'node_modules', 'next', 'dist', 'esm', 'server', 'require-hook.js');
+          if (fs.existsSync(p2)) requireHookCandidates.push(p2);
+        }
+      }
+    } catch {}
+  };
+  walkPnpm(path.join(outRoot, 'node_modules', '.pnpm'));
+  const rhDirect = path.join(outRoot, 'node_modules', 'next', 'dist', 'server', 'require-hook.js');
+  if (fs.existsSync(rhDirect)) requireHookCandidates.push(rhDirect);
+  for (const f of requireHookCandidates) {
+    let src = fs.readFileSync(f, 'utf8');
+    const orig = src;
+    // mod is undefined under workerd (no CJS "module" builtin) → replace with a
+    // inert dummy so every subsequent mod.* access is safe (originalRequire,
+    // _resolveFilename assignments all become no-ops).
+    src = src.replace(/const mod = require\(['"](?:node:)?module['"]\);/, 'const mod = { prototype: { require: null }, _resolveFilename: null };');
+    if (src !== orig) {
+      fs.writeFileSync(f, src);
+      console.log(`[pages-copy-worker] neutralized require-hook: ${f}`);
+    } else {
+      console.log(`[pages-copy-worker] skip (pattern not found): ${f}`);
+    }
+  }
   fs.writeFileSync(handlerPath, code);
   console.log(`[pages-copy-worker] injected ${imported.length} isomorphic imports (nodejs_compat_v2 dynamic require fix)`);
 } else {
