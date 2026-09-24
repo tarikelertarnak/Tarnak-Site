@@ -95,12 +95,21 @@ if (fs.existsSync(handlerPath)) {
   }
   // 4) bare builtin requires (require("module")) must become require("node:module")
   // to match the isomorphic imports above — workerd requires identical specifiers.
+  // Note: "node:module" itself is NOT an isomorphic module in workerd, so
+  // next's require-hook.js (needs module.prototype.require) is neutralized below.
   const BUILTIN_BARE = ['assert','async_hooks','buffer','child_process','constants','crypto','events','fs','http','http2','https','module','os','path','process','stream','string_decoder','timers','tty','url','util','vm','zlib'];
   for (const b of BUILTIN_BARE) {
     const before = code;
     code = code.replace(new RegExp(String.raw`require\((['"])${b}(['"])\)`, 'g'), `require($1node:${b}$2)`);
     if (code !== before) console.log(`[pages-copy-worker] bare require("${b}") -> node:${b}`);
   }
+  // 5) neutralize next/dist/server/require-hook.js: it patches module.prototype
+  // for webpack userland plugins — workerd has no CJS "module" builtin, so the
+  // whole hook is inert (webpack userland plugins don't run in Pages either).
+  code = code.replace(/const mod = require\(['"]node:module['"]\);/, 'const mod = null;');
+  code = code.replace(/const mod = require\(['"]module['"]\);/, 'const mod = null;');
+  code = code.replace(/mod\.prototype\.require/g, '(mod||{}).prototype.require');
+  code = code.replace(/mod\._resolveFilename/g, '(mod||{})._resolveFilename');
   fs.writeFileSync(handlerPath, code);
   console.log(`[pages-copy-worker] injected ${imported.length} isomorphic imports (nodejs_compat_v2 dynamic require fix)`);
 } else {
