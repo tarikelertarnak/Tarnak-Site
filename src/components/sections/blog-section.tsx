@@ -8,7 +8,6 @@ import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import {
   ArrowUpRightIcon,
-  ChevronDownIcon,
   CloseIcon,
   EyeIcon,
   NewspaperIcon,
@@ -18,7 +17,6 @@ import { Input } from '@/components/ui/input'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { StarRating } from '@/components/ui/star-rating'
-import { useComputedGridCols } from '@/lib/use-grid-cols'
 
 type SortKey = 'newest' | 'oldest' | 'az' | 'za' | 'views'
 
@@ -29,11 +27,6 @@ const SORT_LABEL_KEYS: Record<SortKey, string> = {
   za: 'blog.sortZa',
   views: 'blog.sortViews',
 }
-
-// VisibleCount initial = cols*2 (ilk batch) — kullanıcı grid spesifikasyonu (2026-09-24):
-// alignedVisible = min(ceil(visibleCount/cols)*cols, toplam), remaining, nextCount = min(remaining, cols*2).
-// visibleCount asla düşmez; remaining===0 veya toplam ≤ ilk batch ise buton yok.
-const INITIAL_POST_COUNT = 4
 
 /** localStorage counters for blog cards (slug-based). */
 function useBlogStats(slug: string) {
@@ -74,9 +67,6 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
   const [query, setQuery] = useState('')
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [sort, setSort] = useState<SortKey>('newest')
-  const [visibleCount, setVisibleCount] = useState(INITIAL_POST_COUNT)
-  const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null)
-  const cols = useComputedGridCols(gridEl)
 
   const allTags = useMemo(() => {
     const set = new Set<string>()
@@ -137,16 +127,8 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
     return list
   }, [posts, query, activeTags, sort, locale])
 
-  // Kullanıcı grid spesifikasyonu (2026-09-24) — projeler grid'iyle aynı mantık.
-  const batchSize = Math.max(2, cols * 2)
-  const visible = Math.min(
-    Math.ceil(visibleCount / Math.max(1, cols)) * cols,
-    filtered.length,
-  )
-  const remaining = filtered.length - visible
-  const nextCount = Math.min(remaining, batchSize)
-  const shown = filtered.slice(0, visible)
-  const hasMore = remaining > 0
+  // Kullanıcı isteği (2026-09-25): "Daha Fazla Göster" yok — tüm yazılar baştan görünür.
+  const shown = filtered
 
   const dateFmt = (date: string) =>
     new Date(date).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-GB', {
@@ -262,7 +244,6 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
             )
           : (
               <div
-                ref={setGridEl}
                 className="grid w-full max-w-6xl grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
               >
                 {shown.map(post => (
@@ -314,26 +295,8 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
                     </div>
                   </a>
                 ))}
-              </div>
+</div>
             )}
-
-        {hasMore && (
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-6">
-<Button
-              variant="solid"
-              color="primary"
-              onPress={() =>
-                setVisibleCount(c => Math.min(c + nextCount, filtered.length))}
-              endContent={<ChevronDownIcon size={18} />}
-            >
-              {t('projects.showMore')}
-              {' '}
-              (
-              {nextCount}
-              )
-            </Button>
-          </div>
-        )}
       </FadeUpSection>
     </Section>
   )

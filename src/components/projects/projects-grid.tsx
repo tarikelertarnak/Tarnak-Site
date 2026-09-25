@@ -5,16 +5,13 @@ import type { GitHubRepo } from '@/lib/github'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocale, useT } from '@/components/locale-provider'
 import { ProjectCard } from '@/components/projects/project-card'
-import { Button } from '@/components/ui/button'
 import {
-  ChevronDownIcon,
   CloseIcon,
   SearchIcon,
 } from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { clientFetchUserRepos } from '@/lib/github-client'
-import { useComputedGridCols } from '@/lib/use-grid-cols'
 
 /** All sort types — the direction is embedded in the option itself (no separate ASC/DESC buttons needed). */
 type SortKey
@@ -131,10 +128,6 @@ export function ProjectsGrid({
   const [query, setQuery] = useState('')
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [sort, setSort] = useState<SortKey>('newest')
-  // Kullanıcı spesifikasyonu (2026-09-24): initial = cols*2 (first batch), sonra asla düşmez.
-  const [visibleCount, setVisibleCount] = useState(4)
-  const [gridEl, setGridEl] = useState<HTMLDivElement | null>(null)
-  const cols = useComputedGridCols(gridEl)
   const [userStars, setUserStars] = useState<UserStars>({})
   const [githubRepos, setGithubRepos] = useState<ProjectItem[] | null>(null)
   const [githubError, setGithubError] = useState('')
@@ -263,19 +256,8 @@ export function ProjectsGrid({
     return sorted
   }, [allProjects, query, activeTags, sort, userStars])
 
-  // Kullanıcı grid spesifikasyonu (2026-09-24):
-  // batchSize = cols*2, alignedVisible = min(ceil(visibleCount/cols)*cols, toplam),
-  // remaining = toplam - alignedVisible, nextCount = min(remaining, cols*2).
-  // visibleCount asla düşmez; remaining===0 veya toplam ≤ ilk batch ise buton yok.
-  const batchSize = Math.max(2, cols * 2)
-  const visible = Math.min(
-    Math.ceil(visibleCount / Math.max(1, cols)) * cols,
-    filtered.length,
-  )
-  const remaining = filtered.length - visible
-  const nextCount = Math.min(remaining, batchSize)
-  const shown = filtered.slice(0, visible)
-  const hasMore = remaining > 0
+  // Kullanıcı isteği (2026-09-25): "Daha Fazla Göster" yok — tüm projeler baştan görünür.
+  const shown = filtered
 
   return (
     <div className="flex w-full max-w-6xl flex-col gap-4">
@@ -374,7 +356,6 @@ export function ProjectsGrid({
           )
         : (
             <div
-              ref={setGridEl}
               className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6"
             >
               {shown.map(project => (
@@ -382,24 +363,7 @@ export function ProjectsGrid({
               ))}
             </div>
           )}
-
-      {hasMore && (
-        <div className="flex flex-col items-center justify-center gap-3 pt-6 sm:flex-row">
-          <Button
-            variant="solid"
-            color="primary"
-            onPress={() => setVisibleCount(c => Math.min(c + nextCount, filtered.length))}
-            endContent={<ChevronDownIcon size={18} />}
-          >
-            {t('projects.showMore')}
-            {' '}
-            (
-            {nextCount}
-            )
-          </Button>
-        </div>
-      )}
-
+ 
       {actions}
     </div>
   )

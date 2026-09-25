@@ -224,6 +224,10 @@ ensureModule('picocolors');
       '/*.png', '/*.jpg', '/*.jpeg', '/*.webp', '/*.avif', '/*.gif',
       '/*.svg', '/*.ico', '/*.woff', '/*.woff2', '/*.txt',
       '/googlefe5d57c4dfcfcedd.html',
+      '/google2d06d2d25454fe17.html',
+      // Pages redirects /foo.html -> /foo for static assets; exclude the
+      // extensionless form too so GSC's follow lands on the asset service.
+      '/google2d06d2d25454fe17',
       '/cv/*',
       '/projects/*.png', '/projects/*.jpg', '/projects/*.jpeg',
       '/projects/*.webp', '/projects/*.gif', '/projects/*.svg',

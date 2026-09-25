@@ -36,8 +36,8 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getContent()
   const name = content.hero.name || 'Tarık Eler'
-  // Kullanıcı isteği (2026-09-24): tab title'da yalnız marka görünsün — unvan YOK.
-  const title = 'Tarık Eler (Tarnak)'
+  // Kullanıcı isteği (2026-09-25): tab title'da BÜYÜK HARF marka — "TARIK ELER (TARNAK)".
+  const title = 'TARIK ELER (TARNAK)'
   const description
     = 'Tarık Eler (Tarnak) — web developer ve içerik üretici. Next.js, TypeScript ve yapay zeka ile modern web projeleri geliştiriyorum. Portfolio, blog ve projelerim: tarik eler, tarikelertarnak, tarnak.'
   const keywords = [
@@ -78,17 +78,19 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
     alternates: { canonical: '/' },
     other: {
-      'google-site-verification': 'googlefe5d57c4dfcfcedd.html',
+      'google-site-verification': 'google2d06d2d25454fe17',
+      // 2026-09-25: Yandex Webmaster doğrulaması (webmaster.yandex.com)
+      'yandex-verification': '95b7322d0c238a81',
     },
     formatDetection: { email: false, address: false, telephone: false },
     icons: {
       icon: [
-        { url: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' },
-        { url: '/favicon.svg', type: 'image/svg+xml' },
-        { url: '/logo.png', sizes: '512x512', type: 'image/png' },
+        { url: '/favicon.ico?v=2', sizes: '48x48', type: 'image/x-icon' },
+        { url: '/favicon.svg?v=2', type: 'image/svg+xml' },
+        { url: '/logo.png?v=2', sizes: '512x512', type: 'image/png' },
       ],
       apple: [
-        { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+        { url: '/apple-touch-icon.png?v=2', sizes: '180x180', type: 'image/png' },
       ],
     },
     openGraph: {
