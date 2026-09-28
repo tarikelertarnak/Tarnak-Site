@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
-const CONTACT_VALUE_MAX = 100
+import { E164_MAX_DIGITS, PHONE_MAX_CHARS, normalizePhone } from '@/lib/phone'
+
+/** E-posta için makul üst sınır. Telefon için E.164 (15 hane) geçerli. */
+const CONTACT_VALUE_MAX = 254
 
 export const contactFormSchema = z
   .object({
@@ -30,6 +33,19 @@ export const contactFormSchema = z
       data.contactMethod !== 'phone'
       || /^[+\d][\d\s().-]{5,}$/.test(data.contactValue.trim()),
     { message: 'Please enter a valid phone number', path: ['contactValue'] },
+  )
+  // ITU-T E.164: uluslararasi numara en fazla 15 hane ("+" hariç).
+  .refine(
+    (data) => {
+      if (data.contactMethod !== 'phone') {
+        return true
+      }
+      return normalizePhone(data.contactValue).ok
+    },
+    {
+      message: `Phone number must be at most ${E164_MAX_DIGITS} digits`,
+      path: ['contactValue'],
+    },
   )
 
 export interface ContactFormData {

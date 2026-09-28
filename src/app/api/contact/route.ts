@@ -2,6 +2,7 @@ import arcjet, { protectSignup } from '@arcjet/next'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import env from '@/lib/env'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
 import { isMissingColumnError } from '@/lib/postgrest'
 import { contactFormSchema } from '@/lib/validations'
 
@@ -139,6 +140,20 @@ async function saveMessage(params: {
 }
 
 export async function POST(req: Request) {
+  /*
+    Hız sınırı: Arcjet anahtarı yoksa (veya hata verirse) koruma devre dışı
+    kalıyordu — fail-open. IP başına dakikada 3 gönderim, IP + e-posta
+    çiftinde 10/dakika. Arcjet'in kendi limitinin üstüne güvenmıyoruz.
+  */
+  const ip = clientIp(req)
+  const byIp = rateLimit(`contact:ip:${ip}`, { limit: 3, windowMs: 60 * 1000 })
+  if (!byIp.ok) {
+    return NextResponse.json(
+      { success: false, message: 'Too many messages. Please try again shortly.' },
+      { status: 429, headers: { 'Retry-After': String(byIp.retryAfter) } },
+    )
+  }
+
   let body: unknown
   try {
     body = await req.json()

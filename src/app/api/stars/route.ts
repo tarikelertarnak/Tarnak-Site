@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { NextResponse } from 'next/server'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
 
 const DATA_DIR = path.join(process.cwd(), 'data')
 const STARS_FILE = path.join(DATA_DIR, 'stars.json')
@@ -38,6 +39,15 @@ async function writeStars(data: StarsData): Promise<void> {
 
 export async function POST(request: Request) {
   try {
+    // Rate limit: yıldız verisi sınırsız şişirilebiliyordu (kalıcı bellek/disk DoS)
+    const rl = rateLimit(`stars:${clientIp(request)}`, { limit: 10, windowMs: 60 * 1000 })
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
+      )
+    }
+
     const body = (await request.json()) as {
       itemId: string
       itemType: string
@@ -46,7 +56,13 @@ export async function POST(request: Request) {
     }
     const { itemId, itemType, rating, unstar } = body
 
-    if (!itemId || !itemType || (typeof rating !== 'number' || rating < 1 || rating > 5)) {
+    // Input doğrulama: itemId/itemType uzunluk sınırı, rating 1-5
+    if (
+      !itemId || !itemType
+      || typeof itemId !== 'string' || itemId.length > 200
+      || typeof itemType !== 'string' || itemType.length > 50
+      || (typeof rating !== 'number' || rating < 1 || rating > 5)
+    ) {
       return NextResponse.json({ error: 'Geçersiz veri' }, { status: 400 })
     }
 

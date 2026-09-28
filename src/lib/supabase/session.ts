@@ -15,6 +15,11 @@ export interface SessionUser {
   roles: string[]
   /** Computed EFFECTIVE permissions (roles + individual extra permissions; admin = all). */
   permissions: string[]
+  /** Profil düzenleme alanları (user_metadata) — hepsi opsiyonel. */
+  phone?: string | null
+  occupation?: string | null
+  occupationOther?: string | null
+  contact?: string | null
 }
 
 /**
@@ -83,6 +88,10 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     role: profile?.role ?? 'user',
     roles: rawRoles,
     permissions: effectivePermissions(rawRoles, rawExtra),
+    phone: user.user_metadata?.phone ?? null,
+    occupation: user.user_metadata?.occupation ?? null,
+    occupationOther: user.user_metadata?.occupationOther ?? null,
+    contact: user.user_metadata?.contact ?? null,
   }
 }
 

@@ -396,14 +396,57 @@ export async function fetchUserProfile(username: string): Promise<GitHubUserProf
   }
 }
 
+/**
+ * owner/repo/branch için sert doğrulama.
+ *
+ * `encodeURIComponent('..')` noktaları kodlamaz — yani `..` segmentleri hayatta
+ * kalır ve `fetch()`'in URL parser'ı dot-segmentleri normalize edip isteği
+ * istediğimiz `api.github.com` yoluna gönderir. `ghFetch` ise
+ * `Bearer ${GITHUB_TOKEN}` ekliyor: kimlik doğrulamasız bir istek, sunucu
+ * token'ının görebildiği HER özel repoyu okuyabiliyordu. Bu yüzden girdi
+ * beyaz listeyle (pattern) sınırlandırılır, URL birleştirme ile değil.
+ */
+const SAFE_SEGMENT = /^[A-Za-z0-9._-]+$/
+
+function assertSafeSegment(value: string, label: string): void {
+  if (
+    !value
+    || value === '.'
+    || value === '..'
+    || value.includes('..')
+    || !SAFE_SEGMENT.test(value)
+  ) {
+    throw new GitHubApiError(400, `Geçersiz ${label}`)
+  }
+}
+
+/** `path` içinde hiçbir `..`/`.` segmenti veya boş segment olamaz. */
+function assertSafePath(path: string): string {
+  const segments = path.split('/').filter(s => s !== '')
+  if (segments.length === 0) {
+    throw new GitHubApiError(400, 'Geçersiz yol')
+  }
+  for (const s of segments) {
+    if (s === '.' || s === '..' || s.includes('\\') || s.includes('\0')) {
+      throw new GitHubApiError(400, 'Geçersiz yol')
+    }
+  }
+  return segments.map(encodeURIComponent).join('/')
+}
+
 export async function fetchFileContent(
   owner: string,
   repo: string,
   path: string,
   branch: string,
 ): Promise<GitHubFileContent> {
+  assertSafeSegment(owner, 'owner')
+  assertSafeSegment(repo, 'repo')
+  assertSafeSegment(branch, 'branch')
+  const safePath = assertSafePath(path)
+
   const res = await ghFetch(
-    `${API_BASE}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(branch)}`,
+    `${API_BASE}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${safePath}?ref=${encodeURIComponent(branch)}`,
     { headers: headers(), cache: 'no-store' },
   )
   if (!res.ok) {
