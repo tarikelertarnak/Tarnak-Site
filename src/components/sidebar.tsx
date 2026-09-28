@@ -21,6 +21,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
+import { ProfileEditDrawer } from '@/components/profile/profile-edit-drawer'
 import {
   ChatIcon,
   CogIcon,
@@ -126,12 +127,64 @@ export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false)
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
   const [sessionChecked, setSessionChecked] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
 
   useEffect(() => {
     const handler = () => setIsOpen(o => !o)
     window.addEventListener('sidebar:request-toggle', handler)
     return () => window.removeEventListener('sidebar:request-toggle', handler)
   }, [])
+
+  // Yan panelde bir şeye tıklayınca: hedefi AÇ + paneli KAPAT.
+  // Tek bir yakalayıcı tüm linkleri (menü, giriş/kayıt, sosyal, ayarlar) ve
+  // hash bağlantılarını kapsar — ayrı ayrı onClick eklemek gerekmez.
+  // `pathname` değişimi de paneli kapatır (programatik gezinme dahil).
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
+
+  const closeOnNavigate = (e: React.MouseEvent<HTMLElement>) => {
+    const target = (e.target as HTMLElement).closest('a')
+    if (target) {
+      setIsOpen(false)
+    }
+  }
+
+  // Session değişimini dinle (profil kaydı, çıkış, hesap değiştir)
+  useEffect(() => {
+    const handler = () => {
+      setIsOpen(false)
+      setProfileOpen(false)
+      setSessionUser(null)
+      setSessionChecked(false)
+      fetchSession()
+    }
+    window.addEventListener('session:changed', handler)
+    return () => window.removeEventListener('session:changed', handler)
+  }, [pathname])
+
+  const fetchSession = useCallback(() => {
+    let cancelled = false
+    fetch('/api/admin/session')
+      .then(r => r.json())
+      .then((data) => {
+        if (cancelled)
+          return
+        setSessionUser(data.user || null)
+        setSessionChecked(true)
+      })
+      .catch(() => {
+        if (!cancelled)
+          setSessionChecked(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchSession()
+  }, [fetchSession, pathname])
 
   useEffect(() => {
     window.dispatchEvent(
@@ -150,35 +203,23 @@ export function Sidebar() {
     return () => document.removeEventListener('keydown', onKey)
   }, [isOpen])
 
-  useEffect(() => {
-    setIsOpen(false)
-  }, [pathname])
-
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/admin/session')
-      .then(r => r.json())
-      .then((data) => {
-        if (cancelled)
-          return
-        setSessionUser(data.user || null)
-        setSessionChecked(true)
-      })
-      .catch(() => {
-        if (!cancelled)
-          setSessionChecked(true)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [pathname])
-
   const isActive = useCallback(
     (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href)),
     [pathname],
   )
 
   const logout = async () => {
+    // 1) Client-side: Supabase localStorage session'ını da temizle.
+    //    Sunucu route'u cookie'leri siler; localStorage kalırsa sayfa yenilenince
+    //    oturum "geri geliyor" gibi görünüyordu.
+    try {
+      const { createClient } = await import('@/lib/supabase/client')
+      await (await createClient()).auth.signOut()
+    }
+    catch {
+      // ignore — sunucu tarafı zaten temizliyor
+    }
+    // 2) Server-side: cookie'leri (supabase + admin_session) temizle.
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
     }
@@ -186,12 +227,13 @@ export function Sidebar() {
       // ignore
     }
     setSessionUser(null)
-    router.push('/')
-    router.refresh()
+    window.dispatchEvent(new CustomEvent('session:changed'))
+    // Tam yenileme: tüm sunucu bileşenleri yeni oturumla yeniden render olsun.
+    window.location.href = '/'
   }
 
   const sidebarInner = (
-    <nav className="flex h-full flex-col bg-[#0a0a0e]" aria-label="Sidebar navigation">
+    <nav className="flex h-full flex-col bg-[#0a0a0e]" aria-label="Sidebar navigation" aria-modal="true" role="dialog" onClickCapture={closeOnNavigate}>
       {/* Brand — same layout as header: logo + "TARIK ELER — TARNAK" side by side */}
       <div className="flex items-center gap-2.5 border-b border-white/5 px-5 py-4">
         <img
@@ -217,7 +259,7 @@ export function Sidebar() {
         </span>
       </div>
 
-      {/* Search input — opens command palette */}
+      {/* Search — en üstte (marka bandının hemen altı). */}
       <button
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent('search:request-open'))}
@@ -248,6 +290,45 @@ export function Sidebar() {
           <span>K</span>
         </kbd>
       </button>
+
+      {/* Profil — armanın altında (tek buton grubu: foto + ad + çıkış ikonu) */}
+      {sessionChecked && sessionUser && (
+        <div className="flex items-center gap-1 border-b border-white/5 px-3 py-3">
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            title={t('profile.title')}
+            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-white/5"
+          >
+            <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5">
+              {sessionUser.avatarUrl
+                ? (
+                    <img
+                      src={sessionUser.avatarUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  )
+                : (
+                    <UserIcon size={18} className="text-foreground/50" />
+                  )}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground/90">
+              {sessionUser.fullName || sessionUser.username || sessionUser.email || 'Profil'}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={logout}
+            aria-label={t('nav.logout') ?? 'Çıkış'}
+            title={t('nav.logout') ?? 'Çıkış'}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-foreground/60 transition-colors hover:bg-white/5 hover:text-danger"
+          >
+            <LogoutIcon size={17} />
+          </button>
+        </div>
+      )}
+
 
       {/* Primary nav */}
       <div className="flex flex-1 flex-col gap-1 px-3 py-4">
@@ -306,15 +387,8 @@ export function Sidebar() {
             </button>
           </>
         )}
-        {sessionChecked && sessionUser && (
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
-          >
-            <LogoutIcon size={18} />
-            <span>{t('nav.logout') ?? 'Çıkış'}</span>
-          </button>
-        )}
+        {/* Guest (giriş yapmamış): Giriş Yap | Kayıt Ol — yan panelin EN ALTINDA,
+            Ayarlar butonunun hemen üstünde. */}
         {sessionChecked && !sessionUser && (
           <div className="flex flex-row items-center gap-2">
             <Link
@@ -324,9 +398,8 @@ export function Sidebar() {
               <LoginIcon size={16} />
               <span>{t('nav.login')}</span>
             </Link>
-            <span className="text-foreground/30">|</span>
             <Link
-              href="/login?mode=signup"
+              href="/sign"
               className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary/90"
             >
               <span>{t('nav.signup') ?? 'Kayıt Ol'}</span>
@@ -351,7 +424,13 @@ export function Sidebar() {
   )
 
   return (
-    <AnimatePresence>
+    <>
+      <ProfileEditDrawer
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        user={sessionUser}
+      />
+      <AnimatePresence>
       {isOpen && (
         <>
           {/* Backdrop — dark + blur */}
@@ -383,6 +462,7 @@ export function Sidebar() {
           </motion.aside>
         </>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </>
   )
 }

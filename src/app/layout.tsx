@@ -5,11 +5,12 @@ import { LocaleProvider } from '@/components/locale-provider'
 import { MusicPlayer } from '@/components/music-player'
 import { Providers } from '@/components/providers'
 import { ScrollToTop } from '@/components/scroll-to-top'
-import { SearchDialog } from '@/components/search-dialog'
 import { Sidebar } from '@/components/sidebar'
 import { SkipLink } from '@/components/skip-link'
 import { ThemeInitScript } from '@/components/theme-init-script'
 import { TopBar } from '@/components/top-bar'
+
+import { SearchDialog } from '@/components/search-dialog'
 import { getContent } from '@/lib/content'
 import { getLocale, getLocaleDirection } from '@/lib/i18n-server'
 import { SITE_URL } from '@/lib/site-url'
@@ -38,8 +39,11 @@ export async function generateMetadata(): Promise<Metadata> {
   const name = content.hero.name || 'Tarık Eler'
   // Kullanıcı isteği (2026-09-25): tab title'da BÜYÜK HARF marka — "TARIK ELER (TARNAK)".
   const title = 'TARIK ELER (TARNAK)'
+  // Tüm isim varyantları: kullanıcı "tarnak", "eler", "tarik", "tarık",
+  // "portfolyo", "cv", "project", "blog" gibi aramalarla siteye ulaşabilsin
+  // diye her kombinasyonu içeriyoruz.
   const description
-    = 'Tarık Eler (Tarnak) — web developer ve içerik üretici. Next.js, TypeScript ve yapay zeka ile modern web projeleri geliştiriyorum. Portfolio, blog ve projelerim: tarik eler, tarikelertarnak, tarnak.'
+    = 'Tarık Eler (Tarnak) — web developer ve içerik üretici. Next.js, TypeScript ve yapay zeka ile modern web projeleri geliştiriyorum. Portfolio, blog ve projelerim: tarik eler, tarikelertarnak, tarnak, eler tarik, tarik tarnak, eler tarnak.'
   const keywords = [
     'TARIK ELER',
     'TARNAK',
@@ -59,6 +63,22 @@ export async function generateMetadata(): Promise<Metadata> {
     'tarik eler',
     'tarik eler tarnak',
     'TARIK ELER TARNAK',
+    'tarik tarnak',
+    'tarnak tarik',
+    'tarnak eler',
+    'eler tarnak',
+    'tarik tarnak eler',
+    'tarnak tarik eler',
+    'tarik eler tarnak',
+    'tarnak tarik',
+    'tarik tarnak',
+    'eler tarik',
+    'tarnak eler tarik',
+    'tarik eler tarnak',
+    'portfolio',
+    'cv',
+    'project',
+    'blog',
     'web developer',
     'Next.js',
     'TypeScript',
@@ -141,7 +161,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 '@context': 'https://schema.org',
                 '@type': 'Person',
                 name: 'Tarık Eler',
-                alternateName: ['Tarnak', 'TARIK ELER', 'tarikeler', 'elertarik', 'tarık eler'],
+                alternateName: [
+                  'Tarnak',
+                  'TARIK ELER',
+                  'tarikeler',
+                  'elertarik',
+                  'tarık eler',
+                  'tarik eler',
+                  'tarik tarnak',
+                  'tarnak tarik',
+                  'tarnak eler',
+                  'eler tarnak',
+                  'tarik tarnak eler',
+                  'tarnak tarik eler',
+                  'tarik eler tarnak',
+                  'tarnak tarik',
+                  'tarik tarnak',
+                  'eler tarik',
+                  'tarnak eler tarik',
+                  'tarik eler tarnak',
+                  'tarikelertarnak',
+                  'TARIK ELER TARNAK',
+                ],
                 url: SITE_URL,
                 image: `${SITE_URL}/tarik-eler-tarnak-logo.png`,
                 logo: `${SITE_URL}/tarik-eler-tarnak-logo.png`,
@@ -160,7 +201,27 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 '@context': 'https://schema.org',
                 '@type': 'WebSite',
                 name: 'Tarık Eler (Tarnak)',
-                alternateName: ['Tarnak', 'tarikelertarnak', 'tarikeler', 'tarık eler'],
+                alternateName: [
+                  'Tarnak',
+                  'tarikelertarnak',
+                  'tarikeler',
+                  'tarık eler',
+                  'tarik eler',
+                  'tarik tarnak',
+                  'tarnak tarik',
+                  'tarnak eler',
+                  'eler tarnak',
+                  'tarik tarnak eler',
+                  'tarnak tarik eler',
+                  'tarik eler tarnak',
+                  'tarnak tarik',
+                  'tarik tarnak',
+                  'eler tarik',
+                  'tarnak eler tarik',
+                  'tarik eler tarnak',
+                  'tarikelertarnak',
+                  'TARIK ELER TARNAK',
+                ],
                 url: SITE_URL,
                 inLanguage: ['tr', 'en'],
                 // Sitelinks arama kutusu: "tarik eler chat" gibi aramalar sitenin

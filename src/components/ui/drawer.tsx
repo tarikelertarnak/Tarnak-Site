@@ -56,8 +56,13 @@ export function Drawer({
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-[100]">
+          {/*
+            Arka plan: eskiden `bg-black` (tamamen opak) → panel açılınca
+            sitenin gerisi görünmüyordu. Artık yarı saydam + blur: site
+            arkada seçilir kalıyor, tıklayınca yine kapanıyor.
+          */}
           <motion.div
-            className="absolute inset-0 bg-black"
+            className="absolute inset-0 bg-black/45 backdrop-blur-[2px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}

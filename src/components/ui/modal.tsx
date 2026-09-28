@@ -54,7 +54,9 @@ export function Modal({
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black px-4 pb-4 pt-20 sm:pt-24"
+          // Yarı saydam arka plan: modal açıkken de site arkada görünür
+          // (eskiden tam siyaftı, arka plan kayboluyordu).
+          className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto bg-black/45 px-4 pb-4 pt-20 backdrop-blur-[2px] sm:pt-24"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

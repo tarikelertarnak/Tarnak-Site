@@ -113,5 +113,5 @@ export function useLocale(): LocaleContextValue {
 /** Look up static UI strings for the active locale. */
 export function useT() {
   const { locale } = useLocale()
-  return { t: (key: string) => t(locale, key), locale }
+  return { t: (key: string, vars?: Record<string, string | number>) => t(locale, key, vars), locale }
 }

@@ -115,9 +115,9 @@ export const jaContentOverlay: DeepPartial<SiteContent> = {
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: '開発者 & システムアーキテクト',
-    experience: '3年以上',
+    experience: '',
     firstLanguage: 'トルコ語',
-    otherLanguages: '英語 (B1)',
+    otherLanguages: '英語 (A2), ドイツ語 (A1)',
   },
   contact: {
     subtitle: 'お問い合わせ',

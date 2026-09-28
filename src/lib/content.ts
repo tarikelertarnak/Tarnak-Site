@@ -361,9 +361,11 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
           .order('sort_order', { ascending: true })
         if (projectError)
           throw projectError
+        // `featured` DB'de tutulur ama KARTTA gösterilmez — kullanıcı
+        // "[Featured]" etiketini kaldırmamı istedi. Sıralama kullanmıyorsa
+        // alan tamamen boşta kalmasın diye okumuyoruz.
         const dbItems = (dbProjects ?? []).map(p => ({
           title: p.title,
-          notice: p.featured ? '[Featured]' : undefined,
           description: p.description ?? '',
           projectLink: p.demo_url ?? p.repo_url ?? '#',
           ...(p.repo_url ? { srcLink: p.repo_url } : {}),
@@ -592,34 +594,20 @@ async function getDefaultContent(): Promise<SiteContent> {
           content: 'I love building and tinkering with computers and other tech.',
         },
         {
-          label: 'Gaming',
-          icon: 'mdi:gamepad-variant',
-          content: 'I enjoy playing video games, especially with friends.',
-        },
-        {
-          label: 'Fitness',
-          icon: 'mdi:gym',
-          content: 'I like to stay active and go to the gym regularly.',
-        },
-        {
           label: 'Music',
           icon: 'mdi:music',
           content: 'I\'m a big fan of music and love discovering new artists and genres.',
         },
         {
-          label: 'Cybersecurity',
-          icon: 'mdi:shield-lock',
+          label: 'AI',
+          icon: 'mdi:creation',
           content:
-            'I enjoy pentesting, CTF challenges, and hunting for vulnerabilities on bug bounty platforms.',
+            'I love working on my AI projects and trying out new models and tools.',
         },
       ],
-      securityTitle: 'Cybersecurity & CTF',
-      securityText:
-        'Passionate about cybersecurity. I enjoy learning new techniques and taking on security challenges.',
-      securityTools: [
-        { label: 'TryHackMe', icon: 'simple-icons:tryhackme' },
-        { label: 'HackerOne', icon: 'simple-icons:hackerone' },
-      ],
+      securityTitle: '',
+      securityText: '',
+      securityTools: [],
       teamTitle: 'THE TEAM',
       team: [
         { name: 'TARIKELER', role: 'Founder' },
@@ -632,43 +620,13 @@ async function getDefaultContent(): Promise<SiteContent> {
         href: '/cv/tarikeler-cv.pdf',
         summary:
           'Web developer building modern, end-to-end web experiences with Next.js, TypeScript and AI. From design to deploy — I ship products people use.',
-        experience: [
-          {
-            role: 'Founder & Full-Stack Developer',
-            company: 'Fruity Dev',
-            period: 'Active',
-            description:
-              'Professional web development services — high-quality, scalable web applications for clients.',
-          },
-          {
-            role: 'Owner & Developer',
-            company: 'Mythora.de',
-            period: 'Active',
-            description:
-              'Fully self-developed German Minecraft SMP network welcoming players from around the world.',
-          },
-          {
-            role: 'Developer',
-            company: 'PixelShield',
-            period: 'Active',
-            description:
-              'DDoS protection service for Minecraft servers — protocol-aware filtering for Java, Bedrock and Geyser.',
-          },
-          {
-            role: 'Developer',
-            company: 'Portfolio & GitHub Projects',
-            period: 'Ongoing',
-            description:
-              'Browser extensions, AI tools and utilities published on GitHub (Scribd-Download, AI-Jailbreak, Accentra, CodeHub and more).',
-          },
-        ],
+        experience: [],
         education: [
           {
-            role: 'Self-Taught Developer',
-            company: 'Computer Science & Software Engineering',
-            period: 'Continuous',
-            description:
-              'Hands-on learning across web development, cybersecurity, CTF and bug bounty platforms.',
+            role: '11th Grade — Technical Information Systems',
+            company: 'K-Tek (Kılıçarslan Borsa İstanbul Vocational and Technical Anatolian High School)',
+            period: 'Studying',
+            description: 'I am an 11th grade student in the Technical Information Systems track.',
           },
         ],
       },
@@ -694,11 +652,11 @@ async function getDefaultContent(): Promise<SiteContent> {
       lastName: 'ELER',
       displayName: 'TARIKELER',
       nickname: 'Tarnak',
-      title: 'Yazılımcı & Sistem Mimarisi',
+      title: '',
       profileImage: 'https://avatars.githubusercontent.com/u/184168415?v=4',
-      experience: '3+ Yıl',
+      experience: '',
       firstLanguage: 'Türkçe',
-      otherLanguages: 'İngilizce (B1)',
+      otherLanguages: 'İngilizce (A2), Almanca (A1)',
     },
     contact: {
       subtitle: 'Contact',

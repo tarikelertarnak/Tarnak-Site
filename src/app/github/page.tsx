@@ -4,8 +4,16 @@ import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
 
 export async function generateMetadata() {
   const locale = await getLocale()
+  const isEn = locale === 'en'
+  const title = 'GitHub Projeleri — TARIK ELER - TARNAK'
+  const description = isEn
+    ? 'Open source repositories by TARIK ELER (Tarnak) — web apps, desktop apps, browser extensions and AI tools.'
+    : 'TARIK ELER (Tarnak) tarafından geliştirilen açık kaynak GitHub depoları — web uygulamaları, masaüstü uygulamaları, tarayıcı eklentileri ve yapay zeka araçları.'
   return {
-    title: locale === 'en' ? 'GitHub — TARIKELER' : 'GitHub — TARIKELER',
+    title,
+    description,
+    alternates: { canonical: '/github' },
+    openGraph: { title, description, url: '/github', type: 'website' },
   }
 }
 

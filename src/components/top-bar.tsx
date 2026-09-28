@@ -12,7 +12,6 @@ import { motion } from 'motion/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
-import { LoginIcon } from '@/components/ui/icons'
 
 export function TopBar() {
   const { t } = useT()
@@ -131,57 +130,10 @@ export function TopBar() {
             </a>
           </div>
 
-          {/* Right: login (guest) / edit (admin) + search trigger (command palette) */}
+          {/* Right: search trigger (command palette) — the admin "Düzenle" button was
+              removed: it duplicated the Sayfa Düzenleyici (Puck) entry in the sidebar and
+              its client-side admin flag went stale right after logout. */}
           <div className="flex shrink-0 items-center gap-2">
-            {adminChecked && !isAdmin && pathname !== '/login' && (
-              <button
-                type="button"
-                onClick={openSidebar}
-                aria-label={t('nav.login')}
-                title={t('nav.login')}
-                className={`flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 text-primary transition-colors hover:border-primary/50 hover:bg-primary/20 ${
-                  scrolled ? 'h-8 px-2.5' : 'h-9 px-3'
-                }`}
-              >
-                <LoginIcon size={scrolled ? 14 : 16} />
-                <span className="hidden font-medium sm:inline">
-                  {t('nav.login')}
-                </span>
-              </button>
-            )}
-            {adminChecked && isAdmin && !pathname.startsWith('/admin') && (
-              <button
-                type="button"
-                onClick={() => {
-                  const page
-                    = pathname === '/'
-                      ? 'home'
-                      : pathname.replace(/^\//, '').replace(/\//g, '-') || 'home'
-                  router.push(`/admin/puck/${page}`)
-                }}
-                aria-label={t('common.edit')}
-                title={t('common.edit')}
-                className={`flex shrink-0 items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 text-primary transition-colors hover:border-primary/50 hover:bg-primary/20 ${
-                  scrolled ? 'h-8 px-2.5' : 'h-9 px-3'
-                }`}
-              >
-                <svg
-                  width={scrolled ? 14 : 16}
-                  height={scrolled ? 14 : 16}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" />
-                  <path d="m15 5 4 4" />
-                </svg>
-                <span className="hidden sm:inline">{t('common.edit')}</span>
-              </button>
-            )}
             <button
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('search:request-open'))}

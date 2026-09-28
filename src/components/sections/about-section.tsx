@@ -1,29 +1,29 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import type { CvDoc } from '@/lib/cv'
 import type { SiteContent, ToolboxItem as ToolboxItemType } from '@/lib/content'
-import { Popover } from '@lobehub/ui'
-import { useState } from 'react'
+import { Popover } from '@lobehub/ui/base-ui'
+import { useEffect, useRef, useState } from 'react'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { BentoBox, BentoBoxItem } from '@/components/ui/bento-box'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
-  BriefcaseIcon,
+  BrainIcon,
   CheckIcon,
+  ChevronDownIcon,
   ChevronRightIcon,
   CodeIcon,
   CopyIcon,
   DownloadIcon,
-  DumbbellIcon,
   EyeIcon,
   FileIcon,
-  GamepadIcon,
   LaptopIcon,
   LinkIcon,
   MusicIcon,
   SchoolIcon,
-  ShieldIcon,
   socialIcon,
   TerminalIcon,
   UserIcon,
@@ -33,13 +33,11 @@ import { Section, SectionTitle } from '@/components/ui/section'
 /** Interest icons — iconify id → SVG (no iconify dependency). */
 const INTEREST_ICONS: Record<string, ReactNode> = {
   'mdi:laptop': <LaptopIcon size={14} />,
-  'mdi:gamepad-variant': <GamepadIcon size={14} />,
-  'mdi:gym': <DumbbellIcon size={14} />,
   'mdi:music': <MusicIcon size={14} />,
-  'mdi:shield-lock': <ShieldIcon size={14} />,
+  'mdi:creation': <BrainIcon size={14} />,
 }
 
-export function AboutSection({ content }: { content: SiteContent }) {
+export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDoc[] }) {
   const about = content.about
   const { t } = useT()
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
@@ -89,7 +87,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={content.profile.profileImage || undefined}
-                alt={content.profile.displayName}
+                alt={`${content.profile.firstName} ${content.profile.lastName} — profil fotoğrafı`}
                 referrerPolicy="no-referrer"
                 className="h-24 w-24 shrink-0 rounded-full border border-foreground-200/10 object-cover"
               />
@@ -99,10 +97,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
                   {t('about.infoCardTitle')}
                 </h3>
                 <div className="mt-2 grid w-full grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-<InfoRow
-                    label={t('about.infoName')}
-                    value={`${content.profile.firstName} ${content.profile.lastName}`}
-                    action={(
+                  <InfoRow label={t('about.infoName')} value={`${content.profile.firstName} ${content.profile.lastName}`} action={(
                       <CopyValueButton
                         copied={copiedKey === 'name'}
                         label={t('about.copy')}
@@ -114,11 +109,6 @@ export function AboutSection({ content }: { content: SiteContent }) {
                           )}
                       />
                     )}
-                  />
-                  <InfoRow label={t('about.infoTitle')} value={content.profile.title} />
-                  <InfoRow
-                    label={t('about.infoExperience')}
-                    value={content.profile.experience}
                   />
                   <InfoRow
                     label={t('about.infoPhone')}
@@ -177,26 +167,7 @@ export function AboutSection({ content }: { content: SiteContent }) {
                   <FileIcon size={20} className="text-primary" />
                   {about.whoTitle}
                 </h3>
-                <div className="flex flex-row gap-2">
-                  <Button
-                    size="sm"
-                    color="primary"
-                    href={about.cv.href ?? '/cv/tarikeler-cv.pdf'}
-                    target="_blank"
-                    startContent={<DownloadIcon size={16} />}
-                  >
-                    {t('about.cvDownload')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="bordered"
-                    href={about.cv.href ?? '/cv/tarikeler-cv.pdf'}
-                    target="_blank"
-                    startContent={<EyeIcon size={16} />}
-                  >
-                    {t('about.cvView')}
-                  </Button>
-                </div>
+                <CvActions cvs={cvs} />
               </div>
               <p className="text-xs sm:text-sm text-foreground-500 leading-relaxed">
                 {about.whoText}
@@ -204,35 +175,20 @@ export function AboutSection({ content }: { content: SiteContent }) {
               <p className="text-xs sm:text-sm text-foreground-500 leading-relaxed">
                 {about.cv.summary}
               </p>
-              <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex w-full flex-col gap-2">
-                  <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary">
-                    <BriefcaseIcon size={14} />
-                    {t('about.cvExperience')}
-                  </p>
-                  <ul className="flex flex-col gap-2.5">
-                    {about.cv.experience.map(entry => (
-                      <CvEntryItem
-                        key={`${entry.company}-${entry.role}`}
-                        entry={entry}
-                      />
-                    ))}
-                  </ul>
-                </div>
-                <div className="flex w-full flex-col gap-2">
-                  <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary">
-                    <SchoolIcon size={14} />
-                    {t('about.cvEducation')}
-                  </p>
-                  <ul className="flex flex-col gap-2.5">
-                    {about.cv.education.map(entry => (
-                      <CvEntryItem
-                        key={`${entry.company}-${entry.role}`}
-                        entry={entry}
-                      />
-                    ))}
-                  </ul>
-                </div>
+              {/* Only education — there is no work experience yet. */}
+              <div className="flex w-full flex-col gap-2">
+                <p className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-primary">
+                  <SchoolIcon size={14} />
+                  {t('about.cvEducation')}
+                </p>
+                <ul className="flex flex-col gap-2.5">
+                  {about.cv.education.map(entry => (
+                    <CvEntryItem
+                      key={`${entry.company}-${entry.role}`}
+                      entry={entry}
+                    />
+                  ))}
+                </ul>
               </div>
             </div>
           </BentoBoxItem>
@@ -274,28 +230,96 @@ export function AboutSection({ content }: { content: SiteContent }) {
               </ul>
             </div>
           </BentoBoxItem>
-
-          <BentoBoxItem className="col-span-1">
-            <h3 className="text-base sm:text-lg font-semibold">
-              {about.securityTitle}
-            </h3>
-            <p className="mt-2 text-xs sm:text-sm text-foreground-500">
-              {about.securityText}
-            </p>
-            <div className="flex w-full">
-              <ul className="mt-3 sm:mt-4 grid grid-cols-2 gap-2 sm:gap-3 lg:gap-4 w-full">
-                {about.securityTools.map(item => (
-                  <ToolboxItem
-                    key={item.label}
-                    item={{ label: item.label, type: 'link', href: item.href }}
-                  />
-                ))}
-              </ul>
-            </div>
-          </BentoBoxItem>
         </BentoBox>
       </div>
     </Section>
+  )
+}
+
+/**
+ * CV aksiyonları — tek CV varsa normal "İndir / Görüntüle" butonları,
+ * birden fazla CV varsa aramalı (search) bir combobox: kullanıcı listeden
+ * istediği dili seçip açar.
+ */
+function CvActions({ cvs }: { cvs: CvDoc[] }) {
+  const { t } = useT()
+  const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open)
+      return
+    const onDown = (e: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node))
+        setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  const filtered = cvs.filter(c => !q.trim() || c.label.toLowerCase().includes(q.trim().toLowerCase()))
+
+  // Tek CV → düz butonlar (combobox gereksiz).
+  if (cvs.length <= 1) {
+    const href = cvs[0]?.href ?? '/cv/tarikeler-cv.pdf'
+    return (
+      <div className="flex flex-row gap-2">
+        <Button size="sm" color="primary" href={href} target="_blank" startContent={<DownloadIcon size={16} />}>
+          {t('about.cvDownload')}
+        </Button>
+        <Button size="sm" color="primary" href={href} target="_blank" startContent={<EyeIcon size={16} />}>
+          {t('about.cvView')}
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <div ref={rootRef} className="relative flex flex-row gap-2">
+      <Button
+        size="sm"
+        color="primary"
+        onClick={() => setOpen(o => !o)}
+        startContent={<DownloadIcon size={16} />}
+        endContent={<ChevronDownIcon size={14} />}
+        aria-expanded={open}
+      >
+        {t('about.cvDownload')}
+      </Button>
+      {open && (
+        <div className="absolute right-0 top-11 z-30 w-64 overflow-hidden rounded-xl border border-foreground/15 bg-background shadow-2xl shadow-black/20">
+          <div className="border-b border-foreground/10 p-2">
+            <Input
+              value={q}
+              onValueChange={setQ}
+              placeholder={t('about.cvSearch')}
+              className="h-8"
+            />
+          </div>
+          <div className="max-h-56 overflow-y-auto p-1.5">
+            {filtered.map(c => (
+              <a
+                key={c.id}
+                href={c.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm text-foreground/80 no-underline transition-colors hover:bg-primary/10 hover:text-primary"
+              >
+                <span className="min-w-0 truncate">{c.label}</span>
+                <DownloadIcon size={14} className="shrink-0 opacity-60" />
+              </a>
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-2.5 py-3 text-center text-xs text-foreground/50">
+                {t('projects.noResultsShort')}
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
 

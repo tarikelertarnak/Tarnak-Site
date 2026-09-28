@@ -26,6 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
       ? 'Support my projects without spending money by watching ads. Ads appear only on this page.'
       : 'Para harcamadan destek olmak istersen reklam izleyebilirsin. Reklamlar yalnızca bu sayfada gösterilir.',
     robots: { index: false, follow: false },
+    alternates: { canonical: '/reklam' },
   }
 }
 

@@ -353,8 +353,48 @@ const PROFILES: ResourceDef = {
   ],
 }
 
-const LANGUAGES: ResourceDef = {
-  key: 'languages',
+/** CV belgeleri — birden fazla dilde/birden fazla dosya. Sitede combobox olarak listelenir. */
+const CVS: ResourceDef = {
+  key: 'cvs',
+  table: 'cvs',
+  label: 'CV Belgeleri',
+  description: 'Yüklenen CV dosyaları. Birden fazla kayıt varsa sitede indirme butonu combobox olur.',
+  icon: 'mdi:file-account-outline',
+  idColumn: 'id',
+  titleColumn: 'label',
+  orderBy: { column: 'sort_order', ascending: true },
+  listColumns: ['id', 'label', 'lang', 'href', 'sort_order', 'is_active', 'updated_at'],
+  searchColumns: ['label', 'lang'],
+  filters: [
+    {
+      column: 'lang',
+      label: 'Dil',
+      type: 'text',
+      options: [
+        { value: 'tr', label: 'Türkçe' },
+        { value: 'en', label: 'English' },
+        { value: 'de', label: 'Deutsch' },
+      ],
+    },
+  ],
+  fields: [
+    { name: 'label', label: 'Etiket (butonda görünür)', type: 'text', required: true, inTable: true, searchable: true, maxLength: 60, placeholder: 'Türkçe CV' },
+    {
+      name: 'lang',
+      label: 'Dil kodu',
+      type: 'select',
+      required: true,
+      inTable: true,
+      options: ['tr', 'en', 'de'],
+      help: 'Hangi dilde olduğu. Buton etiketi de bu değerden türetilir.',
+    },
+    { name: 'href', label: 'Dosya yolu / URL', type: 'text', required: true, inTable: true, maxLength: 300, placeholder: '/cv/tarikeler-cv.pdf', help: 'public/cv altına yüklediğin dosyanın yolu.' },
+    { name: 'sort_order', label: 'Sıra', type: 'number', inTable: true, min: 0, max: 999 },
+    { name: 'is_active', label: 'Aktif', type: 'boolean', inTable: true },
+  ],
+}
+
+const LANGUAGES: ResourceDef = {  key: 'languages',
   table: 'languages',
   label: 'Bildiğim Diller',
   description: 'Konuşulan diller ve seviyeleri (A1–C2 / Ana dil).',
@@ -413,6 +453,7 @@ export const RESOURCES: readonly ResourceDef[] = [
   AD_SLOTS,
   PROFILES,
   LANGUAGES,
+  CVS,
 ]
 
 export function getResource(key: string): ResourceDef | undefined {

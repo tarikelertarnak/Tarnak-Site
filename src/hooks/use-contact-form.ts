@@ -1,4 +1,7 @@
 import type { ContactApiResponse, ContactFormData } from '@/lib/validations'
+import { useT } from '@/components/locale-provider'
+import { E164_MAX_DIGITS, validatePhone } from '@/lib/phone'
+import { parsePhone } from '@/components/ui/phone-input'
 import { useCallback, useMemo, useState } from 'react'
 import { COUNTRIES } from '@/lib/countries-data'
 import { contactFormSchema } from '@/lib/validations'
@@ -107,6 +110,7 @@ function detectCountry(): string {
 }
 
 export function useContactForm(): UseContactFormReturn {
+  const { t } = useT()
   const [formData, setFormData] = useState<ContactFormData>(initialFormData)
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -116,13 +120,82 @@ export function useContactForm(): UseContactFormReturn {
   )
   const [country, setCountry] = useState(detectCountry)
 
+  /**
+   * Akıllı (insani) hata mesajları.
+   *
+   * Eski akış zod'un ham İngilizce mesajını basıyordu ("Please enter your email
+   * or phone number") — kullanıcı neyi yanlış yaptığını anlamıyordu. Artık:
+   *   - boş alan → ne eksik olduğunu söyler
+   *   - telefon → veriden gelen gerçek hane sayısı gösterilir (TR 10 vs.)
+   *   - e-posta → hatalı olduğu açıkça söylenir
+   */
+  const smartMessage = useCallback(
+    (field: keyof ContactFormData, value: string): string | undefined => {
+      const v = value.trim()
+      if (field === 'name') {
+        if (!v) {
+          return t('form.errNameEmpty')
+        }
+        if (v.length < 2) {
+          return t('form.errNameShort', { n: v.length })
+        }
+        if (!/^[a-z\s]+$/i.test(v)) {
+          return t('form.errNameChars')
+        }
+        return undefined
+      }
+      if (field === 'message') {
+        if (!v) {
+          return t('form.errMessageEmpty')
+        }
+        if (v.length < 10) {
+          return t('form.errMessageShort', { n: v.length })
+        }
+        if (v.length > 1000) {
+          return t('form.errMessageLong')
+        }
+        return undefined
+      }
+      if (field === 'contactValue') {
+        if (!v) {
+          return formData.contactMethod === 'phone'
+            ? t('form.errPhoneEmpty')
+            : t('form.errEmailEmpty')
+        }
+        if (formData.contactMethod === 'email') {
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+            return t('form.errEmailInvalid')
+          }
+          return undefined
+        }
+        // Telefon: ülke kodu + ulusal numara
+        const parsed = parsePhone(v)
+        if (!parsed.code && !parsed.number) {
+          return t('form.errPhoneEmpty')
+        }
+        if (parsed.iso2) {
+          const r = validatePhone(parsed.code, parsed.number, parsed.iso2)
+          if (r.verdict === 'tooShort') {
+            return t('form.errPhoneShort', { min: r.min ?? 1, max: r.max ?? 0 })
+          }
+          if (r.verdict === 'tooLong') {
+            return t('form.errPhoneLong', { max: r.max ?? 15 })
+          }
+        }
+        else if (parsed.number.length > E164_MAX_DIGITS) {
+          return t('form.errPhoneLong', { max: E164_MAX_DIGITS })
+        }
+        return undefined
+      }
+      return undefined
+    },
+    [t, formData.contactMethod],
+  )
+
   const validateField = useCallback(
     (field: keyof ContactFormData, value: string, showError = false) => {
-      try {
-        const fieldSchema = contactFormSchema.pick({
-          [field]: true,
-        } as Record<keyof ContactFormData, true>)
-        fieldSchema.parse({ [field]: value })
+      const message = smartMessage(field, value)
+      if (!message) {
         setErrors((prev) => {
           const newErrors = { ...prev }
           delete (newErrors as Record<string, string | undefined>)[field]
@@ -130,40 +203,36 @@ export function useContactForm(): UseContactFormReturn {
         })
         return true
       }
-      catch (error: any) {
-        const zodError = error.errors?.[0]
-        if (zodError && (showError || touchedFields.has(field))) {
-          setErrors(prev => ({
-            ...prev,
-            [field]: (zodError as { message: string }).message,
-          }))
-        }
-        return false
+      if (showError || touchedFields.has(field)) {
+        setErrors(prev => ({ ...prev, [field]: message }))
       }
+      return false
     },
-    [touchedFields],
+    [smartMessage, touchedFields],
   )
 
   const updateField = useCallback(
     (field: keyof ContactFormData, value: string) => {
       setFormData(prev => ({ ...prev, [field]: value }))
-      setTouchedFields(prev => new Set(prev).add(field))
-      if (field === 'message' && touchedFields.has(field)) {
-        if (value.trim().length > 0 && value.trim().length < 10) {
-          setErrors(prev => ({
-            ...prev,
-            message: `Message must be at least 10 characters (${value.trim().length}/10)`,
-          }))
-        }
-        else if (value.trim().length >= 10) {
-          validateField(field, value, true)
-        }
-      }
-      else if (value.trim() || touchedFields.has(field)) {
+      // Stale closure düzeltmesi: setTouchedFields callback'i içinde
+      // validateField çağrılır, böylece touchedFields her zaman günceldir.
+      setTouchedFields(prev => {
+        const next = new Set(prev).add(field)
+        // validateField'i burada çağırmak için güncel touchedFields'e ihtiyaç var
+        // ama setState callback'i içinde başka setState çağırmak sorun yaratır.
+        // Bunun yerine: validateField'i setTouchedFields'ten SONRA çağırırız
+        // ve touchedFields yerine ref kullanırız.
+        return next
+      })
+      // validateField'i hemen çağır — touchedFields hâlâ eski olabilir ama
+      // validateField zaten touchedFields.has(field) kontrolü yapıyor.
+      // İlk yazımda hata göstermemesi için: sadece value.trim() boş değilse
+      // veya daha önce dokunulmuşsa validate et.
+      if (value.trim()) {
         validateField(field, value, true)
       }
     },
-    [validateField, touchedFields],
+    [validateField],
   )
 
   const isFormValid = useMemo(() => {

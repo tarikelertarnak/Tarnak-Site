@@ -82,6 +82,10 @@ interface DownloadOption {
   label: string
   url: string
   os?: OSKey
+  /** Release tag (v1.2.3) when the option comes from a GitHub release. */
+  version?: string
+  /** true = source ZIP (grouped under "Other", pinned to the top). */
+  isZip?: boolean
 }
 
 /** /github/<owner>/<repo> veya github.com/<owner>/<repo> kalıbından repo kimliği çıkarır. GitHub değilse null. */
@@ -125,6 +129,8 @@ function releaseOptions(releases: ReleaseDto[]): DownloadOption[] {
         label: `${release.tagName} — ${label}`,
         url: asset.downloadUrl,
         os: isSourceZip || isSourceTar ? undefined : assetOS(asset.name),
+        version: release.tagName,
+        isZip: isSourceZip,
       })
     }
   }
@@ -137,6 +143,8 @@ interface DownloadComboboxProps {
   onSelect: (url: string) => void
   /** Trigger button (or alignment reference) — the portal position is computed from it. */
   anchorRef: React.RefObject<HTMLElement | null>
+  /** Only GitHub repos get the "Latest" group (non-GitHub projects have no releases). */
+  showLatest: boolean
 }
 
 /**
@@ -149,6 +157,7 @@ function DownloadCombobox({
   currentUrl,
   onSelect,
   anchorRef,
+  showLatest,
 }: DownloadComboboxProps) {
   const { t } = useT()
   const [query, setQuery] = useState('')
@@ -203,8 +212,48 @@ function DownloadCombobox({
     return [u, ...OS_ORDER.filter(k => k !== u)]
   }, [])
 
+  // ── Filters ──────────────────────────────────────────────────────────────
+  // Type (OS) and version filters. Both default to "all"; each has its own search.
+  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [versionFilter, setVersionFilter] = useState<string>('all')
+  const [typeQuery, setTypeQuery] = useState('')
+  const [versionQuery, setVersionQuery] = useState('')
+
+  /** OS present in the options (a type filter is pointless without them). */
+  const availableTypes = useMemo(
+    () => sortedOS.filter(k => options.some(o => o.os === k)),
+    [options, sortedOS],
+  )
+  /** Versions present in the options, newest first (input order = release order). */
+  const availableVersions = useMemo(() => {
+    const seen: string[] = []
+    for (const o of options) {
+      if (o.version && !seen.includes(o.version))
+        seen.push(o.version)
+    }
+    return seen
+  }, [options])
+
+  const showTypeFilter = availableTypes.length > 0
+  const showVersionFilter = availableVersions.length > 0
+
+  const typeOptions = useMemo(
+    () =>
+      availableTypes
+        .map(k => ({ value: k, label: OS_LABELS[k] }))
+        .filter(o => !typeQuery.trim() || o.label.toLowerCase().includes(typeQuery.trim().toLowerCase())),
+    [availableTypes, typeQuery],
+  )
+  const versionOptions = useMemo(
+    () =>
+      availableVersions
+        .map(v => ({ value: v, label: v }))
+        .filter(o => !versionQuery.trim() || o.label.toLowerCase().includes(versionQuery.trim().toLowerCase())),
+    [availableVersions, versionQuery],
+  )
+
   // In per-OS mode, group assets by OS; empty in single-URL mode.
-  // Items without an OS (e.g. ZIP) go into the "Other" group.
+  // Items without an OS (e.g. ZIP) go into the "Other" group — ZIP pinned first.
   const grouped = useMemo(() => {
     const byOS = new Map<OSKey, DownloadOption[]>()
     const other: DownloadOption[] = []
@@ -219,6 +268,8 @@ function DownloadCombobox({
       list.push(opt)
       byOS.set(opt.os, list)
     }
+    // ZIP entries float to the top of "Other".
+    other.sort((a, b) => Number(!!b.isZip) - Number(!!a.isZip))
     // "Latest" = the first asset of each OS (in per-OS mode there is already only one).
     const latest: DownloadOption[] = []
     for (const k of sortedOS) {
@@ -229,8 +280,16 @@ function DownloadCombobox({
     return { byOS, latest, hasOS, other }
   }, [options, sortedOS])
 
-  const matches = (o: DownloadOption) =>
-    !query.trim() || o.label.toLowerCase().includes(query.trim().toLowerCase())
+  /** Text search + type (OS) + version filters all narrow the list. */
+  const matches = (o: DownloadOption) => {
+    if (query.trim() && !o.label.toLowerCase().includes(query.trim().toLowerCase()))
+      return false
+    if (typeFilter !== 'all' && o.os !== typeFilter)
+      return false
+    if (versionFilter !== 'all' && o.version !== versionFilter)
+      return false
+    return true
+  }
 
   const renderItem = (opt: DownloadOption) => {
     const isCurrent = opt.url === currentUrl
@@ -284,7 +343,7 @@ function DownloadCombobox({
           onClick={() => onSelect(opt.url)}
           className={cn(
             'shrink-0 transition-colors',
-            isCurrent ? 'text-primary' : 'text-white/50 hover:text-white',
+            isCurrent ? 'text-white' : 'text-white/50 hover:text-white',
           )}
         >
           <DownloadIcon size={14} />
@@ -294,7 +353,7 @@ function DownloadCombobox({
   }
 
   const GroupLabel = ({ children }: { children: ReactNode }) => (
-    <div className="sticky top-0 z-[1] border-b border-white/5 bg-[#0d0d12]/95 px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40 backdrop-blur">
+    <div className="sticky top-0 z-[1] border-b border-foreground/10 bg-background/95 px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/60 backdrop-blur">
       {children}
     </div>
   )
@@ -303,7 +362,7 @@ function DownloadCombobox({
   const flat = options.filter(matches)
   const showGroups = grouped.hasOS
 
-  const latestItems = grouped.latest.filter(matches)
+  const latestItems = showLatest ? grouped.latest.filter(matches) : []
   const totalCount = showGroups
     ? latestItems.length
     + sortedOS.reduce((n, k) => n + (grouped.byOS.get(k)?.filter(matches).length ?? 0), 0)
@@ -316,13 +375,13 @@ function DownloadCombobox({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ duration: 0.12, ease: 'easeOut' }}
       style={pos ?? undefined}
-      className="fixed z-[1000] w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-white/10 bg-[#0d0d12]/95 shadow-2xl shadow-black/40 backdrop-blur-xl"
+      className="fixed z-[1000] w-72 max-w-[calc(100vw-1rem)] overflow-hidden rounded-xl border border-foreground/15 bg-background/95 shadow-2xl shadow-black/20 backdrop-blur-xl"
     >
-      <div className="border-b border-white/5 p-2">
+      <div className="border-b border-foreground/10 p-2">
         <div className="relative">
           <SearchIcon
             size={14}
-            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40"
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/60"
           />
           <input
             ref={inputRef}
@@ -330,9 +389,38 @@ function DownloadCombobox({
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder={t('projects.searchVersion')}
-            className="h-8 w-full rounded-lg border border-white/10 bg-white/5 pl-7 pr-2 text-xs text-white outline-none placeholder:text-white/35 focus:border-white/25 focus:ring-0 focus-visible:ring-0"
+            className="h-8 w-full rounded-lg border border-foreground/15 bg-foreground/[0.05] pl-7 pr-2 text-xs text-foreground outline-none placeholder:text-foreground/40 focus:border-foreground/25 focus:ring-0 focus-visible:ring-0"
           />
         </div>
+        {/* Two filters: type (OS) and version. Both searchable, both default to "All". */}
+        {(showTypeFilter || showVersionFilter) && (
+          <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+            {showTypeFilter && (
+              <FilterSelect
+                label={t('projects.filterType')}
+                value={typeFilter}
+                onChange={setTypeFilter}
+                query={typeQuery}
+                onQuery={setTypeQuery}
+                options={typeOptions}
+                allLabel={t('combobox.all')}
+                placeholder={t('projects.searchType')}
+              />
+            )}
+            {showVersionFilter && (
+              <FilterSelect
+                label={t('projects.filterVersion')}
+                value={versionFilter}
+                onChange={setVersionFilter}
+                query={versionQuery}
+                onQuery={setVersionQuery}
+                options={versionOptions}
+                allLabel={t('combobox.all')}
+                placeholder={t('projects.searchVersion')}
+              />
+            )}
+          </div>
+        )}
       </div>
 <div className="max-h-64 overscroll-contain overflow-y-auto py-1.5 [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin]">
         {totalCount === 0
@@ -345,8 +433,8 @@ function DownloadCombobox({
               <>
                 {/* Batch download bar — visible when at least one is selected */}
                 {selected.size > 0 && (
-                  <div className="mx-1.5 mb-1.5 flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-2">
-                    <span className="min-w-0 flex-1 truncate text-xs font-semibold text-primary">
+                  <div className="mx-1.5 mb-1.5 flex items-center gap-2 rounded-lg border border-foreground/15 bg-foreground/[0.06] px-2.5 py-2">
+                    <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
                       {selected.size} seçildi
                     </span>
                     <button
@@ -360,7 +448,7 @@ function DownloadCombobox({
                         setSelected(new Set())
                         onSelect([...selected][0] ?? '')
                       }}
-                      className="shrink-0 rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-white transition-opacity hover:opacity-90"
+                      className="shrink-0 rounded-md bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-foreground transition-opacity hover:opacity-90"
                     >
                       ↓ Toplu İndir
                     </button>
@@ -369,7 +457,7 @@ function DownloadCombobox({
                       onMouseDown={e => e.stopPropagation()}
                       onClick={() => setSelected(new Set())}
                       aria-label="Temizle"
-                      className="shrink-0 rounded-md border border-white/20 px-1.5 py-1 text-[11px] text-white/70 transition-colors hover:text-white"
+                      className="shrink-0 rounded-md border border-foreground/20 px-1.5 py-1 text-[11px] text-foreground/80 transition-colors hover:text-foreground"
                     >
                       <CloseIcon size={12} />
                     </button>
@@ -415,8 +503,113 @@ function DownloadCombobox({
   )
 }
 
-const MEDIA_VIDEO_RE = /\.(mp4|webm|ogg|ogv)(\?|#|$)/i
+/**
+ * Small labelled dropdown with its own search box — used for the type/version
+ * filters inside the download menu. "All" is always the first option.
+ */
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+  allLabel,
+  placeholder,
+  query,
+  onQuery,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+  options: Array<{ value: string, label: string }>
+  allLabel: string
+  placeholder: string
+  query: string
+  onQuery: (v: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    if (!open)
+      return
+    const onDown = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [open])
+
+  const current = options.find(o => o.value === value)
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-label={label}
+        title={label}
+        className="flex h-7 w-full items-center justify-between gap-1 rounded-lg border border-foreground/15 bg-foreground/[0.05] px-2 text-[11px] font-medium text-foreground/90 transition-colors hover:border-foreground/25"
+      >
+        <span className="min-w-0 truncate">
+          {value === 'all' ? allLabel : (current?.label ?? allLabel)}
+        </span>
+        <ChevronDownIcon size={12} className="shrink-0 opacity-60" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-8 z-20 max-h-56 w-full min-w-[9rem] overflow-hidden rounded-lg border border-foreground/15 bg-popover shadow-2xl shadow-black/25 backdrop-blur-xl">
+          <div className="border-b border-foreground/10 p-1.5">
+            <input
+              type="text"
+              value={query}
+              onChange={e => onQuery(e.target.value)}
+              placeholder={placeholder}
+              className="h-7 w-full rounded-md border border-foreground/15 bg-foreground/[0.05] px-2 text-[11px] text-foreground outline-none placeholder:text-foreground/40 focus:border-foreground/25"
+            />
+          </div>
+          <div className="max-h-40 overflow-y-auto py-1">
+            <button
+              type="button"
+              onClick={() => {
+                onChange('all')
+                setOpen(false)
+              }}
+              className={cn(
+                'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors',
+                value === 'all' ? 'bg-primary/15 text-foreground' : 'text-foreground/80 hover:bg-foreground/[0.06]',
+              )}
+            >
+              {allLabel}
+              {value === 'all' && <CheckIcon size={12} />}
+            </button>
+            {options.map(o => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => {
+                  onChange(o.value)
+                  setOpen(false)
+                }}
+                className={cn(
+                  'flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors',
+                  value === o.value ? 'bg-primary/15 text-foreground' : 'text-foreground/80 hover:bg-foreground/[0.06]',
+                )}
+              >
+                <span className="min-w-0 truncate">{o.label}</span>
+                {value === o.value && <CheckIcon size={12} />}
+              </button>
+            ))}
+            {options.length === 0 && (
+              <p className="px-2.5 py-2 text-center text-[11px] text-foreground/60">—</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const MEDIA_VIDEO_RE = /\.(mp4|webm|ogg|ogv)(\?|#|$)/i
 /**
  * Rectangular media box — multiple media (image/gif/video) + arrow overlays +
  *  bottom toolbar (Previous / Next / Zoom). Zoom → lightbox.
@@ -455,7 +648,7 @@ function ProjectMedia({
 
   if (count === 0) {
     return (
-      <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-white/5 ring-1 ring-foreground-200/10">
+      <div className="flex aspect-video w-full items-center justify-center rounded-lg bg-foreground/[0.05] ring-1 ring-foreground-200/10">
         {isGithub
           ? (
               <GithubIcon size={44} className="text-primary" />
@@ -518,7 +711,7 @@ const mediaNode = (src: string, video: boolean, controls: boolean) =>
   return (
     <div>
       <div
-        className="relative aspect-video w-full overflow-hidden rounded-lg bg-white/5 ring-1 ring-foreground-200/10 transition-colors group-hover:ring-primary/30"
+        className="relative aspect-video w-full overflow-hidden rounded-lg bg-foreground/[0.05] ring-1 ring-foreground-200/10 transition-colors group-hover:ring-primary/30"
         onClick={() => {
           // Clicking a photo/GIF opens the lightbox; videos keep playing/pausing on click.
           if (!isVideo)
@@ -657,6 +850,12 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
     () => parseGitHubRepo(project.srcLink ?? project.projectLink),
     [project.srcLink, project.projectLink],
   )
+
+  // "Aç" hedefi: GitHub projesi ise doğrudan GitHub linki, normal proje ise
+  // proje sayfası (yerel /... rotası ya da kendi projectLink'i).
+  const openTarget = isGithub
+    ? (project.srcLink ?? project.projectLink)
+    : project.projectLink
   // GitHub release asset'leri (kart başına 1 kez fetch). Hata/boşsa mevcut statik indirme davranışı korunur.
   const [releaseAssetOptions, setReleaseAssetOptions] = useState<DownloadOption[] | null>(null)
 
@@ -721,6 +920,7 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
       opts.push({
         label: 'ZIP',
         url: `${project.srcLink}/archive/refs/heads/main.zip`,
+        isZip: true,
       })
     }
     return opts
@@ -762,11 +962,6 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
             >
               {project.title}
             </a>
-            {project.notice && (
-              <span className="shrink-0 rounded-full bg-primary/15 px-2.5 py-0.5 text-[10px] font-bold text-primary">
-                {project.notice.replace(/[[\]]/g, '')}
-              </span>
-            )}
           </div>
           {/* Description → project showcase page */}
           <a
@@ -843,29 +1038,32 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
             </span>
           </div>
 
-          {/* Buttons: Open Page → Download → GitHub (only for GitHub projects). */}
+          {/* Buttons: Open (GitHub link for repos, project page otherwise) → Download. */}
           <div className="flex w-full flex-wrap items-stretch gap-1.5">
             <a
-              href={project.projectLink}
+              href={openTarget}
               target={isExternal ? '_blank' : undefined}
               rel={isExternal ? 'noopener noreferrer' : undefined}
               onClick={() => {
                 recordView()
               }}
-              className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-[#e5e7eb] px-2 text-sm font-medium text-black no-underline transition-colors hover:bg-[#d1d5db] hover:text-black"
+              className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-2 text-sm font-medium text-white no-underline transition-colors hover:bg-primary/90 hover:text-white"
             >
-              {isExternal ? t('projects.view') : t('projects.open')}
-              <ArrowUpRightIcon size={14} className="shrink-0 text-black" />
+              {/* Tek isim: "Projeyi Aç". GitHub projesi olsa bile aynı etiket —
+                  buton zaten GitHub linkine gidiyor, ayrı "GitHub'da aç" yazısı
+                  gereksizdi. */}
+              {t('projects.open')}
+              <ArrowUpRightIcon size={14} className="shrink-0 text-white" />
             </a>
 
             {downloadOptions.length > 0 && (
               <div className="relative shrink-0 self-center" ref={comboboxRef}>
-                <div className="flex h-9 items-stretch overflow-hidden rounded-lg bg-[#e5e7eb] transition-colors hover:bg-[#d1d5db]">
+                <div className="flex h-9 items-stretch overflow-hidden rounded-lg bg-primary transition-colors hover:bg-primary/90">
                   <a
                     href={currentDownloadUrl ?? '#'}
                     onClick={() => trackDownload()}
                     title={currentDownloadLabel}
-                    className="inline-flex h-9 w-9 items-center justify-center text-black no-underline transition-colors hover:text-black"
+                    className="inline-flex h-9 w-9 items-center justify-center text-white no-underline transition-colors hover:text-white"
                   >
                     <DownloadIcon size={15} />
                   </a>
@@ -875,7 +1073,7 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
                     onClick={() => setComboboxOpen(o => !o)}
                     aria-label={t('projects.selectVersion')}
                     title={t('projects.selectVersion')}
-                    className="inline-flex h-9 w-7 items-center justify-center border-l border-black/10 text-black transition-colors hover:bg-black/5"
+                    className="inline-flex h-9 w-7 items-center justify-center border-l border-white/20 text-white transition-colors hover:bg-black/5"
                   >
                     <ChevronDownIcon size={13} />
                   </button>
@@ -885,6 +1083,7 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
                     options={downloadOptions}
                     currentUrl={currentDownloadUrl}
                     anchorRef={triggerRef}
+                    showLatest={isGithub}
                     onSelect={(url) => {
                       setComboboxOpen(false)
                       const opt
@@ -896,20 +1095,6 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
                   />
                 )}
               </div>
-            )}
-
-            {isGithub && (
-              <a
-                href={project.srcLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="GitHub"
-                title={t('projects.openGithub')}
-                onClick={() => recordView()}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center self-center rounded-lg bg-[#e5e7eb] text-black no-underline transition-colors hover:bg-[#d1d5db] hover:text-black"
-              >
-                <GithubIcon size={15} />
-              </a>
             )}
           </div>
         </div>

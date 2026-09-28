@@ -47,20 +47,20 @@ export function HeroSection({ content }: { content: SiteContent }) {
   const { t } = useT()
 
   return (
-    <Section className="min-h-[92svh] flex-col overflow-hidden pt-24 pb-8">
+    <Section className="min-h-[100svh] flex-col justify-center overflow-hidden pt-20 pb-10">
       {/* Background decorations */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-grid bg-radial-fade" />
         {/* glow removed — no transparency */}
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-12 md:grid-cols-[1.15fr_0.85fr] md:gap-14">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 md:grid-cols-[1.15fr_0.85fr] md:gap-8">
         {/* LEFT — text */}
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
-          className="flex flex-col items-start text-left"
+          className="flex flex-col items-center text-center md:items-start md:text-left"
         >
           {/* Manifesto title */}
           <motion.div variants={item} className="relative w-full">
@@ -85,7 +85,7 @@ export function HeroSection({ content }: { content: SiteContent }) {
               sentences={[tagline]}
               className="text-lg sm:text-xl md:text-2xl font-semibold"
               color="currentColor"
-              cursorColor="#2563eb"
+              cursorColor="var(--tprimary)"
               typingSpeed={60}
               deletingSpeed={30}
               pauseDuration={3000}
@@ -100,18 +100,15 @@ export function HeroSection({ content }: { content: SiteContent }) {
             {description}
           </motion.p>
 
-          {/* CTA buttons — smooth scroll to page sections (each to its own anchor) */}
+          {/*
+            CTA butonları: 6 eşit buton "seçim paradoksu" yaratıyordu
+            (Hickson: fazla seçenek karar yavaşlatır). Artık 1 birincil +
+            2 ikincil. Birincil: Projeler. İkincil: İletişim, CV.
+          */}
           <motion.div
             variants={item}
             className="mt-7 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4"
           >
-            <Button
-              color="primary"
-              className="font-semibold text-sm sm:text-base px-6 py-3"
-              href="#about"
-            >
-              {t('hero.about')}
-            </Button>
             <Button
               color="primary"
               className="font-semibold text-sm sm:text-base px-6 py-3"
@@ -120,28 +117,15 @@ export function HeroSection({ content }: { content: SiteContent }) {
               {t('hero.projects')}
             </Button>
             <Button
-              color="primary"
-              className="font-semibold text-sm sm:text-base px-6 py-3"
-              href="#blog"
-            >
-              {t('hero.blog')}
-            </Button>
-            <Button
-              color="primary"
+              variant="bordered"
               className="font-semibold text-sm sm:text-base px-6 py-3"
               href="#contact"
             >
               {t('hero.feedback')}
             </Button>
             <Button
-              className="font-semibold text-sm sm:text-base px-6 py-3 !bg-foreground !text-background hover:!bg-foreground/90"
-              href="/chat"
-              startContent={<ChatIcon size={18} />}
-            >
-              {t('nav.chat')}
-            </Button>
-            <Button
-              className="font-semibold text-sm sm:text-base px-6 py-3 !bg-foreground !text-background hover:!bg-foreground/90"
+              variant="bordered"
+              className="font-semibold text-sm sm:text-base px-6 py-3"
               href={content.about.cv.href ?? '/cv/tarikeler-cv.pdf'}
               target="_blank"
               rel="noopener noreferrer"
@@ -154,7 +138,7 @@ export function HeroSection({ content }: { content: SiteContent }) {
           {/* Social icons */}
           <motion.div
             variants={item}
-            className="mt-8 flex flex-row items-center gap-3"
+            className="mt-8 flex flex-row flex-wrap items-center justify-center gap-3 md:justify-start"
           >
             {content.social.map(social => (
               <a
@@ -164,7 +148,7 @@ export function HeroSection({ content }: { content: SiteContent }) {
                 rel="noopener noreferrer"
                 aria-label={social.name}
                 title={social.name}
-                className="group flex h-11 w-11 items-center justify-center rounded-xl border border-foreground-200/10 bg-background text-foreground-500 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                className="group flex h-11 w-11 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/20 hover:text-primary"
               >
                 {socialIcon(social.icon, 22)}
               </a>
@@ -185,14 +169,14 @@ export function HeroSection({ content }: { content: SiteContent }) {
           >
             <img
               src="/tarnak-white.svg"
-              alt="TARNAK"
+              alt="TARNAK — kuş logosu ve TARIK ELER imzası"
               width={220}
               height={220}
               className="hidden h-44 w-44 opacity-90 dark:block sm:h-56 sm:w-56"
             />
             <img
               src="/tarnak.svg"
-              alt="TARNAK"
+              alt="TARNAK — kuş logosu ve TARIK ELER imzası"
               width={220}
               height={220}
               className="block h-44 w-44 opacity-90 dark:hidden sm:h-56 sm:w-56"

@@ -6,6 +6,7 @@ import { ContactSection } from '@/components/sections/contact-section'
 import { HeroSection } from '@/components/sections/hero-section'
 import { ProjectsSection } from '@/components/sections/projects-section'
 import { getPosts } from '@/lib/blog'
+import { getCvs } from '@/lib/cv'
 import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
 
 /**
@@ -18,13 +19,14 @@ export default async function Page() {
   const locale = await getLocale()
   const content = await getLocalizedContent()
   const posts = await getPosts(locale)
+  const cvs = await getCvs()
 
   return (
     <div className="min-h-screen w-full relative">
       <Navigation content={content} />
       <main id="main" className="w-full">
         <HeroSection content={content} />
-        <AboutSection content={content} />
+        <AboutSection content={content} cvs={cvs} />
         <ProjectsSection
           content={content}
           githubUsername={content.settings.githubUsername}

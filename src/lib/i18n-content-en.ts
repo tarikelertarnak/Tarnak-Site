@@ -135,9 +135,9 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
     nickname: 'Tarnak',
     title: 'Developer & Systems Architecture',
     profileImage: 'https://avatars.githubusercontent.com/u/184168415?v=4',
-    experience: '3+ Years',
+    experience: '',
     firstLanguage: 'Turkish',
-    otherLanguages: 'English (B1)',
+    otherLanguages: 'English (A2), German (A1)',
   },
   contact: {
     subtitle: 'CONTACT',

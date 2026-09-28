@@ -18,6 +18,15 @@ export async function generateMetadata() {
     description: isEn
       ? 'Everyone who contributed to TARNAK. Thanks to everyone who develops my open source projects, gives feedback and supports them.'
       : 'TARNAK\'a katkıda bulunan herkes. Açık kaynak projelerimi geliştiren, geri bildirim veren ve destekleyen herkese teşekkürler.',
+    alternates: { canonical: '/credits' },
+    openGraph: {
+      title: isEn ? 'Credits — TARIK ELER - TARNAK' : 'Katkıda Bulunanlar — TARIK ELER - TARNAK',
+      description: isEn
+        ? 'Everyone who contributed to TARNAK.'
+        : 'TARNAK\'a katkıda bulunan herkes.',
+      url: '/credits',
+      type: 'website',
+    },
   }
 }
 

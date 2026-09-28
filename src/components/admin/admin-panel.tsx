@@ -1725,7 +1725,7 @@ const clearMessages = async () => {
                                         <button
                                           type="button"
                                           onClick={() => addGithubRepo(repo)}
-                                          className="shrink-0 h-8 rounded-lg bg-[#e5e7eb] px-3 text-xs font-semibold text-black hover:bg-[#d1d5db]"
+                                          className="shrink-0 h-8 rounded-lg bg-primary px-3 text-xs font-semibold text-white hover:bg-primary/90"
                                         >
                                           Ekle
                                         </button>
@@ -2006,7 +2006,7 @@ function ProfilePhotoCard({
                 />
               )
             : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 text-4xl font-black text-black">
+                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 text-4xl font-black text-white">
                   {displayName.charAt(0) || 'T'}
                 </div>
               )}

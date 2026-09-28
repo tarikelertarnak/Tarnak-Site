@@ -2,7 +2,7 @@
 
 import type { AdminUserRow, UserLimits } from '@/app/api/admin/users/route'
 import { Icon } from '@iconify/react'
-import { Popover } from '@lobehub/ui'
+import { Popover } from '@lobehub/ui/base-ui'
 import { useCallback, useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'

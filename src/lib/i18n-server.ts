@@ -1,5 +1,6 @@
 import type { SiteContent } from '@/lib/content'
 import type { Locale, LocalePref } from '@/lib/i18n'
+import { cache } from 'react'
 import { cookies, headers } from 'next/headers'
 import { getContent } from '@/lib/content'
 import {
@@ -20,8 +21,13 @@ import { ruContentOverlay } from '@/lib/i18n-content-ru'
 /**
  * Server-side locale: stored preference wins, otherwise location (country
  * from Cloudflare's CF-IPCountry header) → accept-language → English.
+ *
+ * `cache()` ile sarıldı: sayfa hem kendi `getLocale()` çağrısını yapıyor hem de
+ * `getLocalizedContent()` içinden bir kez daha çağırıyordu. React cache aynı
+ * istek içinde ikinci çağrıyı bedelsiz yapar (ve `cookies()`/`headers()`
+ * dinamik okuması bir kez çalışır).
  */
-export async function getLocale(): Promise<Locale> {
+export const getLocale = cache(async (): Promise<Locale> => {
   let pref: LocalePref | undefined
   let lang: string | undefined
   let country: string | undefined
@@ -35,7 +41,7 @@ export async function getLocale(): Promise<Locale> {
   }
   // Location first (reliable at the edge), then browser language preference.
   return resolveLocale(pref, detectLocaleFromCountry(country) ?? detectLocale(lang))
-}
+})
 
 /** Get the text direction for the current locale. */
 export function getLocaleDirection(locale: Locale): 'ltr' | 'rtl' {

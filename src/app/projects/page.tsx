@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { Navigation } from '@/components/navigation'
 import { ProjectsGrid } from '@/components/projects/projects-grid'
 import { RememberListPath } from '@/components/remember-list-path'
@@ -5,8 +6,18 @@ import { FolderIcon, GithubIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { getLocalizedContent } from '@/lib/i18n-server'
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Projeler — TARIK ELER - TARNAK',
+  description:
+    'TARIK ELER (Tarnak) tarafından geliştirilen açık kaynak projeler: masaüstü uygulamalar, web araçları, tarayıcı eklentileri ve yapay zeka projeleri. Windows, macOS ve Linux için indirilebilir sürümler.',
+  alternates: { canonical: '/projects' },
+  openGraph: {
+    title: 'Projeler — TARIK ELER - TARNAK',
+    description:
+      'Açık kaynak projeler: masaüstü uygulamalar, web araçları, tarayıcı eklentileri ve yapay zeka projeleri.',
+    url: '/projects',
+    type: 'website',
+  },
 }
 
 export default async function ProjectsPage() {
@@ -35,9 +46,9 @@ export default async function ProjectsPage() {
               href="https://github.com/tarikelertarnak?tab=repositories"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex h-11 items-center gap-2 rounded-lg bg-[#e5e7eb] px-4 py-2 text-sm font-medium text-black no-underline transition-colors hover:bg-[#d1d5db] hover:text-black"
+              className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white no-underline transition-colors hover:bg-primary/90 hover:text-white"
             >
-              <GithubIcon size={14} className="text-black" />
+              <GithubIcon size={14} className="text-white" />
               {content.github.title}
             </a>
           </div>

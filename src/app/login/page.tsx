@@ -27,7 +27,7 @@ export default async function LoginPage() {
         id="main"
         className="flex min-h-[70svh] w-full flex-col items-center justify-center px-4 pt-16 pb-8"
       >
-        <AuthForm />
+        <AuthForm mode="login" />
       </main>
     </div>
   )

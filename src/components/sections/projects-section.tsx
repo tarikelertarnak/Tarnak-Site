@@ -34,7 +34,7 @@ export function ProjectsSection({
           <Button
             href="/projects"
             color="primary"
-            className="h-11 items-center gap-2 rounded-lg bg-[#e5e7eb] px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-[#d1d5db]"
+            className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
             endContent={<span aria-hidden="true">→</span>}
           >
             {t('projects.viewAll')}
@@ -44,7 +44,7 @@ export function ProjectsSection({
             target="_blank"
             rel="noopener noreferrer"
             color="primary"
-            className="h-11 items-center gap-2 rounded-lg bg-[#e5e7eb] px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-[#d1d5db]"
+            className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
             startContent={<GithubIcon size={14} />}
           >
             {t('projects.githubBtn')}

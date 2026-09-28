@@ -11,6 +11,15 @@ export async function generateMetadata() {
     description: isEn
       ? 'TARIK ELER (Tarnak) — Web developer & creator. I build projects with Next.js, TypeScript and AI. My history, skills and motivation.'
       : 'TARIK ELER (Tarnak) — Web developer & creator. Next.js, TypeScript ve yapay zeka üzerine projeler geliştiriyorum. Geçmişim, yeteneklerim ve motivasyonum.',
+    alternates: { canonical: '/about' },
+    openGraph: {
+      title: isEn ? 'About — TARIK ELER - TARNAK' : 'Hakkımda — TARIK ELER - TARNAK',
+      description: isEn
+        ? 'TARIK ELER (Tarnak) — Web developer & creator building projects with Next.js, TypeScript and AI.'
+        : 'TARIK ELER (Tarnak) — Next.js, TypeScript ve yapay zeka üzerine projeler geliştiren web geliştirici.',
+      url: '/about',
+      type: 'profile',
+    },
   }
 }
 

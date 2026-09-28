@@ -116,9 +116,9 @@ export const ptContentOverlay: DeepPartial<SiteContent> = {
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: 'Desenvolvedor & Arquiteto de Sistemas',
-    experience: '3+ anos',
+    experience: '',
     firstLanguage: 'Turco',
-    otherLanguages: 'Inglês (B1)',
+    otherLanguages: 'Inglês (A2), Alemão (A1)',
   },
   contact: {
     subtitle: 'CONTATO',

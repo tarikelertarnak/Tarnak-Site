@@ -115,9 +115,9 @@ export const ruContentOverlay: DeepPartial<SiteContent> = {
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: 'Разработчик и системный архитектор',
-    experience: '3+ года',
+    experience: '',
     firstLanguage: 'Турецкий',
-    otherLanguages: 'Английский (B1)',
+    otherLanguages: 'Английский (A2), Немецкий (A1)',
   },
   contact: {
     subtitle: 'КОНТАКТЫ',

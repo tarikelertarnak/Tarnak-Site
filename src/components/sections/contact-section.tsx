@@ -3,13 +3,14 @@
 import type { FormEvent } from 'react'
 import type { SiteContent } from '@/lib/content'
 import { motion } from 'motion/react'
-import { useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardFooter } from '@/components/ui/card'
-import { CountrySelect } from '@/components/ui/country-select'
+import { PhoneInput, EMPTY_PHONE, parsePhone } from '@/components/ui/phone-input'
+import type { SessionUser } from '@/lib/supabase/session'
 import {
   ArrowLeftIcon,
   ErrorIcon,
@@ -41,9 +42,52 @@ export function ContactSection({ content }: { content: SiteContent }) {
     submitForm,
     resetForm,
     switchContactMethod,
-    country,
-    setCountry,
   } = useContactForm()
+
+  // Telefon iki kutuda tutulur: ulke kodu + numara. Iletisim degeri
+  // PhoneInput tarafindan tek metne birlestirilir.
+  const [phoneValue, setPhoneValue] = useState(EMPTY_PHONE)
+
+  /**
+   * Oturum: giris yapmis kullaniciya e-posta/telefon ZORUNLU DEGIL — alan
+   * `*` isareti gosterilmez, profilindeki deger varsa otomatik dolar.
+   * Giris yapmamis kullanici icin zorunlu kalir.
+   */
+  const [session, setSession] = useState<SessionUser | null>(null)
+  const [sessionChecked, setSessionChecked] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    fetch('/api/admin/session', { cache: 'no-store' })
+      .then(r => r.json())
+      .then((d) => {
+        if (!alive) {
+          return
+        }
+        const u: SessionUser | null = d?.success && d.user ? d.user : null
+        setSession(u)
+        setSessionChecked(true)
+        if (u) {
+          if (u.fullName) {
+            updateField('name', u.fullName)
+          }
+          if (u.email) {
+            switchContactMethod('email')
+            updateField('contactValue', u.email)
+          }
+          else if (u.phone) {
+            switchContactMethod('phone')
+            setPhoneValue(parsePhone(u.phone))
+            updateField('contactValue', u.phone)
+          }
+        }
+      })
+      .catch(() => setSessionChecked(true))
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const nameRef = useRef<HTMLInputElement>(null)
   const contactRef = useRef<HTMLInputElement>(null)
@@ -169,38 +213,34 @@ export function ContactSection({ content }: { content: SiteContent }) {
                     <option value="phone">{t('contact.methodPhone')}</option>
                   </select>
                   {formData.contactMethod === 'phone' && (
-                    <CountrySelect
-                      value={country}
-                      onChange={setCountry}
-                      showCode={false}
+                    <PhoneInput
+                      label={t('contact.phone')}
+                      value={phoneValue}
+                      onChange={(v) => {
+                        setPhoneValue(v)
+                        updateField('contactValue', `+${v.code}${v.number}`)
+                      }}
+                      isInvalid={!!errors.contactValue}
                     />
                   )}
-                  <div className="w-full flex-1">
-                    <Input
-                      type={
-                        formData.contactMethod === 'email' ? 'email' : 'tel'
-                      }
-                      label={
-                        formData.contactMethod === 'email'
-                          ? t('contact.email')
-                          : t('contact.phone')
-                      }
-                      variant="faded"
-                      inputRef={contactRef}
-                      placeholder={
-                        formData.contactMethod === 'email'
-                          ? t('contact.placeholderEmail')
-                          : t('contact.placeholderPhone')
-                      }
-                      value={formData.contactValue}
-                      onValueChange={value =>
-                        updateField('contactValue', value)}
-                      isInvalid={!!errors.contactValue}
-                      errorMessage={errors.contactValue}
-                      required
-                      classNames={{ errorMessage: 'text-sm font-medium' }}
-                    />
-                  </div>
+                  {formData.contactMethod === 'email' && (
+                    <div className="w-full flex-1">
+                      <Input
+                        type="email"
+                        aria-label={t('contact.email')}
+                        variant="faded"
+                        inputRef={contactRef}
+                        placeholder={t('contact.placeholderEmail')}
+                        value={formData.contactValue}
+                        onValueChange={value =>
+                          updateField('contactValue', value)}
+                        isInvalid={!!errors.contactValue}
+                        errorMessage={errors.contactValue}
+                        required
+                        classNames={{ errorMessage: 'text-sm font-medium' }}
+                      />
+                    </div>
+                  )}
                 </div>
                 <Textarea
                   label={t('contact.message')}

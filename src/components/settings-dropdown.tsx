@@ -3,6 +3,7 @@ import type { ThemeMode } from '@/components/theme'
 import type { Locale, LocalePref } from '@/lib/i18n'
 import { LOCALES } from '@/lib/i18n'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { useLocale, useT } from '@/components/locale-provider'
 import { useTheme } from '@/components/theme'
@@ -17,6 +18,7 @@ import {
   RotateCcwIcon,
   SunIcon,
   ThemeSystemIcon,
+  UserIcon,
   VolumeIcon,
 } from '@/components/ui/icons'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
@@ -138,7 +140,8 @@ export function SettingsModal({
       }
     }
 
-    // 2) Istatistik anahtarlari (prefix taramasi)
+    // 2) Istatistik anahtarlari (prefix taramasi) — proje sayaclari dahil
+    //    (stats + viewed/downloaded dedup bayraklari).
     try {
       const toDelete: string[] = []
       for (let i = 0; i < localStorage.length; i++) {
@@ -147,6 +150,8 @@ export function SettingsModal({
           key
           && (key.startsWith('star-state:')
             || key.startsWith('project-stats:')
+            || key.startsWith('project-viewed:')
+            || key.startsWith('project-downloaded:')
             || key.startsWith('blog-stats:'))
         ) {
           toDelete.push(key)

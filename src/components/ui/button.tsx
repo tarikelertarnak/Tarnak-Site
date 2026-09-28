@@ -65,12 +65,13 @@ export function Button({
     btnVariant = 'primary'
   }
 
-  // Master style: all primary solid buttons match the "Contact" reference —
-  // light gray background, fully opaque black (#000) text/icon.
-  // !important is used to override LobeButton's blue/soft colors.
+  // Master style: all primary solid buttons share ONE look — the site's blue
+  // (--primary). Previously they were forced to light gray + black text, which
+  // clashed with the blue icons and made the nav CTAs look like a different
+  // component. !important overrides LobeButton's soft blue.
   const masterClass
     = variant === 'solid' && color === 'primary'
-      ? '!bg-[#e5e7eb] !text-[#000] !opacity-100 hover:!bg-[#d1d5db]'
+      ? '!bg-primary !text-white !opacity-100 hover:!bg-primary/90 dark:!bg-primary/80 dark:hover:!bg-primary/70'
       : ''
 
   // Force the text/border color so bordered/ghost buttons stay visible in light theme too.

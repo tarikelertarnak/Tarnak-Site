@@ -339,10 +339,12 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
         aria-expanded={open}
         aria-haspopup="menu"
         className={cn(
-          'inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-xs font-semibold outline-none transition-colors',
+          // Hero butonlariyla ayni tasarim: mavi dolgu + beyazi yazi. Onceki
+          // sekilli/pill gorunum diger butonlardan kopyaliyordu.
+          'inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-sm font-medium outline-none transition-colors',
           open
-            ? 'border-primary/60 bg-primary/10 text-primary'
-            : 'border-foreground-200/20 text-foreground/85 hover:border-primary/40 hover:text-primary',
+            ? 'bg-primary/90 text-white'
+            : 'bg-primary text-white hover:bg-primary/90',
         )}
       >
         <MailIcon size={15} />

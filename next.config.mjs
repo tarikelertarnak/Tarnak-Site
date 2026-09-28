@@ -35,6 +35,7 @@ const nextConfig = {
     output: 'export',
     typescript: { ignoreBuildErrors: true },
   } : {}),
+  devIndicators: false,
   trailingSlash: true,
   // Turbopack, lightningcss'in native .node require'ını bundle edemiyor
   // (Cannot find module / could not resolve ...win32-x64-msvc.node).

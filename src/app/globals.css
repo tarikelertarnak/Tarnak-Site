@@ -2,7 +2,6 @@
 
 @plugin '../hero.ts';
 
-@source '../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 @source '../**/*.{ts,tsx,js,jsx}';
 @source '../components/**/*.{ts,tsx}';
 @source '../app/**/*.{ts,tsx}';
@@ -11,14 +10,13 @@
 
 /* antd cssinjs `:where(.css-dev-*) a { background-color: transparent; color: var(--ant-color-link) }`
    unlayered kurali Tailwind'in @layer utilities icindeki bg- ve text- kuralini eziyor (unlayered > layered).
-   a + class selector'i specificity'yi (0,1,1) yapip antd'nin (0,0,1) kuralini gecer.
-   Renk de ekleniyor: yazi duz siyah kalir, hover'da antd link mavisine donmez. */
-a.bg-\[\#e5e7eb\] { background-color: #e5e7eb; color: #000; }
-a.hover\:bg-\[\#d1d5db\]:hover,
-a.hover\:bg-\[\#d1d5db\]:hover { background-color: #d1d5db; color: #000; }
-/* bg'si container'da olan buton linkleri (İndir/chevron) — antd link rengini ez, düz siyah kalsın */
-a.text-black { color: #000; }
-a.hover\:text-black:hover { color: #000; }
+   `a` + class selector'i specificity'yi (0,1,1) yapip antd'nin (0,0,1) kuralini gecer.
+   Renk de ekleniyor: yazi duz beyaz kalir, hover'da antd link mavisine donmez.
+   NOT: eskiden `a.bg-[#e5e7eb]` idi; butonlar maviye (`bg-primary`) cevrilince
+   o kural ise durmustu ve butonlar saydam gorunuyordu. Artik primary tabanli. */
+a.bg-primary { background-color: var(--tprimary); color: #fff; }
+a.hover\:bg-primary\/90:hover { background-color: color-mix(in srgb, var(--tprimary) 90%, transparent); color: #fff; }
+a.hover\:text-white:hover { color: #fff; }
 
 @theme {
     /* Custom xs breakpoint for extra small devices (480px+) */
@@ -34,7 +32,7 @@ a.hover\:text-black:hover { color: #000; }
     --color-foreground-200: var(--tfg-200);
     --color-foreground-300: var(--tfg-300);
     --color-foreground-400: var(--tfg-400);
-    --color-foreground-500: var(--tfg-500);
+    --color-foreground-500: #a1a1aa;
     --color-foreground-600: var(--tfg-600);
     --color-foreground-700: var(--tfg-700);
     --color-foreground-800: var(--tfg-800);
@@ -45,7 +43,7 @@ a.hover\:text-black:hover { color: #000; }
     --color-secondary: var(--tsecondary);
     --color-secondary-foreground: var(--tsecondary-fg);
     --color-success: #10b981;
-    --color-danger: #ef4444;
+    --color-danger: #dc2626;
 }
 
 /* Default (light) theme — white background, dark text. */
@@ -399,10 +397,38 @@ textarea {
     cursor: text;
 }
 
-/* ---------- Metin seçimi ---------- */
+/* ---------- Metin seçimi ----------
+   Önce yarı saydam bir mavi vardı: textbox odaktayken tüm yazı seçili gibi
+   mavi görünüyordu. Artık yumuşak, açık tema uyumlu bir ton; input içinde
+   okunabilirliği bozmuyor. */
 ::selection {
-    background: rgba(7, 97, 213, 0.35);
+    background: color-mix(in srgb, var(--tprimary) 22%, transparent);
     color: inherit;
+}
+
+input::selection,
+textarea::selection {
+    background: color-mix(in srgb, var(--tprimary) 18%, transparent);
+    color: inherit;
+}
+
+/* Tarayıcı autofill'i mavi bir blokla boyuyordu; tema değişse de kalıyordu. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+    -webkit-text-fill-color: currentColor;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset;
+    caret-color: currentColor;
+    transition: background-color 9999s ease-out 0s;
+}
+
+@supports not (-webkit-appearance: none) {
+    input:-webkit-autofill,
+    textarea:-webkit-autofill {
+        background: transparent !important;
+    }
 }
 
 /* ---------- Kaydırma çubuğu ---------- */

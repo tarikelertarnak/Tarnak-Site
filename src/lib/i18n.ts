@@ -110,6 +110,19 @@ export const dictionaries: Partial<Record<Locale, Dictionary>> = {
   ...extraDicts,
 }
 
-export function t(locale: Locale, key: string): string {
-  return dictionaries[locale]?.[key] ?? trDict[key as keyof typeof trDict] ?? key
+/**
+ * Çeviri lookup. `vars` verilirse metindeki `{ad}` yer tutucuları doldurulur
+ * (örn. t('tr', 'phone.lengthHintRange', { min: 10, max: 10 })).
+ */
+export function t(
+  locale: Locale,
+  key: string,
+  vars?: Record<string, string | number>,
+): string {
+  const raw = dictionaries[locale]?.[key] ?? trDict[key as keyof typeof trDict] ?? key
+  if (!vars) {
+    return raw
+  }
+  return raw.replace(/\{(\w+)\}/g, (m, name: string) =>
+    (name in vars ? String(vars[name]) : m))
 }

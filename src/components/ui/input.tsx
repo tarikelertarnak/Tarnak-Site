@@ -8,6 +8,7 @@ import { cn } from '@/components/ui/cn'
 import { EyeIcon, EyeOffIcon } from '@/components/ui/icons'
 
 export interface InputProps {
+  id?: string
   'label'?: string
   'type'?: string
   'variant'?: 'faded' | 'bordered' | 'flat' | 'underlined'
@@ -19,6 +20,9 @@ export interface InputProps {
   'required'?: boolean
   'isDisabled'?: boolean
   'maxLength'?: number
+  'minLength'?: number
+  'pattern'?: string
+  'autoComplete'?: string
   'placeholder'?: string
   'size'?: 'sm' | 'md' | 'lg'
   'onKeyDown'?: (e: KeyboardEvent<HTMLInputElement>) => void
@@ -27,7 +31,7 @@ export interface InputProps {
   'className'?: string
   'classNames'?: Record<string, string>
   'aria-label'?: string
-  'autoComplete'?: string
+  'inputMode'?: 'text' | 'numeric' | 'tel' | 'email' | 'url' | 'search' | 'decimal'
   'inputRef'?: React.Ref<HTMLInputElement>
 }
 
@@ -43,6 +47,7 @@ export function Input({
   required,
   isDisabled,
   maxLength,
+  minLength,
   placeholder,
   size,
   onKeyDown,
@@ -52,10 +57,14 @@ export function Input({
   classNames: _classNames,
   'aria-label': ariaLabel,
   autoComplete,
+  pattern,
   inputRef,
+  inputMode,
+  id,
   ...rest
 }: InputProps) {
   const { t } = useT()
+  const inputId = id || `input-${Math.random().toString(36).slice(2, 8)}`
   const isPassword = type === 'password'
   const [showPassword, setShowPassword] = useState(false)
   const inputVariant = variant === 'bordered' ? 'outlined' : 'filled'
@@ -64,12 +73,12 @@ export function Input({
   return (
     <div className={cn('flex w-full flex-col gap-1.5', className)}>
       {label && (
-        <label className="text-xs sm:text-sm text-foreground-500">
+        <label htmlFor={inputId} className="text-xs sm:text-sm text-foreground-500">
           {label}
           {required && <span className="text-danger"> *</span>}
         </label>
       )}
-      <LobeInput
+      <LobeInput id={inputId}
         {...rest}
         ref={inputRef}
         type={effectiveType}
@@ -81,6 +90,7 @@ export function Input({
           onValueChange?.(e.target.value)
         }}
         maxLength={maxLength}
+        minLength={minLength}
         placeholder={placeholder}
         size={size === 'lg' ? 'large' : size === 'sm' ? 'small' : 'middle'}
         onKeyDown={onKeyDown}
@@ -106,6 +116,8 @@ export function Input({
         }
         aria-label={ariaLabel}
         autoComplete={autoComplete}
+      pattern={pattern}
+      inputMode={inputMode}
         data-invalid={isInvalid ? '' : undefined}
       />
       {isInvalid && errorMessage && (

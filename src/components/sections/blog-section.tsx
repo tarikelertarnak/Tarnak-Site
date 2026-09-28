@@ -153,7 +153,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
             <Button
               href="/blog"
               color="primary"
-              className="h-11 items-center gap-2 rounded-lg bg-[#e5e7eb] px-4 py-2 text-sm font-medium text-black transition-colors hover:bg-[#d1d5db]"
+              className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
               endContent={<span aria-hidden="true">→</span>}
             >
               {t('blog.all')}
@@ -285,7 +285,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
                             />
                             <BlogStats slug={post.slug} />
                           </div>
-                          <span className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-lg bg-[#e5e7eb] px-4 py-2 text-sm font-medium text-black transition-all duration-200 hover:bg-[#d1d5db]">
+                          <span className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-primary/90">
                             {t('projects.open')}
                             {' '}
                             <ArrowUpRightIcon size={16} />

@@ -8,8 +8,17 @@ import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
 
 export async function generateMetadata() {
   const locale = await getLocale()
+  const isEn = locale === 'en'
+  const title = isEn ? 'Search — TARIK ELER - TARNAK' : 'Arama — TARIK ELER - TARNAK'
+  const description = isEn
+    ? 'Search across projects, blog posts and navigation on TARIK ELER.'
+    : 'TARIK ELER sitesinde projeler, blog yazıları ve gezinme arasında arama yap.'
   return {
-    title: locale === 'en' ? 'Search — TARIK ELER - TARNAK' : 'Arama — TARIK ELER - TARNAK',
+    title,
+    description,
+    alternates: { canonical: '/search' },
+    openGraph: { title, description, url: '/search', type: 'website' },
+    robots: { index: false, follow: true },
   }
 }
 

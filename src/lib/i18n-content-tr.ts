@@ -49,52 +49,30 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
         content: 'Bilgisayarlar ve diğer teknolojilerle uğraşmayı seviyorum.',
       },
       {
-        label: 'Oyun',
-        icon: 'mdi:gamepad-variant',
-        content: 'Video oyunları oynamayı, özellikle arkadaşlarımla oynamayı severim.',
-      },
-      {
-        label: 'Spor',
-        icon: 'mdi:gym',
-        content: 'Düzenli olarak spora gidip aktif kalmayı seviyorum.',
-      },
-      {
         label: 'Müzik',
         icon: 'mdi:music',
         content:
           'Müziğin büyük bir hayranıyım; yeni sanatçılar ve türler keşfetmeyi severim.',
       },
       {
-        label: 'Siber Güvenlik',
-        icon: 'mdi:shield-lock',
+        label: 'Yapay Zeka',
+        icon: 'mdi:creation',
         content:
-          'Pentest, CTF yarışmaları ve bug bounty platformlarında zafiyet avlamayı seviyorum.',
+          'Yapay zeka ile geliştirdiğim projeler üzerine çalışmayı, yeni modeller ve araçları denemeyi seviyorum.',
       },
     ],
-    securityTitle: 'Siber Güvenlik & CTF',
-    securityText:
-      'Siber güvenliğe tutkulu biriyim. Yeni teknikler öğrenmeyi ve güvenlik zorluklarının üstesinden gelmeyi seviyorum.',
     teamTitle: 'EKİBİMİZ',
     cv: {
       href: '/cv/tarikeler-cv.pdf',
       summary:
         'Next.js, TypeScript ve yapay zeka ile modern, uçtan uca web deneyimleri üreten web geliştirici. Tasarımdan deploy\u2019a — insanların kullandığı ürünler geliştiriyorum.',
-      experience: [
-        {
-          role: 'Geliştirici',
-          company: 'Portfolyo & GitHub Projeleri',
-          period: 'Devam ediyor',
-          description:
-            'GitHub\u2019da yayınlanan tarayıcı eklentileri, AI araçları ve yardımcı uygulamalar (Scribd-Download, AI-Jailbreak, Accentra, CodeHub ve daha fazlası).',
-        },
-      ],
       education: [
         {
-          role: 'Kendi Kendini Yetiştiren Geliştirici',
-          company: 'Bilgisayar Bilimi & Yazılım Mühendisliği',
-          period: 'Sürekli',
-          description:
-            'Web geliştirme, siber güvenlik, CTF ve bug bounty platformları üzerinde uygulamalı öğrenme.',
+          role: '11. Sınıf — Teknik Bilişim',
+          company:
+            'K-Tek (Kılıçarslan Borsa İstanbul Mesleki ve Teknik Anadolu Lisesi)',
+          period: 'Okuyor',
+          description: 'Teknik Bilişim bölümünde 11. sınıf öğrencisiyim.',
         },
       ],
     },
@@ -119,11 +97,11 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
     lastName: 'ELER',
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
-    title: 'Yazılımcı & Sistem Mimarisi',
+    title: '',
     profileImage: 'https://avatars.githubusercontent.com/u/184168415?v=4',
-    experience: '3+ Yıl',
+    experience: '',
     firstLanguage: 'Türkçe',
-    otherLanguages: 'İngilizce (B1)',
+    otherLanguages: 'İngilizce (A2), Almanca (A1)',
   },
   contact: {
     subtitle: 'İLETİŞİM',
