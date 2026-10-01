@@ -108,4 +108,74 @@
 - before: primary buton kontrasti 3.6:1, hata mesaji 3.5:1, text-foreground-500 4.2:1, input htmlFor yok, sidebar focus trap yok
 - after: dark tema'da daha koyu mavi, danger renkleri WCAG AA'ya guncellendi, foreground-500 daha acik, input id+htmlFor eklendi, sidebar aria-modal+role=dialog
 - result: PASS (tsc temiz, 23/23 test)
+- commit: 0d1f2dc (grup: perf+seo+bug+ux+a11y+cv)
+
+### [MASTER FAZ — PERFORMANCE — PART 3] Bundle analizi + Puck dynamic import
+- before: static toplam 3985 KB, en buyuk chunk 316 KB (antd/Heroui/LobeUI)
+- after: static toplam 3988 KB (Puck zaten ayri chunk'ta, bundle degismedi)
+- Puck admin route'una tasinmasi icin next/dynamic ile import yapildi (PERF-006 tekrar denendi, bu sefer calisti)
+- result: PASS (tsc temiz, 23/23 test, build basarili)
 - commit: pending
+
+## 2026-09-28 — Commit turu
+- 16 fazın tamamı 3 commit'te gruplandı (calisma agaci temiz):
+  - a5273d3 carl(phase-0): STATE/BACKLOG/LOG/PROJECT_MAP
+  - 7d9a996 carl(sec-001..006): guvenlik fazlari (14 dosya)
+  - 0d1f2dc carl(perf+seo+bug+ux+a11y+cv): kalan 13 faz (285 dosya)
+- result: PASS | commit: 0d1f2dc
+
+## 2026-09-30 — GSC Site Haritalari: "Getirilemedi" analizi
+- BrowserOS neo (oc/rapid-capybara, page 4) uzerinden GSC Sitemaps sayfasi incelendi.
+- GSC durumu: /sitemap.xml — Tur "Bilinmiyor", Gonderildi 28 Eyl 2026, Son okuma tarihi BOS,
+  Durum "Getirilemedi", Kesfedilen sayfa 0.
+- KOK NEDEN ARAMASI (canli HTTP, Googlebot UA):
+  - /sitemap.xml -> 200, Content-Type application/xml, 1323 byte, gecerli XML
+  - Googlebot UA ile 200, mobil Googlebot UA ile 200
+  - Cloudflare challenge YOK (cf-mitigated header yok), NEL/CORS header'lari normal
+  - /robots.txt -> 200, "Sitemap: https://tarikelertarnak.pages.dev/sitemap.xml" iceriyor
+  - SONUC: altyapi SAGLIKLI. "Getirilemedi" 28 Eyl'deki (onceki robot.txt/sitemap deploy oncesi)
+    denemeden kalan BAYAT cache. GSC bu sitemap'i "kesfedilmis" sayiyor; satir menusunde
+    "yeniden gonder"/"sil" YOK, durum hucresi de tiklanabilir degil -> yalnizca periyodik okuma.
+- AYNI SIRA 2 KUSUR BULUNDU (gercek, duzeltildi):
+  1. Deploy edilen sitemap ESKI: canli 8 URL (lastmod 2026-09-25), repo 13 URL (2026-09-28)
+     -> repo surumu deploy edilmemis.
+  2. Sitemap noindex/Disallowed sayfalari iceriyordu (GSC'ye dogrudan hata):
+     - /reklam  -> src/app/reklam/page.tsx robots: { index: false }
+     - /search  -> src/app/search/page.tsx robots: { index: false }
+     - /login   -> public/robots.txt "Disallow: /login"
+     -> 3 kayit silindi, 13 -> 10 URL. XML dogrulandi (11 <loc> sayildi, hepsi tekil).
+- NOT: data/blog/posts.json = [] (0 yazı) -> sitemap'e blog yazi URL'i eklenemedi.
+  Blog SEO'su icin once icerik uretilmeli.
+- Etkilenen dosya: public/sitemap.xml
+- result: PASS (XML valid, canli 200) | commit: 4dbe45e
+- PENDING: duzeltilen sitemap'in canliya cikmasi icin deploy/push gerekiyor
+  (remote push kullanici onayi olmadan yapilmaz).
+
+## [2026-10-01] REKLAM (ADS) KALDIRMA — PASS
+- KULLANICI: "reklam muhabbetini kaldir bos ver" + sidebar'da "Destek Ol" ve
+  "Katkıda Bulunanlar" geri gelsin.
+- ROOT CAUSE: reklam yuzeyi birden fazla yerdeydi; hepsi tarandi (caller grep):
+  WatchAdSection (sadece /donate), AdWatch (/reklam + /ads), AdSlotCard,
+  /api/ads, footer nav girdisi (site-navigation.ts), sitemap kaydi, admin paneli.
+- SILINENLER:
+  - src/app/donate/page.tsx  -> <WatchAdSection> bolumu (id="reklam-izle") kaldirildi
+  - src/components/donate/watch-ad-section.tsx
+  - src/components/ads/ (ad-watch.tsx, ad-slot.tsx)
+  - src/app/reklam/page.tsx, src/app/ads/page.tsx
+  - src/app/api/ads/route.ts
+  - src/lib/site-navigation.ts -> nav girdisi + Labels.ads alani
+- SILINMEYEN (bilincli):
+  - src/lib/ads.ts + ads.test.ts -> admin/overview.ts getStats() cagirir; DB istatistik paneli duruyor
+  - src/app/credits/* -> statik katkida bulunanlar sayfasi, reklamla BAGLI DEGIL
+  - /donate sayfasinin para yontemleri (GitHub Sponsors/Patreon/Ko-fi/Buy Me a Coffee)
+- SIDEBAR: kullanici listesinde olan 2 link (donate, credits) silinmisti -> geri konuldu.
+  NAV_LINKS artik: home, chat, projects, blog, about, donate, credits.
+  i18n "nav.donate"/"nav.credits" anahtarlari TUM dillerde mevcut (tr: Destek Ol / Katkida Bulunanlar).
+- REGRESYON TESTI: site-navigation.test.ts -> "silinen reklam sayfasi listede YOK" (/reklam),
+  sayaclar 17 -> 16 guncellendi.
+- Puck dynamic import olculdu (3985 -> 3988 KB, fayda yok) -> geri alindi, YAGNI.
+- OLCUM (sonrasi):
+  - next build  : OK (74s) — /reklam, /ads, /api/ads route listesinde YOK
+  - tsc --noEmit: OK (21s, 0 hata) — onceki stale .next/types hatalari build ile temizlendi
+  - vitest run  : 303/303 PASS (21 dosya, 28s)
+- result: PASS | PENDING: deploy + canli dogrulama + DNS TXT

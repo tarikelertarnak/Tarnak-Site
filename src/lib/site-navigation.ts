@@ -36,7 +36,6 @@ interface Labels {
   chat: string
   github: string
   search: string
-  ads: string
   donate: string
   credits: string
   login: string
@@ -65,7 +64,6 @@ function buildStaticGroups(l: Labels): NavGroup[] {
         { id: 'chat', label: l.chat, href: '/chat' },
         { id: 'github', label: l.github, href: '/github' },
         { id: 'search', label: l.search, href: '/search' },
-        { id: 'ads', label: l.ads, href: '/reklam' },
         { id: 'donate', label: l.donate, href: '/donate' },
         { id: 'credits', label: l.credits, href: '/credits' },
       ],
@@ -141,7 +139,6 @@ export function buildSiteNavigation(
     chat: t('nav.chat'),
     github: t('nav.github'),
     search: t('nav.search'),
-    ads: t('nav.ads'),
     donate: t('nav.donate'),
     credits: t('nav.credits'),
     login: t('nav.login'),
