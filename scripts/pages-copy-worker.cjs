@@ -68,7 +68,12 @@ if (fs.existsSync(handlerPath)) {
     }
   }
   // 2) node builtins
-  for (const b of ['assert','async_hooks','buffer','child_process','constants','crypto','events','fs','http','http2','https','module','os','path','process','stream','string_decoder','timers','tty','url','util','vm','zlib']) {
+  // ponytail: yalnizca handler.mjs icinde gercekten require() edilenleri cek.
+  // 2026-10-01 olcumu: child_process=0, constants=0, string_decoder=0 kullanim;
+  // geri kalanlar 1..61 arasi. Bos builtin import etmek cold start CPU'yu
+  // (18ms, Free plan limiti ~10ms) artiriyordu — 1102 "exceededCpu" kok nedeni.
+  const BUILTIN_USED = ['async_hooks','buffer','crypto','events','fs','http','http2','https','module','os','path','process','stream','timers','tty','url','util','vm','zlib'];
+  for (const b of BUILTIN_USED) {
     const sym = `__nb_${b.replace(/[^a-zA-Z0-9]/g, '_')}`;
     imported.push(`import * as ${sym} from "node:${b}";`);
     isoRefs.push(sym);
@@ -97,7 +102,7 @@ if (fs.existsSync(handlerPath)) {
   // to match the isomorphic imports above — workerd requires identical specifiers.
   // Note: "node:module" itself is NOT an isomorphic module in workerd, so
   // next's require-hook.js (needs module.prototype.require) is neutralized below.
-  const BUILTIN_BARE = ['assert','async_hooks','buffer','child_process','constants','crypto','events','fs','http','http2','https','module','os','path','process','stream','string_decoder','timers','tty','url','util','vm','zlib'];
+  const BUILTIN_BARE = BUILTIN_USED;
   for (const b of BUILTIN_BARE) {
     const before = code;
     code = code.replace(new RegExp(String.raw`require\((['"])${b}(['"])\)`, 'g'), `require($1node:${b}$2)`);

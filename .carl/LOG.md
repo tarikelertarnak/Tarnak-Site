@@ -179,3 +179,26 @@
   - tsc --noEmit: OK (21s, 0 hata) — onceki stale .next/types hatalari build ile temizlendi
   - vitest run  : 303/303 PASS (21 dosya, 28s)
 - result: PASS | PENDING: deploy + canli dogrulama + DNS TXT
+
+## 2026-10-01 — DEPLOY + CANLI CPU KRIZI
+
+### [DEPLOY-001] Reklam kaldirma -> production
+- commit 590956b -> production deploy 7c78bb3f (branch master; Pages production branch = MASTER, "main" SADECE preview uretir)
+- CANLI DOGRULAMA: /reklam 404, /ads 404, /api/ads 404, /donate 200 (reklam-izle YOK), /credits 200,
+  /sitemap.xml 11 URL (reklam/search/login YOK), sidebar /donate + /credits linkleri VAR.
+- result: PASS (reklam kaldirma tamamen canlida)
+
+### [OPS-001] Cloudflare 1102 "exceededCpu" — CANLI SITE ARALIKLI 503
+- BELIRTI: apex / ve worker route'lari (donate, reklam) aralikli 503 -> "error code: 1102"
+- TAIL KANITI: outcome=exceededCpu, cpuTime=18ms (Free plan limiti ~10ms)
+- STATIK AYRIM: /sitemap.xml, /robots.txt, /_next/static/* = 200 DAIMA. Worker route'lari = 503.
+  -> _routes.json dogru calisiyor; sorun worker bundle'i.
+- A/B OLCUM (interleaved): 6-gunlu dokunulmamis deployment aaebba51 & 38ac19d3 = 200=8/8.
+  Production (yeni) = 200=3/503=5. -> Bu bir REGRESYON; 28 Eylul'deki 0d1f2dcc buyuk fazindan sonra basladi.
+- DENEME (etkisiz): pages-copy-worker.cjs'te kullanilmayan 4 builtin (assert, child_process,
+  constants, string_decoder) whitelist'ten cikarildi -> injected imports 31->27, ama handler.mjs
+  yalnizca 278 byte kuculdu (12992630 -> 12992352). CPU duususu OLCULEMEDI. Geri alinmadi (zararsiz, kalir).
+- SONUC: Kok neden = Next.js 16.3.4 runtime + 23 builtin zorla import -> cold start 18ms > Free plan limiti.
+  Cozum iki yollu: (a) Workers Paid plan (30s CPU limit, ODEME gerekli — kullanici onayi lazim),
+  (b) runtime bundle'i kucultmek (buyuk is, Next/OpenNext tarafinda).
+- result: FAIL (acik blocker — kod dogru, altyapi limiti asildi)
