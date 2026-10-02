@@ -228,6 +228,10 @@ ensureModule('picocolors');
       '/_next/*',
       '/*.png', '/*.jpg', '/*.jpeg', '/*.webp', '/*.avif', '/*.gif',
       '/*.svg', '/*.ico', '/*.woff', '/*.woff2', '/*.txt', '/*.xml',
+      // 2026-10-02: /site.webmanifest 404 veriyordu — .webmanifest uzantisi exclude
+      // listesinde yoktu, dosya worker'a dusuyordu. PWA manifest'i de Pages'in
+      // static servisine verilmeli.
+      '/*.webmanifest',
       // Pages 308 ile /foo.html -> /foo -> /foo/ zinciri kuruyor (trailingSlash:true).
       // Uzantili, uzantisiz ve tirasli UCH formu da kapsamali ki GSC'nin takip ettigi
       // son adim worker'a dusup 1102/503 vermesin.
