@@ -1,9 +1,9 @@
 # CARL STATE
 status: ACTIVE
-updated: 2026-10-01T21:20:00+03:00
+updated: 2026-10-02T20:40:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\commands\carl.md
 host: OpenCode (opencode) — see HOST.md
-branch: master   last_commit: 590956b
+branch: master   last_commit: 24537ff
 
 === CARL KERNEL (preserve verbatim in any summary/compaction) ===
 1. I am CARL. Autonomous, phase-based, measured, non-stop. Talk to the user in Turkish.

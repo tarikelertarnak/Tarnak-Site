@@ -202,3 +202,29 @@
   Cozum iki yollu: (a) Workers Paid plan (30s CPU limit, ODEME gerekli — kullanici onayi lazim),
   (b) runtime bundle'i kucultmek (buyuk is, Next/OpenNext tarafinda).
 - result: FAIL (acik blocker — kod dogru, altyapi limiti asildi)
+
+## 2026-10-02 — GSC ALAN SAHİPLİĞİ DOĞRULAMASI (ÇÖZÜMSÜZ YOL TESPİTİ)
+
+### [SEO-002] pages.dev DNS TXT dogrulamasi YAPILAMAZ
+- Kullanici token: google-site-verification=n1-lFT1ZA4DDYRLClGr0uEaqcMafk8h07dVeolKpHlA
+- GSC ekrani TXT kaydi istiyor. ANCAK *.pages.dev Cloudflare'in kendi DNS zone'u -> kullanici TXT kaydi EKLEMEYEZ.
+- Kanit: ayni durum Cloudflare R2 subdomain'leri icin de gecerli; resmi Search Console community
+  tartismasinda "we do not control Cloudflare's DNS" diye belgelenmis.
+- SONUC: Bu adim kalici olarak basarisiz olur. Kullaniciya durdurucu bildirildi.
+- CALISAN ALTERNATIF: URL onizleme mulku (URL-prefix property).
+  Dogrulama 2 sekilde yapilir, ikisi de site kodunda (Cloudflare DNS'inden bagimsiz):
+    a) public/google<TOKEN>.html  -> icerik: google-site-verification: <TOKEN>
+    b) <meta name="google-site-verification" content="<TOKEN"> />  (app/layout)
+  Sayfada zaten eski dosyalar var: googlefe5d57c4dfcfcedd.html, google2d06d2d25454fe17.html
+- KALICI COZUM: kendi alan adini (tarikelertarnak.com) Pages'e custom domain olarak bagla.
+  Sonra DNS TXT calisir ve mulk "Domain" olur (tum alt domainler dahil, URL-prefix'ten genis).
+  Not: su an tarikelertarnak.com ve www.su DNS cozumlenmiyor -> custom domain yok.
+
+### [OPS-002] BrowserOS neo ajan koprüsü KAPALI
+- Tarayici UI acik (17 chrome process, "prod=BrowserOS neo", 151.0.8162.137).
+- ANCAK ajan MCP endpoint'i (opencode.jsonc -> http://127.0.0.1:9014/mcp) DINLEMIYOR.
+  9013/9014 kapali; 9111 acik ama o Chrome'un kendi endpoint'i (X-Frame-Options: DENY), MCP degil.
+- browseros-claw-server.exe --config <CONFIG> istiyor; uretilmis bir config dosyasi diskte bulunamadi.
+- chrome.exe komut satirinda claw/mcp/remote-debugging-port argumani YOK.
+- SONUC: Tarayiciyi otomatik surmek mumkun degil. Kullanici BrowserOS neo'yu cockpit'ten
+  ajan modunda baslatmali. Bu, AGENTS.md §7'deki bilinen durumla birebir ayni (kanitlanmis).
