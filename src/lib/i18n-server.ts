@@ -97,3 +97,24 @@ export async function getLocalizedContent(): Promise<SiteContent> {
   const content = await getContent()
   return localizeContent(content, await getLocale())
 }
+
+/**
+ * Build-safe variants: NO cookies()/headers().
+ *
+ * 2026-10-02 Cloudflare 1102 fix. `getLocale()` calls cookies()/headers(), which
+ * makes Next mark every route that touches it as *dynamic* — so `revalidate = 300`
+ * is silently ignored and every request does a full SSR of a 13 MB handler, which
+ * blows the 10 ms Workers Free CPU budget (intermittent 503).
+ *
+ * Using these in the root layout + homepage lets Next prerender them at build time
+ * and serve from the Pages CDN instead. Trade-off: SSR emits the DEFAULT locale;
+ * the client corrects lang/dir/content after hydration (brief flash for
+ * non-default-locale visitors). Admin routes stay dynamic — they read cookies
+ * themselves.
+ */
+export const getStaticLocale = cache(async (): Promise<Locale> => resolveLocale(undefined, undefined))
+
+export async function getStaticLocalizedContent(): Promise<SiteContent> {
+  const content = await getContent()
+  return localizeContent(content, await getStaticLocale())
+}

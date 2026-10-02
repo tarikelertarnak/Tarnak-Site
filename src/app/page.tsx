@@ -7,7 +7,7 @@ import { HeroSection } from '@/components/sections/hero-section'
 import { ProjectsSection } from '@/components/sections/projects-section'
 import { getPosts } from '@/lib/blog'
 import { getCvs } from '@/lib/cv'
-import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
+import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 
 /**
  * Rebuild the page every 5 minutes. revalidatePath() is used for
@@ -15,9 +15,17 @@ import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
  */
 export const revalidate = 300
 
+/**
+ * 2026-10-02 Cloudflare 1102 fix: prerender at build time and serve from the
+ * Pages CDN. Without this the route stays dynamic (cookies()/headers() via
+ * getLocale), every request full-SSRs a 13 MB handler, and the 10 ms Workers
+ * Free CPU budget is blown -> intermittent 503.
+ */
+export const dynamic = 'force-static'
+
 export default async function Page() {
-  const locale = await getLocale()
-  const content = await getLocalizedContent()
+  const locale = await getStaticLocale()
+  const content = await getStaticLocalizedContent()
   const posts = await getPosts(locale)
   const cvs = await getCvs()
 

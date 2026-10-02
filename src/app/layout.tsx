@@ -12,7 +12,7 @@ import { TopBar } from '@/components/top-bar'
 
 import { SearchDialog } from '@/components/search-dialog'
 import { getContent } from '@/lib/content'
-import { getLocale, getLocaleDirection } from '@/lib/i18n-server'
+import { getLocaleDirection, getStaticLocale } from '@/lib/i18n-server'
 import { SITE_URL } from '@/lib/site-url'
 import '@fontsource/montserrat/400.css'
 import '@fontsource/montserrat/500.css'
@@ -138,7 +138,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const content = await getContent()
-  const locale = await getLocale()
+  const locale = await getStaticLocale()
   const musicSrc = content.settings?.musicSrc
   const defaultTheme
     = (content.settings?.defaultTheme as 'light' | 'dark' | 'system' | 'auto' | undefined)
