@@ -228,9 +228,11 @@ ensureModule('picocolors');
       '/_next/*',
       '/*.png', '/*.jpg', '/*.jpeg', '/*.webp', '/*.avif', '/*.gif',
       '/*.svg', '/*.ico', '/*.woff', '/*.woff2', '/*.txt', '/*.xml',
-      // Pages 308 ile /foo.html -> /foo redirect'i verir, o yuzden worker'a
-      // dusmemeleri icin TEK glob her iki formu da (uzantili + uzantisiz) kapsar.
+      // Pages 308 ile /foo.html -> /foo -> /foo/ zinciri kuruyor (trailingSlash:true).
+      // Uzantili, uzantisiz ve tirasli UCH formu da kapsamali ki GSC'nin takip ettigi
+      // son adim worker'a dusup 1102/503 vermesin.
       '/google*',
+      '/google*/',
       '/cv/*',
       '/projects/*.png', '/projects/*.jpg', '/projects/*.jpeg',
       '/projects/*.webp', '/projects/*.gif', '/projects/*.svg',
