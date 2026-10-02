@@ -228,3 +228,33 @@
 - chrome.exe komut satirinda claw/mcp/remote-debugging-port argumani YOK.
 - SONUC: Tarayiciyi otomatik surmek mumkun degil. Kullanici BrowserOS neo'yu cockpit'ten
   ajan modunda baslatmali. Bu, AGENTS.md §7'deki bilinen durumla birebir ayni (kanitlanmis).
+
+## 2026-10-02 — CLOUDFLARE 1102 KOK NEDEN DUZELTMESI
+
+### [OPS-003] ISR cache calisiyordu -> binding eksikti  ✅ KESIN KANIT
+- Belirti: "Error 1102 / Worker exceeded resource limits". Tail: outcome=exceededCpu,
+  cpuTime=18ms, wallTime=21ms. Sayfa arasi 200/503 (olcum: 9/12 200, 3/12 503).
+- Chain: wrangler.json'da KV binding YOKTI -> OpenNext KVIncrementalCache
+  `if (!kv) throw new IgnorableError("No KV Namespace")` -> ISR sessizce devre disi
+  -> HER istek tam SSR (prerender-manifest.json bile yok, 0 sayfa prerender) ->
+  18ms CPU -> Workers Free 10ms limiti -> 1102.
+- Kanit kaynagi: @opennextjs/cloudflare dist/api/overrides/incremental-cache/
+  kv-incremental-cache.js  ->  BINDING_NAME="NEXT_INC_CACHE_KV", NAME="cf-kv-incremental-cache"
+- Cozum uygulandi:
+  1) wrangler kv namespace create NEXT_INC_CACHE_KV -> id ddcb232dfa94499785fee65ef7b1d6ad
+  2) wrangler.json -> kv_namespaces[0] = { binding: NEXT_INC_CACHE_KV, id: ddcb... }
+  3) open-next.config.ts -> defineCloudflareConfig({ incrementalCache: "cf-kv-incremental-cache" })
+- KV Free tier'da (100k read/gun). Para harcanmadi.
+
+### [OPS-004] Cloudflare OAuth TOKEN GECERSIZ KILINDI — deploy yapilamiyor  ⛔ ENGEL
+- WSL wrangler token: expiry 2026-10-02T18:20:59Z, scopes TAM (workers_kv:write, pages:write).
+  KV namespace create RAW token ile BASARILI oldu (namespace gercekten olusturuldu).
+  ANCAK /accounts ve /accounts/{id}/pages/projects/... cagrilarinda "Invalid access token [9109]".
+- Windows wrangler tokeni: expiry 2026-09-24 -> 8 gun once DEAD.
+- Sonuc: KV namespace OLUSTURULDU ama binding'li deploy EDILEMEDI. Canli hala 52e2a58c (KV'siz).
+- Cozum: kullanici `wrangler login` (interaktif) veya CLOUDFLARE_API_TOKEN. Sonra tek deploy.
+
+### [OPS-005] pages deploy auth inceligi
+- CLOUDFLARE_API_TOKEN env ile deploy CALISMIYOR (9109) ama kv namespace create CALISIYOR.
+  OAuth akisi (env yok) da 9102 veriyor. Sonuc: wrangler'in /accounts cagrisi OAuth
+  token'i reddediyor. Token'i log'a yazmamak icin toml'den okunup env'e aktarildi.
