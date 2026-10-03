@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "tarikelertarnak",
-  "pages_build_output_dir": ".open-next",
+"pages_build_output_dir": ".open-next",
   "compatibility_date": "2026-09-15",
   "compatibility_flags": ["nodejs_compat_v2"],
   "kv_namespaces": [

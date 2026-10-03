@@ -37,6 +37,12 @@ const nextConfig = {
   } : {}),
   devIndicators: false,
   trailingSlash: true,
+  // 2026-10-03: Search Console HTML dosya dogrulamasi /google<TOKEN>.html adresini
+  // DOGRUDAN GET eder ve yonlendirmeleri TAKIP ETMEZ. trailingSlash yuzunden
+  // Next bu yolu 308 ile /google<TOKEN>/'e atiyor ve dogrulama surekli basarisiz
+  // oluyor. skipTrailingSlashRedirect bu tek yolda (ve public/ statiklerinde)
+  // yonlendirmeyi kapatir; sayfa rotalari trailingSlash:true ile degismez.
+  skipTrailingSlashRedirect: true,
   // Turbopack, lightningcss'in native .node require'ını bundle edemiyor
   // (Cannot find module / could not resolve ...win32-x64-msvc.node).
   // External bırakınca Node kendi require'ıyla (düzgün çalışan) yüklüyor.

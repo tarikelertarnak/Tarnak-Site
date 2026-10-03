@@ -12,6 +12,7 @@ import { TopBar } from '@/components/top-bar'
 
 import { SearchDialog } from '@/components/search-dialog'
 import { getContent } from '@/lib/content'
+import { GSC_VERIFICATION_TOKEN } from '@/lib/gsc'
 import { getLocaleDirection, getStaticLocale } from '@/lib/i18n-server'
 import { SITE_URL } from '@/lib/site-url'
 import '@fontsource/montserrat/400.css'
@@ -100,8 +101,9 @@ export async function generateMetadata(): Promise<Metadata> {
     other: {
       // 2026-10-02: pages.dev subdomain'inde DNS TXT dogrulamasi YAPILAMAZ (zone
       // Cloudflare'e ait). Bu yuzden GSC URL onizleme mulku bu meta etiketiyle
-      // dogrulanir. Eski token (google2d06d2d25454fe17) bayat oldu, degistirildi.
-      'google-site-verification': 'n1-lFT1ZA4DDYRLClGr0uEaqcMafk8h07dVeolKpHlA',
+      // dogrulanir. Token src/lib/gsc.ts'de TEK KAYNAK olarak tutulur; ayni
+      // deger /google-verification route handler'i tarafindan da kullanilir.
+      'google-site-verification': GSC_VERIFICATION_TOKEN,
       // 2026-09-25: Yandex Webmaster doğrulaması (webmaster.yandex.com)
       'yandex-verification': '95b7322d0c238a81',
     },

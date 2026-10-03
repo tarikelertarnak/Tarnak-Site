@@ -232,11 +232,6 @@ ensureModule('picocolors');
       // listesinde yoktu, dosya worker'a dusuyordu. PWA manifest'i de Pages'in
       // static servisine verilmeli.
       '/*.webmanifest',
-      // Pages 308 ile /foo.html -> /foo -> /foo/ zinciri kuruyor (trailingSlash:true).
-      // Uzantili, uzantisiz ve tirasli UCH formu da kapsamali ki GSC'nin takip ettigi
-      // son adim worker'a dusup 1102/503 vermesin.
-      '/google*',
-      '/google*/',
       '/cv/*',
       '/projects/*.png', '/projects/*.jpg', '/projects/*.jpeg',
       '/projects/*.webp', '/projects/*.gif', '/projects/*.svg',
