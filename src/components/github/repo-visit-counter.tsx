@@ -53,7 +53,7 @@ export function RepoVisitCounter({
           setLeaving(true)
           recordProjectView(title)
         }}
-        className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-white no-underline transition-colors hover:bg-primary/90"
+        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-white no-underline transition-colors hover:bg-primary/90"
       >
         {t('projects.openGithub')}
       </a>

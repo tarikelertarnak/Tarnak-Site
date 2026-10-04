@@ -25,7 +25,14 @@ export function Drawer({
   title,
   children,
   side = 'right',
-  width = 'max-w-sm',
+  /*
+    2026-10-04 (kullanıcı isteği): sağ yan panel %25 büyüdü.
+    `max-w-sm` = 24rem = 384px; 384 * 1.25 = 480px. Tailwind'in standart
+    merdiveninde tam karşılığı yok (`max-w-md` 448, `max-w-lg` 512), bu
+    yüzden kesin değer. Tek varsayılan — AYARLAR ve PROFIL panelleri gibi
+    tüm sağ drawer'lar birlikte büyür, ayrı ayrı vermek gerekmez.
+  */
+  width = 'max-w-[480px]',
 }: DrawerProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
 

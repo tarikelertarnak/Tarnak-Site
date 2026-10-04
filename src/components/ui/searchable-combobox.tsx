@@ -102,7 +102,7 @@ export function SearchableCombobox({
         }}
         aria-label={ariaLabel}
         aria-expanded={open}
-        className={`inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none transition-colors ${
+        className={`inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none transition-colors ${
           hasSelection
             ? 'border-primary/40 text-primary hover:border-primary/70'
             : 'border-foreground-200/15 text-foreground/85 hover:border-primary/40'

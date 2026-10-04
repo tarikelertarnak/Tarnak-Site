@@ -33,9 +33,16 @@ a.hover\:text-white:hover { color: #fff; }
        `--tbg`'ye eşitlendiği için yüzey ana arka plana birebir yapışıyordu:
        light'ta #fff üstünde #fff, dark'ta #050507 üstünde #050507 → light
        temada hiçbir kart/gruplama görünmüyordu.
-       `--tfg-200` yüzey merdiveninin 1. basamağı: light #f4f4f5, dark #1a1a1f.
+
+       2026-10-04 (kullanıcı isteği): hem light hem dark temada grup/kutu
+       yüzeyi "fazla açık"tı → bir kademe koyulaştırıldı. Yeni `--tsurface`
+       token'ı bunun icin ayrıldı: `--tfg-200` ÖNCEKİ ÇÖZÜMDEKİ KART
+       rengini hem de metin/kenarlık merdivenini (`text-foreground-200`,
+       `border-foreground-200/10`) taşıyor; onu koyulaştırmak kenarlıkları da
+       koyulaştırıp ikinci bir regresyon yaratırdı. Kart yüzeyi artık
+       bağımsız ayarlanabilir.
        Alt basamaklar: `bg-background/80`, `/95` gibi yarı saydam barlar. */
-    --color-background: var(--tfg-200);
+    --color-background: var(--tsurface);
     --color-foreground: var(--tfg);
     --color-foreground-200: var(--tfg-200);
     --color-foreground-300: var(--tfg-300);
@@ -57,6 +64,8 @@ a.hover\:text-white:hover { color: #fff; }
 /* Default (light) theme — white background, dark text. */
 :root {
     --tbg: #ffffff;
+    /* Kutu/grup kart yüzeyi — sayfa zemininden bir kademe koyu. */
+    --tsurface: #e7e8eb;
     --tfg: #18181b;
     --tfg-200: #f4f4f5;
     --tfg-300: #eceef1;
@@ -76,6 +85,8 @@ a.hover\:text-white:hover { color: #fff; }
 /* Dark theme — black background, light text (site is designed dark-first). */
 .dark {
     --tbg: #050507;
+    /* Kutu/grup kart yüzeyi — sayfa zemininden bir kademe koyu. */
+    --tsurface: #131317;
     --tfg: #ededed;
     --tfg-200: #1a1a1f;
     --tfg-300: #25252b;

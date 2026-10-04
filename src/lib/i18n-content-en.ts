@@ -124,9 +124,11 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
     description: 'My public repositories, fetched live from my GitHub profile.',
   },
   chat: {
+    // `subtitle` tek okunan alan; `title`/`description` sunucu semasi icin
+    // bos birakildi — eski metin public sayfadan tamamen kaldirildi.
     subtitle: 'CHAT',
-    title: 'Chat With Me',
-    description: 'Leave a message or just say hello. It will show up instantly.',
+    title: '',
+    description: '',
   },
   profile: {
     firstName: 'TARIK',

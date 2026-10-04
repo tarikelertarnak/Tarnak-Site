@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { ChatWindow } from '@/components/chat/chat-window'
+import { ChatIcon } from '@/components/ui/icons'
 import { Navigation } from '@/components/navigation'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { getLocalizedContent } from '@/lib/i18n-server'
@@ -43,10 +44,24 @@ export default async function ChatPage() {
       <Navigation content={content} />
       <main id="main" className="">
         <Section className="flex-col pt-24 sm:pt-28 lg:pt-32 min-h-[100svh]">
+          {/*
+            2026-10-04 (kullanici istegi): CHAT basligi ana sayfadaki
+            "HAKKIMDA" basligiyla BIREBIR ayni olsun. Iki sayfa da ayni
+            `SectionTitle` bilesenini `big` moduyla kullanir — oyun
+            sayfada kopyalanmadi, ortak bilesen zaten ayni CSS'i verir
+            (alt cizgi, primary renk, uppercase, tracking-tight).
+            Once burada `big` verilmedigi icin baslik kucuk gradient etiketi +
+            duz buyuk metin olarak cikiyordu.
+            Eski "Chat With Me / Leave a message or just say hello" metni
+            kaldirildi -> `description` bos. Baslikta mesaj balonu ikonu
+            (`ChatIcon`) var; HAKKIMDA'nın ikonu `UserIcon`.
+          */}
           <SectionTitle
-            title={content.chat.title}
+            title=""
             subTitle={content.chat.subtitle}
-            description={content.chat.description}
+            description=""
+            icon={<ChatIcon size={34} className="inline-block" />}
+            big
           />
           <ChatWindow content={content} userName={userName} />
         </Section>

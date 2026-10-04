@@ -91,16 +91,20 @@ export function Button({
   }
 
   /**
-   * Buton yüksekliği TEK bir sabit: 44px (`h-11`). `size` yalnızca yazı tipi
+   * Buton yüksekliği TEK bir sabit: 40px (`h-10`). `size` yalnızca yazı tipi
    * ve iç boşluğu değiştirir, yüksekliği ASLA — 30 `size="sm"` çağrısı vardı
    * ve yükseklikler çağrıdan çağrıya kayıyordu.
    *
    * `!` ile zorlanır: Tailwind'de aynı katmandaki iki sınıfın çelişmesi
    * attribute sırasına değil CSS çıktı sırasına bakar, yani çağıran
-   * `h-9`/`h-12` yazsa bile `!h-11` kazanır. Genişlik metin uzunluğuna göre
+   * `h-9`/`h-12` yazsa bile `!h-10` kazanır. Genişlik metin uzunluğuna göre
    * serbest kalır (kullanıcı isteği: genişlik farklı olabilir).
+   *
+   * 44px -> 40px: kullanıcı butonları "biraz daha küçük" istedi. 40px hâlâ
+   * erişilebilir dokunma hedefi (>=40px) eşiğinde; split butonların
+   * yarıları da tam bu yükseklikte birleşiyor.
    */
-  const heightClass = isIconOnly ? '!h-11 !w-11' : '!h-11'
+  const heightClass = isIconOnly ? '!h-10 !w-10' : '!h-10'
 
   return (
     <LobeButton

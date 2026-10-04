@@ -22,6 +22,7 @@ import {
   SearchIcon,
   StarOutlineIcon,
 } from '@/components/ui/icons'
+import { SPLIT_DIVIDER, SPLIT_PART, SPLIT_WRAP } from '@/components/ui/split-button'
 import { StarRating } from '@/components/ui/star-rating'
 import { readProjectStats, recordDownload, recordProjectView } from '@/lib/project-stats'
 
@@ -1039,7 +1040,15 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
           </div>
 
           {/* Buttons: Open (GitHub link for repos, project page otherwise) → Download. */}
-          <div className="flex w-full flex-wrap items-stretch gap-1.5">
+          {/*
+              Buton hizasi: `gap-2` (hepsi ayni bosluk) ve `PROJECT_BTN` tek
+              stil sabiti. Split yapisi icin `overflow-hidden` + `rounded-lg`
+              sarmalayicida: dis koseler yuvarlak, birlese ic koseler parent
+              tasmasina birakilir duz kalir, ayirici `border-l border-white/25`.
+              - "Projeyi Ac" ve "Indir" ayni h-9 + ayni tipografi.
+              - Indir ve combobox TEK bir yuvarlak kutuyu paylasir.
+            */}
+          <div className="flex w-full flex-wrap items-stretch gap-2">
             <a
               href={openTarget}
               target={isExternal ? '_blank' : undefined}
@@ -1047,7 +1056,7 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
               onClick={() => {
                 recordView()
               }}
-              className="inline-flex h-9 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-2 text-sm font-medium text-white no-underline transition-colors hover:bg-primary/90 hover:text-white"
+              className="inline-flex h-10 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-2 text-sm font-medium text-white no-underline transition-colors hover:bg-primary/90 hover:text-white"
             >
               {/* Tek isim: "Projeyi Aç". GitHub projesi olsa bile aynı etiket —
                   buton zaten GitHub linkine gidiyor, ayrı "GitHub'da aç" yazısı
@@ -1058,12 +1067,15 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
 
             {downloadOptions.length > 0 && (
               <div className="relative shrink-0 self-center" ref={comboboxRef}>
-                <div className="flex h-9 items-stretch overflow-hidden rounded-lg bg-primary transition-colors hover:bg-primary/90">
+                {/* Indir + acilir liste TEK yuvarlak kutu: ayirici ince cizgi,
+                    birlese ic koseler duz (SPLIT_WRAP/SPLIT_PART/SPLIT_DIVIDER). */}
+                <div className={SPLIT_WRAP}>
                   <a
                     href={currentDownloadUrl ?? '#'}
                     onClick={() => trackDownload()}
                     title={currentDownloadLabel}
-                    className="inline-flex h-9 w-9 items-center justify-center text-white no-underline transition-colors hover:text-white"
+                    aria-label={currentDownloadLabel}
+                    className={cn(SPLIT_PART, 'w-10 px-0')}
                   >
                     <DownloadIcon size={15} />
                   </a>
@@ -1072,8 +1084,9 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
                     ref={triggerRef}
                     onClick={() => setComboboxOpen(o => !o)}
                     aria-label={t('projects.selectVersion')}
+                    aria-expanded={comboboxOpen}
                     title={t('projects.selectVersion')}
-                    className="inline-flex h-9 w-7 items-center justify-center border-l border-white/20 text-white transition-colors hover:bg-black/5"
+                    className={cn(SPLIT_PART, SPLIT_DIVIDER)}
                   >
                     <ChevronDownIcon size={13} />
                   </button>

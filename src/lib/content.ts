@@ -645,9 +645,14 @@ async function getDefaultContent(): Promise<SiteContent> {
       description: 'My public repositories, pulled live from my GitHub profile.',
     },
     chat: {
+      // Sadece `subtitle` okunuyor: /chat artik HAKKIMDA ile ayni
+      // `SectionTitle big` yapisini kullanir (ikon + buyuk harf baslik).
+      // `title`/`description` alanlari sunucu tarafi semada zorunlu oldugu
+      // icin duruyor ama sayfada render EDILMIYOR — eski "Chat With Me /
+      // Leave a message..." metni tamamen kaldirildi (kullanici istegi).
       subtitle: 'CHAT',
-      title: 'Talk to Me',
-      description: 'Leave a message or just say hello. It shows up right away.',
+      title: '',
+      description: '',
     },
     profile: {
       firstName: 'TARIK',

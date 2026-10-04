@@ -5,9 +5,9 @@ import type { CvDoc } from '@/lib/cv'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocale, useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/components/ui/cn'
 import { Input } from '@/components/ui/input'
 import { ChevronDownIcon, DownloadIcon, EyeIcon } from '@/components/ui/icons'
+import { SPLIT_DIVIDER, SPLIT_WRAP } from '@/components/ui/split-button'
 
 /**
  * CV seçici — aramalı (search) combobox.
@@ -52,38 +52,42 @@ export function CvPicker({
 
   const label = t('about.cvView')
 
-  if (cvs.length <= 1) {
+if (cvs.length <= 1) {
     const href = cvs[0]?.href ?? '/cv/tarikeler-cv.pdf'
     /*
-      Tek kayıt -> birleşik (split) buton. `startContent`/`endContent` ve `size`
-      bilerek dusurulur: iki yarinin ikonu ve icerigi kendi kuralim.
-      `{...rest}` yalnizca renk/varyant/className gibi govde stillerini tasir,
-      bu yuzden cagiranin className'i (h-11, rounded-lg, font-medium) iki
-      yarida da ayni gorunur — buton tabaninin zorladigi !h-11 ile hizali.
+      Tek kayit -> birleşik (split) buton. Daha once iki ayri buton gibi
+      duruyordu; `SPLIT_WRAP` tek yuvarlak kutuyu iki yariye boluyor ve
+      birlese ic koseleri duz birakıyor (bkz. split-button.tsx).
+      `startContent`/`endContent` ve `size` bilerek dusurulur: iki yarinin
+      ikonu ve icerigi kendi kuralim.
+      Ikon once, sonra yazi (kullanici istegi): goz simgesi "CV" kelimesinin
+      SOLUNDA — LobeButton `iconPosition="start"` ile bunu destekliyor.
+
+      `className` BILINCLI OLARAK yarilara GEÇIRILMEZ. Hero cagirani
+      `h-11 ... rounded-lg px-4 py-2 ...` yaziyor; bu iki yariya birden
+      uygulaninca her yari kendi `rounded-lg`'ini aliyor ve split'in orta
+      köşeleri yeniden yuvarlaniyor — yani birlestirme tam bozuluyor.
+      Geometri SPLIT_WRAP/SPLIT_PART'e devredildi; renk/varyant `shared`
+      icinden geliyor. Iki çağrı noktası da zaten ek geometri vermiyor.
     */
-    const { startContent: _s, endContent: _e, size: _sz, className, ...shared } = rest
-    const btn = cn(
-      'h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90',
-      className,
-    )
+    const { startContent: _s, endContent: _e, size: _sz, className: _cn, ...shared } = rest
 
     return (
-      <div className="inline-flex">
-        {/* Ana kisim: "CV" + goz ikonu -> CV'yi yeni sekmede goruntule */}
+      <div className={SPLIT_WRAP}>
+        {/* Ana kisim: goz ikonu + "CV" -> CV'yi yeni sekmede goruntule */}
         <Button
           {...shared}
-          className={cn(btn, 'rounded-r-none')}
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          endContent={<EyeIcon size={16} />}
+          startContent={<EyeIcon size={16} />}
         >
           CV
         </Button>
-        {/* Indirme kismi: sola yuvarlatilir, ortada dikey ayirici */}
+        {/* Indirme kismi: ince ayirici cizgi + sabit genislik */}
         <Button
           {...shared}
-          className={cn(btn, 'w-11 rounded-l-none px-0', 'border-l border-white/25')}
+          className={SPLIT_DIVIDER}
           href={href}
           download
           aria-label={t('about.cvDownload')}

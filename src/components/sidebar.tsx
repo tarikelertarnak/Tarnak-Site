@@ -107,7 +107,7 @@ interface NavItem {
   icon: (props: { size?: number, className?: string }) => React.ReactElement
 }
 
-const SIDEBAR_WIDTH = 260
+const SIDEBAR_WIDTH = 325
 
 const NAV_LINKS: NavItem[] = [
   { key: 'home', labelKey: 'nav.home', href: '/', icon: HouseIcon },
@@ -250,7 +250,7 @@ export function Sidebar() {
           height={30}
           className="block shrink-0 dark:hidden"
         />
-        <span className="truncate text-sm font-bold tracking-tight text-foreground">
+        <span className="truncate text-base font-bold tracking-tight text-foreground">
           TARIK ELER
           <span className="text-white/30"> — </span>
           {/* Ayni duzeltme top-bar.tsx'te de var: cyan diger mavilerle
@@ -264,7 +264,7 @@ export function Sidebar() {
         type="button"
         onClick={() => window.dispatchEvent(new CustomEvent('search:request-open'))}
         aria-label={t('common.search')}
-        className="flex w-full items-center gap-2.5 border-b border-white/5 px-4 py-3 text-left text-sm text-foreground/50 transition-colors hover:bg-white/5 hover:text-foreground"
+        className="flex w-full items-center gap-3 border-b border-white/5 px-5 py-3.5 text-left text-base text-foreground/50 transition-colors hover:bg-white/5 hover:text-foreground"
       >
         <svg
           width={16}
@@ -310,10 +310,10 @@ export function Sidebar() {
                     />
                   )
                 : (
-                    <UserIcon size={18} className="text-foreground/50" />
+                    <UserIcon size={20} className="text-foreground/50" />
                   )}
             </span>
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground/90">
+            <span className="min-w-0 flex-1 truncate text-base font-medium text-foreground/90">
               {sessionUser.fullName || sessionUser.username || sessionUser.email || 'Profil'}
             </span>
           </button>
@@ -324,14 +324,14 @@ export function Sidebar() {
             title={t('nav.logout') ?? 'Çıkış'}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-foreground/60 transition-colors hover:bg-white/5 hover:text-danger"
           >
-            <LogoutIcon size={17} />
+            <LogoutIcon size={19} />
           </button>
         </div>
       )}
 
 
       {/* Primary nav */}
-      <div className="flex flex-1 flex-col gap-1 px-3 py-4">
+      <div className="flex flex-1 flex-col gap-1 px-3.5 py-5">
         {NAV_LINKS.map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
@@ -340,14 +340,14 @@ export function Sidebar() {
               key={item.key}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium',
+                'flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium',
                 'transition-colors duration-200',
                 active
                   ? 'bg-primary/15 text-primary'
                   : 'text-foreground/70 hover:bg-white/5 hover:text-foreground',
               )}
             >
-              <Icon size={18} />
+              <Icon size={20} />
               <span>{t(item.labelKey)}</span>
             </Link>
           )
@@ -357,7 +357,7 @@ export function Sidebar() {
       <div className="mx-4 border-t border-white/5" />
 
       {/* Bottom: session, settings */}
-      <div className="flex flex-col gap-1 px-3 py-4">
+      <div className="flex flex-col gap-1 px-3.5 py-5">
         {/* Session-dependent buttons */}
         {sessionChecked && sessionUser?.role === 'admin' && (
           <>
@@ -366,9 +366,9 @@ export function Sidebar() {
             </p>
             <Link
               href="/admin"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
+              className="flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
             >
-              <ShieldIcon size={18} />
+              <ShieldIcon size={20} />
               <span>{t('nav.panel') ?? 'Panel'}</span>
             </Link>
             <button
@@ -380,9 +380,9 @@ export function Sidebar() {
                     : pathname.replace(/^\//, '').replace(/\//g, '-') || 'home'
                 router.push(`/admin/puck/${page}`)
               }}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
+              className="flex w-full items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
             >
-              <EditSquareIcon size={18} />
+              <EditSquareIcon size={20} />
               <span>{t('nav.pageEditor') ?? 'Sayfa Düzenleyici'}</span>
             </button>
           </>
@@ -393,14 +393,14 @@ export function Sidebar() {
           <div className="flex flex-row items-center gap-2">
             <Link
               href="/login"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-foreground-200/15 bg-background px-3 py-2.5 text-sm font-medium text-foreground/80 transition-colors duration-200 hover:border-primary/40 hover:text-foreground"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-foreground-200/15 bg-background px-3.5 py-3 text-base font-medium text-foreground/80 transition-colors duration-200 hover:border-primary/40 hover:text-foreground"
             >
-              <LoginIcon size={16} />
+              <LoginIcon size={18} />
               <span>{t('nav.login')}</span>
             </Link>
             <Link
               href="/sign"
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary/90"
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-3.5 py-3 text-base font-semibold text-primary-foreground transition-colors duration-200 hover:bg-primary/90"
             >
               <span>{t('nav.signup') ?? 'Kayıt Ol'}</span>
             </Link>
@@ -414,9 +414,9 @@ export function Sidebar() {
             window.dispatchEvent(new CustomEvent('settings:open'))
             setIsOpen(false)
           }}
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
+          className="flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
         >
-          <CogIcon size={18} />
+          <CogIcon size={20} />
           <span>{t('settings.title')}</span>
         </button>
       </div>
@@ -451,7 +451,7 @@ export function Sidebar() {
             exit={{ x: -SIDEBAR_WIDTH }}
             transition={{ type: 'spring', stiffness: 360, damping: 34 }}
             className={cn(
-              'fixed top-0 left-0 z-50 h-full w-[260px]',
+              'fixed top-0 left-0 z-50 h-full w-[325px]',
               'border-r border-white/10 bg-[#0a0a0e] shadow-2xl',
             )}
             role="dialog"

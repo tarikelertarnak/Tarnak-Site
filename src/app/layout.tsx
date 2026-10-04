@@ -49,61 +49,20 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   const content = await getContent()
   const name = content.hero.name || 'Tarık Eler'
-  // Kullanıcı isteği (2026-09-25): tab title'da BÜYÜK HARF marka — "TARIK ELER (TARNAK)".
-  const title = 'TARIK ELER (TARNAK)'
-  // Tüm isim varyantları: kullanıcı "tarnak", "eler", "tarik", "tarık",
-  // "portfolyo", "cv", "project", "blog" gibi aramalarla siteye ulaşabilsin
-  // diye her kombinasyonu içeriyoruz.
+  // Kullanıcı isteği (2026-10-04): paylaşım başlığı sabit ve kısa —
+  // link açıklarken görünen metin "Tarık Eler (Tarnak) - Portfolio".
+  const title = 'Tarık Eler (Tarnak) - Portfolio'
+  // Uzun isim/anahtar kelime yığını KALDIRILDI. Google zaten sayfayı
+  // indeksleyip "site:" aramasıyla buluyor; spam görünen meta etiketler
+  // SEO'yu degil paylaşım kartını bozuyordu. `keywords` alani tamamen
+  // silindi (aşağıda metadata'ya da girdi).
   const description
-    = 'Tarık Eler (Tarnak) — web developer ve içerik üretici. Next.js, TypeScript ve yapay zeka ile modern web projeleri geliştiriyorum. Portfolio, blog ve projelerim: tarik eler, tarikelertarnak, tarnak, eler tarik, tarik tarnak, eler tarnak.'
-  const keywords = [
-    'TARIK ELER',
-    'TARNAK',
-    'Tarık Eler',
-    'TARIKELER',
-    'tarikelertarnak',
-    'Tarnak',
-    'tarikeler',
-    'tarık',
-    'eler',
-    'tarıkeler',
-    'elertarik',
-    'tarık eler',
-    'eler tarık',
-    'tarık eler tarnak',
-    'tarikelertarnak',
-    'tarik eler',
-    'tarik eler tarnak',
-    'TARIK ELER TARNAK',
-    'tarik tarnak',
-    'tarnak tarik',
-    'tarnak eler',
-    'eler tarnak',
-    'tarik tarnak eler',
-    'tarnak tarik eler',
-    'tarik eler tarnak',
-    'tarnak tarik',
-    'tarik tarnak',
-    'eler tarik',
-    'tarnak eler tarik',
-    'tarik eler tarnak',
-    'portfolio',
-    'cv',
-    'project',
-    'blog',
-    'web developer',
-    'Next.js',
-    'TypeScript',
-    'yazılım geliştirici',
-    'portfolio',
-    'kişisel site',
-  ]
+    = 'Tarık Eler (Tarnak) — web developer ve içerik üretici. Next.js, TypeScript ve yapay zeka ile modern web projeleri geliştiriyorum. Portfolio, blog ve projelerim.'
 
   return {
     metadataBase: new URL(SITE_URL),
     title,
     description,
-    keywords,
     authors: [{ name: 'Tarık Eler (Tarnak)', url: SITE_URL }],
     creator: 'Tarık Eler (Tarnak)',
     publisher: 'Tarık Eler (Tarnak)',

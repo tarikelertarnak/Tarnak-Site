@@ -341,7 +341,7 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
         className={cn(
           // Hero butonlariyla ayni tasarim: mavi dolgu + beyazi yazi. Onceki
           // sekilli/pill gorunum diger butonlardan kopyaliyordu.
-          'inline-flex h-9 items-center gap-2 rounded-lg px-3.5 text-sm font-medium outline-none transition-colors',
+          'inline-flex h-10 items-center gap-2 rounded-lg px-3.5 text-sm font-medium outline-none transition-colors',
           open
             ? 'bg-primary/90 text-white'
             : 'bg-primary text-white hover:bg-primary/90',

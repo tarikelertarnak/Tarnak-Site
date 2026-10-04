@@ -127,10 +127,11 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                       />
                     )}
                   />
-                  <InfoRow
-                    label={t('about.infoFirstLanguage')}
-                    value={content.profile.firstLanguage}
-                  />
+                  {/*
+                    "Ana Dil" satiri kaldirildi (kullanici istegi): ayni bilgi
+                    "Diller" tablosunda zaten `about.infoFirstLanguage` rozetiyle
+                    gorunuyor, burada tekrar etiketli satiri gereksiz tekrardi.
+                  */}
                 </div>
               </div>
             </div>
@@ -142,7 +143,9 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
             <h3 className="text-base sm:text-lg font-semibold">
               {t('about.languagesTitle')}
             </h3>
-            <div className="w-full overflow-x-auto">
+            {/* Cerceve: tablo govdesi sayfa zemine yapisip "Diller" basligindan
+                  kopuyordu. `border` + `rounded-xl` ile ayri bir yuzey. */}
+            <div className="w-full overflow-x-auto rounded-xl border border-foreground-200/15">
               <table className="w-full text-left text-xs sm:text-sm">
                 <tbody>
                   <tr className="border-b border-foreground-200/10">

@@ -270,7 +270,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
                   {content.contact.footerText}
                 </p>
               )}
-              <div className="flex w-full sm:w-auto sm:ml-auto items-center justify-center gap-2">
+              <div className="flex w-full sm:w-auto sm:ml-auto items-center justify-center gap-3">
                 <Button
                   type="submit"
                   color="primary"

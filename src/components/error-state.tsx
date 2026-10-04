@@ -130,7 +130,7 @@ export function ErrorState({
       </p>
 
       {/* Butonlar: Projelere Göz At / GitHub Explorer'a Git → / Yenile */}
-      <div className="flex flex-wrap items-center justify-center gap-2.5">
+      <div className="flex flex-wrap items-center justify-center gap-3">
         <Link
           href="/projects"
           className="inline-flex items-center gap-1.5 rounded-lg border border-primary/40 px-4 py-2 text-sm font-medium text-primary no-underline transition-colors hover:bg-primary/10"

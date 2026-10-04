@@ -150,7 +150,7 @@ icon={<NewspaperIcon size={36} className="inline-block" />}
           />
 
         {!onBlogPage && (
-          <div className="mb-4 flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-2">
+          <div className="mb-4 flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-3">
             <Button
               href="/blog"
               color="primary"
@@ -286,7 +286,7 @@ icon={<NewspaperIcon size={36} className="inline-block" />}
                             />
                             <BlogStats slug={post.slug} />
                           </div>
-                          <span className="ml-auto inline-flex h-9 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-primary/90">
+                          <span className="ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white transition-all duration-200 hover:bg-primary/90">
                             {t('projects.open')}
                             {' '}
                             <ArrowUpRightIcon size={16} />
