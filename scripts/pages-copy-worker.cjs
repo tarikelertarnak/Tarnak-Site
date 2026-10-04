@@ -225,6 +225,167 @@ ensureModule('picocolors');
   }
 }
 
+// 2026-10-04: /sitemap.xml ve /feed.xml'i SAF STATIK ASSET'e cevir.
+//
+// Neden: bu iki route build'de prerender ediliyor (.open-next/cache/<id>/
+// sitemap.xml.cache) ama Pages'in cikti kokunde DOSYA olarak bulunmuyorlar.
+// Sayfa HTML'leri de .cache icinde duruyor ve worker onlari okuyup
+// sunabiliyor; ancak bu iki route'un handler'i calisirken node:fs kullaniyor
+// (sitemap.ts -> statSync, feed.xml -> getPosts() -> data/blog/posts.json).
+// workerd'de runtime fs yok -> 500. Canli /sitemap.xml ve /feed.xml 500
+// donuyordu; arama motorlarinin en cok isteyebilecegi iki dosya.
+//
+// Cozum: prerender sirasinda uretilen govdeyi .cache JSON'indan cikarip
+// cikti kokune DOGRUDAN yaziyoruz, sonra _routes.json'da exclude ediyoruz.
+// Boylece Pages'in static servisi sunuyor: worker hic devreye girmiyor,
+// 10 ms CPU harcanmiyor, fs calismiyor, 500 olmuyor. robots.txt zaten boyle
+// calisiyor.
+//
+// Onceki deneme (2026-10-03) '/*.xml' exclude edince 404 almisti; sebebi
+// exclude'un Pages'e ESKI public/sitemap.xml'i vermesiydi. public/sitemap.xml
+// artik yok ve kokteki dosya her build'de yeniden uretiliyor, sorun gecerli
+// degil. Yine de wildcard yerine iki dosyayi ACIKCA isimlendiriyoruz.
+{
+  const cacheRoot = path.join(openNextDir, 'cache');
+  const buildIds = fs.existsSync(cacheRoot)
+    ? fs.readdirSync(cacheRoot).filter((d) => !d.startsWith('__') && fs.statSync(path.join(cacheRoot, d)).isDirectory())
+    : [];
+  for (const name of ['sitemap.xml', 'feed.xml']) {
+    let written = false;
+    for (const b of buildIds) {
+      const c = path.join(cacheRoot, b, name + '.cache');
+      if (!fs.existsSync(c)) continue;
+      try {
+        const j = JSON.parse(fs.readFileSync(c, 'utf8'));
+        if (typeof j.body === 'string' && j.body.length) {
+          fs.writeFileSync(path.join(openNextDir, name), j.body);
+          console.log(`[pages-copy-worker] extracted ${name} (${j.body.length} bayt) -> static asset`);
+          written = true;
+          break;
+        }
+      } catch (e) {
+        console.log(`[pages-copy-worker] WARN ${name} .cache okunamadi: ${e.message}`);
+      }
+    }
+    if (!written) console.log(`[pages-copy-worker] WARN ${name} .cache yok — worker'a birakildi (500 riski)`);
+  }
+}
+
+// 2026-10-04: PRERENDER EDILMIS SAYFALARI da statik asset'e cevir.
+//
+// Neden: Next build her public sayfayi prerender ediyor (.open-next/cache/<id>/
+// index.cache = 372 KB, about.cache, projects.cache ...). Ama bu .cache
+// dosyalari Pages'in cikti kokunde DILE duyulmuyor; sayfa ancak worker'a
+// dustugunde render ediliyor. Ana sayfanin SSR'i 258 KB HTML uretiyor ve
+// Workers Free 10 ms CPU limitini asiyor -> canli / = 503 / timeout, KV'ye de
+// yazilamiyor -> kalici olarak olu. /projects ve /about yalnizca daha onceden
+// KV'ye yazilmis olduklari icin HIT donuyor.
+//
+// Cozum: sitemap/feed icin yaptigimizin aynisi. .cache JSON'unun govdesini
+// <route>/index.html olarak cikti kokune yaziyoruz; Pages static servisi
+// sunuyor, worker hic devreye girmiyor, 0 CPU, 503 yok.
+//
+// DIKKAT: exclude listesinde WILDCARD kullanmiyoruz. '/blog/*' gibi desenler
+// /blog/<slug> detayini de statik'e dusururdu (404). Sadece tam sayfa
+// yollari listeleniyor; dinamik alt rotalar worker'da kalir.
+// Trade-off: client-side Link navigasyonu RSC istegini static HTML'den alir,
+// Next bunu "MPA navigation" sayip tam sayfa yenilemesine duser. Yavas,
+// ama kirik degil — 503'den cok iyi.
+const routesExclude = [];
+{
+  // 2026-10-04: SOFT-404 YAN ETKISI — Pages'in asset-miss davranisi.
+  //
+  // Bulgu (canli olcum): `yok.png`, `yok.jpg`, `yok.woff2`, `manifest.webmanifest`
+  // → HTTP 200 + 258 KB ANA SAYFA HTML'i. `yok.json`, `yok.css`, `yok.js` → 404.
+  // Neden: Pages, exclude listesindeki bir ASSET yolunu static servisine verir.
+  // Dosya yoksa Pages kokteki `index.html`'yi **200 ile** servis eder (SPA
+  // fallback). Bizim exclude listemiz `/*.png`, `/*.jpg` gibi WILDCARD iceriyor,
+  // yani "bu uzantili dosya yoksa ana sayfayi dondur" demis oluyoruz. Onceki
+  // deployment'da (0d11fdbd, index.html static degilken) `/yok.png` 404 len=0
+  // donuyordu → yan etkiyi biz getirdik.
+  //
+  // Cozum: Pages'in 404.html desteklemesi. Koke prerender edilmis not-found
+  // sayfasini 404.html olarak yaziyoruz; Pages eslesmeyen asset icin
+  // index.html yerine 404.html + HTTP 404 donuyor.
+  const cacheRoot = path.join(openNextDir, 'cache');
+  const buildIds = fs.existsSync(cacheRoot)
+    ? fs.readdirSync(cacheRoot).filter((d) => !d.startsWith('__') && fs.statSync(path.join(cacheRoot, d)).isDirectory())
+    : [];
+  const PAGES = {
+    '': 'index',
+    '/about': 'about',
+    '/blog': 'blog',
+    '/projects': 'projects',
+    '/credits': 'credits',
+    '/donate': 'donate',
+    '/github': 'github',
+  };
+  const statics = [];
+  for (const [route, base] of Object.entries(PAGES)) {
+    let done = false;
+    for (const b of buildIds) {
+      const c = path.join(cacheRoot, b, base + '.cache');
+      if (!fs.existsSync(c)) continue;
+      try {
+        const j = JSON.parse(fs.readFileSync(c, 'utf8'));
+        // Sayfa .cache'lerinde govde "body" degil "html" alaninda
+        // ({type,meta,html,rsc,segmentData}); XML route'larinda "body".
+        const body = typeof j.html === 'string' && j.html.length
+          ? j.html
+          : (typeof j.body === 'string' ? j.body : '');
+        if (body.length > 1000) {
+          const dir = route === '' ? openNextDir : path.join(openNextDir, route.slice(1));
+          fs.mkdirSync(dir, { recursive: true });
+          fs.writeFileSync(path.join(dir, 'index.html'), body);
+          statics.push(route || '/');
+          console.log(`[pages-copy-worker] extracted ${route || '/'} (${body.length} bayt) -> static asset`);
+          done = true;
+          break;
+        }
+        console.log(`[pages-copy-worker] WARN ${route || '/'} govde yok; anahtarlar: ${Object.keys(j).join(',')}`);
+      } catch (e) {
+        console.log(`[pages-copy-worker] WARN ${route || '/'} .cache okunamadi: ${e.message}`);
+      }
+    }
+    if (!done) console.log(`[pages-copy-worker] WARN ${route || '/'}.cache yok — worker'a birakildi (503 riski)`);
+  }
+  // exclude'e eklenacak tam yollar. SADECE slash'li hal: slash'siz istek
+  // worker'a dustugu icin Next'in skipTrailingSlashRedirect'i devreye girip
+  // tek bir 308 ile slash'li adrese yolluyor. Slash'sizi de exclude edersek
+  // Pages'in 308'i devreye giriyordu (prime 308'de basarisiz sayiyordu).
+  for (const r of statics) {
+    if (r === '/') routesExclude.push('/');
+    else routesExclude.push(r + '/');
+  }
+
+  // 404.html: Pages, kokte 404.html varsa eslesmeyen yollar icin onu + HTTP
+  // 404 donuyor (yoksa index.html + 200 = soft 404). Next'in prerender ettigi
+  // not-found govdesini yaziyoruz; boylece hem /blog/yok-yazi hem /yok.png
+  // dogru 404 doner.
+  {
+    let done = false;
+    for (const b of buildIds) {
+      const c = path.join(cacheRoot, b, '_not-found.cache');
+      if (!fs.existsSync(c)) continue;
+      try {
+        const j = JSON.parse(fs.readFileSync(c, 'utf8'));
+        const body = typeof j.html === 'string' && j.html.length
+          ? j.html
+          : (typeof j.body === 'string' ? j.body : '');
+        if (body.length > 1000) {
+          fs.writeFileSync(path.join(openNextDir, '404.html'), body);
+          console.log(`[pages-copy-worker] extracted 404.html (${body.length} bayt) -> Pages 404 fallback (soft-404 fix)`);
+          done = true;
+          break;
+        }
+      } catch (e) {
+        console.log(`[pages-copy-worker] WARN _not-found.cache okunamadi: ${e.message}`);
+      }
+    }
+    if (!done) console.log('[pages-copy-worker] WARN _not-found.cache yok — 404.html uretilmedi (asset soft-404 kalir)');
+  }
+}
+
 // _routes.json: without it, Pages advanced mode (_worker.js present) routes
 // EVERY request into the worker, and static files (CSS/images) 404 — the worker
 // never serves them. Excluding static paths returns those to Pages' asset
@@ -236,6 +397,9 @@ ensureModule('picocolors');
     version: 1,
     include: ['/*'],
     exclude: [
+      // pages-copy-worker ustunde prerender edilen sayfalar (/, /about, ...)
+      // onceki blokta toplandi; onlar da static servise veriliyor.
+      ...routesExclude,
       '/_next/*',
       '/*.png', '/*.jpg', '/*.jpeg', '/*.webp', '/*.avif', '/*.gif',
       '/*.svg', '/*.ico', '/*.woff', '/*.woff2', '/*.txt',
@@ -245,6 +409,13 @@ ensureModule('picocolors');
       // vermeye devam ediyordu -> /sitemap.xml?x=1 = 404. GSC "Getirilemedi".
       // XML artik worker'dan gelsin; Pages'in static servisine /sitemap.xml
       // kalmadi.
+      // 2026-10-04: yukaridaki sorun gitti. public/sitemap.xml kaldirildi ve
+      // bu script sitemap.xml + feed.xml'i cikti kokune prerender EDILMIS
+      // govdeden yaziyor (yukaridaki blok). Bu yuzden iki dosya artik guvenle
+      // exclude edilebilir: statik servis, 0 CPU, 500 yok. Wildcard
+      // ('/*.xml') yerine dosya adi — var olmayan XML'leri kapsam dişi birakir.
+      '/sitemap.xml',
+      '/feed.xml',
       // 2026-10-02: /site.webmanifest 404 veriyordu — .webmanifest uzantisi exclude
       // listesinde yoktu, dosya worker'a dusuyordu. PWA manifest'i de Pages'in
       // static servisine verilmeli.

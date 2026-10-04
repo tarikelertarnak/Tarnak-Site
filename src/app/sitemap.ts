@@ -1,3 +1,5 @@
+import { statSync } from 'node:fs'
+import path from 'node:path'
 import type { MetadataRoute } from 'next'
 import { getPosts } from '@/lib/blog'
 import { siteUrl } from '@/lib/site-url'
@@ -20,13 +22,6 @@ import { siteUrl } from '@/lib/site-url'
  * /cv bir sayfa degil, PDF yolu (/cv/tarikeler-cv.pdf) — PDF sitemap'e girmez.
  */
 
-// 2026-10-04: `revalidate` yerine `force-static`. `revalidate` yoksa Next bu
-// rotayi DINAMIK sayar ve `getPosts()` her istekte Supabase'e gider; worker'da
-// bu 500'e donuyordu ("Internal Server Error", no-store). force-static ile
-// sitemap build'de uretilir ve `.cache` asset'i olarak sunulur — calisma
-// zamaninda hicbir ag cagrisi olmaz.
-export const dynamic = 'force-static'
-
 /** Indexable public routes, most important first. */
 const STATIC_ROUTES: Array<{ path: string; priority: number; freq: 'daily' | 'weekly' | 'monthly' }> = [
   { path: '/', priority: 1, freq: 'daily' },
@@ -38,11 +33,51 @@ const STATIC_ROUTES: Array<{ path: string; priority: number; freq: 'daily' | 'we
   { path: '/credits', priority: 0.4, freq: 'monthly' },
 ]
 
+/**
+ * 2026-10-04: `lastModified` her rota icin `new Date()` idi.
+ *
+ * Sonuc: sitemap build'de uretildigi icin butun URL'ler her deploy'da "bugun
+ * degisti" sinyali veriyordu. Google bunu "sitem her gun degisiyor" diye
+ * okuyup tarama frekansini kisiyor — yani biz sitemap'i guncellemek icin
+ * yalnizca SEO'yu zedeliyoruz.
+ *
+ * Gercek degisiklik kaynaklarinin (data/ dosyalarinin) dosya zamanini
+ * kullaniyoruz. Veri dosyasi degismisse anlamli bir lastModified olur;
+ * degismediyse sitemap eski tarihi korur.
+ */
+function contentLastmod(): Date {
+  const files = [
+    path.join(process.cwd(), 'data', 'content.json'),
+    path.join(process.cwd(), 'data', 'blog', 'posts.json'),
+  ]
+  const dates: number[] = []
+  for (const f of files) {
+    try {
+      dates.push(statSync(/* turbopackIgnore: true */ f).mtimeMs)
+    }
+    catch {
+      // dosya yoksa o katkiyi at — digerinden devam et
+    }
+  }
+  // hicbiri bulunamadiysa epoch'a yakin eski bir tarih: "degismedi" demek,
+  // her deploy'da bugun demekten daha dogru.
+  return new Date(dates.length ? Math.max(...dates) : 0)
+}
+
+const CONTENT_LASTMOD = contentLastmod()
+
+/**
+ * `trailingSlash: true` oldugu icin Next'in urettigi canonical'lar
+ * `https://site/projects/` seklinde BITIYOR. `siteUrl()` ise slash eklemiyor.
+ * Once sitemap slash'siz, canonical slash'liydi — tutarsiz sitemap'ler
+ * Google'in guvenini zedeliyor. Burada tek form kullanıyoruz: canonical.
+ */
+const canonicalUrl = (p: string) => (p === '/' ? siteUrl('/') : siteUrl(`${p}/`))
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const today = new Date()
-  const entries: MetadataRoute.Sitemap = STATIC_ROUTES.map(({ path, priority, freq }) => ({
-    url: siteUrl(path),
-    lastModified: today,
+  const entries: MetadataRoute.Sitemap = STATIC_ROUTES.map(({ path: routePath, priority, freq }) => ({
+    url: canonicalUrl(routePath),
+    lastModified: CONTENT_LASTMOD,
     changeFrequency: freq,
     priority,
   }))
@@ -54,9 +89,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (const post of posts) {
       if (!post?.slug)
         continue
+      // 2026-10-04: her yazi icin CONTENT_LASTMOD (dosya mtime) kullaniliyordu.
+      // Bu, "bu yazi 2020'de yazildi" sinyali yerine "su an degisti" sinyali
+      // veriyordu; Google lastModified'a guvenir. Yazinin kendi tarihi elimizde
+      // (`post.date`, yyyy-mm-dd) -> onu kullan. Bozuk tarih varsa guvenli
+      // tarafa dus (CONTENT_LASTMOD).
+      const published = post.date ? new Date(`${post.date}T12:00:00Z`) : null
+      const lastModified
+        = published && !Number.isNaN(published.getTime())
+          ? published
+          : CONTENT_LASTMOD
       entries.push({
-        url: siteUrl(`/blog/${post.slug}`),
-        lastModified: post.date ? new Date(post.date) : today,
+        url: canonicalUrl(`/blog/${post.slug}`),
+        lastModified,
         changeFrequency: 'monthly',
         priority: 0.7,
       })

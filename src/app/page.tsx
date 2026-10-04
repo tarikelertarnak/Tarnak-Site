@@ -28,7 +28,7 @@ export default async function Page() {
     <div className="min-h-screen w-full relative">
       <Navigation content={content} />
       <main id="main" className="w-full">
-        <HeroSection content={content} />
+        <HeroSection content={content} cvs={cvs} />
         <AboutSection content={content} cvs={cvs} />
         <ProjectsSection
           content={content}

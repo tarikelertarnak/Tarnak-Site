@@ -39,9 +39,10 @@ export default async function ProjectsPage() {
             title=""
             subTitle={content.projects.subtitle}
             description={content.projects.description}
-            icon={<FolderIcon size={36} className="inline-block" />}
-            big
-          />
+icon={<FolderIcon size={36} className="inline-block" />}
+              headingLevel="h1"
+              big
+            />
 
           {/* GitHub Projects button */}
           <div className="mx-auto mb-8 flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-2">

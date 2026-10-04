@@ -14,8 +14,7 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
     name: 'TARIK ELER',
     tagline: 'Yazılımcı & Sistem Mimarisi',
     badge: '',
-    description:
-      'Next.js, TypeScript ve yapay zeka ile modern web deneyimleri üretiyorum. Tasarımdan deploy\u2019a kadar uçtan uca çalışırım.',
+    description: '',
     exploreLabel: 'Projeleri Keşfet',
     connectLabel: 'İletişime Geç',
     emoji: '🚀',

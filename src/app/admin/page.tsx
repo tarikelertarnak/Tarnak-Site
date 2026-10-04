@@ -6,7 +6,12 @@ import { getContent } from '@/lib/content'
 import { getLocale } from '@/lib/i18n-server'
 import { getSessionUser } from '@/lib/supabase/session'
 
-export const metadata = { title: 'Admin Panel' }
+export const metadata = {
+    title: 'Admin Panel',
+    // 2026-10-04: noindex — panel sayfasi arama motorlarina acik bir sayfa
+    // degil (once layout'tan index:true miras aliyordu).
+    robots: { index: false, follow: false },
+  }
 export const dynamic = 'force-dynamic'
 export default async function AdminPage() {
   const user = await getSessionUser()

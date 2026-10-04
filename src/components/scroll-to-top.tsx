@@ -18,6 +18,19 @@ export function ScrollToTop() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  /**
+   * `/#contact` gibi adresleri `https://tarikelertarnak.pages.dev/` yapar.
+   *
+   * Sunucuya hash GONDERILMEZ, bu yuzden redirect ile cozulemez; istemcide
+   * `replaceState` ile adres temizlenir. `replace` (reassign) degil — geri
+   * tusu onceki URL'e donmesin diye. Sayfa yeniden yuklenmez, kayma olmaz.
+   */
+  useEffect(() => {
+    if (!window.location.hash)
+      return
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
+  }, [])
+
   return (
     <button
       type="button"

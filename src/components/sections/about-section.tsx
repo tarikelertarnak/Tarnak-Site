@@ -4,27 +4,24 @@ import type { ReactNode } from 'react'
 import type { CvDoc } from '@/lib/cv'
 import type { SiteContent, ToolboxItem as ToolboxItemType } from '@/lib/content'
 import { Popover } from '@lobehub/ui/base-ui'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { BentoBox, BentoBoxItem } from '@/components/ui/bento-box'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { CvPicker } from '@/components/ui/cv-picker'
 import {
   BrainIcon,
   CheckIcon,
-  ChevronDownIcon,
   ChevronRightIcon,
   CodeIcon,
   CopyIcon,
-  DownloadIcon,
   EyeIcon,
   FileIcon,
   LaptopIcon,
   LinkIcon,
   MusicIcon,
   SchoolIcon,
-  socialIcon,
   TerminalIcon,
   UserIcon,
 } from '@/components/ui/icons'
@@ -61,22 +58,6 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
           icon={<UserIcon size={34} className="inline-block" />}
           big
         />
-        {/* Social links */}
-        <div className="mb-8 flex flex-row flex-wrap items-center justify-center gap-3">
-          {content.social.map(item => (
-            <a
-              key={item.name}
-              href={item.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={item.name}
-              title={item.name}
-              className="group flex h-11 w-11 items-center justify-center rounded-xl border border-foreground-200/10 bg-background text-foreground-500 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-            >
-              {socialIcon(item.icon, 22)}
-            </a>
-          ))}
-        </div>
       </FadeUpSection>
 
       <div className="flex w-full justify-center">
@@ -150,12 +131,45 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                     label={t('about.infoFirstLanguage')}
                     value={content.profile.firstLanguage}
                   />
-                  <InfoRow
-                    label={t('about.infoOtherLanguages')}
-                    value={content.profile.otherLanguages}
-                  />
                 </div>
               </div>
+            </div>
+          </BentoBoxItem>
+
+          {/* Languages: structured table. Data stays a plain string
+              ("İngilizce (A2), Almanca (A1)") — parsed here, no schema churn. */}
+          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-2 gap-4">
+            <h3 className="text-base sm:text-lg font-semibold">
+              {t('about.languagesTitle')}
+            </h3>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <tbody>
+                  <tr className="border-b border-foreground-200/10">
+                    <td className="py-2 pr-3 font-medium">
+                      {content.profile.firstLanguage}
+                    </td>
+                    <td className="py-2 text-right">
+                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold uppercase text-primary">
+                        {t('about.infoFirstLanguage')}
+                      </span>
+                    </td>
+                  </tr>
+                  {parseLanguages(content.profile.otherLanguages).map(row => (
+                    <tr
+                      key={row.name}
+                      className="border-b border-foreground-200/10 last:border-b-0"
+                    >
+                      <td className="py-2 pr-3 text-foreground-700 dark:text-foreground/80">
+                        {row.name}
+                      </td>
+                      <td className="py-2 text-right font-semibold text-primary">
+                        {row.level}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </BentoBoxItem>
 
@@ -167,7 +181,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                   <FileIcon size={20} className="text-primary" />
                   {about.whoTitle}
                 </h3>
-                <CvActions cvs={cvs} />
+                <CvPicker cvs={cvs} size="sm" color="primary" />
               </div>
               <p className="text-xs sm:text-sm text-foreground-500 leading-relaxed">
                 {about.whoText}
@@ -237,90 +251,20 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
 }
 
 /**
- * CV aksiyonları — tek CV varsa normal "İndir / Görüntüle" butonları,
- * birden fazla CV varsa aramalı (search) bir combobox: kullanıcı listeden
- * istediği dili seçip açar.
+ * "İngilizce (A2), Almanca (A1)" → [{ name, level }].
+ * Seviye parantezi yoksa boş string döner; ana dil tabloda ayrı satır.
  */
-function CvActions({ cvs }: { cvs: CvDoc[] }) {
-  const { t } = useT()
-  const [open, setOpen] = useState(false)
-  const [q, setQ] = useState('')
-  const rootRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open)
-      return
-    const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node))
-        setOpen(false)
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [open])
-
-  const filtered = cvs.filter(c => !q.trim() || c.label.toLowerCase().includes(q.trim().toLowerCase()))
-
-  // Tek CV → düz butonlar (combobox gereksiz).
-  if (cvs.length <= 1) {
-    const href = cvs[0]?.href ?? '/cv/tarikeler-cv.pdf'
-    return (
-      <div className="flex flex-row gap-2">
-        <Button size="sm" color="primary" href={href} target="_blank" startContent={<DownloadIcon size={16} />}>
-          {t('about.cvDownload')}
-        </Button>
-        <Button size="sm" color="primary" href={href} target="_blank" startContent={<EyeIcon size={16} />}>
-          {t('about.cvView')}
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <div ref={rootRef} className="relative flex flex-row gap-2">
-      <Button
-        size="sm"
-        color="primary"
-        onClick={() => setOpen(o => !o)}
-        startContent={<DownloadIcon size={16} />}
-        endContent={<ChevronDownIcon size={14} />}
-        aria-expanded={open}
-      >
-        {t('about.cvDownload')}
-      </Button>
-      {open && (
-        <div className="absolute right-0 top-11 z-30 w-64 overflow-hidden rounded-xl border border-foreground/15 bg-background shadow-2xl shadow-black/20">
-          <div className="border-b border-foreground/10 p-2">
-            <Input
-              value={q}
-              onValueChange={setQ}
-              placeholder={t('about.cvSearch')}
-              className="h-8"
-            />
-          </div>
-          <div className="max-h-56 overflow-y-auto p-1.5">
-            {filtered.map(c => (
-              <a
-                key={c.id}
-                href={c.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm text-foreground/80 no-underline transition-colors hover:bg-primary/10 hover:text-primary"
-              >
-                <span className="min-w-0 truncate">{c.label}</span>
-                <DownloadIcon size={14} className="shrink-0 opacity-60" />
-              </a>
-            ))}
-            {filtered.length === 0 && (
-              <p className="px-2.5 py-3 text-center text-xs text-foreground/50">
-                {t('projects.noResultsShort')}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  )
+function parseLanguages(raw: string): { name: string, level: string }[] {
+  return raw
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const m = entry.match(/^(.*?)\s*\(([^)]+)\)$/)
+      return m
+        ? { name: m[1].trim(), level: m[2].trim() }
+        : { name: entry, level: '' }
+    })
 }
 
 function InfoRow({

@@ -41,7 +41,7 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
     description: '',
     whoTitle: 'Who Am I?',
     whoText:
-      'A web developer who enjoys writing code and building products. Web development, design and technology are my passion.',
+      'A web developer who enjoys writing code and building products. Web development, design and technology are my passion. I enjoy everything that builds me up as a person.',
     toolboxTitle: 'My Toolbox',
     toolboxDescription: 'Technologies I use while building projects and sites.',
     beyondTitle: 'Beyond Code',

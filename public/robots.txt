@@ -29,9 +29,21 @@
 
 User-agent: *
 Allow: /
-Disallow: /admin
-Disallow: /login
-Disallow: /api/
-Disallow: /puck
+
+# Uygulama rotalari — indekslenmemeli. Sayfalarin meta `robots` alani da
+# noindex (2026-10-04); robots.txt tarama butcesi icin, meta etiketi icerik
+# icin. Ikisi birlikte verilir.
+Disallow: /admin        # yönetim paneli (alt rotalar dahil: prefix kurali)
+Disallow: /puck         # görsel sayfa düzenleyici
+Disallow: /login        # giriş formu
+Disallow: /sign         # kayıt formu
+Disallow: /search       # arama sonuçları — klasik duplicate content
+Disallow: /auth         # OAuth callback (düşman link/param kirliliği)
+Disallow: /api/         # API — indekslenmemeli
+
+# İçerik sinyalleri (yukarıdaki şablon yorumu bunu zaten tanımlıyordu ama
+# hiçbir direktif yoktu). `search=yes` arama indeksine açık anlamına gelir;
+# ai-train belirtilmediği için "ne izin ver ne yasakla" (nötr) kalır.
+Content-Signal: search=yes
 
 Sitemap: https://tarikelertarnak.pages.dev/sitemap.xml

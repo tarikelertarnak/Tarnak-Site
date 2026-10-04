@@ -3,7 +3,11 @@ import { getLocale } from '@/lib/i18n-server'
 import { getSessionUser } from '@/lib/supabase/session'
 import Client from './client'
 
-export const metadata = { title: 'Sayfa Düzenleyici' }
+export const metadata = {
+    title: 'Sayfa Düzenleyici',
+    // 2026-10-04: noindex (once layout'tan index:true miras aliyordu).
+    robots: { index: false, follow: false },
+  }
 export const dynamic = 'force-dynamic'
 
 export default async function PuckAdminPage({

@@ -12,7 +12,11 @@ import { TopBar } from '@/components/top-bar'
 
 import { SearchDialog } from '@/components/search-dialog'
 import { getContent } from '@/lib/content'
-import { GSC_VERIFICATION_TOKEN } from '@/lib/gsc'
+import {
+  BING_VERIFICATION,
+  GOOGLE_SITE_VERIFICATION,
+  YANDEX_VERIFICATION,
+} from '@/lib/search-verification'
 import { getLocaleDirection, getStaticLocale } from '@/lib/i18n-server'
 import { SITE_URL } from '@/lib/site-url'
 import '@fontsource/montserrat/400.css'
@@ -103,16 +107,36 @@ export async function generateMetadata(): Promise<Metadata> {
     authors: [{ name: 'Tarık Eler (Tarnak)', url: SITE_URL }],
     creator: 'Tarık Eler (Tarnak)',
     publisher: 'Tarık Eler (Tarnak)',
-    robots: { index: true, follow: true, 'max-image-preview': 'large', 'max-snippet': -1 },
-    alternates: { canonical: '/' },
+    robots: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      // max-snippet:-1 = Google istediği kadar uzun metin gösterebilir
+      // (yazı seçiminde "tarik eler" görünsün diye önemli).
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+    alternates: {
+      canonical: '/',
+      // RSS ucunu HTML'de ilan et: tarayici/okuyucu otomatik bulur, ucuzlar
+      // yeni yazilari ucuz bir GET ile ogrenir (bkz. src/app/feed.xml).
+      types: {
+        'application/rss+xml': [{ url: '/feed.xml', title: 'Tarık Eler (Tarnak) — Blog' }],
+      },
+    },
     other: {
       // 2026-10-02: pages.dev subdomain'inde DNS TXT dogrulamasi YAPILAMAZ (zone
       // Cloudflare'e ait). Bu yuzden GSC URL onizleme mulku bu meta etiketiyle
-      // dogrulanir. Token src/lib/gsc.ts'de TEK KAYNAK olarak tutulur; ayni
-      // deger /google-verification route handler'i tarafindan da kullanilir.
-      'google-site-verification': GSC_VERIFICATION_TOKEN,
-      // 2026-09-25: Yandex Webmaster doğrulaması (webmaster.yandex.com)
-      'yandex-verification': '95b7322d0c238a81',
+      // dogrulanir. Token src/lib/search-verification.ts'de TEK KAYNAK olarak
+      // tutulur; ayni deger /google-verification route handler'i tarafindan da
+      // kullanilir.
+      'google-site-verification': GOOGLE_SITE_VERIFICATION,
+      // Yandex Webmaster (2026-09-25) — jeton gomuluydu, tek kaynaga tasindi.
+      'yandex-verification': YANDEX_VERIFICATION,
+      // Bing Webmaster — BING_SITE_VERIFICATION tanimliysa basilir. Anahtari
+      // kosul spreading ile ekliyoruz: Next'in `other` tipi `undefined` kabul
+      // etmiyor (TS2322), dogrudan yazmak build'i kirardi.
+      ...(BING_VERIFICATION ? { 'msvalidate.01': BING_VERIFICATION } : {}),
     },
     formatDetection: { email: false, address: false, telephone: false },
 icons: {
@@ -239,13 +263,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 ],
                 url: SITE_URL,
                 inLanguage: ['tr', 'en'],
-                // Sitelinks arama kutusu: "tarik eler chat" gibi aramalar sitenin
-                // arama alanina yonlensin (Google sitelinks/searchbox).
-                potentialAction: {
-                  '@type': 'SearchAction',
-                  target: `${SITE_URL}/search?q={search_term_string}`,
-                  'query-input': 'required name=search_term_string',
-                },
+                // 2026-10-04: `potentialAction: SearchAction` KALDIRILDI.
+                // Iki neden: (1) Google Kasim 2024'te sitelinks arama kutusu
+                // ozelligini kaldirdi, schema.org uzerinden isteniyorsa bile
+                // pratikte islevsiz; (2) hedef `/search` sayfasi
+                // `robots: {index:false}` — yani JSON-LD "burada ara" diyordu,
+                // baglandigi sayfa indekslenmiyordu. Celişki kaldirildi.
               },
             ]),
           }}

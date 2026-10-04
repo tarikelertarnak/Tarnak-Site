@@ -3,7 +3,7 @@
     "name": "TARIK ELER",
     "tagline": "Yazılımcı & Sistem Mimarisi",
     "badge": "",
-    "description": "Ben Tarık Eler (Tarnak). Next.js, TypeScript ve yapay zeka ile modern web deneyimleri üretiyorum. Tasarımdan deploy'a kadar uçtan uca çalışırım.",
+    "description": "",
     "exploreLabel": "Projeleri Keşfet",
     "connectLabel": "İletişime Geç",
     "emoji": "🚀",
@@ -71,75 +71,45 @@
     "title": "Dünyama Kısa Bir Bakış",
     "description": "",
     "whoTitle": "Ben Kimim?",
-    "whoText": "Kod yazmayı ve ürün geliştirmeyi seven bir web geliştiriciyim. Web geliştirme, tasarım ve teknoloji benim için bir tutku.",
+    "whoText": "Kod yazmayı ve ürün geliştirmeyi seven bir web geliştiriciyim. Web geliştirme, tasarım ve teknoloji benim için bir tutku. Kendimi geliştiren her şeyi yapmaktan hoşlanıyorum.",
     "toolboxTitle": "Araç Çantam",
     "toolboxDescription": "Projeler ve siteler geliştirirken kullandığım teknolojiler.",
     "toolbox": [
       {
-        "label": "Next.js",
-        "icon": "logos:nextjs-icon",
-        "type": "link",
-        "href": "https://nextjs.org"
-      },
-      {
-        "label": "Tailwind",
-        "icon": "logos:tailwindcss-icon",
-        "type": "link",
-        "href": "https://tailwindcss.com"
-      },
-      {
-        "label": "Docker",
-        "icon": "logos:docker-icon",
-        "type": "link",
-        "href": "https://www.docker.com"
-      },
-      {
-        "label": "Node.js",
-        "icon": "logos:nodejs-icon",
-        "type": "link",
-        "href": "https://nodejs.org"
-      },
-      {
-        "label": "Git",
-        "icon": "logos:git-icon",
-        "type": "link",
-        "href": "https://git-scm.com"
-      },
-      {
-        "label": "Python",
-        "icon": "logos:python",
-        "type": "link",
-        "href": "https://www.python.org"
-      },
-      {
-        "label": "Html",
-        "icon": "devicon:react",
+        "label": "HTML",
+        "icon": "",
         "type": "link",
         "href": "https://developer.mozilla.org/en-US/docs/Web/HTML"
       },
       {
         "label": "CSS",
-        "icon": "devicon:react",
+        "icon": "",
         "type": "link",
         "href": "https://developer.mozilla.org/en-US/docs/Web/CSS"
       },
       {
         "label": "JavaScript",
-        "icon": "devicon:react",
+        "icon": "",
         "type": "link",
         "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript"
       },
       {
         "label": "C#",
-        "icon": "devicon:react",
+        "icon": "",
         "type": "link",
-        "href": "https://learn.microsoft.com/en-us/dotnet/csharp/"
+        "href": "https://learn.microsoft.com/dotnet/csharp/"
       },
       {
-        "label": "C++",
-        "icon": "devicon:react",
+        "label": "Python",
+        "icon": "",
         "type": "link",
-        "href": "https://en.cppreference.com"
+        "href": "https://www.python.org"
+      },
+      {
+        "label": "SQL",
+        "icon": "",
+        "type": "link",
+        "href": "https://www.postgresql.org/docs/current/sql.html"
       }
     ],
     "beyondTitle": "Kodun Ötesinde",

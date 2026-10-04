@@ -144,9 +144,10 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
           title=""
           subTitle={t('blog.sub')}
           description={t('blog.desc')}
-          icon={<NewspaperIcon size={36} className="inline-block" />}
-          big
-        />
+icon={<NewspaperIcon size={36} className="inline-block" />}
+            headingLevel="h1"
+            big
+          />
 
         {!onBlogPage && (
           <div className="mb-4 flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-2">

@@ -1,4 +1,4 @@
-# CARL LOG
+# TARMAS LOG
 
 ## 2026-09-28
 
@@ -334,7 +334,7 @@ Cache HIT olsa bile 503 donuyor. Demek ki maliyet cache okumasinda degil,
 - /chat /sign /profil orce-dynamic oldugu icin her istek render — en kotusu.
 
 ### Kapanmayan tek konu
-Workers **Paid** plan (30 sn CPU, ~5 USD/ay). CARL kernel 6: odeme yapilmaz.
+Workers **Paid** plan (30 sn CPU, ~5 USD/ay). TARMAS kernel 6: odeme yapilmaz.
 Kullanici karari gerekiyor. Kabul edilirse tek satirlik sonuc: plan yukseltilir,
 prime dongusu gereksiz hale gelir.
 
@@ -344,3 +344,58 @@ prime dongusu gereksiz hale gelir.
   GitHub push protection blokladi. git filter-branch --index-filter ile gecmisten
   silindi, dosya .gitignore'a alindi. **GOCSPX- secreti hala gecerliyse rotate et.**
 - Yedek branch ackup/pre-secret-purge push sonrasi silindi.
+## [2026-10-04] UI fazi — hero/about/CV/diller/araç çantası
+- Sosyal linkler (GitHub/Instagram/LinkedIn/Discord) KALDIRILDI: hero-section, about-section, /about sayfası. `content.social` verisi duruyor (contact-quick-menu + admin kullanıyor).
+- `hero.description` sabit bio metni 3 dosyadan boşaltıldı (content.json, content.ts, i18n-content-tr.ts). Hero'da koşullu render: boşsa gizli, admin yazınca geri gelir.
+- Hero CTA: Projeler, İletişim, CV, BLOG, HAKKIMDA, Sohbet (6 link). Yeni i18n anahtarı yok — `nav.blog/about/chat` zaten vardı.
+- YENI `src/components/ui/cv-picker.tsx`: aramalı combobox, geçerli sayfa dili en üstte "Önerilen" rozeti. AboutSection'daki `CvActions` kopyası silindi, ikisi de paylaşıyor.
+- Diller tablosu: `parseLanguages("İngilizce (A2), Almanca (A1)")` ile ayrıştırılıp tabloya basıldı; InfoRow'lar kaldırıldı. Ana dil ayrı satır.
+- Araç çantamı Supabase `skills` tablosunda 6 satıra indirildi: HTML, CSS, JavaScript, C#, Python, SQL. Python'in gerçek level/years/değerleri korundu; yeniler level=0 (uydurma veri yok, admin doldurur).
+- `SKILL_LABEL_LINKS`'e `SQL` eklendi (`C#` zaten vardı → yinelenen anahtar hatası düzeltildi).
+- Doğrulama: `tsc --noEmit` 0 hata · `vitest run` 21 dosya / 303 test geçti · 3 JSON geçerli.
+- Supabase durumu: skills=6, cvs=1 (sadece tr), projects=1, posts=0, stats=1.
+- NOT: `cvs` tek kayıt olduğu için combobox düz butona düşüyor. Dil başına CV dosyası yok (public/cv'de yalnız tarikeler-cv.pdf + .html, TR).
+
+## [2026-10-04] TARMAS faz — .carl rename + SEO/1102 kapanisi + yayin
+
+### Isimlendirme
+- .carl/ -> .tarmas/ (git mv, gecmis korunur)
+- ~/.config/opencode/command/carl.md -> 	armas.md (/carl -> /tarmas, 0 kalan referans)
+- .tarmas/STATE.md|BACKLOG.md|LOG.md basliklari TARMAS olarak guncellendi
+
+### SEO — blog detay sayfasi
+- src/app/blog/[slug]/page.tsx: orce-dynamic -> orce-static + generateStaticParams()
+  KOK NEDEN: getLocale() cookies()/headers() okuyordu -> route dinamik -> her istekte tam SSR
+  -> Workers Free 10 ms CPU asiminda 503. Diger 7 public sayfa 2026-10-03'te ayni sebepten
+  static'e alinmisti; blog detay son SSR rotasiydi.
+- dynamicParams = false: OLcum posts=0 oldugu icin generateStaticParams bos donuyordu ve
+  Next olmayan slug'i render edip 404 HTML'ini **200** ile cache'liyordu
+  (x-nextjs-prerender: 1, s-maxage=31536000, canonical /) = soft 404.
+  Artik prerender edilmemis slug hic render edilmiyor -> dogru 404.
+- src/app/sitemap.ts: blog lastModified CONTENT_LASTMOD (dosya mtime) -> post.date.
+  Google lastModified'a guvenir; her yazi "su an degisti" sinyal veriyordu.
+
+### SEO — Pages asset soft-404 (YENI BULGU)
+- OLUM: /yok.png, /yok.jpg, /yok.woff2, /manifest.webmanifest -> **200 + 258 KB ana sayfa**.
+  KOK NEDEN: sayfalar static'e alininca koke index.html yazildi; Pages, exclude listesindeki
+  (wildcard /*.png vs.) eslesmeyen ASSET icin index.html'yi 200 ile servis ediyor.
+  5 gun onceki deployment'da (0d11fdbd) /yok.png 404 len=0 idi -> yan etkiyi biz getirdik.
+- COZUM: pages-copy-worker.cjs prerender edilmis _not-found.cache govdesini koke
+  404.html olarak yazar. Pages eslesmeyen asset icin 404.html + HTTP 404 donuyor.
+
+### Icerik
+- data/content.json + src/lib/i18n-content-en.ts whoText:
+  "Kendiimi gelistiren her seyi yapmaktan hoslaniyorum" eklendi (kullanici talebi).
+
+### Deploy + olcum (d71b6d48)
+- tsc 0 hata · vitest 303/303 · build OK · prime 7/7 ilk denemede 200
+- 11 public rota + endpoint 200 · 9/9 404 sinifi dogru · 308 slash redirect dogru
+- Blog detay 404 · sitemap 7 loc + 7 lastmod · robots 200 · /admin noindex,nofollow
+
+### Kalan (bloklu / karar gerekiyor)
+- Cok dilli CV: 17 ek locale PDF/HTML yok; cvs tablosunda tek Turkce kayit
+- posts=0: gercek blog icerigi yok (uydurma icerik uretilmez)
+- Bing verification token + IndexNow key yok
+- BrowserOS neo kapali (:9210 red) -> gercek tarayici/hover testi yapilamadi;
+  dogrulama static HTML uzerinden yapildi
+- Google OAuth GOCSPX- siri commit edilmedi; rotate kullaniciya

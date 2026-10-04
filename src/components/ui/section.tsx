@@ -41,6 +41,7 @@ export function SectionTitle({
   description,
   icon,
   big = false,
+  headingLevel = 'h2',
 }: {
   title: string
   subTitle: string
@@ -51,14 +52,28 @@ export function SectionTitle({
    * underlined title (tasarimcidayi style). The title is hidden.
    */
   big?: boolean
+  /**
+   * Baslik seviyesi. Varsayilan 'h2' — hicbir sayfada h1'i degistirmez.
+   *
+   * 2026-10-04 (SEO): /blog, /projects, /credits, /donate, /github sayfalari
+   * sayfa basligini bu bilesen ile basiyordu ve bilesen hep <h2> uretiyordu;
+   * sonuc olarak bu bes sayfada hic <h1> yoktu. Arama motorlari sayfanin
+   * konusunu <h1>'den okur, o yuzden bu sayfalarda konu basligi <h1> olmali.
+   * `headingLevel` verilmeden hicbir yerde davranis degismez.
+   */
+  headingLevel?: 'h1' | 'h2'
 }) {
+  // Dinamik etiket adi: JSX'te <Heading> yazilamaz, bu yuzden kucuk bir
+  // degiskenle cozuluyor. `h2` default oldugu icin mevcut kullanim degismez.
+  const Heading = headingLevel
+
   if (big) {
     return (
       <div className="flex flex-col items-center justify-center pb-8 sm:pb-10 lg:pb-12 text-center">
-        <h2 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
+        <Heading className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
           {icon}
           {subTitle}
-        </h2>
+        </Heading>
         {description && (
           <p className="mt-4 text-foreground-500 text-sm sm:text-base max-w-md lg:max-w-lg">{description}</p>
         )}
@@ -71,7 +86,7 @@ export function SectionTitle({
       <p className="animate-gradient bg-gradient-to-r from-[#FBBF24] to-[#00C950] bg-size-300 bg-clip-text font-bold text-transparent text-xs sm:text-sm">
         {subTitle}
       </p>
-      <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">{title}</h2>
+      <Heading className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">{title}</Heading>
       <p className="text-foreground-500 text-sm sm:text-base max-w-md lg:max-w-lg">{description}</p>
     </div>
   )

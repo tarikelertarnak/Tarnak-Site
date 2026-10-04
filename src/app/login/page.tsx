@@ -8,6 +8,12 @@ import { getSessionUser } from '@/lib/supabase/session'
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: 'Giriş | TARIK ELER - TARNAK',
+    // 2026-10-04: Bu sayfa metadata'da SADECE title tasidi; `robots` alani
+    // tanimli olmadigi icin layout'tan `index: true, follow: true` MIRAS
+    // aliyordu. Yani giris formu Google'a "indekslenmeye uygun sayfa"
+    // sinyali gonderiyordu. Ayni seyin /sign, /admin, /puck icin de gecerli
+    // oldugu icelendi: hepsi noindex.
+    robots: { index: false, follow: false },
   }
 }
 

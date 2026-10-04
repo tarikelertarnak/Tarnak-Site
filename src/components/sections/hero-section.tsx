@@ -1,17 +1,16 @@
 'use client'
 
 import type { Variants } from 'motion/react'
+import type { CvDoc } from '@/lib/cv'
 import type { SiteContent } from '@/lib/content'
 import { TypewriterEffect } from '@lobehub/ui/awesome'
 import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
-import {
-  ChatIcon,
-  EyeIcon,
-  socialIcon,
-} from '@/components/ui/icons'
+import { CvPicker } from '@/components/ui/cv-picker'
+import { EyeIcon } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
+import { SITE_URL } from '@/lib/site-url'
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -30,19 +29,7 @@ const item: Variants = {
   },
 }
 
-/** Simplified hero — just the list of technologies I work with (static). */
-const STACK = [
-  'TypeScript',
-  'React',
-  'Next.js',
-  'Node.js',
-  'Tailwind',
-  'PostgreSQL',
-  'Docker',
-  'Python',
-] as const
-
-export function HeroSection({ content }: { content: SiteContent }) {
+export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc[] }) {
   const { name, tagline, description } = content.hero
   const { t } = useT()
 
@@ -62,7 +49,12 @@ export function HeroSection({ content }: { content: SiteContent }) {
           animate="show"
           className="flex flex-col items-center text-center md:items-start md:text-left"
         >
-          {/* Manifesto title */}
+          {/*
+            Name + TARNAK: TARNAK artık TARIK ELER ile aynı tipografide
+            (font-black / uppercase / tracking-tighter / text-primary), sağ üstte
+            ve üst kenardan taşarak durur. Üzerine gelince italik, tıklanınca
+            temiz site köküne gider.
+          */}
           <motion.div variants={item} className="relative w-full">
             <h1
               className={[
@@ -70,13 +62,14 @@ export function HeroSection({ content }: { content: SiteContent }) {
                 'text-5xl sm:text-7xl md:text-7xl lg:text-8xl',
               ].join(' ')}
             >
-<span className="block pl-1">{name}</span>
-              <span className="block pl-1 mt-1 text-base sm:text-lg md:text-xl lg:text-2xl font-bold text-foreground/80 tracking-widest">
-                {' '}
-                — TARNAK
-                {' '}
-              </span>
+              <span className="block pl-1">{name}</span>
             </h1>
+            <a
+              href={`${SITE_URL}/`}
+              className="absolute -top-1 right-0 block font-black uppercase leading-none tracking-tighter text-primary no-underline transition-transform duration-300 hover:italic hover:-translate-y-0.5 text-3xl sm:text-5xl md:text-6xl lg:text-7xl"
+            >
+              TARNAK
+            </a>
           </motion.div>
 
           {/* Typewriter */}
@@ -92,19 +85,20 @@ export function HeroSection({ content }: { content: SiteContent }) {
             />
           </motion.div>
 
-          {/* Description */}
-          <motion.p
-            variants={item}
-            className="mt-3 max-w-xl text-sm sm:text-base text-foreground-500 leading-relaxed"
-          >
-            {description}
-          </motion.p>
-
           {/*
-            CTA butonları: 6 eşit buton "seçim paradoksu" yaratıyordu
-            (Hickson: fazla seçenek karar yavaşlatır). Artık 1 birincil +
-            2 ikincil. Birincil: Projeler. İkincil: İletişim, CV.
+            Description: sabit metin kaldırıldı. İçerik boşsa alan gizlenir,
+            admin `hero.description` alanına yazınca kendiliğinden geri gelir.
           */}
+          {description.trim() && (
+            <motion.p
+              variants={item}
+              className="mt-3 max-w-xl text-sm sm:text-base text-foreground/500 leading-relaxed"
+            >
+              {description}
+            </motion.p>
+          )}
+
+          {/* Ana gezinme: Projeler, İletişim, CV, Blog, Hakkımda, Sohbet. */}
           <motion.div
             variants={item}
             className="mt-7 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4"
@@ -123,36 +117,33 @@ export function HeroSection({ content }: { content: SiteContent }) {
             >
               {t('hero.feedback')}
             </Button>
+            <CvPicker
+              cvs={cvs}
+              variant="bordered"
+              className="font-semibold text-sm sm:text-base px-6 py-3"
+              startContent={<EyeIcon size={18} />}
+            />
             <Button
               variant="bordered"
               className="font-semibold text-sm sm:text-base px-6 py-3"
-              href={content.about.cv.href ?? '/cv/tarikeler-cv.pdf'}
-              target="_blank"
-              rel="noopener noreferrer"
-              startContent={<EyeIcon size={18} />}
+              href="/blog/"
             >
-              {t('about.cvView')}
+              {t('nav.blog')}
             </Button>
-          </motion.div>
-
-          {/* Social icons */}
-          <motion.div
-            variants={item}
-            className="mt-8 flex flex-row flex-wrap items-center justify-center gap-3 md:justify-start"
-          >
-            {content.social.map(social => (
-              <a
-                key={social.name}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={social.name}
-                title={social.name}
-                className="group flex h-11 w-11 items-center justify-center rounded-xl border border-primary/30 bg-primary/10 text-primary transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:bg-primary/20 hover:text-primary"
-              >
-                {socialIcon(social.icon, 22)}
-              </a>
-            ))}
+            <Button
+              variant="bordered"
+              className="font-semibold text-sm sm:text-base px-6 py-3"
+              href="#about"
+            >
+              {t('nav.about')}
+            </Button>
+            <Button
+              variant="bordered"
+              className="font-semibold text-sm sm:text-base px-6 py-3"
+              href="/chat/"
+            >
+              {t('nav.chat')}
+            </Button>
           </motion.div>
         </motion.div>
 

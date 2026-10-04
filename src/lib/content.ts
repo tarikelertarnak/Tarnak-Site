@@ -47,6 +47,7 @@ const SKILL_LABEL_LINKS: Record<string, string> = {
   'React': 'https://react.dev',
   'PostgreSQL': 'https://www.postgresql.org',
   'C#': 'https://learn.microsoft.com/en-us/dotnet/csharp/',
+  'SQL': 'https://www.postgresql.org/docs/current/sql.html',
   'C++': 'https://en.cppreference.com',
 }
 
@@ -541,8 +542,9 @@ async function getDefaultContent(): Promise<SiteContent> {
       name: 'TARIK ELER',
       tagline: 'Yazılımcı & Sistem Mimarisi',
       badge: '',
-      description:
-        'Next.js, TypeScript ve yapay zeka ile modern web deneyimleri üretiyorum. Tasarımdan deploy\u2019a kadar uçtan uca çalışırım.',
+      // Sabit bio metni kaldırıldı; admin `hero.description` alanına yazınca
+      // hero içinde kendiliğinden görünür (hero-section.tsx koşullu render).
+      description: '',
       exploreLabel: 'Projeleri Keşfet',
       connectLabel: 'İletişime Geç',
       emoji: '🚀',

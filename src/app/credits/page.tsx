@@ -76,7 +76,7 @@ export default async function CreditsPage() {
         {/* Hero */}
         <Section className="flex-col pt-28 sm:pt-32 pb-12 sm:pb-16" id="credits">
           <div className="flex flex-col items-center justify-center pb-8 sm:pb-10 lg:pb-12 text-center">
-            <h2 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
+<h1 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width={38}
@@ -95,7 +95,7 @@ export default async function CreditsPage() {
                 </g>
               </svg>
               {isEn ? 'CONTRIBUTORS' : 'KATKIDA BULUNANLAR'}
-            </h2>
+            </h1>
           </div>
         </Section>
 

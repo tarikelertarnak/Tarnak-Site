@@ -8,6 +8,9 @@ import { getSessionUser } from '@/lib/supabase/session'
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: 'Kayıt Ol | TARIK ELER - TARNAK',
+    // 2026-10-04: layout'tan `index: true` miras aliyordu — kayit formu
+    // indeksleniyordu. noindex (bkz. login/page.tsx).
+    robots: { index: false, follow: false },
   }
 }
 

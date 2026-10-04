@@ -38,6 +38,7 @@ export default async function GithubPage() {
                 ? 'GitHub integration will be active soon. For now you can browse repos from the projects page.'
                 : 'GitHub entegrasyonu yakında aktif olacak. Şimdilik projeler sayfasından repo\'lara göz atabilirsin.'
             }
+headingLevel="h1"
             big
           />
         </Section>

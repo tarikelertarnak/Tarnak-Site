@@ -1,4 +1,4 @@
-# CARL BACKLOG
+# TARMAS BACKLOG
 
 ## P0 — Kritik (güvenlik / veri kaybı / build)
 - [ ] SEC-001 GitHub path traversal düzeltmesi doğrulandı (500→400) — `src/lib/github.ts`

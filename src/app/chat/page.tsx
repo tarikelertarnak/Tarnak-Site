@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   title: 'Tarık Eler Chat | TARIK ELER - TARNAK',
   description:
     'Tarık Eler (Tarnak) ile sohbet et — yapay zeka destekli chat. Next.js, TypeScript ve yazılım geliştirme hakkında sorularını sor. tarik eler chat, tarnak chat.',
-  alternates: { canonical: siteUrl('/chat') },
+  alternates: { canonical: '/chat' },
   openGraph: {
     type: 'website',
     url: siteUrl('/chat'),

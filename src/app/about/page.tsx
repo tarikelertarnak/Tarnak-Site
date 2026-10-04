@@ -1,5 +1,5 @@
 import { Navigation } from '@/components/navigation'
-import { BriefcaseIcon, CodeIcon, GithubIcon, HeartIcon, ShieldIcon, socialIcon, StarIcon, UserIcon } from '@/components/ui/icons'
+import { BriefcaseIcon, CodeIcon, GithubIcon, HeartIcon, ShieldIcon, StarIcon, UserIcon } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 
@@ -182,22 +182,6 @@ export default async function AboutPage() {
               <UserIcon size={36} className="inline-block" />
               {about.subtitle}
             </h1>
-            {/* Social links */}
-            <div className="mt-8 flex flex-row flex-wrap items-center justify-center gap-3">
-              {content.social.map(item => (
-                <a
-                  key={item.name}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={item.name}
-                  title={item.name}
-                  className="group flex h-11 w-11 items-center justify-center rounded-xl border border-foreground-200/10 bg-background text-foreground-500 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-                >
-                  {socialIcon(item.icon, 22)}
-                </a>
-              ))}
-            </div>
             {about.description && (
               <p className="mt-4 text-base text-foreground/60 sm:text-lg">
                 {about.description}

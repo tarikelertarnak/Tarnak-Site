@@ -21,9 +21,11 @@ SRC_WIN="/mnt/c/Users/TARIKELER/Documents/Projelerim/TARIK ELER TARNAK/site"
 DST="$HOME/tarnak-build"
 ACCOUNT="baa0d2e06bd52fbf27ac68fd59aaa45b"
 HOST="https://tarikelertarnak.pages.dev"
-# Sadece public pazarlama rotalari. /chat /admin /sign /api ASLA prime edilmez
-# (kimlik dogrulama gerektirir, cache'lenmemeli).
-PUBLIC_ROUTES=(/ /projects /blog /about /credits /donate /github)
+# Sadece public pazarlama rotalari, KANONIK (trailing slash'li) haliyle.
+# /chat /admin /sign /api ASLA prime edilmez (kimlik dogrulama gerektirir,
+# cache'lenmemeli). Slash'siz hal 308 redirect doner; prime 308'i basarisiz
+# sayip donguyu yirdigi icin kanonik yollari test ediyoruz.
+PUBLIC_ROUTES=(/ /projects/ /blog/ /about/ /credits/ /donate/ /github/)
 
 step() { printf '\n\033[1m### %s\033[0m\n' "$1"; }
 
@@ -40,6 +42,24 @@ cp "$SRC_WIN/package.json" "$DST/package.json"
 for f in wrangler.json next.config.mjs; do
   [ -f "$SRC_WIN/$f" ] && cp "$SRC_WIN/$f" "$DST/$f"
 done
+# 2026-10-04: public/ ve data/ SENKRON CIKIYORDU.
+#
+# Sonuc: public/ altindaki her dosya (robots.txt, ikonlar, sitemap eskisi,
+# webmanifest) WSL'deki KOPYA dan geliyordu. Kaynakta robots.txt'e ekledigim
+# `Disallow: /sign` ve `Content-Signal` direktifleri hicbir deploy'da
+# canliya cikmadi — canli robots.txt'i 2026-09-25 surumuydu ve bunu
+# dogrulayan testte yakaladik. Ayni sekilde data/ gecmise gore bayat
+# kalirsa blog/liste/sitemap eski icerigi gosterir.
+#
+# `rm -rf` ONCE: eski dosyalarin WSL kopyasinda kalip birikmesini engeller
+# (yoksa public/ icinde silinmis dosyalar sonsuza kadar deploy edilir).
+# Dizinleri yerinde BOSALTMak yerine TAMAMEN silip yeniden kuruyoruz:
+# `rm -rf "$DST/public/."` reddediliyor ("refusing to remove '.' or '..'"),
+# `rm -rf "$DST/public"/*` ise nokta ile baslayan dosya adlarini gormezdi.
+rm -rf "$DST/public" "$DST/data"
+mkdir -p "$DST/public" "$DST/data"
+cp -r "$SRC_WIN/public/." "$DST/public/"
+cp -r "$SRC_WIN/data/." "$DST/data/"
 cd "$DST"
 
 # ---------------------------------------------------------------- build
@@ -61,8 +81,17 @@ echo "  worker.js: $(stat -c%s .open-next/worker.js) bayt"
 
 # ---------------------------------------------------------------- worker patch
 step "3/5 pages-copy-worker (worker inject + _routes.json)"
-node scripts/pages-copy-worker.cjs 2>&1 | grep -E '_routes|idempotent|injected|flattened' || true
+# Ciktiya DOSYAYA yaz. 2026-10-04: `node ... | grep ... || true` hatayi
+# YUTUYORDU — pages-copy-worker ReferenceError (routesExclude) verdi, grep
+# eslesmeyince sessizce gecti, deploy 200 sayfa prerender etmeden tamamlandi
+# ve canlida / 503 vermeye devam etti. Artik node exit kodu kontrol ediliyor.
+node scripts/pages-copy-worker.cjs > /tmp/pcw.log 2>&1 || {
+  echo "--- pages-copy-worker BASARISIZ ---"; tail -30 /tmp/pcw.log; exit 1; }
+grep -E '_routes|extracted|idempotent|injected|flattened' /tmp/pcw.log || true
 [ -f .open-next/_worker.js ] || { echo "HATA: _worker.js uretilmedi"; exit 1; }
+[ -f .open-next/_routes.json ] || { echo "HATA: _routes.json uretilmedi (statik assetler worker'a dusecek)"; exit 1; }
+# Ana sayfa statik ASSET olmali: / 503 -> 10 ms CPU asimini kalici cozer.
+[ -f .open-next/index.html ] || { echo "HATA: .open-next/index.html yok (prerender sayfa static'e alinamadi)"; exit 1; }
 
 # ---------------------------------------------------------------- deploy
 step "4/5 Cloudflare Pages deploy"
