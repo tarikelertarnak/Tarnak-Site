@@ -20,6 +20,13 @@ import { siteUrl } from '@/lib/site-url'
  * /cv bir sayfa degil, PDF yolu (/cv/tarikeler-cv.pdf) — PDF sitemap'e girmez.
  */
 
+// 2026-10-04: `revalidate` yerine `force-static`. `revalidate` yoksa Next bu
+// rotayi DINAMIK sayar ve `getPosts()` her istekte Supabase'e gider; worker'da
+// bu 500'e donuyordu ("Internal Server Error", no-store). force-static ile
+// sitemap build'de uretilir ve `.cache` asset'i olarak sunulur — calisma
+// zamaninda hicbir ag cagrisi olmaz.
+export const dynamic = 'force-static'
+
 /** Indexable public routes, most important first. */
 const STATIC_ROUTES: Array<{ path: string; priority: number; freq: 'daily' | 'weekly' | 'monthly' }> = [
   { path: '/', priority: 1, freq: 'daily' },

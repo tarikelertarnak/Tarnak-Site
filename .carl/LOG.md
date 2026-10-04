@@ -307,3 +307,40 @@ layout her zaman yeniden kaziyordu.
 Tek istekler 200 (0.12-0.25 sn). Ardisik 5 isteklik burst'lerde aralikli 503 —
 Workers Free 10 ms CPU tavani, handler 12.3 MB. Statik-exclude mumkun degil
 (bkz. elenen hipotezler). Cozum = Workers Paid (30 sn CPU) -> ODEME, kullanici onayi gerekli.
+## [2026-10-04] measure | Free plan CPU tavanı — KALAN SINIR (deployment 16c1cbeb)
+
+### sitemap.xml 500 -> force-static
+evalidate = 3600 kaldirilinca Next bu rotayi DINAMIK saydi; getPosts() her
+istekte Supabase'e gitti ve worker'da 500 verdi ("Internal Server Error", no-store).
+Duzeltme: src/app/sitemap.ts -> xport const dynamic = 'force-static'.
+Sitemap build'de uretilir, calisma zamaninda ag cagrisi olmaz.
+
+### Olcum (canli)
+| Senaryo | Sonuc |
+|---|---|
+| Tek istek (soğuk) | 200, ttfb 0.12-0.25 sn |
+| Prime sonrasi ilk dalga | 7/7, 1 denemede |
+| 7 rota x 3 ardisik (burst) | 4 rota 3/3, /donate 1/3, /github 0/3 |
+| Burst sonrasi tekrar | sitemap 503, GSC meta 0 (govde bos, 503) |
+| Yanit header'i | x-nextjs-cache: HIT, x-nextjs-prerender: 1, s-maxage=31536000 |
+
+### Yorum
+Cache HIT olsa bile 503 donuyor. Demek ki maliyet cache okumasinda degil,
+**12.27 MB worker modulunun yuklenmesinde**. Bu platform siniri, kod hatasi degil:
+- Workers Free CPU limiti 10 ms; olcumlerde 11-38 ms.
+- Static-exclude mumkun degil: OpenNext orce-static sayfalari diske HTML
+  yazmiyor, .open-next/cache/*.cache icinde; output kokunde yalnizca GSC + CV
+  html var. Worker her istekte cagrilmak zorunda.
+- /chat /sign /profil orce-dynamic oldugu icin her istek render — en kotusu.
+
+### Kapanmayan tek konu
+Workers **Paid** plan (30 sn CPU, ~5 USD/ay). CARL kernel 6: odeme yapilmaz.
+Kullanici karari gerekiyor. Kabul edilirse tek satirlik sonuc: plan yukseltilir,
+prime dongusu gereksiz hale gelir.
+
+### Git
+- 21 commit push edildi (origin eskiden 7198219).
+- progress.md 7 committe Google OAuth client secret (GOCSPX-) iceriyordu;
+  GitHub push protection blokladi. git filter-branch --index-filter ile gecmisten
+  silindi, dosya .gitignore'a alindi. **GOCSPX- secreti hala gecerliyse rotate et.**
+- Yedek branch ackup/pre-secret-purge push sonrasi silindi.
