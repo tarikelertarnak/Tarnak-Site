@@ -475,3 +475,17 @@ CSS degiskenleriyle desync oldu ve body koyu kaldi; "light tema global kirik"
  gibi gorundu. Gercek degil: uygulama `localStorage['site-theme']` kullanir.
 `site-theme=light` + reload ile gercek durum olculdu. Ders: temayi DOM'dan
 zorlamak yerine uygulamanin kendi anahtarindan dogrula.
+
+### Dogrulanamayan nokta (durust kayit)
+- `Page.captureScreenshot` (fromSurface) BrowserClaw yuzeyinde TEK RENKli
+  cerceve donuyor (dark: tam siyah, light: tam beyaz — ortalama 0 / 254.9).
+  Bu, sayfanin gercekten bos oldugunu kanitlamaz; capture yuzeyi guvenilir
+  degil. Bu yuzden "tum sayfa koyu tema gorseli dogrulandi" DENMIYOR.
+- Element duzeyinde `getComputedStyle` her iki temada da guvenilir ve tutarli:
+  dark -> butonlar `rgba(0,0,0,0) | rgb(237,237,237)`, `--tbg #050507`.
+- Gozlem: `body` computed `background-color` LobeUI'in enjekte ettigi
+  `body{background-color:#fafafa}` kuralindan geliyor (unlayered, Tailwind
+  `@layer utilities`i yener) ve `--tbg` ile UYUSMUYOR. Gorunur yuzeyi
+  `ThemedBackground` kapladigi icin su an sorun YARATIYOR gibi gorunmuyor,
+  ama bu bir tuzak: computed body bg ile gercek zemin ayni sey degil.
+  Duzeltilmedi — etkisi dogrulanmadi, kanit olmadan kod degistirilmedi.
