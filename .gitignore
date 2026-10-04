@@ -110,3 +110,7 @@ rebuild-trigger.md
 # generated lockfiles (keep pnpm-lock.yaml only)
 package-lock.json
 wrangler.json
+
+# Gunluk/surelme dosyasi — gecmiste Google OAuth client secret (GOCSPX-)
+# iceriyordu, GitHub push protection engelledi. Artik yalnizca yerel.
+/progress.md
