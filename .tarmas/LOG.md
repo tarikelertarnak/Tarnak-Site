@@ -489,3 +489,38 @@ zorlamak yerine uygulamanin kendi anahtarindan dogrula.
   `ThemedBackground` kapladigi icin su an sorun YARATIYOR gibi gorunmuyor,
   ama bu bir tuzak: computed body bg ile gercek zemin ayni sey degil.
   Duzeltilmedi — etkisi dogrulanmadi, kanit olmadan kod degistirilmedi.
+
+### UX-012 — buton standardizasyonu + split CV + EN yazim (2026-10-04)
+**Buton yuksekligi (kok duzeltme):** `button.tsx` tabani artik her butona
+`!h-11` (44px) zorlar. `size` sadece yazi tipi/ic boslugu degistirir.
+`!` onemli: Tailwind'de ayni katmandaki celiskiler CSS cikti sirasina bakar,
+cagiran `h-9`/`h-12` yazsa bile 44px kazanir. 30 `size="sm"` cagrisi vardi.
+Canli olcum (4 sayfa, iki tema): 17 buton, TAMAMI 44px, ihlal 0.
+
+**Split CV butonu:** `cv-picker.tsx` tek kayit durumunda iki ayri buton
+yerine birlestirilmis (split) buton: ana kisim "CV" + goz ikonu -> yeni
+sekmede goruntule, yan kisim indirme ikonu -> `download` ile dogrudan indir.
+`ButtonProps.download` eklendi (LobeButton `{...rest}` ile `<a>`'ya gecer).
+Coklu CV durumunda combobox aynen korunur.
+
+**Hero ikonlari:** Projeler=Briefcase, Iletisim=Send, Blog=File,
+Hakkimda=UserPlus, Sohbet=Chat. Buton genislikleri metne gore degisir,
+yukseklik sabit.
+
+**Light tema kart yuzeyi (kok neden):** `globals.css` icinde
+`--color-background: var(--tbg)` idi -> `bg-background` = sayfa zemininin
+ayni rengi, 77 kullanimda kart/panel/modal/dropdown/girdi yuzeyi plana
+yapisikti. `--tfg-200`ye baglandi (light #f4f4f5, dark #1a1a1f).
+Canli: yuzey rgb(244,244,245) vs sayfa #fff.
+Regresyon: `theme-contrast.test.ts` yuzey/arka-plan kontrasti > 1.05.
+
+**EN yazim (9):** `en.json` — "don't want to support" -> "support us",
+"Ad is playing" -> "The ad is playing", "Tab is in background" -> "The tab
+is in the background", "Thank you! You supported." -> "Thank you for
+supporting us!", "tarikeler." -> "tarikeler" (fazla nokta), "binary file,
+cannot preview" -> "binary file; its content cannot be previewed".
+`content.ts` — Turkce sizan `firstLanguage/otherLanguages` -> English/German,
+"Talk To Me" -> "Talk to Me". Klasik yazim hatasi (recieve/seperate/...)
+yoktu; bulunanlar dilbilgisi/eksik nesne.
+
+**Dogrulama:** tsc 0 · 313/313 test · deploy+prime 8/8 · CDP canli olcum.

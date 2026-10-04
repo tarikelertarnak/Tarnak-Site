@@ -27,6 +27,7 @@ export interface ButtonProps {
   'className'?: string
   'aria-label'?: string
   'block'?: boolean
+  'download'?: boolean
   'as'?: 'a' | 'button' | ComponentType<unknown> | string
 }
 
@@ -89,6 +90,18 @@ export function Button({
     onPress?.()
   }
 
+  /**
+   * Buton yüksekliği TEK bir sabit: 44px (`h-11`). `size` yalnızca yazı tipi
+   * ve iç boşluğu değiştirir, yüksekliği ASLA — 30 `size="sm"` çağrısı vardı
+   * ve yükseklikler çağrıdan çağrıya kayıyordu.
+   *
+   * `!` ile zorlanır: Tailwind'de aynı katmandaki iki sınıfın çelişmesi
+   * attribute sırasına değil CSS çıktı sırasına bakar, yani çağıran
+   * `h-9`/`h-12` yazsa bile `!h-11` kazanır. Genişlik metin uzunluğuna göre
+   * serbest kalır (kullanıcı isteği: genişlik farklı olabilir).
+   */
+  const heightClass = isIconOnly ? '!h-11 !w-11' : '!h-11'
+
   return (
     <LobeButton
       {...rest}
@@ -103,7 +116,7 @@ export function Button({
       href={href}
       target={target}
       rel={rel}
-      className={[masterClass, outlineClass, className].filter(Boolean).join(' ')}
+      className={[heightClass, masterClass, outlineClass, className].filter(Boolean).join(' ')}
       block={block}
       aria-label={ariaLabel}
       onClick={handleClick}

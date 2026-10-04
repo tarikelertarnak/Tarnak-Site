@@ -8,7 +8,7 @@ import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { CvPicker } from '@/components/ui/cv-picker'
-import { EyeIcon } from '@/components/ui/icons'
+import { BriefcaseIcon, ChatIcon, FileIcon, SendIcon, UserPlusIcon } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
 import { SITE_URL } from '@/lib/site-url'
 
@@ -104,10 +104,9 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           )}
 
           {/*
-            Ana gezinme: altı düğme de aynı `bordered` stili — light temada
-            şeffaf zemin + siyah metin, dark temada şeffaf zemin + beyaz
-            metin. (Projeler daha önce `color="primary"` idi ve light temada
-            mavi zemin + beyaz yazı ile diğerlerinden kopuyordu.)
+            Ana gezinme: altı düğme de aynı stili alır — `color="primary"` +
+            Blog bölümündeki "Tüm Yazıları Gör" butonunun className'i
+            (h-11 sabit yükseklik, rounded-lg, font-medium, px-4 py-2).
             Çapa (#) yok: her düğme gerçek bir rotaya gider.
           */}
           <motion.div
@@ -115,42 +114,46 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
             className="mt-7 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4"
           >
             <Button
-              variant="bordered"
-              className="font-semibold text-sm sm:text-base px-6 py-3"
+              color="primary"
+              className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+startContent={<BriefcaseIcon size={16} />}
               href="/projects/"
             >
               {t('hero.projects')}
             </Button>
             <Button
-              variant="bordered"
-              className="font-semibold text-sm sm:text-base px-6 py-3"
+              color="primary"
+              className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              startContent={<SendIcon size={16} />}
               href="/contact/"
             >
               {t('hero.feedback')}
             </Button>
             <CvPicker
               cvs={cvs}
-              variant="bordered"
-              className="font-semibold text-sm sm:text-base px-6 py-3"
-              startContent={<EyeIcon size={18} />}
+              color="primary"
+              className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
             />
             <Button
-              variant="bordered"
-              className="font-semibold text-sm sm:text-base px-6 py-3"
+              color="primary"
+              className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              startContent={<FileIcon size={16} />}
               href="/blog/"
             >
               {t('nav.blog')}
             </Button>
             <Button
-              variant="bordered"
-              className="font-semibold text-sm sm:text-base px-6 py-3"
+              color="primary"
+              className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              startContent={<UserPlusIcon size={16} />}
               href="/about/"
             >
               {t('nav.about')}
             </Button>
             <Button
-              variant="bordered"
-              className="font-semibold text-sm sm:text-base px-6 py-3"
+              color="primary"
+              className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              startContent={<ChatIcon size={16} />}
               href="/chat/"
             >
               {t('nav.chat')}

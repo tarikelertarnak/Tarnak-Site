@@ -5,6 +5,7 @@ import type { CvDoc } from '@/lib/cv'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocale, useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/components/ui/cn'
 import { Input } from '@/components/ui/input'
 import { ChevronDownIcon, DownloadIcon, EyeIcon } from '@/components/ui/icons'
 
@@ -50,29 +51,44 @@ export function CvPicker({
     : ordered
 
   const label = t('about.cvView')
-  const icon = rest.startContent ?? <EyeIcon size={18} />
 
   if (cvs.length <= 1) {
     const href = cvs[0]?.href ?? '/cv/tarikeler-cv.pdf'
+    /*
+      Tek kayıt -> birleşik (split) buton. `startContent`/`endContent` ve `size`
+      bilerek dusurulur: iki yarinin ikonu ve icerigi kendi kuralim.
+      `{...rest}` yalnizca renk/varyant/className gibi govde stillerini tasir,
+      bu yuzden cagiranin className'i (h-11, rounded-lg, font-medium) iki
+      yarida da ayni gorunur — buton tabaninin zorladigi !h-11 ile hizali.
+    */
+    const { startContent: _s, endContent: _e, size: _sz, className, ...shared } = rest
+    const btn = cn(
+      'h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90',
+      className,
+    )
+
     return (
-      <div className="flex flex-row gap-2">
-        {/*
-          {...rest} SON eklenir: cagiranin `variant`/`className`'i kazanmali.
-          Daha once bu iki buton `color="primary"` ile SABIT basiliyor ve
-          gelen varyant/className yok sayiliyordu — hero'da `variant="bordered"`
-          verilse bile CV dugmeleri mavi/beyaz kaliyordu (kullanici raporu).
-        */}
+      <div className="inline-flex">
+        {/* Ana kisim: "CV" + goz ikonu -> CV'yi yeni sekmede goruntule */}
         <Button
-          {...rest}
-          size="sm"
+          {...shared}
+          className={cn(btn, 'rounded-r-none')}
           href={href}
           target="_blank"
-          startContent={<DownloadIcon size={16} />}
+          rel="noopener noreferrer"
+          endContent={<EyeIcon size={16} />}
         >
-          {t('about.cvDownload')}
+          CV
         </Button>
-        <Button {...rest} size="sm" href={href} target="_blank" startContent={icon}>
-          {label}
+        {/* Indirme kismi: sola yuvarlatilir, ortada dikey ayirici */}
+        <Button
+          {...shared}
+          className={cn(btn, 'w-11 rounded-l-none px-0', 'border-l border-white/25')}
+          href={href}
+          download
+          aria-label={t('about.cvDownload')}
+        >
+          <DownloadIcon size={16} />
         </Button>
       </div>
     )
@@ -83,7 +99,7 @@ export function CvPicker({
       <Button
         {...rest}
         onClick={() => setOpen(o => !o)}
-        startContent={icon}
+        startContent={rest.startContent ?? <EyeIcon size={18} />}
         endContent={<ChevronDownIcon size={14} />}
         aria-expanded={open}
       >

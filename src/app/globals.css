@@ -27,7 +27,15 @@ a.hover\:text-white:hover { color: #fff; }
     /* Themed color tokens — `t*` vars flip with the .dark/.light class so the
        SAME utility (e.g. text-foreground) reads "white-ish" in dark mode and
        "black-ish" in light mode. primary (blue) stays identical in both. */
-    --color-background: var(--tbg);
+    /* `bg-background` = KART/panel/modal/dropdown/girdi yüzeyidir (77
+       kullanım), sayfa zemini DEĞİLDİR — sayfa zemini `body` ve
+       `ThemedBackground` (`bg-white dark:bg-black`) üzerinden gelir.
+       `--tbg`'ye eşitlendiği için yüzey ana arka plana birebir yapışıyordu:
+       light'ta #fff üstünde #fff, dark'ta #050507 üstünde #050507 → light
+       temada hiçbir kart/gruplama görünmüyordu.
+       `--tfg-200` yüzey merdiveninin 1. basamağı: light #f4f4f5, dark #1a1a1f.
+       Alt basamaklar: `bg-background/80`, `/95` gibi yarı saydam barlar. */
+    --color-background: var(--tfg-200);
     --color-foreground: var(--tfg);
     --color-foreground-200: var(--tfg-200);
     --color-foreground-300: var(--tfg-300);

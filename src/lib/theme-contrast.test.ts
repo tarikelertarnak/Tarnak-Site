@@ -59,6 +59,13 @@ const token = (block: string, name: string) => block.match(new RegExp(`${name}:\
  */
 const FG500 = /--color-foreground-500:\s*([^;\s][^;]*);/
 
+/**
+ * `--color-background: var(--tbg)` seklinde bir esleme. Grubu (ornegin
+ * `--tfg-200`) dondurur; `--tbg`'ye baglanirsa kart yuzeyi sayfa zemininin
+ * aynisi olur ve light temada gruplama kaybolur.
+ */
+const BG_ALIAS = /--color-background:\s*var\((--[a-z0-9-]+)\)/
+
 describe('globals.css tema kontrasti', () => {
   const light = themeBlock('root')
   const dark = themeBlock('dark')
@@ -66,6 +73,22 @@ describe('globals.css tema kontrasti', () => {
   it('light ve dark token bloklarini bulur', () => {
     expect(token(light, '--tbg')).toBe('#ffffff')
     expect(token(dark, '--tbg')).toBe('#050507')
+  })
+
+  it('kart yuzeyi sayfa zemininden gorunur sekilde ayrilir', () => {
+    const alias = BG_ALIAS.exec(css)?.[1]
+    expect(alias, '--color-background bir var() ile eslenmeli').toBeTruthy()
+
+    for (const [name, block] of [['light', light], ['dark', dark]] as const) {
+      const surface = token(block, alias!)
+      const page = token(block, '--tbg')
+      expect(surface, `${name}: ${alias} tanimli degil`).toBeTruthy()
+      expect(page, `${name}: --tbg tanimli degil`).toBeTruthy()
+      // Yuzey/arka-plan kontrasti 1.00 ise yuzey plana yapisir.
+      // Light #f4f4f5 vs #ffffff = 1.10, dark #1a1a1f vs #050507 = 1.17.
+      expect(contrast(surface!, page!), `${name}: yuzey sayfa zemininden ayrilmiyor`)
+        .toBeGreaterThan(1.05)
+    }
   })
 
   it('foreground-500 tema degistirir (sabit deger degil)', () => {

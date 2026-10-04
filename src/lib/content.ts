@@ -646,7 +646,7 @@ async function getDefaultContent(): Promise<SiteContent> {
     },
     chat: {
       subtitle: 'CHAT',
-      title: 'Talk To Me',
+      title: 'Talk to Me',
       description: 'Leave a message or just say hello. It shows up right away.',
     },
     profile: {
@@ -657,8 +657,8 @@ async function getDefaultContent(): Promise<SiteContent> {
       title: '',
       profileImage: 'https://avatars.githubusercontent.com/u/184168415?v=4',
       experience: '',
-      firstLanguage: 'Türkçe',
-      otherLanguages: 'İngilizce (A2), Almanca (A1)',
+      firstLanguage: 'Turkish',
+      otherLanguages: 'English (A2), German (A1)',
     },
     contact: {
       subtitle: 'Contact',
