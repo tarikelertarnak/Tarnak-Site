@@ -59,6 +59,9 @@ yarn-error.log*
 !/scripts/fetch-github-data.cjs
 !/scripts/gen-countries.cjs
 !/scripts/check-country-map.cjs
+# Tek komutlu Pages deploy (build + deploy + prime). Sır içermez, sürümlenmeli —
+# Cloudflare 1102/asılı sorunlarının ana çözüm yolu bu.
+!/scripts/deploy-pages.sh
 # Reklam semasi sir ICERMEZ (SUPABASE_DB_PW kullanmaz) — repoda kalsin ki
 # baska bir makinede/clone'da sema kaybolmasin.
 !/scripts/schema-ads.sql

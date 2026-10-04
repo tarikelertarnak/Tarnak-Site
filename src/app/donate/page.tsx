@@ -2,17 +2,29 @@ import { CopyButton } from '@/components/donate/copy-button'
 import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
 
-import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
+import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
+
+// 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
+export const dynamic = 'force-static'
 
 export async function generateMetadata() {
-  const locale = await getLocale()
+  const locale = await getStaticLocale()
   const isEn = locale === 'en'
-  return {
-    title: isEn ? 'Support — TARIK ELER - TARNAK' : 'Destek Ol — TARIK ELER - TARNAK',
-    description: isEn
-      ? 'If you want to support my projects, you can contribute using the methods below. Every bit of support means a lot to me!'
-      : 'Projelerimi desteklemek istersen, aşağıdaki yöntemlerle katkıda bulunabilirsin. Her destek benim için çok değerli!',
-  }
+return {
+      title: isEn ? 'Support — TARIK ELER - TARNAK' : 'Destek Ol — TARIK ELER - TARNAK',
+      description: isEn
+        ? 'If you want to support my projects, you can contribute using the methods below. Every bit of support means a lot to me!'
+        : 'Projelerimi desteklemek istersen, aşağıdaki yöntemlerle katkıda bulunabilirsin. Her destek benim için çok değerli!',
+      alternates: { canonical: '/donate' },
+      openGraph: {
+        title: isEn ? 'Support — TARIK ELER - TARNAK' : 'Destek Ol — TARIK ELER - TARNAK',
+        description: isEn
+          ? 'Support the open source projects of TARIK ELER (Tarnak).'
+          : 'TARIK ELER (Tarnak) tarafından geliştirilen açık kaynak projeleri destekle.',
+        url: '/donate',
+        type: 'website',
+      },
+    }
 }
 
 const METHODS = [
@@ -63,8 +75,8 @@ const METHODS = [
 ]
 
 export default async function DonatePage() {
-  const content = await getLocalizedContent()
-  const locale = await getLocale()
+  const content = await getStaticLocalizedContent()
+  const locale = await getStaticLocale()
   const isEn = locale === 'en'
 
   return (

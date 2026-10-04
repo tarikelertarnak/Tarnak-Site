@@ -258,3 +258,52 @@
 - CLOUDFLARE_API_TOKEN env ile deploy CALISMIYOR (9109) ama kv namespace create CALISIYOR.
   OAuth akisi (env yok) da 9102 veriyor. Sonuc: wrangler'in /accounts cagrisi OAuth
   token'i reddediyor. Token'i log'a yazmamak icin toml'den okunup env'e aktarildi.
+
+## [2026-10-04] fix | ASILILMA KOK NEDENI: layout.tsx revalidate=300 (deployment 73f71645)
+
+### Tespit
+`wrangler pages deployment tail fb21a293-8263-4b13-bbc2-cb729ac09d0c` ciktisi:
+```
+GET https://tarikelertarnak.pages.dev/credits?z=108272 - Ok
+  (error) Failed to revalidate stale page /credits FatalError: Dummy queue is not implemented
+```
+Cloudflare Pages'te ISR revalidate kuyrugu DUMMY. Bir cache kaydi stale oldugunda
+worker bu kuyrugu tetikliyor ve istek HIC DONMUYOR (ttfb=0, 60 sn+ sonsuz, curl kod 000).
+
+### Neden stale oluyordu
+`src/app/layout.tsx:25` -> `export const revalidate = 300`.
+Layout segment'i tum child rotalara gecerlidir. Sayfa dosyalarindan revalidate'i
+kaldirmak (7 public page + blog/[slug] + github/[owner]) HICBIR SEYI COZMEDI cunku
+layout her zaman yeniden kaziyordu.
+
+### Elenen hipotezler (olculerek)
+| Hipotez | Sonuc |
+|---|---|
+| Sayfa kodu farkli (credits/donate) | Elendi — about ile ayni import/export yapisinda, supabase/fs/searchParams yok |
+| Artifact boyutu (credits 251K) | Elendi — about 334K ile daha BUYUK ve calisiyor |
+| ISR'yi sayfalardan kaldirmak yeter | Elendi — 6/7 rota duzeldi ama credits/donate asili kaldi |
+| KV'deki bayat kayitlar | Elendi — 34 anahtar silindi, KV bos (0), credits/donate yine asili |
+| static-exclude ile worker'i devre disi birak | Elendi — .open-next kokunde public rota HTML'i YOK, sadece GSC + CV |
+| Next'in `stale-while-revalidate=2592000` header'i | Elendi — Next zaten `s-maxage=300` uretiyor, ek `_headers` gereksizdi |
+
+### Uygulama
+- `src/app/layout.tsx`: `export const revalidate = 300` -> `export const dynamic = 'force-static'` + kok neden yorumu.
+- `src/app/sitemap.ts`: `export const revalidate = 3600` kaldirildi (yorum guncellendi).
+- 7 public sayfadan `revalidate` daha once kaldirilmis ve **duzeltilmis** (PowerShell backtick kaçisi `\`revalidate`` -> CR + "evalidate" diye satirlari bolmusdu; regex ile tek satira geri birlestirildi).
+- `scripts/pages-copy-worker.cjs`: inject idempotent (`globalThis.__iso = [` marker) — `__nb_stream already declared` tekrarini onluyor.
+- `scripts/deploy-pages.sh` (yeni): tek komut build+deploy+prime. Build ciktisi DOSYAYA yazilir (boru `| tail` hatayi kesiyordu); `wrangler.json` + `next.config.mjs` senkrona eklendi (KV bindingi deploy'a girmiyorsa ISR hic calismaz); PRIME 10 deneme x 12 sn ve SADECE 200'de duruyor (onceki `!= 000` kosulu 503'te donguyu kesiyordu).
+
+### Olcum (canli, 73f71645)
+| Test | Once | Sonra |
+|---|---|---|
+| /credits | 0/3, 10 deneme kod=000 | 5/5, ttfb 0.12-0.21 sn |
+| /donate | 0/3, 10 deneme kod=000 | 5/5, ttfb 0.15 sn |
+| 7 public rota (t=0) | 5/7 | **7/7** |
+| 7 public rota (t=360 sn, stale penceresi gecmis) | asiliyordu | **7/7** |
+| /sitemap.xml | 503 | 200, 7 <loc> |
+| /robots.txt, /cv/tarikeler-cv.pdf, /site.webmanifest | 200 | 200 |
+
+### Kalan (platform siniri)
+Tek istekler 200 (0.12-0.25 sn). Ardisik 5 isteklik burst'lerde aralikli 503 —
+Workers Free 10 ms CPU tavani, handler 12.3 MB. Statik-exclude mumkun degil
+(bkz. elenen hipotezler). Cozum = Workers Paid (30 sn CPU) -> ODEME, kullanici onayi gerekli.

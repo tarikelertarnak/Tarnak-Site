@@ -2,10 +2,10 @@ import Link from 'next/link'
 import { Navigation } from '@/components/navigation'
 import { FileQuestionIcon } from '@/components/ui/icons'
 import { t } from '@/lib/i18n'
-import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
+import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 
 export default async function NotFound() {
-  const [content, locale] = await Promise.all([getLocalizedContent(), getLocale()])
+  const [content, locale] = await Promise.all([getStaticLocalizedContent(), getStaticLocale()])
 
   return (
     <div className="min-h-screen w-full relative">

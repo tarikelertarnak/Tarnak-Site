@@ -27,8 +27,44 @@ export async function proxy(request: NextRequest) {
   if (guard)
     return guard
 
+  // 2026-10-03 Cloudflare 1102 fix.
+  //
+  // `updateSession()` calls `supabase.auth.getUser()` — a NETWORK round-trip to
+  // Supabase Auth plus JWT signature verification. On the Workers Free plan the
+  // CPU budget is 10 ms, so running it on EVERY request guaranteed an
+  // exceededCpu / 503 on any page the CDN could not serve statically. Prerendered
+  // pages (assets/) bypassed the Worker and returned 200, which is why only the
+  // dynamic routes failed — it looked random, it was CPU.
+  //
+  // Fix: the canonical-host guard (two header reads, free) still runs for every
+  // route so hash-URL deployments keep redirecting and we don't get duplicate
+  // content. The expensive session refresh runs ONLY where a session matters.
+  // Public content pages keep their auth cookie untouched — the client reads it
+  // directly for theme/locale.
+  if (!needsServerSession(request)) {
+    return NextResponse.next()
+  }
+
   const { response } = await updateSession(request)
   return response
+}
+
+/** Routes whose behaviour actually depends on a refreshed server-side session. */
+const SESSION_PREFIXES = [
+  '/api',
+  '/admin',
+  '/auth',
+  '/chat',
+  '/login',
+  '/puck',
+  '/sign',
+]
+
+function needsServerSession(request: NextRequest): boolean {
+  const { pathname } = request.nextUrl
+  return SESSION_PREFIXES.some(
+    prefix => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
 }
 
 export const config = {

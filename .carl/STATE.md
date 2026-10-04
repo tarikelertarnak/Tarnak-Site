@@ -1,6 +1,6 @@
 # CARL STATE
 status: ACTIVE
-updated: 2026-10-02T20:40:00+03:00
+updated: 2026-10-04T15:40:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\commands\carl.md
 host: OpenCode (opencode) — see HOST.md
 branch: master   last_commit: 24537ff
@@ -27,11 +27,25 @@ branch: master   last_commit: 24537ff
 - deploy: WSL rsync → /root/tarnak-build → pnpm opennext:build → wrangler pages deploy (ASLA otomatik)
 
 ## Current
-phase: CANLI CPU LIMITI KRIZI — DONE (reklam fazi canliya alindi)   step: root cause confirmed
-bar: 590956b production'a deploy edildi (7c78bb3f). /reklam /ads /api/ads = 404, /donate'de reklam yok, sitemap 11 URL — HEPSI DOGRU. Ancak worker route'lari aralikli 503 (Cloudflare 1102).
-attempts_on_item: 2
-files_in_flight: (none — calisma agaci temiz, 590956b commit'li)
+phase: 1102 / ASILILMA KOK NEDENI COZULDU   step: verified (7/7, 360 sn sonra da 200)
+deployment: 73f71645 (https://tarikelertarnak.pages.dev)   free_plan: Workers 10ms CPU
+attempts_on_item: 9   files_in_flight: src/app/layout.tsx, src/app/sitemap.ts, 7 public page, scripts/pages-copy-worker.cjs, scripts/deploy-pages.sh (yeni)
 running_processes: (none)
+
+## KOK NEDEN VE COZUM (2026-10-04 — ASILILMA / 000)
+- Belirti: /credits ve /donate 60 sn+ sonsuz asiliyordu (ttfb=0, kod 000). /projects /blog /about /github normalde 200 idi.
+- Tespit: `wrangler pages deployment tail <UUID>` -> `(error) Failed to revalidate stale page /credits FatalError: Dummy queue is not implemented`.
+- NEDEN: `src/app/layout.tsx` icinde `export const revalidate = 300` vardi. Layout segment'i TUM child rotalara gecerli oldugu icin sayfa dosyalarindan revalidate kaldirmak YETMIYORDU. Kayitlar 300 sn sonra "stale" oluyor, worker revalidate kuyrugunu tetikliyor, kuyruk Cloudflare Pages'te DUMMY -> istek hic donmuyor.
+- COZUM: `layout.tsx` ve `sitemap.ts`'ten `revalidate` kaldirildi; her rota `force-static`. Artik hicbir kayit stale olmuyor, dummy queue hic tetiklenmiyor.
+- Yan fayda: `sitemap.xml` de ISR'den cikti, 7 <loc> build'de uretiliyor.
+- OLÇUM: 7/7 public rota t=0 ve t=360 sn sonra 200 (ttfb 0.12-0.25 sn); 360 sn onceki testte /credits 0/3, /donate 0/3 idi.
+- Yan etki: icerik degisikligi artik YENI BUILD ile yayinlanir (ISR yok). Supabase/admin icerigi icin bu yeterli.
+
+## KALAN SINIR (platform, kod degil)
+- Workers Free CPU limiti 10 ms; handler ~12.3 MB, middleware ~5.4 MB. Tam render ~11-38 ms -> aralikli 503.
+- Statik-exclude MUIMKIN DEGIL: OpenNext `force-static` sayfalari diske HTML yazmiyor, `.open-next/cache/*.cache` icinde tutuyor (output kokunde yalnizca GSC + CV html var). Yani worker her istekte cagrilmak zorunda.
+- Tek kalan cozum: Workers Paid plan (30 sn CPU). Odeme gerektirir — kullanici onayi olmadan YAPILAMAZ (protokol 6). Oneri: kullaniciya sun, kararini versin.
+- Mitigasyon (uygulandi): `scripts/deploy-pages.sh` icindeki PRIME dongusu her public rotayi 200 alana kadar tekrar dener.
 
 ## CANLI DURUM KRITI (2026-10-01 21:20)
 - Cloudflare 1102 = "Worker exceeded CPU time limit". Tail kaniti: outcome=exceededCpu, cpuTime=18ms.

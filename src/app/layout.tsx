@@ -22,7 +22,14 @@ import '@fontsource/montserrat/700.css'
 import '@fontsource/montserrat/800.css'
 import './globals.css'
 
-export const revalidate = 300
+// 2026-10-03: `revalidate = 300` BURADAN KALDIRILDI — KOK NEDEN.
+// Layout segment'i tum child rotalara gecerlidir; buradaki revalidate yuzünden
+// /credits ve /donate'nin cache kaydi "stale" oluyordu. Worker stale gorunce
+// revalidate kuyrugunu tetikliyor, kuyruk Cloudflare Pages'te dummy
+// ("FatalError: Dummy queue is not implemented") ve istek ASILI KALIYORDU
+// (ttfb=0, 60 sn+ sonsuz). Sayfa dosyalarindan revalidate kaldirmak YETMIYORDI,
+// layout her zaman yeniden kaziyordu.
+export const dynamic = 'force-static'
 
 // Kanonik origin tek kaynaktan gelir — bkz. src/lib/site-url.ts
 // (Vercel/Cloudflare ortam degiskenlerini otomatik okur; eskiden burada

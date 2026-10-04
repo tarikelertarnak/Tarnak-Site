@@ -9,11 +9,6 @@ import { getPosts } from '@/lib/blog'
 import { getCvs } from '@/lib/cv'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 
-/**
- * Rebuild the page every 5 minutes. revalidatePath() is used for
- * instant updates when content is edited from the admin panel.
- */
-export const revalidate = 300
 
 /**
  * 2026-10-02 Cloudflare 1102 fix: prerender at build time and serve from the

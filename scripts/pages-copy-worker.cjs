@@ -22,6 +22,16 @@ try {
 const handlerPath = path.join(openNextDir, 'server-functions', 'default', 'handler.mjs');
 if (fs.existsSync(handlerPath)) {
   let code = fs.readFileSync(handlerPath, 'utf8');
+  // Idempotency: bu script build sonrasi her calistiginda ayni handler.mjs uzerinde
+  // calisir. 2026-10-03'te ikinci calistirmada inject edilen blok baseline'i gormeyip
+  // DUPLICATE import ekliyordu -> wrangler "The symbol __nb_stream has already been
+  // declared" ile 28 hata verip deploy'i durduruyordu.
+  // Karsi onlem: inject ettigimiz marker satiri zaten varsa handler.mjs'e DOKUNMA
+  // (worker.js -> _worker.js kopyasi yukarida zaten yapildi).
+  if (code.includes('globalThis.__iso = [')) {
+    console.log('[pages-copy-worker] handler.mjs zaten inject edilmis — atlandi (idempotent)');
+  } else {
+  let code = fs.readFileSync(handlerPath, 'utf8');
   // workerd isomorphic require rule: a runtime `require("X")` only resolves when
   // X is ALREADY in the worker's module graph as a live (non-tree-shaken) import.
   // esbuild drops unused imports, so every import must be referenced from a
@@ -146,6 +156,7 @@ if (fs.existsSync(handlerPath)) {
   }
   fs.writeFileSync(handlerPath, code);
   console.log(`[pages-copy-worker] injected ${imported.length} isomorphic imports (nodejs_compat_v2 dynamic require fix)`);
+  }
 } else {
   console.log('[pages-copy-worker] handler.mjs not found — nothing to patch');
 }
@@ -227,11 +238,22 @@ ensureModule('picocolors');
     exclude: [
       '/_next/*',
       '/*.png', '/*.jpg', '/*.jpeg', '/*.webp', '/*.avif', '/*.gif',
-      '/*.svg', '/*.ico', '/*.woff', '/*.woff2', '/*.txt', '/*.xml',
+      '/*.svg', '/*.ico', '/*.woff', '/*.woff2', '/*.txt',
+      // 2026-10-03: '/*.xml' KALDIRILDI. /sitemap.xml src/app/sitemap.ts'ten
+      // (revalidate=3600, 7 rota) uretiliyor; exclude edince worker'a hic dusmuyor,
+      // Pages eski public/sitemap.xml'i 7 gunluk cache ile (s-maxage=604800)
+      // vermeye devam ediyordu -> /sitemap.xml?x=1 = 404. GSC "Getirilemedi".
+      // XML artik worker'dan gelsin; Pages'in static servisine /sitemap.xml
+      // kalmadi.
       // 2026-10-02: /site.webmanifest 404 veriyordu — .webmanifest uzantisi exclude
       // listesinde yoktu, dosya worker'a dusuyordu. PWA manifest'i de Pages'in
       // static servisine verilmeli.
       '/*.webmanifest',
+      // GSC HTML dogrulama dosyasi: static asset olarak .open-next/root'a
+      // prerender edilmis (68 byte, dogru icerik) ama .html worker'a dustugu
+      // icin route handler workerd'de 500 veriyordu (3/3 deneme). GSC sadece
+      // 200 + icerik istiyor -> Pages'in static servisine birak.
+      '/google*.html',
       '/cv/*',
       '/projects/*.png', '/projects/*.jpg', '/projects/*.jpeg',
       '/projects/*.webp', '/projects/*.gif', '/projects/*.svg',
@@ -239,6 +261,6 @@ ensureModule('picocolors');
       '/github-data.json',
     ],
   };
-  fs.writeFileSync(routesPath, JSON.stringify(routes, null, 2) + '\n');
+fs.writeFileSync(routesPath, JSON.stringify(routes, null, 2) + '\n');
   console.log('[pages-copy-worker] wrote _routes.json (static assets -> Pages service, routes -> worker)');
 }

@@ -16,6 +16,9 @@
 - [ ] PERF-005 getCvs → modül TTL ekle (her istek DB'ye gidiyor)
 - [ ] PERF-006 SearchDialog → next/dynamic (cmdk her sayfada yüklüyor)
 - [ ] PERF-007 ISR: cookies()/headers() dinamik opt-in — middleware'e taşı veya kabul et
+- [x] PERF-008 ISR tamamen kaldırıldı (layout.tsx `revalidate = 300` KOK NEDEN — dummy queue → sonsuz asılma) ✓ 2026-10-04
+- [ ] PERF-009 Workers Paid plana geç (30 sn CPU) — **kullanıcı onayı + ödeme gerekli**, otomatik yapılamaz
+- [ ] PERF-010 `/chat` `/sign` `/profil` burst'lerde 503 (force-dynamic, her istek render) — Paid plan olmadan çözüm yok
 
 ## P2 — SEO
 - [ ] SEO-001 İsim varyantları: keywords + description + JSON-LD ✓ yapıldı

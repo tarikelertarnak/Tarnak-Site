@@ -1,9 +1,12 @@
 import { Navigation } from '@/components/navigation'
 import { Section, SectionTitle } from '@/components/ui/section'
-import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
+import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
+
+// 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
+export const dynamic = 'force-static'
 
 export async function generateMetadata() {
-  const locale = await getLocale()
+  const locale = await getStaticLocale()
   const isEn = locale === 'en'
   const title = 'GitHub Projeleri — TARIK ELER - TARNAK'
   const description = isEn
@@ -18,8 +21,8 @@ export async function generateMetadata() {
 }
 
 export default async function GithubPage() {
-  const content = await getLocalizedContent()
-  const locale = await getLocale()
+  const content = await getStaticLocalizedContent()
+  const locale = await getStaticLocale()
   const isEn = locale === 'en'
 
   return (

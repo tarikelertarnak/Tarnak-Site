@@ -4,7 +4,10 @@ import { ProjectsGrid } from '@/components/projects/projects-grid'
 import { RememberListPath } from '@/components/remember-list-path'
 import { FolderIcon, GithubIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
-import { getLocalizedContent } from '@/lib/i18n-server'
+import { getStaticLocalizedContent } from '@/lib/i18n-server'
+
+// 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
+export const dynamic = 'force-static'
 
 export const metadata: Metadata = {
   title: 'Projeler — TARIK ELER - TARNAK',
@@ -21,7 +24,7 @@ export const metadata: Metadata = {
 }
 
 export default async function ProjectsPage() {
-  const content = await getLocalizedContent()
+  const content = await getStaticLocalizedContent()
 
   return (
     <div className="min-h-screen w-full relative">
