@@ -557,7 +557,7 @@ async function getDefaultContent(): Promise<SiteContent> {
         { title: 'Projects', href: '/projects' },
         { title: 'Blog', href: '/blog' },
         { title: 'Chat', href: '/chat' },
-        { title: 'Feedback', href: '/#contact' },
+        { title: 'Feedback', href: '/contact/' },
       ],
     },
     social: [

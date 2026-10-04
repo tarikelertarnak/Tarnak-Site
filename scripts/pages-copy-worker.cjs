@@ -315,6 +315,7 @@ const routesExclude = [];
     '': 'index',
     '/about': 'about',
     '/blog': 'blog',
+    '/contact': 'contact',
     '/projects': 'projects',
     '/credits': 'credits',
     '/donate': 'donate',

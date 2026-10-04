@@ -349,7 +349,7 @@ export default async function AboutPage() {
                 {isEn ? 'Follow on GitHub' : 'GitHub\'da Takip Et'}
               </a>
               <a
-                href="/#contact"
+                href="/contact/"
                 className="inline-flex items-center gap-2 rounded-lg border border-foreground-200/15 bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
               >
                 {isEn ? 'Get in Touch' : 'İletişime Geç'}

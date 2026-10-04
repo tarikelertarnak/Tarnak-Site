@@ -25,7 +25,7 @@ export const jaContentOverlay: DeepPartial<SiteContent> = {
       { title: 'プロジェクト', href: '/projects' },
       { title: 'ブログ', href: '/blog' },
       { title: 'チャット', href: '/chat' },
-      { title: 'お問い合わせ', href: '/#contact' },
+      { title: 'お問い合わせ', href: '/contact/' },
     ],
   },
   about: {

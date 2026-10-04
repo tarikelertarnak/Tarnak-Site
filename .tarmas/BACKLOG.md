@@ -60,3 +60,14 @@
 - [ ] OPS-003 Google OAuth GOCSPX- siri rotate — **kullanici**
 - [ ] OPS-004 BrowserOS neo ac (:9210 red) -> gercek tarayici/hover testi
 - [x] UX-008 Light tema kontrast bug'i: `--color-foreground-500` sabitti (2.56:1 AA FAIL) -> `var(--tfg-600)` (10.44:1) · `theme-contrast.test.ts` regresyon testi
+
+### UX-011 — capasiz gezinme + tek buton stili (2026-10-04 KAPANDI, deploy 691e0322)
+- [x] Tum `#` linkleri gercek rotaya (`/projects/ /about/ /blog/ /contact/ /chat/`)
+- [x] Yeni `src/app/contact/page.tsx` + copy-worker PAGES + deploy prime listesi
+- [x] Alty hero butonu tek `bordered` stili (light: siyah yazni)
+- [x] `CvPicker` `{...rest}` sizdirmesi duzeltildi (varyant/className artik gecerli)
+- [x] `TARIK ELER -` / `TARNAK` iki satir, capraz hover kaldirildi
+- [x] `hover:border-white/50` light override eklendi
+- [x] Regresyon: `src/lib/no-hash-links.test.ts` (JSX + obje literal, negatif kontrol dogrulandi)
+- [x] Skill: `browseros-neo/SKILL.md` cold-start proseduru (chrome + claw-server, portlar, `site-theme` tuzagi)
+- [ ] Kalan: `admin-panel.tsx` pre-existing lint hatalari (7) — bu fazda kapsam disi

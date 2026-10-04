@@ -25,7 +25,7 @@ HOST="https://tarikelertarnak.pages.dev"
 # /chat /admin /sign /api ASLA prime edilmez (kimlik dogrulama gerektirir,
 # cache'lenmemeli). Slash'siz hal 308 redirect doner; prime 308'i basarisiz
 # sayip donguyu yirdigi icin kanonik yollari test ediyoruz.
-PUBLIC_ROUTES=(/ /projects/ /blog/ /about/ /credits/ /donate/ /github/)
+PUBLIC_ROUTES=(/ /projects/ /blog/ /about/ /contact/ /credits/ /donate/ /github/)
 
 step() { printf '\n\033[1m### %s\033[0m\n' "$1"; }
 

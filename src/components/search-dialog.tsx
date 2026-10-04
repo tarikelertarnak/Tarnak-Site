@@ -34,8 +34,8 @@ const NAV_ITEMS: { title: string, titleEn: string, titleTr: string, href: string
   { title: 'Projects', titleEn: 'Projects', titleTr: 'Projeler', href: '/projects/' },
   { title: 'Blog', titleEn: 'Blog', titleTr: 'Blog', href: '/blog/' },
   { title: 'GitHub', titleEn: 'GitHub', titleTr: 'GitHub', href: '/github/' },
-  { title: 'About', titleEn: 'About', titleTr: 'Hakkında', href: '/#about' },
-  { title: 'Contact', titleEn: 'Contact', titleTr: 'İletişim', href: '/#contact' },
+  { title: 'About', titleEn: 'About', titleTr: 'Hakkında', href: '/about/' },
+  { title: 'Contact', titleEn: 'Contact', titleTr: 'İletişim', href: '/contact/' },
 ]
 
 // ─── Blog demo data (hardcoded) ────────────────────────────────────
@@ -127,7 +127,9 @@ export function SearchDialog() {
       return
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = prev }
+    return () => {
+      document.body.style.overflow = prev
+    }
   }, [open])
 
   // ── Build search groups ────────────────────────────────────────

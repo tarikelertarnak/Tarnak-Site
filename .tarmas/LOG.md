@@ -431,3 +431,47 @@ canli degismezdi. Test bunu acikca not ediyor.
 - CANLI CSS DOGRULAMASI: .text-foreground-500,.text-foreground-500\/40{color:var(--tfg-600)}
   -> duzeltme gercekten uretimde. light 10.44:1 AA, dark 7.95:1 AA (degismedi).
 - scripts/deploy-pages.sh artik 404.html artifact'ini da zorunlu kiliyor (regresyon korumasi).
+
+## [2026-10-04] UX — hash yok, tek buton stili, iki satirlik marka | deploy 691e0322
+
+Kullanici: "#projects gibi butun # leri sil, normal olsun hep" + alty buton tek
+CSS + light temada yazi siyah + "TARIK ELER - / TARNAK" + guruplama gorunur.
+
+### KOK NEDEN — capalar 3 ayri yerde gizliydi
+1. `hero-section.tsx` dogrudan `href="#projects" | "#contact" | "#about"`
+2. `lib/site-navigation.ts` VERI olarak `href: '/#contact'` (footer/nav listesi)
+3. `i18n-content-{de,en,es,fr,ja,pt,ru,tr}.ts` + `content.ts` + `data/content.json`
+   -> `href: '/#contact'`
+Ucunu değiştirmeden canli HTML `/#contact` vermeye devam ediyordu. Ilk
+regresyon testim yalnizca JSX `href="..."` bicimini taridi -> 3. grup kacti;
+canli HTML uzerinden fark edildi, test genisletildi (JSX + obje literal).
+
+### Diger gercek kok nedenler
+- `CvPicker` tek-CV dali iki butonu `color="primary"` ile SABIT basiyor ve
+  gelen `variant`/`className`'i yok sayiyordu -> hero'da `variant="bordered"`
+  verilse bile CV dugmeleri mavi/beyaz kaliyordu. `{...rest}` son eklenip
+  `color="primary"` kaldirildi.
+- `globals.css`: `hover:border-white/50` icin light override YOKTI -> beyaz
+  zeminde hover'da cerceve gorunmezdi. Eklendi.
+- Yanlis yorum duzeltildi: `bg-white/25` "override edilmez" diyordu ama
+  asagida zaten override ediliyordu.
+
+### Yeni
+- `src/app/contact/page.tsx` — `/#contact` yerine gercek sayfa (force-static,
+  ana sayfayla ayni `ContactSection`). `pages-copy-worker.cjs` PAGES listesine
+  ve `deploy-pages.sh` PUBLIC_ROUTES'a eklendi; yoksa SSR'ye dusup 1102 verirdi.
+
+### Dogrulama
+- tsc 0 · vitest 312/312 (23 dosya) · negatif kontrol: gecici `href="#projects"`
+  geri konunca test KIRMIZI -> test gercekten yakaliyor
+- canli kabul (BrowserOS CDP, `site-theme=light`): h1Lines ["TARIK ELER -","TARNAK"]
+  her ikisi de block · buton 7/7 · distinctStyles TEK girdi
+  `rgba(0,0,0,0) | rgb(24,24,27)` · hashHrefs [] · bodyBg #fafafa
+- prime 8/8 · `/contact/` 153 KB statik asset
+
+### NOT — olcum tuzagi (duzeltilmedi, kayit icin)
+`html[data-theme=light]` elle zorlaninca LobeUI `colorBgLayout` (#050507)
+CSS degiskenleriyle desync oldu ve body koyu kaldi; "light tema global kirik"
+ gibi gorundu. Gercek degil: uygulama `localStorage['site-theme']` kullanir.
+`site-theme=light` + reload ile gercek durum olculdu. Ders: temayi DOM'dan
+zorlamak yerine uygulamanin kendi anahtarindan dogrula.

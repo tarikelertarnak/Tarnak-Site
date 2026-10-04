@@ -66,3 +66,8 @@ running_processes: (none)
 1. Kullanici karari: cok dilli CV (yeni PDF'ler mi, site ici route mu)
 2. Gercek blog yazisi eklendikce `deploy-pages.sh` (yazi = yeni deploy)
 3. BrowserOS neo acilinca hover/hash temizleme testi
+## 2026-10-04 UX fazi sonrasi (deploy 691e0322)
+- Production: https://tarikelertarnak.pages.dev — prime 8/8, `/contact/` statik asset
+- Test: 312/312 (23 dosya) · tsc 0 · negatif kontrol dogrulandi
+- Kapanan: UX-011 (capasiz gezinme, tek buton stili, iki satirlik marka, light gorunurluk)
+- Kayit: `.tarmas/LOG.md` UX-011 blogu

@@ -25,7 +25,7 @@ export const ptContentOverlay: DeepPartial<SiteContent> = {
       { title: 'Projetos', href: '/projects' },
       { title: 'Blog', href: '/blog' },
       { title: 'Chat', href: '/chat' },
-      { title: 'Contato', href: '/#contact' },
+      { title: 'Contato', href: '/contact/' },
     ],
   },
   about: {

@@ -71,11 +71,13 @@ function buildStaticGroups(l: Labels): NavGroup[] {
     {
       id: 'sections',
       title: l.sections,
+      // 2026-10-04: `/#bolum` capalari kaldirildi — her bolumun artik gercek
+      // bir sayfasi var, butun linkler normal rota (hero'daki # istegiyle ayni).
       entries: [
-        { id: 'sec-about', label: l.about, href: '/#about' },
-        { id: 'sec-projects', label: l.projects, href: '/#projects' },
-        { id: 'sec-blog', label: l.blog, href: '/#blog' },
-        { id: 'sec-contact', label: l.contact, href: '/#contact' },
+        { id: 'sec-about', label: l.about, href: '/about/' },
+        { id: 'sec-projects', label: l.projects, href: '/projects/' },
+        { id: 'sec-blog', label: l.blog, href: '/blog/' },
+        { id: 'sec-contact', label: l.contact, href: '/contact/' },
       ],
     },
     {

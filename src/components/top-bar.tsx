@@ -138,7 +138,7 @@ export function TopBar() {
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('search:request-open'))}
               aria-label={t('common.search')}
-              className={`flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground ${
+              className={`flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/5 text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground ${
                 scrolled ? 'h-8 px-2.5' : 'h-9 px-3'
               }`}
             >

@@ -698,7 +698,7 @@ const clearMessages = async () => {
                                   setNavItem(index, 'title', value)}
                               />
                             </Field>
-                            <Field label="Link (örn. /#projects)">
+                            <Field label="Link (örn. /projects/)">
                               <Input
                                 variant="faded"
                                 value={item.href}

@@ -1,8 +1,8 @@
 'use client'
 
 import type { Variants } from 'motion/react'
-import type { CvDoc } from '@/lib/cv'
 import type { SiteContent } from '@/lib/content'
+import type { CvDoc } from '@/lib/cv'
 import { TypewriterEffect } from '@lobehub/ui/awesome'
 import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
@@ -50,26 +50,31 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           className="flex flex-col items-center text-center md:items-start md:text-left"
         >
           {/*
-            Name + TARNAK: TARNAK artık TARIK ELER ile aynı tipografide
-            (font-black / uppercase / tracking-tighter / text-primary), sağ üstte
-            ve üst kenardan taşarak durur. Üzerine gelince italik, tıklanınca
-            temiz site köküne gider.
+            Name + TARNAK: aynı tipografi (font-black / uppercase /
+            tracking-tighter / text-primary), artık iki satır: "TARIK ELER -"
+            / "TARNAK". absolute konumlandırma ve üzerine gelince çapraz
+            (italic + yukarı kayma) efekti kaldırıldı — marka sabit durur,
+            tıklanınca temiz site köküne gider.
           */}
-          <motion.div variants={item} className="relative w-full">
+          <motion.div variants={item} className="w-full">
             <h1
               className={[
                 'font-black uppercase leading-[0.95] tracking-tighter text-primary select-none',
                 'text-5xl sm:text-7xl md:text-7xl lg:text-8xl',
               ].join(' ')}
             >
-              <span className="block pl-1">{name}</span>
+              <span className="block pl-1">
+                {name}
+                {' '}
+                -
+              </span>
+              <a
+                href={`${SITE_URL}/`}
+                className="block pl-1 no-underline"
+              >
+                TARNAK
+              </a>
             </h1>
-            <a
-              href={`${SITE_URL}/`}
-              className="absolute -top-1 right-0 block font-black uppercase leading-none tracking-tighter text-primary no-underline transition-transform duration-300 hover:italic hover:-translate-y-0.5 text-3xl sm:text-5xl md:text-6xl lg:text-7xl"
-            >
-              TARNAK
-            </a>
           </motion.div>
 
           {/* Typewriter */}
@@ -98,22 +103,28 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
             </motion.p>
           )}
 
-          {/* Ana gezinme: Projeler, İletişim, CV, Blog, Hakkımda, Sohbet. */}
+          {/*
+            Ana gezinme: altı düğme de aynı `bordered` stili — light temada
+            şeffaf zemin + siyah metin, dark temada şeffaf zemin + beyaz
+            metin. (Projeler daha önce `color="primary"` idi ve light temada
+            mavi zemin + beyaz yazı ile diğerlerinden kopuyordu.)
+            Çapa (#) yok: her düğme gerçek bir rotaya gider.
+          */}
           <motion.div
             variants={item}
             className="mt-7 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4"
           >
             <Button
-              color="primary"
+              variant="bordered"
               className="font-semibold text-sm sm:text-base px-6 py-3"
-              href="#projects"
+              href="/projects/"
             >
               {t('hero.projects')}
             </Button>
             <Button
               variant="bordered"
               className="font-semibold text-sm sm:text-base px-6 py-3"
-              href="#contact"
+              href="/contact/"
             >
               {t('hero.feedback')}
             </Button>
@@ -133,7 +144,7 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
             <Button
               variant="bordered"
               className="font-semibold text-sm sm:text-base px-6 py-3"
-              href="#about"
+              href="/about/"
             >
               {t('nav.about')}
             </Button>
@@ -176,7 +187,7 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
 
           {/* Scroll-down indicator */}
           <motion.a
-            href="#projects"
+            href="/projects/"
             aria-label={t('hero.scrollDown')}
             variants={item}
             className="mt-2 inline-flex h-12 w-7 items-start justify-center self-center rounded-full border-2 border-primary/40 p-1.5"

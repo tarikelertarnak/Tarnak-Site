@@ -32,7 +32,7 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
       { title: 'Projects', href: '/projects' },
       { title: 'Blog', href: '/blog' },
       { title: 'Chat', href: '/chat' },
-      { title: 'Contact', href: '/#contact' },
+      { title: 'Contact', href: '/contact/' },
     ],
   },
   about: {

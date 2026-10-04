@@ -36,10 +36,19 @@ describe('buildSiteNavigation', () => {
     expect(hrefs).not.toContain('/reklam')
   })
 
-  const REQUIRED_SECTIONS = ['/#about', '/#projects', '/#blog', '/#contact']
+  // 2026-10-04: `/#bolum` capalari gercek sayfalara cevrildi (kullanici:
+  // "butun # leri sil, normal olsun hep").
+  const REQUIRED_SECTIONS = ['/about/', '/projects/', '/blog/', '/contact/']
 
-  it.each(REQUIRED_SECTIONS)('ana sayfa bolumu listede: %s', (href) => {
+  it.each(REQUIRED_SECTIONS)('bolum listede gercek rota olarak: %s', (href) => {
     expect(hrefs).toContain(href)
+  })
+
+  // REGRESYON: capali href geri gelirse yakala. Ayri sayfaIci `#main` (atlama
+  // linki) bu listede degil — gezinme girdileri dis sayfa olmali.
+  it('hicbir gezinme linki capa (#) icermez', () => {
+    const hashed = hrefs.filter(h => h.includes('#'))
+    expect(hashed).toEqual([])
   })
 
   it('hesap baglantilari listede (giris, panel, editor)', () => {

@@ -56,16 +56,22 @@ export function CvPicker({
     const href = cvs[0]?.href ?? '/cv/tarikeler-cv.pdf'
     return (
       <div className="flex flex-row gap-2">
+        {/*
+          {...rest} SON eklenir: cagiranin `variant`/`className`'i kazanmali.
+          Daha once bu iki buton `color="primary"` ile SABIT basiliyor ve
+          gelen varyant/className yok sayiliyordu — hero'da `variant="bordered"`
+          verilse bile CV dugmeleri mavi/beyaz kaliyordu (kullanici raporu).
+        */}
         <Button
+          {...rest}
           size="sm"
-          color="primary"
           href={href}
           target="_blank"
           startContent={<DownloadIcon size={16} />}
         >
           {t('about.cvDownload')}
         </Button>
-        <Button size="sm" color="primary" href={href} target="_blank" startContent={icon}>
+        <Button {...rest} size="sm" href={href} target="_blank" startContent={icon}>
           {label}
         </Button>
       </div>

@@ -25,7 +25,7 @@ export const ruContentOverlay: DeepPartial<SiteContent> = {
       { title: 'Проекты', href: '/projects' },
       { title: 'Блог', href: '/blog' },
       { title: 'Чат', href: '/chat' },
-      { title: 'Контакты', href: '/#contact' },
+      { title: 'Контакты', href: '/contact/' },
     ],
   },
   about: {
