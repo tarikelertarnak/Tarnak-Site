@@ -32,7 +32,7 @@ a.hover\:text-white:hover { color: #fff; }
     --color-foreground-200: var(--tfg-200);
     --color-foreground-300: var(--tfg-300);
     --color-foreground-400: var(--tfg-400);
-    --color-foreground-500: #a1a1aa;
+    --color-foreground-500: var(--tfg-600);
     --color-foreground-600: var(--tfg-600);
     --color-foreground-700: var(--tfg-700);
     --color-foreground-800: var(--tfg-800);

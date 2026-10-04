@@ -41,3 +41,22 @@
 - [ ] MASTER FAZ — ACCESSIBILITY — PART 6
 - [ ] MASTER FAZ — PERFORMANCE — PART 3
 - [ ] MASTER FAZ — SECURITY — PART 2
+
+## P4 — 2026-10-04 TARMAS faz kapanisi (tamamlandi)
+- [x] SEO-007 Blog detay orce-static + generateStaticParams + dynamicParams=false (1102 kapatildi)
+- [x] SEO-008 Blog soft-404: bilinmeyen slug 200 -> 404
+- [x] SEO-009 Asset soft-404: 404.html uretiliyor (/yok.png 200 -> 404)
+- [x] SEO-010 Sitemap blog lastModified = post.date
+- [x] OPS-001 .carl -> .tarmas, /carl -> /tarmas
+- [x] OPS-002 deploy-pages.sh regresyon kontrolu: 404.html artifact zorunlulugu
+- [x] UX-006 whoText self-development cumlesi (tr + en)
+- [ ] UX-007 Footer iyilestirmesi
+- [ ] UX-008 Light theme buglari (reproduce + fix)
+- [ ] UX-009 Hero description admin/Puck formunda duzenlenebilir mi — dogrula
+- [ ] UX-010 Player/projects localized bos durum ("Henuz proje yok") dogrula
+- [ ] DOC-001 Cok dilli CV (17 locale PDF/HTML) — **kullanici karari**
+- [ ] SEO-011 Gercek blog yazisi (posts=0, uydurma icerik uretilmez)
+- [ ] SEO-012 Bing verification token + IndexNow key — **kullanici**
+- [ ] OPS-003 Google OAuth GOCSPX- siri rotate — **kullanici**
+- [ ] OPS-004 BrowserOS neo ac (:9210 red) -> gercek tarayici/hover testi
+- [x] UX-008 Light tema kontrast bug'i: `--color-foreground-500` sabitti (2.56:1 AA FAIL) -> `var(--tfg-600)` (10.44:1) · `theme-contrast.test.ts` regresyon testi

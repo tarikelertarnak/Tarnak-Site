@@ -399,3 +399,35 @@ prime dongusu gereksiz hale gelir.
 - BrowserOS neo kapali (:9210 red) -> gercek tarayici/hover testi yapilamadi;
   dogrulama static HTML uzerinden yapildi
 - Google OAuth GOCSPX- siri commit edilmedi; rotate kullaniciya
+
+## [2026-10-04] TARMAS — LIGHT TEMA KONTRAST BUG'I (UX-008 kapandi)
+
+### KOK NEDEN
+src/app/globals.css @theme inline blogunda --color-foreground-500 SABIT #a1a1aa
+idi ve **temaya bagli degildi**. Light temada arka plan #ffffff oldugu icin sitedeki
+**176 	ext-foreground-500 kullaniminin tamami 2.56:1 kontrastta** kaldi — WCAG AA
+(4.5:1) FAIL, yani light temada muted metin okunmaz durumdaydi. Dark temada ayni deger
+#050507 uzerinde 7.95:1 oldugu icin sorun gorunmuyordu (sadece light kirikti).
+
+### NEDEN VAR(--tfg-600) YETERLI (tek satir)
+--tfg-600 = light #3f3f46 (10.44:1 AA), dark #a1a1aa (7.95:1 AA).
+Yani dark tema degeri bugunki degerle **byte-byte ayni** -> dark temada GORSEL HIC BIR
+DEGISIKLIK YOK. --tfg-500 secilmendi: dark #71717a sadece 4.21:1 (AA-large sinirinda).
+
+### DIKKAT: inline theme'de deger build'de basilir
+@theme inline degerleri utility'ye derleme aninda yazilir; sonradan
+--color-foreground-500 yeniden tanimlamak utility'yi ETKILEMEZ. Duzeltme
+@theme inline blogunun icinde olmak ZORUNDA — disina yazilsaydi test gecer,
+canli degismezdi. Test bunu acikca not ediyor.
+
+### DOGRULAMA (olcum = kapanis)
+- src/lib/theme-contrast.test.ts (5 test, yeni): token'lari okuyup **GERCEK mapping'i**
+  cozuyor (--color-foreground-500: var(--tfg-X) -> o temadaki hex) ve WCAG oranini
+  hesapliyor. Test gercekte tarayiciya cikan rengi olcuyor, token'i degil.
+- NEGATIF KONTROL: bug geri getirildi -> test light: #a1a1aa on #ffffff = 2.56:1
+  ile KIRMILDI (cikis kodu 1). Duzeltme geri yuklendi -> 5/5 gecti.
+- tsc 0 hata · vitest 308/308 (303 + 5 yeni)
+- deploy 4a5cbf93 · prime 7/7 ilk denemede 200
+- CANLI CSS DOGRULAMASI: .text-foreground-500,.text-foreground-500\/40{color:var(--tfg-600)}
+  -> duzeltme gercekten uretimde. light 10.44:1 AA, dark 7.95:1 AA (degismedi).
+- scripts/deploy-pages.sh artik 404.html artifact'ini da zorunlu kiliyor (regresyon korumasi).

@@ -42,13 +42,18 @@ running_processes: (none)
 - **Sitemap lastModified**: blog icin `post.date` (dosya mtime degil).
 - **Isimlendirme**: `.carl` -> `.tarmas`, `/carl` -> `/tarmas`.
 
-## OLCUM (deploy d71b6d48)
+## OLCUM (deploy 4a5cbf93)
 - tsc 0 hata · vitest 303/303 · build OK
 - prime 7/7 ilk denemede 200 (`/`, `/projects/`, `/blog/`, `/about/`, `/credits/`, `/donate/`, `/github/`)
 - 11 public rota + endpoint 200 · 9/9 404 sinifi dogru · slash'siz istek 308 -> slash'li adres
 - `/admin` noindex,nofollow · sitemap 7 loc + 7 lastmod · robots 200 · feed 200
 - `lang="tr"` · canonical `https://tarikelertarnak.pages.dev/` · JSON-LD Person + WebSite
-- Diller tablosu · Kodun Ötesinde · CV picker · blog bos durum ("Henüz yazı yok") canlida
+- Diller tablosu · Kodun Ötesinde · CV picker · blog bos durum canlida
+- **Light tema kontrast FIX**: `--color-foreground-500` sabit `#a1a1aa` idi -> light temada
+  176 kullanim **2.56:1 (AA FAIL)**. `var(--tfg-600)` -> light 10.44:1, dark 7.95:1 (degismedi).
+  Canli CSS dogrulandi: `.text-foreground-500{color:var(--tfg-600)}`
+- Regresyon testi: `src/lib/theme-contrast.test.ts` 5 test (negatif kontrol ile kırildigi kanitli)
+- vitest **308/308** (303 + 5 yeni) · tsc 0
 
 ## KALAN
 - Cok dilli CV belgeleri (17 locale) yok -> kullanici karari

@@ -92,6 +92,8 @@ grep -E '_routes|extracted|idempotent|injected|flattened' /tmp/pcw.log || true
 [ -f .open-next/_routes.json ] || { echo "HATA: _routes.json uretilmedi (statik assetler worker'a dusecek)"; exit 1; }
 # Ana sayfa statik ASSET olmali: / 503 -> 10 ms CPU asimini kalici cozer.
 [ -f .open-next/index.html ] || { echo "HATA: .open-next/index.html yok (prerender sayfa static'e alinamadi)"; exit 1; }
+# 404.html olmazsa Pages eslesmeyen ASSET icin index.html'i 200 ile servis eder (soft-404).
+[ -f .open-next/404.html ] || { echo "HATA: .open-next/404.html yok (asset soft-404 regresyonu)"; exit 1; }
 
 # ---------------------------------------------------------------- deploy
 step "4/5 Cloudflare Pages deploy"
