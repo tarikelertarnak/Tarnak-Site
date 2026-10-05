@@ -104,6 +104,27 @@ export const HERO_BTN_DIVIDER = 'border-l border-primary-fg'
 export const HERO_BTN_FG = 'text-primary-fg'
 
 /**
+ * Normal (tek parçalı) buton TETİKLEYİCİSİ — dropdown/combobox ve kart
+ * içi butonlar için.
+ *
+ * 2026-10-05 ölçümü (canlı CDP, açık tema):
+ *
+ *   |             | referans (Projeler…) | sort combobox | Projeyi Aç |
+ *   |-------------|----------------------|---------------|------------|
+ *   | height      | 40px                 | 40px ✓        | 40px ✓     |
+ *   | radius      | 6px                  | 0px ✗         | 8px ✗      |
+ *   | border      | 1px #000             | 0px ✗         | 0px ✗      |
+ *   | font-size   | 13px                 | 13px ✓        | 14px ✗     |
+ *
+ * Üçü de ayrı ayrı sapıyordu. Burada tek sınıf birleştirildi: dropdown
+ * tetikleyicisi `rounded-md border` alıyor, "Projeyi Aç" `rounded-md`'e
+ * geçiyor. `h-10 px-3.5 gap-1.5 text-[13px]` zaten `HERO_BTN_BODY` ile
+ * aynıydı.
+ */
+export const HERO_BTN_TRIGGER
+  = `${HERO_BTN_BODY} bg-primary ${HERO_BTN_EDGE} ${HERO_BTN_FG} ${HERO_BTN_STATE}`
+
+/**
  * Hero `<Button>` çağrıları için GÖVDE sınıfları.
  *
  * Normal butonların canlı ölçümü: `h 40px`, `radius 6px`, `fs 13px`,

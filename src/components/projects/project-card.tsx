@@ -6,6 +6,7 @@ import { motion } from 'motion/react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { SiteLogo } from '@/components/logo'
+import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
 import { useT } from '@/components/locale-provider'
 import { Card, CardBody } from '@/components/ui/card'
 import { cn } from '@/components/ui/cn'
@@ -1127,7 +1128,18 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
               onClick={() => {
                 recordView()
               }}
-              className="inline-flex h-10 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-2 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
+              /*
+                "Projeyi Aç" — 2026-10-05 ölçüm düzeltmesi.
+                Canlı ölçüm (açık tema), referans hero butonuyla karşılaştırma:
+                  radius  8px vs 6px   → rounded-md
+                  border  yok  vs 1px   → border-primary-fg
+                  font    14px vs 13px  → text-[13px]
+                  h 40px ✓, bg mavi ✓, gap 6px ✓, ikon 14px ✓
+                `min-w`/`flex-1`/`px-2` korundu: kartta yanındaki indirme
+                split butonuyla aynı satırda esner, `flex-1` olmazsa kart
+                genişliğine göre hizalanmaz.
+              */
+              className={`${HERO_BTN_TRIGGER} min-w-[7.5rem] flex-1`}
             >
               {/* Tek isim: "Projeyi Aç". GitHub projesi olsa bile aynı etiket —
                   buton zaten GitHub linkine gidiyor, ayrı "GitHub'da aç" yazısı

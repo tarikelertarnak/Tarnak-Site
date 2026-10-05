@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
 import type { ReactNode } from 'react'
 import {
   CheckIcon,
@@ -89,7 +90,6 @@ export function SearchableCombobox({
   }, [options, q])
 
   const triggerText = multiple ? placeholder : optionsLabel(options, selected) || placeholder
-  const hasSelection = multiple ? (badge ?? 0) > 0 : selected.length > 0
   const selectedOption = multiple ? undefined : options.find(o => o.value === selected[0])
 
   return (
@@ -102,16 +102,18 @@ export function SearchableCombobox({
         }}
         aria-label={ariaLabel}
         aria-expanded={open}
-        // 2026-10-05 (kullanıcı): tetikleyici diğer butonlarla aynı CSS'i
-        // taşımalı — hero/İletişim Bilgileri/Daha Fazlası satırı
-        // `h-10 rounded-lg px-4 text-sm font-medium` kullanıyor. Önceden
-        // `rounded-full border px-3 text-xs` idi: hap şeklinde, daha küçük
-        // yazı, farklı köşe → aynı satırda yabancı duruyordu.
-        className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-4 text-sm font-medium outline-none transition-colors ${
-          hasSelection
-            ? 'bg-primary text-primary-fg hover:bg-primary/90'
-            : 'bg-primary text-primary-fg hover:bg-primary/90'
-        }`}
+        /*
+          2026-10-05 (kullanıcı): tetikleyici ölçüldü ve referans butonlarla
+          karşılaştırıldı. Sapmalar:
+            radius  0px  vs referans 6px   → rounded-md
+            border  yok  vs referans 1px   → border-primary-fg
+            bg      mavi ✓, renk ✓, h 40 ✓, fs 13px ✓
+          Artık `HERO_BTN_TRIGGER` tek kaynak; Blog ve Projeler bu bileşeni
+          paylaştığı için ikisi birebir aynı görünür (aynı dosya).
+          Önceki `rounded-full border px-3 text-xs` ve sonraki elle
+          `rounded-lg px-4 text-sm` denemeleri yerine ölçülmüş değer.
+        */
+        className={`${HERO_BTN_TRIGGER} cursor-pointer`}
       >
         {selectedOption?.icon}
         <span className="max-w-[12rem] truncate">{triggerText}</span>

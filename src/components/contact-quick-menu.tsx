@@ -4,6 +4,7 @@ import type { SiteContent } from '@/lib/content'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
+import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -112,7 +113,13 @@ function ChannelRow({
       data-index={index}
       onMouseEnter={onHover}
       className={cn(
-        'group/row flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors',
+        /*
+          Menü satırı — tetikleyici değil, liste öğesi. Yine de kullanıcı
+          isteği: "dokunma alanı en az 40px". `min-h-10` ölçülen 44px'i
+          40px'e indiriyor ve tıklama alanını garantiliyor (ikon+metin
+          hizası `items-center` ile korunuyor).
+        */
+        'group/row flex min-h-10 items-center gap-2 rounded-lg px-2 py-1.5 transition-colors',
         active ? 'bg-foreground-200/15' : 'hover:bg-foreground-200/10',
       )}
     >
@@ -342,12 +349,18 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
         aria-expanded={open}
         aria-haspopup="menu"
         className={cn(
-          // Hero butonlariyla ayni tasarim: mavi dolgu + beyazi yazi. Onceki
-          // sekilli/pill gorunum diger butonlardan kopyaliyordu.
-          'inline-flex h-10 items-center gap-2 rounded-lg px-3.5 text-sm font-medium outline-none transition-colors',
-          open
-            ? 'bg-primary/90 text-primary-fg'
-            : 'bg-primary text-primary-fg hover:bg-primary/90',
+          /*
+            "İletişim Bilgileri" tetikleyicisi — 2026-10-05 ölçüm düzeltmesi.
+            Panel İÇİNDEKİ kanallar (WhatsApp/Discord/GitHub) ölçüldü:
+              h      44px vs referans 40px  → h-10
+              radius  8px vs referans  6px  → rounded-md
+              border  yok  vs referans  1px  → border-primary-fg
+              fs     14px vs referans 13px  → text-[13px]
+            Tetikleyici `HERO_BTN_TRIGGER` ile aynı sınıfı kullanıyor;
+            `open` durumunda `bg-primary/90` (aktif ton) korundu.
+          */
+          HERO_BTN_TRIGGER,
+          open ? 'bg-primary/90' : '',
         )}
       >
         <MailIcon size={15} />
