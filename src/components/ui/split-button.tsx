@@ -3,7 +3,14 @@
 import type { ButtonProps } from '@/components/ui/button'
 import type { ReactNode } from 'react'
 import { cn } from '@/components/ui/cn'
-import { HERO_BTN_SHELL, HERO_BTN_STATE } from '@/components/ui/hero-button-style'
+import {
+  HERO_BTN_DIVIDER,
+  HERO_BTN_EDGE,
+  HERO_BTN_FG,
+  HERO_BTN_FOCUS,
+  HERO_BTN_SHELL,
+  HERO_BTN_STATE,
+} from '@/components/ui/hero-button-style'
 
 /**
  * SplitButton — iki (veya daha fazla) eylemi TEK buton gibi gösteren birleşik yapı.
@@ -58,22 +65,38 @@ const ICON_PART_WIDTH = 40
  * Dış sarmalayıcı. `group-focus-within:` ile odak halkası GRUPU çevreler:
  * her parçaya ayrı halka koymak ikisinin arasında iki çizgi yapıyordu.
  *
- * ÖLÇÜM DÜZELTMESİ (2026-10-05): `rounded-lg` (8px) ve `px-3`/`text-sm`
- * diğer hero butonlarıyla UYUŞMUYORDU. Canlı ölçüm: komşu butonlar
- * `radius 6px`, `padding-x 14px`, `font-size 13px`, `gap 6px`. Split'te
- * `0px / 12px / 14px / 8px` idi — kullanıcının "CV butonu farklı duruyor"
- * şikâyetinin dört kaynağı. Artık tek kaynaktan (`hero-button-style.ts`)
- * besleniyor.
+ * GÖRSEL DİL DÜZELTMESİ (2026-10-05): canlı ölçüm üç gerçek farkı
+ * gösterdi ve kullanıcının "beyaz arka plan + mavi çerçeve + soluk ikon"
+ * tarifini açıklıyordu:
+ *   1. kabukta `bg-primary` YOKTU → saydam, kart zemininin beyazı görünüyordu
+ *   2. çerçeve `border-primary` idi → mavi kalıyordu (normal buton siyah/beyaz)
+ *   3. ikon `currentColor` yerine inherited gri tonunu alıyordu
+ * Üçü de `hero-button-style.ts`ten gelen sabitlerle kapandı; artık
+ * normal butonla (LobeButton) aynı değişkenlerden besleniyoruz.
  */
-const WRAP = `${HERO_BTN_SHELL} align-middle select-none group focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/60 focus-within:ring-offset-2 focus-within:ring-offset-background`
+const WRAP
+  = `${HERO_BTN_SHELL} ${HERO_BTN_EDGE} ${HERO_BTN_FG} align-middle select-none group ${HERO_BTN_FOCUS}`
 
-/** Her yari: geometrisiz. Yuvarlatma yok, esnemez, `gap-0`. */
+/**
+ * Her yari: geometrisiz. Yuvarlatma yok, esnemez.
+ *
+ * `bg-primary` KABUKTA da var ama PARÇAYA DA konur. Neden (2026-10-05):
+ * LobeUI/antd `cssinjs` in şu kuralı global:
+ *   `:where(.css-*) a { color: var(--ant-color-link) }`
+ * Split'in `<a>` parçası `text-primary-fg` utility'si taşıyor ama bu
+ * `:where()` kuralı daha YÜKSEK özgüllüğe sahip olduğu için ikon ve yazı
+ * `--tfg-700` (açık temada `rgb(63,63,70)`, koyu temada
+ * `rgb(228,228,231)`) rengini alıyordu — yani kullanıcının "soluk ikon"
+ * şikâyeti. Kabuk `bg-primary` olduğu için `a.bg-primary { color: ... }`
+ * kuralı da tetiklenmiyordu (o kural kabukta çalışmıyor).
+ * Parçaya `bg-primary` eklenince `a.bg-primary` kuralı işe yarıyor ve
+ * `color: var(--tprimary-fg)` uygulanıyor: light siyah, dark beyaz.
+ */
 const PART
-  = `inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border-0 text-[13px] font-medium text-primary-fg no-underline transition-colors ${HERO_BTN_STATE} focus-visible:outline-none dark:hover:bg-primary/80`
+  = `inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border-0 bg-primary text-[13px] font-medium no-underline transition-colors ${HERO_BTN_STATE} ${HERO_BTN_FG} focus-visible:outline-none`
 
-/** Sag yari: sabit kare + ince ayirici. */
-const ICON_PART
-  = 'border-l border-[var(--tsplit-divider,rgba(0,0,0,0.25))]'
+/** Sag yari: sabit kare + ince ayirici (dış çerçeveyle aynı renk). */
+const ICON_PART = HERO_BTN_DIVIDER
 
 /**
  * Sol yari: icerik kadar genis, yatay dolgu.

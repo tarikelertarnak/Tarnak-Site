@@ -59,7 +59,13 @@ describe('SplitButton', () => {
     ])
 
     expect(html).toContain('border-l')
-    expect(html).toContain('--tsplit-divider')
+    // 2026-10-05: ayırıcı artık dış ÇERÇEVEYLE AYNI renk
+    // (`--tprimary-fg`: light siyah, dark beyaz). Önceden bağımsız
+    // `--tsplit-divider` değişkeni vardı ve çerçeve maviyken
+    // "bağımsız" görünüyordu — kullanıcı "ayırıcı dış çerçeveyle uyumlu
+    // renkte olsun" dedi.
+    expect(html).toContain('border-l border-primary-fg')
+    expect(html).not.toContain('--tsplit-divider')
   })
 
   it('her parca ayni yukseklikte ve esnemez', () => {
