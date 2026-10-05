@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import type { BlogPost } from '@/lib/content'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
@@ -16,6 +17,11 @@ function invalidateBlog(slug?: string) {
 }
 
 export async function POST(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına admin-blog dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'admin-blog')
+  if (denied)
+    return denied
   const admin = await isAdminUser()
   if (!admin) {
     return NextResponse.json({ success: false, message: 'Yetkisiz.' }, { status: 401 })

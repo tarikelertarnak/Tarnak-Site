@@ -70,6 +70,29 @@ export function ChatWindow({
   const [error, setError] = useState('')
   const [sending, setSending] = useState(false)
   const [uploading, setUploading] = useState(false)
+
+  /*
+    429 SONRASI GERİ SAYIM (2026-10-05).
+    Sunucu `Retry-After` döndüğünde bu saniye 1'den başlar, buton
+    `isDisabled` kalır ve süre dolunca OTOMATİK açılır — kullanıcı
+    sayfa yenilemeden tekrar deneyebilir.
+  */
+  const [cooldown, setCooldown] = useState(0)
+  useEffect(() => {
+    if (cooldown <= 0)
+      return
+    const t = setTimeout(() => setCooldown(c => Math.max(0, c - 1)), 1000)
+    return () => clearTimeout(t)
+  }, [cooldown])
+
+  /*
+    ÇİFT TIKLAMA KORUMASI: Enter'a iki kez basıp iki POST atılmasını
+    engelliyoruz. `sending` zaten guard veriyor ama React'ta aynı tick
+    içinde iki kez `true` görülemediği için son 800ms'yi ayrıca
+    tutuyoruz — kullanıcı "dokunmadım" sanılan durumlar oluyordu.
+  */
+  const lastSentAt = useRef(0)
+  const DEBOUNCE_MS = 800
   const fileRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -164,9 +187,12 @@ export function ChatWindow({
       || (!text.trim() && !fileData)
       || sending
       || uploading
+      || cooldown > 0
+      || Date.now() - lastSentAt.current < DEBOUNCE_MS
     ) {
       return
     }
+    lastSentAt.current = Date.now()
     setSending(true)
     setError('')
     try {
@@ -182,6 +208,20 @@ export function ChatWindow({
       })
       const data = await res.json()
       if (!res.ok) {
+        /*
+          429 — sunucu hız sınırı. Kullanıcı mesajı SİLME: metin
+          kalsın ki Retry-After dolunca tekrar gönderebilsin.
+          `Retry-After` başlığından kalan saniye alınıp geri sayım
+          başlatılıyor; buton o süre boyunca `isDisabled`.
+        */
+        if (res.status === 429) {
+          const retryAfter = Number(
+            res.headers.get('Retry-After') ?? data.retryAfter ?? 60,
+          ) || 60
+          setCooldown(Math.ceil(retryAfter))
+          setError(t('chat.rateLimited', { seconds: retryAfter }))
+          return
+        }
         setError(data.message || t('chat.sendFailed'))
         return
       }
@@ -462,16 +502,29 @@ export function ChatWindow({
                       send()
                     }
                   }}
-                  maxLength={500}
+                  /* Sunucu limiti 2000 karakter; eski istemci sınırı 500'dü.
+                   * `BODY_LIMITS.chatMessageChars` ile birebir aynı. */
+                  maxLength={2000}
                   className="flex-1"
                 />
+                {/* 429 geri sayımı: butonun altında kalan saniye görünür,
+                 * süre dolunca otomatik kaybolur. */}
+                {cooldown > 0 && (
+                  <span
+                    role="status"
+                    aria-live="polite"
+                    className="mt-1 text-center text-xs text-foreground/60"
+                  >
+                    {t('chat.rateLimitedCooldown', { seconds: cooldown })}
+                  </span>
+                )}
                 <Button
                   color="primary"
                   isIconOnly
                   aria-label={t('chat.send')}
                   onPress={() => send()}
-                  isLoading={sending}
-                  isDisabled={!text.trim() || uploading}
+isLoading={sending}
+              isDisabled={!text.trim() || uploading || cooldown > 0 || sending}
                   className="shrink-0"
                 >
                   <SendIcon size={20} />

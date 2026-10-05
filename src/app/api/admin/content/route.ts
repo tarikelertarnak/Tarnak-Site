@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import type { SiteContent } from '@/lib/content'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
@@ -6,6 +7,11 @@ import { isAdminUser } from '@/lib/supabase/session'
 import { contentSchema } from '@/lib/validations'
 
 export async function POST(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına admin-content dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'admin-content')
+  if (denied)
+    return denied
   const admin = await isAdminUser()
   if (!admin) {
     return NextResponse.json({ success: false, message: 'Yetkisiz.' }, { status: 401 })

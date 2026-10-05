@@ -441,5 +441,7 @@
   "settings.title": "Settings",
   "stars.like": "Star",
   "stars.likes": "likes",
-  "stars.unlike": "Remove star"
+  "stars.unlike": "Remove star",
+  "chat.rateLimited": "You're going too fast. Try again in {seconds} seconds.",
+  "chat.rateLimitedCooldown": "You're going too fast. You can send again in {seconds} seconds."
 }

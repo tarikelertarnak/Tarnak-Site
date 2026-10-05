@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { NextResponse } from 'next/server'
-import { clientIp, rateLimit } from '@/lib/rate-limit'
+import { LIMITS, checkLimit } from '@/lib/rate-limit-kv'
 
 const DATA_DIR = path.join(process.cwd(), 'data')
 const STARS_FILE = path.join(DATA_DIR, 'stars.json')
@@ -39,13 +39,43 @@ async function writeStars(data: StarsData): Promise<void> {
 
 export async function POST(request: Request) {
   try {
-    // Rate limit: yıldız verisi sınırsız şişirilebiliyordu (kalıcı bellek/disk DoS)
-    const rl = rateLimit(`stars:${clientIp(request)}`, { limit: 10, windowMs: 60 * 1000 })
+    /*
+      HIZ SINIRI — 2026-10-05, KV'ye taşındı (IP başına 10/dakika).
+      Önceden in-memory `rateLimit` vardı; Workers izoleleri arasında
+      paylaşılmadığı için dağıtık şişirmeyi durdurmuyordu.
+
+      DEĞİŞEN DAVRANIŞ: kullanıcı isteği gereği sayaç uç noktası artık
+      429 DÖNMÜYOR — limit aşılırsa istek "sessizce yok sayılır" (200,
+      mevcut sayaç döner). Sebep: bu uç nokta bir sayaç, indirme/görüntülenme
+      DEĞİL; 429 dönmek kullanıcının yıldızlamasını bozdu. Aynı desen
+      indirme/görüntülenme sayaçlarında da uygulanacak: sayma engellenir,
+      işlem engellenmez.
+      `failClosed: false`: KV kesilirse yıldızlamaya izin ver (ucuz, kritik değil).
+    */
+    const rl = await checkLimit('stars', { ...LIMITS.write, failClosed: false }, request)
     if (!rl.ok) {
-      return NextResponse.json(
-        { error: 'Too many requests' },
-        { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
-      )
+      const current = await readStars()
+      const bodyEarly = (await request.json().catch(() => null)) as
+        { itemId?: string, itemType?: string } | null
+      const keyEarly = bodyEarly?.itemId && bodyEarly?.itemType
+        ? `${bodyEarly.itemType}:${bodyEarly.itemId}`
+        : ''
+      const existingEarly = keyEarly ? current[keyEarly] ?? { total: 0, count: 0 } : { total: 0, count: 0 }
+      return NextResponse.json({
+        totalStars: existingEarly.total,
+        count: existingEarly.count,
+        average: existingEarly.count > 0
+          ? Math.round((existingEarly.total / existingEarly.count) * 10) / 10
+          : 0,
+        counted: false,
+      }, {
+        status: 200,
+        headers: {
+          'X-RateLimit-Limit': String(rl.limit),
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(Math.ceil(rl.resetAt / 1000)),
+        },
+      })
     }
 
     const body = (await request.json()) as {

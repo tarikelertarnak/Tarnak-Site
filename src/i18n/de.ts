@@ -66,6 +66,8 @@ const de: Record<string, string> = {
   'chat.requiresLogin': 'Sie müssen sich anmelden, um dem Chat beizutreten.',
   'chat.send': 'Senden',
   'chat.sendFailed': 'Senden fehlgeschlagen.',
+  'chat.rateLimited': 'Du gehst zu schnell. Versuche es in {seconds} Sekunden erneut.',
+  'chat.rateLimitedCooldown': 'Du gehst zu schnell. Du kannst in {seconds} Sekunden erneut senden.',
   'chat.uploadFailed': 'Datei konnte nicht hochgeladen werden.',
   'common.back': 'Zurück',
   'common.close': 'Schließen',

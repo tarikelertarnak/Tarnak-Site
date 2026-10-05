@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
@@ -61,9 +62,15 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ resource: string, id: string }> },
 ) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına dakikada 20 yazma.
+   * Yetkiden SONRA, Supabase UPDATE'ten ÖNCE. */
   if (!(await isAdminUser())) {
     return unauthorized()
   }
+
+  const denied = await guardWrite(req, 'admin-data')
+  if (denied)
+    return denied
 
   const { resource: key, id: rawId } = await params
   const resource = getResource(key)
@@ -135,9 +142,14 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ resource: string, id: string }> },
 ) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına dakikada 20 yazma. */
   if (!(await isAdminUser())) {
     return unauthorized()
   }
+
+  const denied = await guardWrite(_req, 'admin-data')
+  if (denied)
+    return denied
 
   const { resource: key, id: rawId } = await params
   const resource = getResource(key)

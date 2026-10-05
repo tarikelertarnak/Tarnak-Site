@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import env from '@/lib/env'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
+import { LIMITS, checkLimit, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { isMissingColumnError } from '@/lib/postgrest'
 import { contactFormSchema } from '@/lib/validations'
 
@@ -141,16 +142,42 @@ async function saveMessage(params: {
 
 export async function POST(req: Request) {
   /*
-    Hız sınırı: Arcjet anahtarı yoksa (veya hata verirse) koruma devre dışı
-    kalıyordu — fail-open. IP başına dakikada 3 gönderim, IP + e-posta
-    çiftinde 10/dakika. Arcjet'in kendi limitinin üstüne güvenmıyoruz.
+    HIZ SINIRI — 2026-10-05 güncellemesi.
+
+    ÖNCEKİ: `rateLimit(...)` in-memory, IP başına 3/dakika. Workers'ta her
+    izole ayrı bellek taşıdığı için DAĞITIK spam'i durdurmuyordu.
+
+    YENİ: KV tabanlı `checkLimit`, kullanıcı isteği doğrultusunda
+    **IP başına saatte 5**. İki ek koruma korundu:
+      • IP + e-posta ikilisi (aşağıda, `rateLimit` ile) — tek kişi farklı
+        IP'lerle aynı adrese spam atmasın diye.
+      • Discord webhook + ARCJET gönderimi limitten SONRA — yani reddedilen
+        istek webhook'a ulaşmaz, ücretsiz kanal israf olmaz.
+
+    `failClosed: false`: form ucuz (bir INSERT + iki webhook). KV kesintisi
+    kullanıcıyı formdan mahrum bırakmasın diye izin veriyoruz; gerçek spam
+    koruması zaten Arcjet'te.
   */
+  const hourly = await checkLimit('contact', { ...LIMITS.contact, failClosed: false }, req)
+  if (!hourly.ok)
+    return rateLimitResponse(hourly)
+
+  // Dakikalık in-memory koruma KORUNDU: saatte 5 limiti tek IP için yeterli
+  // ama e-posta ikilisi farklı IP'leri yakalar. İkisi birlikte çalışıyor.
   const ip = clientIp(req)
   const byIp = rateLimit(`contact:ip:${ip}`, { limit: 3, windowMs: 60 * 1000 })
   if (!byIp.ok) {
     return NextResponse.json(
       { success: false, message: 'Too many messages. Please try again shortly.' },
-      { status: 429, headers: { 'Retry-After': String(byIp.retryAfter) } },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(byIp.retryAfter),
+          'X-RateLimit-Limit': '3',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(Math.ceil((Date.now() + byIp.retryAfter * 1000) / 1000)),
+        },
+      },
     )
   }
 

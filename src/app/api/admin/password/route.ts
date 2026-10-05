@@ -1,9 +1,15 @@
+import { guardWrite } from '@/lib/rate-guard'
 import { NextResponse } from 'next/server'
 import { hashPassword, verifyPassword } from '@/lib/auth'
 import { getAdmin, saveAdmin } from '@/lib/content'
 import { isAdminUser } from '@/lib/supabase/session'
 
 export async function POST(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına admin-password dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'admin-password')
+  if (denied)
+    return denied
   const adminUser = await isAdminUser()
   if (!adminUser) {
     return NextResponse.json({ success: false, message: 'Yetkisiz.' }, { status: 401 })

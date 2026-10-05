@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import { NextResponse } from 'next/server'
 import { createSessionToken } from '@/lib/auth'
 import { getAdmin } from '@/lib/content'
@@ -9,6 +10,11 @@ import { verifyGoogleIdToken } from '@/lib/google-auth'
  * (kelimenin tam anlamıyla admin login'in cookie kuralının aynısı).
  */
 export async function POST(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına auth-google dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'auth-google')
+  if (denied)
+    return denied
   const body = await req.json().catch(() => null)
   const idToken = typeof body?.id_token === 'string' ? body.id_token : ''
   const nextParam = typeof body?.next === 'string' ? body.next : '/'

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { E164_MAX_DIGITS, normalizePhone } from '@/lib/phone'
-import { clientIp, rateLimit } from '@/lib/rate-limit'
+import { LIMITS, checkLimit, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -28,14 +28,15 @@ export async function POST(req: Request) {
   /*
     Hız sınırı: hesap üretimi kimlik doğrulamasızdı ve limitsizdi — sınırsız
     hesap + Supabase Auth kotasının tükenmesi. IP başına saatte 5 kayıt.
+
+    2026-10-05: in-memory `rateLimit` -> KV tabanlı `checkLimit`. Workers
+    izoleleri arası paylaşılmadığı için önceki koruma dağıtık spam'i
+    durdurmuyordu. `failClosed: true`: KV okunamazsa kayıt üretimini
+    durduruyoruz — kimlik doğrulamasız hesap üretimi pahalı.
   */
-  const rl = rateLimit(`signup:${clientIp(req)}`, { limit: 5, windowMs: 60 * 60 * 1000 })
-  if (!rl.ok) {
-    return NextResponse.json(
-      { success: false, message: `Çok fazla deneme. ${rl.retryAfter} saniye sonra tekrar dene.` },
-      { status: 429, headers: { 'Retry-After': String(rl.retryAfter) } },
-    )
-  }
+  const rl = await checkLimit('signup', { ...LIMITS.auth, failClosed: true }, req)
+  if (!rl.ok)
+    return rateLimitResponse(rl)
 
   const body = await req.json().catch(() => null)
   const fullName = typeof body?.fullName === 'string' ? body.fullName.trim().slice(0, 100) : ''

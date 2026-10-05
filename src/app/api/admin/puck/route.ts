@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 import {
@@ -38,6 +39,11 @@ export async function GET(req: Request) {
 //   { page, action:'loadVersion', id }           → return the version
 //   { page, action:'deleteVersion', id }         → delete the version
 export async function POST(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına admin-puck dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'admin-puck')
+  if (denied)
+    return denied
   const admin = await isAdminUser()
   if (!admin) {
     return NextResponse.json({ success: false, message: 'Yetkisiz.' }, { status: 401 })

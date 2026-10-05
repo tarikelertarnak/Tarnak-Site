@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import { NextResponse } from 'next/server'
 import { E164_MAX_DIGITS, normalizePhone } from '@/lib/phone'
 import { createAdminClient } from '@/lib/supabase/admin'
@@ -23,6 +24,11 @@ const MAX_LEN: Record<string, number> = {
  * metadata'dan okur — hata yalnızca güncelleme bölümünde sessizce tolere edilir.
  */
 export async function PATCH(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına auth-profile dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'auth-profile')
+  if (denied)
+    return denied
   const user = await getSessionUser()
   if (!user) {
     return NextResponse.json({ success: false, message: 'Giriş yapılmadı.' }, { status: 401 })

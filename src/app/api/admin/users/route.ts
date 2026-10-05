@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import {
@@ -125,6 +126,11 @@ export async function GET() {
  * All mutations on the owner are rejected with 403.
  */
 export async function POST(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına admin-users dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'admin-users')
+  if (denied)
+    return denied
   const admin = await isAdminUser()
   if (!admin) {
     return NextResponse.json({ success: false, message: 'Yetkisiz.' }, { status: 401 })

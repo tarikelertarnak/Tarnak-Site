@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import { Buffer } from 'node:buffer'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -29,6 +30,11 @@ function looksLikeImage(data: Buffer, ext: string): boolean {
 }
 
 export async function POST(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına admin-background dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'admin-background')
+  if (denied)
+    return denied
   const admin = await isAdminUser()
   if (!admin) {
     return NextResponse.json({ success: false, message: 'Yetkisiz.' }, { status: 401 })

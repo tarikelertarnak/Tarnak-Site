@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import { NextResponse } from 'next/server'
 import { createSessionToken, hashPassword, verifyCredentials } from '@/lib/auth'
 import { clientIp } from '@/lib/client-ip'
@@ -42,6 +43,11 @@ function pruneAttempts(now: number) {
  */
 
 export async function POST(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına admin-login dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'admin-login')
+  if (denied)
+    return denied
   const ip = clientIp(req)
   const now = Date.now()
   pruneAttempts(now)

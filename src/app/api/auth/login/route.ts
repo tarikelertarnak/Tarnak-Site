@@ -1,3 +1,4 @@
+import { guardWrite } from '@/lib/rate-guard'
 import { NextResponse } from 'next/server'
 import { createSessionToken, verifyCredentials } from '@/lib/auth'
 import { getAdmin } from '@/lib/content'
@@ -120,6 +121,11 @@ function normalizeIdentifier(raw: string): string {
  *    metadata'da username/full_name eşleşen hesabın e-postası bulunur.
  */
 export async function POST(req: Request) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına auth-login dakikada 20 yazma.
+   * Pahalı işlemden (Supabase INSERT / dosya yazımı) ÖNCE kontrol edilir. */
+  const denied = await guardWrite(req, 'auth-login')
+  if (denied)
+    return denied
   const ip = ipOf(req)
   const now = Date.now()
   const lock = attempts.get(ip)

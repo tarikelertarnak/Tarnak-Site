@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 import { adminDb, buildPayload, missingColumnFrom, writeWithColumnFallback } from '@/lib/admin/data'
+import { guardWrite } from '@/lib/rate-guard'
 import { getResource, resolveFilters } from '@/lib/admin/resources'
 import { isAdminUser } from '@/lib/supabase/session'
 
@@ -215,9 +216,15 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ resource: string }> },
 ) {
+  /* __RATE_GUARD__ KV hız sınırı: IP başına dakikada 20 yazma.
+   * Yetki kontrolünden SONRA, Supabase INSERT'ten ÖNCE. */
   if (!(await isAdminUser())) {
     return unauthorized()
   }
+
+  const denied = await guardWrite(req, 'admin-data')
+  if (denied)
+    return denied
 
   const { resource: key } = await params
   const resource = getResource(key)

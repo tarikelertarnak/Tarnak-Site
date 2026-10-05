@@ -1,13 +1,8 @@
 import { Buffer } from 'node:buffer'
 import { NextResponse } from 'next/server'
 import { MAX_UPLOAD_BYTES, saveUploadedFile } from '@/lib/chat'
-import { clientIp } from '@/lib/client-ip'
+import { LIMITS, checkLimit, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { getSessionUser, hasSessionPermission } from '@/lib/supabase/session'
-
-// Simple in-memory rate limit: max 5 files per IP within 60 s
-const UPLOAD_LIMIT_MS = 60_000
-const UPLOAD_MAX_PER_WINDOW = 5
-const uploadAttempts = new Map<string, number[]>()
 
 export async function POST(req: Request) {
   // File upload is only available to logged-in users with the files.upload permission
@@ -25,19 +20,17 @@ export async function POST(req: Request) {
     )
   }
 
-  const ip = clientIp(req)
-
-  // Rate limit check
-  const now = Date.now()
-  const attempts = (uploadAttempts.get(ip) ?? []).filter(t => now - t < UPLOAD_LIMIT_MS)
-  if (attempts.length >= UPLOAD_MAX_PER_WINDOW) {
-    return NextResponse.json(
-      { success: false, message: 'Çok fazla dosya yükledin. Lütfen biraz bekle.' },
-      { status: 429 },
-    )
-  }
-  attempts.push(now)
-  uploadAttempts.set(ip, attempts)
+  /*
+    HIZ SINIRI — 2026-10-05: in-memory dizi -> KV sabit pencere
+    (`LIMITS.chatUpload` = IP başına dakikada 10). Dosya yükleme pahalı:
+    10 MB'a kadar `formData()` ayrıştırma + diske yazma, dağıtık olarak
+    sınırsız çağrılırsa Workers diski/CPU'yu tüketir.
+    `failClosed: true`: KV okunamazsa yüklemeyi reddet (depolama maliyeti).
+    Kontrol `formData()` ÖNCESİNDE — gövdeyi ayrıştırmadan reddediyoruz.
+  */
+  const rl = await checkLimit('chat-upload', { ...LIMITS.chatUpload, failClosed: true }, req)
+  if (!rl.ok)
+    return rateLimitResponse(rl)
 
   let formData: FormData
   try {
