@@ -6,6 +6,7 @@ import type { SiteContent, ToolboxItem as ToolboxItemType } from '@/lib/content'
 import { Popover } from '@lobehub/ui/base-ui'
 import { useState } from 'react'
 import { FadeUpSection } from '@/components/fade-up-section'
+import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { useT } from '@/components/locale-provider'
 import { BentoBox, BentoBoxItem } from '@/components/ui/bento-box'
 import { Button } from '@/components/ui/button'
@@ -58,6 +59,30 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
           icon={<UserIcon size={34} className="inline-block" />}
           big
         />
+        {/*
+          Başlık altı aksiyon satırı (2026-10-05, kullanıcı):
+            1. "Daha Fazlası" -> /about/ (rozet, hafif kenar + ok ikonu)
+            2. "İletişim Bilgileri" -> `ContactQuickMenu` (mavi birleşik
+               buton, /contact/ ile AYNI bileşen — tek kaynak)
+          `gap-3` diğer buton satırlarıyla aynı. Sıralama: önce bağlantı,
+          sonra eylem; kullanıcı "combobox'u buraya da ekle" dediği için
+          combobox sağda duruyor.
+        */}
+        <div className="flex w-full flex-wrap items-center justify-center gap-3">
+          <Button
+            color="primary"
+            href="/about/"
+            // Hero butonlariyla BIREBIR ayni olcak (h-10, rounded-lg, px-4,
+            // gap-2, text-sm font-medium) — "Daha Fazlasi" dugmesi farkli
+            // gorsunmesin diye. `variant="bordered"` yerine dolu: ayni satirda
+            // "Iletisim Bilgileri" (bg-primary) ve hero butonlari duruyor.
+            className="h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
+            endContent={<ChevronRightIcon size={15} className="shrink-0" />}
+          >
+            {t('about.more')}
+          </Button>
+          <ContactQuickMenu content={content} />
+        </div>
       </FadeUpSection>
 
       <div className="flex w-full justify-center">

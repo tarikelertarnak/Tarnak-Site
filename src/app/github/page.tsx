@@ -8,7 +8,7 @@ export const dynamic = 'force-static'
 export async function generateMetadata() {
   const locale = await getStaticLocale()
   const isEn = locale === 'en'
-  const title = 'GitHub Projeleri — TARIK ELER - TARNAK'
+  const title = 'GitHub Sayfam — TARIK ELER - TARNAK'
   const description = isEn
     ? 'Open source repositories by TARIK ELER (Tarnak) — web apps, desktop apps, browser extensions and AI tools.'
     : 'TARIK ELER (Tarnak) tarafından geliştirilen açık kaynak GitHub depoları — web uygulamaları, masaüstü uygulamaları, tarayıcı eklentileri ve yapay zeka araçları.'

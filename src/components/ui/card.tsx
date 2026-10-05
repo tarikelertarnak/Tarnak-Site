@@ -28,9 +28,14 @@ export function CardHeader({ children, className }: { children: ReactNode, class
   )
 }
 
-export function CardBody({ children, className }: { children: ReactNode, className?: string }) {
+export function CardBody({ children, className, ...rest }: { children: ReactNode, className?: string } & React.HTMLAttributes<HTMLDivElement>) {
+  // `...rest`: auth-form `id`/`role`/`aria-labelledby` geçiriyor (tabpanel).
+  // Tip daraltılırsa burası TS2322 veriyordu — HTMLAttributes ile esnetildi.
   return (
-    <div className={cn('relative flex flex-1 w-full p-3 flex-col h-auto break-words text-left', className)}>
+    <div
+      {...rest}
+      className={cn('relative flex flex-1 w-full p-3 flex-col h-auto break-words text-left', className)}
+    >
       {children}
     </div>
   )

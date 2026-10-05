@@ -8,6 +8,7 @@ import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
+import { HERO_BTN_BODY } from '@/components/ui/hero-button-style'
 import { CvPicker } from '@/components/ui/cv-picker'
 import { BriefcaseIcon, ChatIcon, FileIcon, SendIcon, UserPlusIcon } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
@@ -116,7 +117,7 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           >
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
+              className={HERO_BTN_BODY}
 startContent={<BriefcaseIcon size={16} />}
               href="/projects/"
             >
@@ -124,7 +125,7 @@ startContent={<BriefcaseIcon size={16} />}
             </Button>
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
+              className={HERO_BTN_BODY}
               startContent={<SendIcon size={16} />}
               href="/contact/"
             >
@@ -133,11 +134,11 @@ startContent={<BriefcaseIcon size={16} />}
             <CvPicker
               cvs={cvs}
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
+              className={HERO_BTN_BODY}
             />
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
+              className={HERO_BTN_BODY}
               startContent={<FileIcon size={16} />}
               href="/blog/"
             >
@@ -145,7 +146,7 @@ startContent={<BriefcaseIcon size={16} />}
             </Button>
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
+              className={HERO_BTN_BODY}
               startContent={<UserPlusIcon size={16} />}
               href="/about/"
             >
@@ -153,7 +154,7 @@ startContent={<BriefcaseIcon size={16} />}
             </Button>
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
+              className={HERO_BTN_BODY}
               startContent={<ChatIcon size={16} />}
               href="/chat/"
             >

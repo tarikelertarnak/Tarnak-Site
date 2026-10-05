@@ -264,9 +264,12 @@ export function ChatWindow({
                 {t('chat.registerBtn')}
               </Button>
             </div>
-            <p className="text-foreground-500 text-center text-xs">
-              {t('chat.fileHint')}
-            </p>
+            {/*
+              "Görsel, ses ve dosya gönderebilirsiniz. Sohbet yalnızca
+              aramızda." ipucu KALDIRILDI (2026-10-05, kullanıcı). Kayıt
+              çağrısının altındaki bu satır yerine boşluk kalmıyor — kart
+              zaten `pb` dolgusuyla kapanıyor.
+            */}
           </div>
         </Card>
       </div>

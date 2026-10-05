@@ -11,6 +11,7 @@
 import { motion } from 'motion/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { SiteLogo } from '@/components/logo'
 import { useT } from '@/components/locale-provider'
 
 export function TopBar() {
@@ -102,21 +103,21 @@ export function TopBar() {
                 scrolled ? 'text-xs' : 'text-sm sm:text-base'
               }`}
             >
-              <img
-                src="/tarnak-white.svg"
-                alt="TARNAK"
-                width={28}
-                height={28}
-                className={`hidden shrink-0 dark:block transition-all duration-300 ${
-                  scrolled ? 'h-6 w-6' : 'h-7 w-7 sm:h-7 sm:w-7'
-                }`}
-              />
-              <img
-                src="/tarnak.svg"
-                alt="TARNAK"
-                width={28}
-                height={28}
-                className={`block shrink-0 dark:hidden transition-all duration-300 ${
+              {/*
+                Logo (2026-10-05, kullanıcı): `logo-framed-*.svg` çerçeveli
+                marka dosyası. Önceden İKİ ayrı `<img>` vardı
+                (`tarnak-white.svg` + `tarnak.svg`) ve `dark:block/dark:hidden`
+                ile değiştiriliyordu — iki indirme, iki kopya, iki yer de
+                güncellenmeliydi.
+
+                `SiteLogo` inline SVG: `fill=currentColor` (gövde yazı rengini
+                alır) + `stroke=var(--tbg)` (çerçeve sayfa zeminini alır, yani
+                açık temada siyah gövde + beyaz çerçeve, koyu temada tersi).
+                Tema CSS'ten okunduğu için `dark:` varyantı gereksiz.
+              */}
+              <SiteLogo
+                size={28}
+                className={`shrink-0 transition-all duration-300 ${
                   scrolled ? 'h-6 w-6' : 'h-7 w-7 sm:h-7 sm:w-7'
                 }`}
               />

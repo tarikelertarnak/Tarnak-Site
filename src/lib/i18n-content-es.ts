@@ -5,7 +5,7 @@ type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]>
 /** Español — overlay over the Turkish base (data/content.json). */
 export const esContentOverlay: DeepPartial<SiteContent> = {
   hero: {
-    name: 'TARIK ELER',
+    name: 'TARIK ELER TARNAK',
     tagline: 'Desarrollador y Arquitectura de Sistemas',
     badge: '',
     description:
@@ -86,11 +86,10 @@ export const esContentOverlay: DeepPartial<SiteContent> = {
       ],
       education: [
         {
-          role: 'Desarrollador Autodidacta',
-          company: 'Ciencias de la Computación e Ingeniería de Software',
-          period: 'Continuo',
-          description:
-            'Aprendizaje práctico a través del desarrollo web, la ciberseguridad, los CTF y las plataformas de bug bounty.',
+          role: '11.º curso — Sistemas Informáticos',
+          company: 'K-Tek (Kılıçarslan Borsa Istanbul Mesleki ve Teknik Anadolu Licesi)',
+          period: 'Estudiando',
+          description: 'Soy estudiante de 11.º curso en la rama de Sistemas Informáticos.',
         },
       ],
     },
@@ -101,7 +100,7 @@ export const esContentOverlay: DeepPartial<SiteContent> = {
     description: '',
   },
   github: {
-    subtitle: 'GITHUB',
+    subtitle: 'Mi página de GitHub',
     title: 'Proyectos de GitHub',
     description: 'Mis repositorios públicos, obtenidos en vivo desde mi perfil de GitHub.',
   },
@@ -112,7 +111,7 @@ export const esContentOverlay: DeepPartial<SiteContent> = {
   },
   profile: {
     firstName: 'TARIK',
-    lastName: 'ELER',
+    lastName: 'TARNAK',
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: 'Desarrollador y Arquitectura de Sistemas',

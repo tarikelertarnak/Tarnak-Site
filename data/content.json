@@ -1,6 +1,6 @@
 {
   "hero": {
-    "name": "TARIK ELER",
+    "name": "TARIK ELER TARNAK",
     "tagline": "Yazılımcı & Sistem Mimarisi",
     "badge": "",
     "description": "",
@@ -175,19 +175,11 @@
     "subtitle": "PROJELER",
     "title": "Tüm Projeler",
     "description": "",
-    "items": [
-      {
-        "title": "Player",
-        "description": "Müzik çalar uygulaması — sıra tabanlı oynatma listesi, arama, ses kontrolü.",
-        "projectLink": "https://github.com/TARIKELER-TARNAK/Player",
-        "srcLink": "https://github.com/TARIKELER-TARNAK/Player",
-        "image": ""
-      }
-    ]
+    "items": []
   },
   "github": {
     "subtitle": "GITHUB",
-    "title": "GitHub Projeleri",
+    "title": "GitHub Sayfam",
     "description": "GitHub profilimden canlı çekilen genel depolarım."
   },
   "chat": {
@@ -197,7 +189,7 @@
   },
   "profile": {
     "firstName": "TARIK",
-    "lastName": "ELER",
+    "lastName": "TARNAK",
     "displayName": "TARIKELER",
     "nickname": "Tarnak",
     "title": "",

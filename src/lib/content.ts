@@ -539,7 +539,7 @@ export async function saveAdmin(admin: AdminCredentials): Promise<PersistResult>
 async function getDefaultContent(): Promise<SiteContent> {
   return {
     hero: {
-      name: 'TARIK ELER',
+      name: 'TARIK ELER TARNAK',
       tagline: 'Yazılımcı & Sistem Mimarisi',
       badge: '',
       // Sabit bio metni kaldırıldı; admin `hero.description` alanına yazınca
@@ -641,7 +641,7 @@ async function getDefaultContent(): Promise<SiteContent> {
     },
     github: {
       subtitle: 'GITHUB',
-      title: 'GitHub Projects',
+      title: 'GitHub Sayfam',
       description: 'My public repositories, pulled live from my GitHub profile.',
     },
     chat: {
@@ -656,7 +656,7 @@ async function getDefaultContent(): Promise<SiteContent> {
     },
     profile: {
       firstName: 'TARIK',
-      lastName: 'ELER',
+      lastName: 'TARNAK',
       displayName: 'TARIKELER',
       nickname: 'Tarnak',
       title: '',

@@ -29,16 +29,27 @@ describe('SplitButton', () => {
       { href: '/cv.pdf', download: true, children: <span>D</span> },
     ])
 
-    // Tek sarmalayici: overflow-hidden + rounded-xl
+    // Tek sarmalayici: overflow-hidden + KOYU 1px cerceve + rounded-md
+    // 2026-10-05: canli olcumde komsu hero butonlarinin degeri
+    // `radius 6px`, `border 1px`, `padding-x 14px`, `font-size 13px`,
+    // `gap 6px` idi. Split eskiden `rounded-lg`(8px)/`border 0`/`px-4`/
+    // `text-sm`/`gap-2` tasiyordu — kullanici "CV butonu uyumsuz" dedi.
+    // Artik degerler `hero-button-style.ts`ten tek kaynaktan geliyor:
+    //   rounded-md = 6px (Tailwind 4'te md = 0.375rem)
     expect(html).toContain('overflow-hidden')
-    expect(html).toContain('rounded-xl')
+    expect(html).toContain('rounded-md')
+    // Komsu butonlarda 1px cerceve var; split'te de olmali.
+    expect(html).toMatch(/border border-primary/)
 
-    // Parcalar kendi radius'unu almaz
+    // Parcalar kendi radius'unu almaz — sarmalayici kirpar.
+    // Kural: radius sarmalayicida VAR, parcalarda YOK.
     const partMatches = html.match(/rounded-none/g) ?? []
     expect(partMatches.length).toBe(2)
-
-    // Parcalarda radius OLMAZ
-    expect(html).not.toMatch(/rounded-(lg|md|full|sm)/)
+    // Her parcenin class'inda `rounded-none` ve baska radius YOK.
+    for (const cls of html.match(/class="([^"]*rounded-none[^"]*)"/g) ?? []) {
+      expect(cls).toMatch(/rounded-none/)
+      expect(cls).not.toMatch(/rounded-(?:lg|md|full|sm|xl)/)
+    }
   })
 
   it('iki parca arasinda 1px ayirici vardir', () => {

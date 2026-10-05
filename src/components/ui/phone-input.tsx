@@ -5,6 +5,7 @@ import { useT } from '@/components/locale-provider'
 import { Input } from '@/components/ui/input'
 import { CountrySelect } from '@/components/ui/country-select'
 import { COUNTRIES } from '@/lib/countries-data'
+import { countryFromLanguages } from '@/lib/country-detect'
 import {
   COUNTRY_CODE_MAX,
   countryLengthRange,
@@ -119,6 +120,43 @@ export function PhoneInput({
    */
   const [codeDraft, setCodeDraft] = useState<string | null>(null)
   const shownCode = codeDraft ?? value.code
+
+  /**
+   * Otomatik ülke seçimi (kullanıcı isteği 2026-10-05): "Ülke seç
+   * otomatik bilgisayarımızın dilini çekip o dilin ülkesini varsayılan
+   * olarak göstersin; önce konum, konum bulunamazsa dilden gider."
+   *
+   * Uygulama notları:
+   *  - Konum (`navigator.geolocation`) ÜLKE vermez, koordinat verir; ülkeye
+   *    çevirmek dış servis + izin ister. Form doldururken otomatik izin
+   *    istemek yanlış, o yüzden sıralama pratikte "dil" oluyor. Konum yolu
+   *    `resolveCountryFromGeolocation`'da ayrı tutuldu — sağlayıcı bağlanınca
+   *    tek satır değişir.
+   *  - Sadece BOŞ formda çalışır: kullanıcı ülkeyi/numarayı değiştirdiyse
+   *    veya alan bir kayıttan geliyorsa dokunmaz (yoksa yüklenen kaydın
+   *    ülkesi tarayıcı diliyle ezilir).
+   *  - `autoGuessed` bir kez çalışır; sonraki render'larda tekrar etki
+   *    etmez, böylece kullanıcının seçimi ikinci render'da geri alınmaz.
+   *  - Sunucu tarafında `navigator` yok; effect zaten sadece istemcide çalışır
+   *    ama hydration uyumsuzluğu olmasın diye `iso2` state'i ile değil,
+   *    doğrudan `onChange` ile ilerliyoruz ve effect içinde `typeof`
+   *    kontrolü var.
+   */
+  const [autoGuessed, setAutoGuessed] = useState(false)
+  useEffect(() => {
+    if (autoGuessed)
+      return
+    // Alan zaten doluysa (kayıt geldi / kullanıcı seçti) karışma.
+    if (value.iso2 || value.number || value.code) {
+      setAutoGuessed(true)
+      return
+    }
+    const detected = countryFromLanguages()
+    if (detected)
+      onChange(rebaseNumber(EMPTY_PHONE, detected))
+    setAutoGuessed(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoGuessed])
 
   useEffect(() => {
     if (codeDraft === null) {

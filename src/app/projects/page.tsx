@@ -52,7 +52,11 @@ icon={<FolderIcon size={36} className="inline-block" />}
               rel="noopener noreferrer"
               className="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
             >
-              <GithubIcon size={14} className="text-white" />
+              {/* GitHub logosu: `text-white` ACIK temada beyaz kalıyordu ve mavi
+              zemin üstünde zor okunuyordu. `text-primary-fg` tema ile birlikte
+              çözülüyor: açık temada siyah, koyu temada beyaz — buton yazısıyla
+              birebir aynı renk. */}
+          <GithubIcon size={14} className="shrink-0 text-primary-fg" />
               {content.github.title}
             </a>
           </div>

@@ -11,7 +11,7 @@ type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]>
  */
 export const enContentOverlay: DeepPartial<SiteContent> = {
   hero: {
-    name: 'TARIK ELER',
+    name: 'TARIK ELER TARNAK',
     tagline: 'Developer & Systems Architecture',
     badge: '',
     description:
@@ -106,17 +106,17 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
     subtitle: 'PROJECTS',
     title: 'All Projects',
     description: '',
-    items: [
-      {
-        title: 'Player',
-        notice: '[Featured]',
-        description:
-          'Music player app — queue-based playlist, search, volume control.',
-        projectLink: 'https://github.com/tarikelertarnak/Player',
-        srcLink: 'https://github.com/tarikelertarnak/Player',
-        image: '',
-      },
-    ],
+    /*
+      `items` BOS — 2026-10-05 (kullanıcı): burada sabit/hardcoded bir
+      "Player — Music player app" projesi vardı ve kullanıcı bunu istemedi:
+      "bölümde boş görünmesin diye uydurulmuş hiçbir proje olmamalı.
+      Gerçek projeyi silersem kart da kaybolmalı."
+      Bu dizi, GitHub API'si boş/hata döndüğünde devreye giren bir
+      YEDEK veri kaynağıydı. Kaldırıldı: liste artık yalnız gerçek kaynaktan
+      (GitHub API) geliyor, veri yoksa boş durum mesajı gösteriliyor.
+      `lib/content.ts` zaten `items: []` idi — tutarsızlık buradan geliyordu.
+    */
+    items: [],
   },
   github: {
     subtitle: 'GITHUB',
@@ -132,7 +132,7 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
   },
   profile: {
     firstName: 'TARIK',
-    lastName: 'ELER',
+    lastName: 'TARNAK',
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: 'Developer & Systems Architecture',

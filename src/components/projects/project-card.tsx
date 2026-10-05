@@ -5,6 +5,7 @@ import type { ProjectItem } from '@/lib/content'
 import { motion } from 'motion/react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { SiteLogo } from '@/components/logo'
 import { useT } from '@/components/locale-provider'
 import { Card, CardBody } from '@/components/ui/card'
 import { cn } from '@/components/ui/cn'
@@ -142,8 +143,18 @@ interface DownloadComboboxProps {
   options: DownloadOption[]
   currentUrl: string | null
   onSelect: (url: string) => void
-  /** Trigger button (or alignment reference) — the portal position is computed from it. */
+  /**
+   * Chevron düğmesi (sağ parça). Menünün dikey hizası bu düğmeden ölçülür
+   * (üstte/altta yer var mı) — bkz. `calc()`.
+   */
   anchorRef: React.RefObject<HTMLElement | null>
+  /**
+   * İki parçalı butonun TAMAMI (`SplitButton` sarmalayıcısı). Menünün yatay
+   * hizası chevron'a değil, indirme ikonu ile chevron arasındaki AYIRICI
+   * ÇİZGİYE bağlı; çizgi = wrapper'ın solu + sol parçanın genişliği, yani
+   * `wrapperSol − chevronSol` farkı. `anchorRef` tek başına yetmiyor.
+   */
+  buttonRef: React.RefObject<HTMLElement | null>
   /** Only GitHub repos get the "Latest" group (non-GitHub projects have no releases). */
   showLatest: boolean
 }
@@ -158,6 +169,7 @@ function DownloadCombobox({
   currentUrl,
   onSelect,
   anchorRef,
+  buttonRef,
   showLatest,
 }: DownloadComboboxProps) {
   const { t } = useT()
@@ -170,33 +182,96 @@ function DownloadCombobox({
     inputRef.current?.focus()
   }, [])
 
-  // The menu opens based on the viewport: right if room on the button's right, left if on the left,
-  // and if neither side fits, it snaps to the edge the screen can fit (no overflow).
+  /*
+    KONUMLANDIRMA — yeniden yazıldı (2026-10-05, kullanıcı).
+
+    Belirti: menü butondan "çok uzakta, yukarıda ve sağda" görünüyordu.
+
+    KÖK NEDEN (iki ayrı hata):
+      1. `top = r.bottom + GAP` — menü HER ZAMAN aşağıda açılıyordu. Kartın
+         altındaysa ekranı taşıyor, üstte yer varken bile aşağı zorlanıyordu.
+         Yukarı açma hiç denenmiyordu.
+      2. `anchorRef` chevron'a değil, iki parçalı butonun WRAPPER'ına
+         bağlıydı; ayırıcı çizginin x konumu hiç ölçülmüyordu.
+
+    İstenen davranış (birebir uygulandı):
+      - Menü, indirme ikonu ile chevron arasındaki AYIRICI ÇİZGİNİN x
+        konumuna hizalı. Yani `anchorX = wrapperSol + indirmeParçasıGenişliği`.
+      - Yer varsa ÜSTTE: menünün alt-sağ köşesi çizgide.
+      - Üstte yer yoksa ALTta: menünün üst-sağ köşesi çizgide.
+      - Sağda yer varsa uygun köşe hizalanıp menü sağa da açılabilir.
+      - `GAP = 8` bitişik ama üst üste binmiyor.
+      - Kenarlardan en az `PAD = 8` içeride; ekran dışına asla taşmaz.
+      - Scroll/resize'da yeniden hesaplanır (mevcutti, korundu).
+
+    Ölçüm `getBoundingClientRect` ile alınır, portal `position: fixed` basar —
+    transform'lı bir kartın içinde `absolute` kullansaydık kartla birlikte
+    kayardı, portal bunu bitiriyor.
+  */
   useLayoutEffect(() => {
     const MENU_W = 288
+    const MENU_H = 320
     const GAP = 8
+    const PAD = 8
     const calc = () => {
-      const el = anchorRef.current
-      if (!el)
+      const chevron = anchorRef.current
+      if (!chevron)
         return
-      const r = el.getBoundingClientRect()
+      const r = chevron.getBoundingClientRect()
       const viewW = window.innerWidth
       const viewH = window.innerHeight
-      const spaceRight = viewW - r.right
-      const spaceLeft = r.left
-      const top = Math.min(r.bottom + GAP, Math.max(8, viewH - 320))
-      if (spaceRight >= MENU_W + GAP) {
-        // Enough room on the right → open right
-        setPos({ top, left: r.right + GAP })
+
+      /*
+        AYIRICI ÇİZGİNİN x KONUMU — istenen hizalama noktası.
+        Çizgi, sol parçanın (indirme ikonu) sağ kenarıyla sağ parçanın
+        (chevron) sol kenarı arasında, yani wrapper'ın solundan sol
+        parçanın genişliği kadar içeride. `buttonRef` wrapper'ı verir; yoksa
+        chevron'un solu (sol parça genişliği = 0 varsayımı).
+      */
+      const wrapLeft = buttonRef.current?.getBoundingClientRect().left
+      const dividerX = wrapLeft ?? r.left
+
+      // Dikey: önce ÜSTTE yer var mı? (menünün alt kenarı butonun üstünde)
+      const spaceAbove = r.top - PAD
+      const spaceBelow = viewH - r.bottom - PAD
+
+      let top: number
+      if (spaceAbove >= MENU_H + GAP) {
+        top = r.top - GAP
       }
-      else if (spaceLeft >= MENU_W + GAP) {
-        // Enough room on the left → open left
-        setPos({ top, right: viewW - r.left + GAP })
+      else if (spaceBelow >= MENU_H + GAP) {
+        top = r.bottom + GAP
       }
       else {
-        // Neither fits → snap to the screen edge (no overflow thanks to max-w)
-        setPos({ top, left: Math.max(8, Math.min(r.right + GAP, viewW - MENU_W - 8)) })
+        // Sığan tarafa dayayıp ekran kenarına yapış (asla taşma).
+        top = spaceAbove >= spaceBelow
+          ? Math.max(PAD, r.top - GAP - MENU_H)
+          : Math.min(viewH - MENU_H - PAD, r.bottom + GAP)
       }
+
+      /*
+        Yatay — istenen dört kural:
+          a) Yer varsa menü çizginin soluna doğru uzansın (sağ kenar çizgide).
+          b) Sağda yeterli alan varsa uygun köşe çizgiye hizalıp menü SAĞA da
+             açılabilir.
+          c) Sığmıyorsa sola doğru açılır.
+          d) Ekran kenarlarından en az PAD içeride kalır.
+      */
+      const leftward = dividerX - MENU_W
+      const rightward = dividerX
+      let left: number
+      if (leftward >= PAD) {
+        left = leftward
+      }
+      else if (rightward + MENU_W + PAD <= viewW) {
+        left = rightward
+      }
+      else {
+        // Ne sola ne sağa sığar → ekran kenarına dayayıp clamp et.
+        left = Math.max(PAD, Math.min(leftward, viewW - MENU_W - PAD))
+      }
+
+      setPos({ top, left })
     }
     calc()
     window.addEventListener('resize', calc)
@@ -205,7 +280,7 @@ function DownloadCombobox({
       window.removeEventListener('resize', calc)
       window.removeEventListener('scroll', calc, true)
     }
-  }, [anchorRef])
+  }, [anchorRef, buttonRef])
 
   // The user's platform first, then the standard order.
   const sortedOS = useMemo<OSKey[]>(() => {
@@ -655,21 +730,15 @@ function ProjectMedia({
               <GithubIcon size={44} className="text-primary" />
             )
           : (
-              <img
-                src="/tarnak-white.svg"
-                alt="TARNAK"
-                className="hidden h-16 w-16 object-contain p-1 dark:block"
-                loading="lazy"
-              />
+              /*
+                Logo (2026-10-05): `logo-framed-*.svg` çerçeveli marka.
+                Önce iki ayrı `<img>` + `dark:block/dark:hidden` idi; tek inline
+                `SiteLogo` hem tema CSS'ini okuyor hem tek indirme isteği
+                yapıyor. `p-1` dolgusu eski `<img>`'in iç boşluğuydu, framed
+                çerçevede gereksiz — `h-16 w-16` ile 64px karede.
+              */
+              <SiteLogo size={64} className="h-16 w-16" />
             )}
-        {!isGithub && (
-          <img
-            src="/tarnak.svg"
-            alt="TARNAK"
-            className="block h-16 w-16 object-contain p-1 dark:hidden"
-            loading="lazy"
-          />
-        )}
       </div>
     )
   }
@@ -845,6 +914,8 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
 const [comboboxOpen, setComboboxOpen] = useState(false)
   const comboboxRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  /** İki parçalı butonun sarmalayıcısı — menü hizası ayırıcı çizgiye bağlı. */
+  const splitWrapRef = useRef<HTMLDivElement>(null)
 
   // GitHub projesi: srcLink/projectLink'ten repo kimliği çıkarılır.
   const githubRepo = useMemo(
@@ -1068,8 +1139,14 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
             {downloadOptions.length > 0 && (
               <div className="relative shrink-0 self-center" ref={comboboxRef}>
                 {/* Indir + acilir liste TEK yuvarlak kutu: ayirici ince cizgi,
-                    birlese ic koseler duz (geometri: `SplitButton`, bkz. split-button.tsx). */}
+                    birlese ic koseler duz (geometri: `SplitButton`, bkz. split-button.tsx).
+
+                    `ref={splitWrapRef}`: acilir menunun yatay hizasi AYIRICI
+                    CIZGIYE baglanacak (kullanici isteği) ve o cizgi sarmalayicinin
+                    solu + sol parcanin genisligi. Sarmalayici olmadan bu olcum
+                    yapilamaz. */}
                 <SplitButton
+                  ref={splitWrapRef}
                   parts={[
                     {
                       href: currentDownloadUrl ?? '#',
@@ -1096,6 +1173,7 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
                     options={downloadOptions}
                     currentUrl={currentDownloadUrl}
                     anchorRef={triggerRef}
+                    buttonRef={splitWrapRef}
                     showLatest={isGithub}
                     onSelect={(url) => {
                       setComboboxOpen(false)

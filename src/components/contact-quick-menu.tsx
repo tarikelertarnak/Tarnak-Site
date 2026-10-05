@@ -43,9 +43,12 @@ import { copyText } from '@/lib/clipboard'
  */
 
 /**
- * Panelin liste DISINDA kalan yuksekligi (px): mt-2 boslugu + arama kutusu
+ * Panelin liste DISINDA kalan yuksekligi (px): ust bosluk (artik yukari
+ * kaydirildigi icin olcum gereksiz — asagida bakiyor) + arama kutusu
  * (p-2 dolgu + h-9 alan + alt kenarlik) + panel kenarligi + pay.
  * Yukseklik hesabi yalnizca listeye uygulandigi icin buradan dusulmeli.
+ * Negatif ust bosluk paneli SADECE yukari kaydirir; dikeyde yer acmaz,
+ * dolayisiyla bu deger degismedi.
  */
 const PANEL_CHROME = 80
 
@@ -355,7 +358,13 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl border border-surface-border bg-background shadow-2xl shadow-black/25"
+          // Panel tetikleyicinin alt kenarına (top-full) yapışıp `mt-2` ile
+          // 8px aşağı kayıyordu; kullanıcı butonla panel arasındaki boşluğu
+          // panelin tetikleyiciden kopuk durduğu gibi okuyordu. `-mt-7` (28px)
+          // panelin üst kenarını butonun 20px ÜSTÜNE taşıyor: buton yüksekliği
+          // 40px, eşleşme 20+8 px -> panel butonun üst yarısıyla hizalı.
+          // Yön KORUNDU: hâlâ `top-full` (aşağı), sadece yukarı kaydırıldı.
+          className="absolute left-0 top-full z-50 -mt-7 w-[min(24rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl border border-surface-border bg-background shadow-2xl shadow-black/25"
         >
           {/* Arama */}
           <div className="border-b border-foreground-200/10 p-2">

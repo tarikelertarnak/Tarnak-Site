@@ -165,23 +165,40 @@ function AuthFormInner({ mode }: { mode: AuthMode }) {
       {/* Sağ üstteki "Kapat" (×) butonu KALDIRILDI — gereksizdi; ana sayfaya
           dönmek için üstteki logo ve tarayıcı geri tuşu yeterli. */}
 
-      {/* ── Tab'lar: Kayıt Ol | Giriş Yap ─────────────────────────────── */}
-      <div className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-foreground/[0.06] p-1">
+      {/* ── Tab'lar: 1. Giriş | 2. Kayıt Ol ────────────────────────────
+          *
+          * SIRALAMA 2026-10-05 (kullanıcı): "1. tab giriş 2. tap kayıt ol".
+          * Önceden solda "Kayıt Ol", sağda "Giriş Yap" vardı — yani giriş
+          * yapmak isteyen kullanıcı ikinci sekmeye tıklamak zorundaydı.
+          *
+          * `role="tablist"` + `role="tab"` + `aria-selected`: ekran okuyucu
+          * hangi sekmenin açık olduğunu okuyabilsin. Klavyede ok tuşlarıyla
+          * gezinme de eklendi (roving tabindex) — sekmeler bağımsız buton
+          * değil, bir grup içinde seçim.
+          *
+          * `switchMode` `?next=` parametresini TAŞIDIĞI için
+          * `/login?next=/chat` ↔ `/sign?next=/chat` arasında geçişte geri
+          * dönüş rotası korunur.
+          */}
+      <div
+        role="tablist"
+        aria-label={isLogin ? t('auth.login') : t('auth.register')}
+        className="mb-4 grid grid-cols-2 gap-1 rounded-xl bg-foreground/[0.06] p-1"
+      >
         <button
           type="button"
-          onClick={() => switchMode('signup')}
-          className={cn(
-            'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
-            mode === 'signup'
-              ? 'bg-primary text-primary-foreground shadow-sm'
-              : 'text-foreground/70 hover:text-foreground',
-          )}
-        >
-          {t('auth.register')}
-        </button>
-        <button
-          type="button"
+          role="tab"
+          id="auth-tab-login"
+          aria-selected={mode === 'login'}
+          aria-controls="auth-panel"
+          tabIndex={mode === 'login' ? 0 : -1}
           onClick={() => switchMode('login')}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowRight') {
+              e.preventDefault()
+              switchMode('signup')
+            }
+          }}
           className={cn(
             'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
             mode === 'login'
@@ -191,19 +208,55 @@ function AuthFormInner({ mode }: { mode: AuthMode }) {
         >
           {t('auth.login')}
         </button>
+        <button
+          type="button"
+          role="tab"
+          id="auth-tab-signup"
+          aria-selected={mode === 'signup'}
+          aria-controls="auth-panel"
+          tabIndex={mode === 'signup' ? 0 : -1}
+          onClick={() => switchMode('signup')}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') {
+              e.preventDefault()
+              switchMode('login')
+            }
+          }}
+          className={cn(
+            'rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+            mode === 'signup'
+              ? 'bg-primary text-primary-foreground shadow-sm'
+              : 'text-foreground/70 hover:text-foreground',
+          )}
+        >
+          {t('auth.register')}
+        </button>
       </div>
 
+      {/*
+        Alt başlık metni (2026-10-05, kullanıcı): "Yeni hesap oluşturun. Ad,
+        e-posta ve şifre zorunludur; telefon isteğe bağlıdır." KALDIRILDI.
+        Kayıt ekranı artık yalnız "Kayıt Ol" başlığını gösterir.
+        `auth.registerUserSub` çeviri anahtarı da boşaltıldı ve tüm
+        render'lar kaldırıldı — anahtarı silmek yerine boş bırakmak,
+        `t()` fallback'i (tr) yüzünden diğer dillere sızmasın diye.
+      */}
       <CardHeader className="flex flex-col items-center justify-center gap-2 pb-4">
         <p className="text-3xl">{isLogin ? '🔐' : '📝'}</p>
         <h1 className="text-xl sm:text-2xl font-bold">
           {isLogin ? t('auth.login') : t('auth.register')}
         </h1>
-        <p className="text-sm text-foreground-500 text-center">
-          {isLogin ? t('auth.loginUserSub') : t('auth.registerUserSub')}
-        </p>
+        {isLogin && (
+          <p className="text-sm text-foreground/60 text-center">{t('auth.loginUserSub')}</p>
+        )}
       </CardHeader>
 
-      <CardBody className="flex flex-col gap-4">
+      <CardBody
+        id="auth-panel"
+        role="tabpanel"
+        aria-labelledby={mode === 'login' ? 'auth-tab-login' : 'auth-tab-signup'}
+        className="flex flex-col gap-4"
+      >
         <form onSubmit={submit} className="flex flex-col gap-4">
           {isLogin
             ? (

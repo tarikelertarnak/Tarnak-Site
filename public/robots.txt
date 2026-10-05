@@ -46,4 +46,15 @@ Disallow: /api/         # API — indekslenmemeli
 # ai-train belirtilmediği için "ne izin ver ne yasakla" (nötr) kalır.
 Content-Signal: search=yes
 
+# ── Arama motoru uyumu (2026-10-05) ───────────────────────────────────────
+# Bu dosya Google, Bing ve Yandex icin TEK kaynak. Uc motor da ayni
+# yonlendirme (canonical) kurallarina uyar:
+#   • Google  -> sitemap.xml referansi + Search Console
+#   • Bing    -> sitemap.xml + Bing Webmaster Tools (IndexNow ile hizli indeks)
+#   • Yandex  -> sitemap.xml + Yandex Webmaster (xmlns:yandex doğrulaması
+#                webmaster.yandex.ru/sites/ üzerinden eklenir; meta etiketi
+#                sunucu tarafında verilemez çünkü dosya statik)
+# Arama motoru doğrulama dosyalari her ucu de AYRI ve sunucudan 200 donmeli;
+# sitemap TEK dosya olarak yukaride bir kez bildirildi — cogaltmak gerekmez.
+
 Sitemap: https://tarikelertarnak.pages.dev/sitemap.xml

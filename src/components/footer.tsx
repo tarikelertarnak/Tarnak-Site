@@ -58,14 +58,18 @@ export function Footer({ content }: { content: SiteContent }) {
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
               {/* Marka + iletisim */}
               <div className="flex flex-col gap-3 lg:col-span-4">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <span className="text-lg font-bold text-primary">
-                    {content.hero.name}
-                  </span>
-                  <span className="rounded-full border border-secondary/30 bg-secondary/10 px-2.5 py-0.5 text-[10px] font-bold tracking-normal text-secondary">
-                    {content.profile.nickname}
-                  </span>
-                </div>
+                {/*
+                  Marka yazısı (2026-10-05, kullanıcı): "TARIK ELER (TARNAK)".
+                  Önce `hero.name` ("TARIK ELER TARNAK") ve `nickname` ayrı bir
+                  MAVI KUTUCUK içinde yan yana duruyordu; kullanıcı seçip
+                  kopyalayınca boşluk kaybolup "TARIK ELERTarnak" oluyordu.
+                  Şimdi tek metin, parantezli: seç/kopyala birebir doğru çıkar.
+                  `hero.name` içindeki "TARNAK" kaldırıldı, isim tek kaynaktan
+                  (`profile`) birleştiriliyor.
+                */}
+                <span className="select-text text-lg font-bold text-primary">
+                  {`${content.profile.firstName} ${content.profile.lastName} (${content.profile.nickname.toUpperCase()})`}
+                </span>
                 {/* Kisa slogan — footer'a uzun "hakkımda" paragrafı koymak
                     düzeni bozuyordu; tam metin Hakkımda bölümünde zaten var. */}
                 <p className="max-w-sm text-xs leading-relaxed text-foreground-500 sm:text-sm">

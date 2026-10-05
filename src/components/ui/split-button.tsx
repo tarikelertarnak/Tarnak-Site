@@ -3,6 +3,7 @@
 import type { ButtonProps } from '@/components/ui/button'
 import type { ReactNode } from 'react'
 import { cn } from '@/components/ui/cn'
+import { HERO_BTN_SHELL, HERO_BTN_STATE } from '@/components/ui/hero-button-style'
 
 /**
  * SplitButton — iki (veya daha fazla) eylemi TEK buton gibi gösteren birleşik yapı.
@@ -56,22 +57,32 @@ const ICON_PART_WIDTH = 40
 /**
  * Dış sarmalayıcı. `group-focus-within:` ile odak halkası GRUPU çevreler:
  * her parçaya ayrı halka koymak ikisinin arasında iki çizgi yapıyordu.
- * `--tsplit-divider` tema değişkeni (globals.css) açık temada koyu, koyu
- * temada açık — `border-white/25` her iki temada da yanlış kalıyordu.
+ *
+ * ÖLÇÜM DÜZELTMESİ (2026-10-05): `rounded-lg` (8px) ve `px-3`/`text-sm`
+ * diğer hero butonlarıyla UYUŞMUYORDU. Canlı ölçüm: komşu butonlar
+ * `radius 6px`, `padding-x 14px`, `font-size 13px`, `gap 6px`. Split'te
+ * `0px / 12px / 14px / 8px` idi — kullanıcının "CV butonu farklı duruyor"
+ * şikâyetinin dört kaynağı. Artık tek kaynaktan (`hero-button-style.ts`)
+ * besleniyor.
  */
-const WRAP
-  = 'inline-flex h-10 flex-nowrap items-stretch overflow-hidden rounded-xl bg-primary align-middle select-none group focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/60 focus-within:ring-offset-2 focus-within:ring-offset-background'
+const WRAP = `${HERO_BTN_SHELL} align-middle select-none group focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/60 focus-within:ring-offset-2 focus-within:ring-offset-background`
 
 /** Her yari: geometrisiz. Yuvarlatma yok, esnemez, `gap-0`. */
 const PART
-  = 'inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-none border-0 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90 focus-visible:outline-none dark:hover:bg-primary/80'
+  = `inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border-0 text-[13px] font-medium text-primary-fg no-underline transition-colors ${HERO_BTN_STATE} focus-visible:outline-none dark:hover:bg-primary/80`
 
-/** Sağ yarı: sabit kare + ince ayırıcı. */
+/** Sag yari: sabit kare + ince ayirici. */
 const ICON_PART
   = 'border-l border-[var(--tsplit-divider,rgba(0,0,0,0.25))]'
 
-/** Sol yari: içerik kadar geniş, yatay dolgu. */
-const MAIN_PART = 'px-3'
+/**
+ * Sol yari: icerik kadar genis, yatay dolgu.
+ *
+ * `px-3.5` + `text-[13px]` diger hero butonlariyla (`px-3.5 text-[13px]
+ * font-medium`) BIREBIR ayni. Once `px-4`/`text-sm` idi ve komşu butonlardan
+ * farkli genislik ve yazi boyu cikardi.
+ */
+const MAIN_PART = 'px-3.5'
 
 /**
  * Eski dışa aktarılan sabitler — geriye dönük uyum. Artık hiçbir yerde
@@ -106,9 +117,17 @@ function hasContentPart(parts: SplitButtonPartProps[], index: number) {
 export function SplitButton({
   parts,
   className,
+  ref,
 }: {
   parts: SplitButtonPartProps[]
   className?: string
+  /**
+   * Sarmalayıcı `<div>`'e ref. Menü/panel konumlandırması gereken yerler
+   * bunu kullanır (proje kartındaki indirme menüsü: ayırıcı çizginin x
+   * konumu = wrapper'ın solu + sol parçanın genişliği, bkz. project-card.tsx).
+   * React 19'da `ref` prop'a geçer, `forwardRef` gerekmez.
+   */
+  ref?: React.Ref<HTMLDivElement>
 }) {
   if (parts.length === 0)
     return null
@@ -116,7 +135,7 @@ export function SplitButton({
   const lastIndex = parts.length - 1
 
   return (
-    <div className={cn(WRAP, className)}>
+    <div ref={ref} className={cn(WRAP, className)}>
       {parts.map((p, i) => {
         // Sabit kare yari: ya acikca isaretlenmis ya da (yoksa) son yari
         // ve oncesinde yazi/ikon disi bir yari varsa. Proje kartinda IKISI

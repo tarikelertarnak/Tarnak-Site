@@ -19,6 +19,7 @@ import type { SessionUser } from '@/lib/supabase/session'
 import { AnimatePresence, motion } from 'motion/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
+import { SiteLogo } from '@/components/logo'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { ProfileEditDrawer } from '@/components/profile/profile-edit-drawer'
@@ -234,22 +235,12 @@ export function Sidebar() {
 
   const sidebarInner = (
     <nav className="flex h-full flex-col bg-[#0a0a0e]" aria-label="Sidebar navigation" aria-modal="true" role="dialog" onClickCapture={closeOnNavigate}>
-      {/* Brand — same layout as header: logo + "TARIK ELER — TARNAK" side by side */}
+      {/* Brand — same layout as header: logo + "TARIK ELER — TARNAK" side by side
+          Logo 2026-10-05: `logo-framed-*.svg` çerçeveli marka. İki ayrı `<img>` +
+          `dark:block/dark:hidden` yerine tek inline `SiteLogo` — `fill` yazı
+          rengini, `stroke` sayfa zeminini alır, tema CSS'ten okunur. */}
       <div className="flex items-center gap-2.5 border-b border-white/5 px-5 py-4">
-        <img
-          src="/tarnak-white.svg"
-          alt="TARNAK"
-          width={30}
-          height={30}
-          className="hidden shrink-0 dark:block"
-        />
-        <img
-          src="/tarnak.svg"
-          alt="TARNAK"
-          width={30}
-          height={30}
-          className="block shrink-0 dark:hidden"
-        />
+        <SiteLogo size={30} className="shrink-0" />
         <span className="truncate text-base font-bold tracking-tight text-foreground">
           TARIK ELER
           <span className="text-white/30"> — </span>

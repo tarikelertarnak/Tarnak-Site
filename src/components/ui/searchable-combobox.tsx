@@ -102,10 +102,15 @@ export function SearchableCombobox({
         }}
         aria-label={ariaLabel}
         aria-expanded={open}
-        className={`inline-flex h-10 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-xs font-medium outline-none transition-colors ${
+        // 2026-10-05 (kullanıcı): tetikleyici diğer butonlarla aynı CSS'i
+        // taşımalı — hero/İletişim Bilgileri/Daha Fazlası satırı
+        // `h-10 rounded-lg px-4 text-sm font-medium` kullanıyor. Önceden
+        // `rounded-full border px-3 text-xs` idi: hap şeklinde, daha küçük
+        // yazı, farklı köşe → aynı satırda yabancı duruyordu.
+        className={`inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-4 text-sm font-medium outline-none transition-colors ${
           hasSelection
-            ? 'border-primary/40 text-primary hover:border-primary/70'
-            : 'border-foreground-200/15 text-foreground/85 hover:border-primary/40'
+            ? 'bg-primary text-primary-fg hover:bg-primary/90'
+            : 'bg-primary text-primary-fg hover:bg-primary/90'
         }`}
       >
         {selectedOption?.icon}

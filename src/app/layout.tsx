@@ -4,6 +4,7 @@ import { EmotionStyleRegistry } from '@/components/emotion-style-registry'
 import { LocaleProvider } from '@/components/locale-provider'
 import { MusicPlayer } from '@/components/music-player'
 import { Providers } from '@/components/providers'
+import { GLOBAL_SHORTCUTS, Shortcuts } from '@/components/shortcuts'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { Sidebar } from '@/components/sidebar'
 import { SkipLink } from '@/components/skip-link'
@@ -251,6 +252,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <EmotionStyleRegistry>
               <LocaleProvider detectedLocale={locale}>
                 <SkipLink />
+                {/*
+                  Klavye kısayolları — TEK kayıt noktası, tüm rotalarda
+                  (2026-10-05, kullanıcı). Bileşen `null` render eder, sadece
+                  `keydown` dinler.
+
+                    Ctrl/⌘+K  arama          (zaten vardı: search-dialog.tsx)
+                    Ctrl/⌘+B  sol yan panel   (yeni)
+                    Ctrl/⌘+/  ayarlar paneli  (yeni)
+                    Escape     panel/menü kapat (bileşenlerin kendi handler'ı)
+                    Ctrl/⌘+↑↓ sayfa kaydırma  (yeni)
+
+                  `Shortcuts` yazarken (input/textarea/contenteditable) hiçbir
+                  kısayol çalışmaz — Ctrl+B yazıyı kalınlaştırmak için basılır,
+                  yanlışlıkla panel açılırsa odak kaybolur ve kullanıcının
+                  yazdığı metin kaybolur. Modal/drawer açıkken de yeni kısayol
+                  tetiklenmez.
+                */}
+                <Shortcuts shortcuts={GLOBAL_SHORTCUTS} />
                 <TopBar />
                 <Sidebar />
                 <SearchDialog />
