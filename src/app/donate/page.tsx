@@ -106,7 +106,7 @@ export default async function DonatePage() {
         {/* Methods table */}
         <Section className="flex-col pb-16 sm:pb-24" framed>
           <div className="mx-auto w-full max-w-4xl">
-            <div className="overflow-hidden rounded-2xl border border-foreground-200/10 bg-background">
+            <div className="overflow-hidden rounded-2xl border border-surface-border bg-background">
               {/* Header */}
               <div className="grid grid-cols-1 gap-2 border-b border-foreground-200/10 px-4 py-3 sm:grid-cols-[1.4fr_2fr_auto] sm:px-6">
                 <span className="text-xs font-semibold uppercase tracking-wider text-foreground/50">

@@ -444,7 +444,7 @@ export function SettingsModal({
             type="button"
             onClick={save}
             disabled={!dirty}
-            className="sticky bottom-0 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
+            className="sticky bottom-0 flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-primary"
           >
             <CheckIcon size={15} />
             {t('settings.save')}

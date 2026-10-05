@@ -135,7 +135,7 @@ export function SearchableCombobox({
                 onChange={e => setQ(e.target.value)}
                 placeholder={searchPlaceholder}
                 aria-label={searchPlaceholder}
-                className="h-8 w-full rounded-lg border border-foreground-200/15 bg-background pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
+                className="h-8 w-full rounded-lg border border-foreground-200/15 bg-surface-3 pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
               />
               {q && (
                 <button

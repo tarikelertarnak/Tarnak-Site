@@ -193,7 +193,7 @@ export default async function AboutPage() {
         {/* About me description */}
         <Section className="flex-col pb-12 sm:pb-16" framed>
           <div className="mx-auto w-full max-w-3xl">
-            <div className="rounded-2xl border border-foreground-200/10 bg-background p-6 sm:p-8">
+            <div className="rounded-2xl border border-surface-border bg-background p-6 sm:p-8">
               <h2 className="mb-4 text-2xl font-bold text-foreground sm:text-3xl">
                 {isEn ? 'Hello, I\'m Tarık.' : 'Merhaba, ben Tarık.'}
               </h2>
@@ -263,7 +263,7 @@ export default async function AboutPage() {
               {focus.map(f => (
                 <div
                   key={f.title}
-                  className="rounded-2xl border border-foreground-200/10 bg-background p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
+                  className="rounded-2xl border border-surface-border bg-background p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
                 >
                   <h3 className="mb-2 text-base font-semibold text-foreground">
                     {f.title}
@@ -315,7 +315,7 @@ export default async function AboutPage() {
               {values.map(v => (
                 <div
                   key={v.label}
-                  className="rounded-2xl border border-foreground-200/10 bg-background px-5 py-4"
+                  className="rounded-2xl border border-surface-border bg-background px-5 py-4"
                 >
                   <h3 className="mb-1 text-sm font-bold text-primary">
                     {v.label}

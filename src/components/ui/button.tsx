@@ -70,9 +70,15 @@ export function Button({
   // (--primary). Previously they were forced to light gray + black text, which
   // clashed with the blue icons and made the nav CTAs look like a different
   // component. !important overrides LobeButton's soft blue.
+  //
+  // `!text-primary-fg` (was `!text-white`): user asked for BLACK text and
+  // black icons on these buttons in light theme. The utility resolves to
+  // `var(--tprimary-fg)` — black in light, white in dark (black text on a
+  // dark blue button would be unreadable). Koyu temada `dark:` varyantı
+  // gerekmiyor çünkü token zaten tema ile değişiyor.
   const masterClass
     = variant === 'solid' && color === 'primary'
-      ? '!bg-primary !text-white !opacity-100 hover:!bg-primary/90 dark:!bg-primary/80 dark:hover:!bg-primary/70'
+      ? '!bg-primary !text-primary-fg !opacity-100 hover:!bg-primary/90 dark:!bg-primary/80 dark:hover:!bg-primary/70'
       : ''
 
   // Force the text/border color so bordered/ghost buttons stay visible in light theme too.

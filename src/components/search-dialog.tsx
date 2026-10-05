@@ -253,7 +253,7 @@ export function SearchDialog() {
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             >
               <div
-                className="flex max-h-[72vh] flex-col overflow-hidden rounded-2xl border border-foreground-200/15 bg-background shadow-2xl"
+                className="flex max-h-[72vh] flex-col overflow-hidden rounded-2xl border border-surface-border bg-background shadow-2xl"
                 role="dialog"
                 aria-modal="true"
                 aria-label={t('search.title') || 'Search'}

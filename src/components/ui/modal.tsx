@@ -74,7 +74,7 @@ export function Modal({
             exit={{ opacity: 0, scale: 0.97, y: -4 }}
             transition={{ type: 'spring', stiffness: 380, damping: 32 }}
             onClick={e => e.stopPropagation()}
-            className={`relative flex w-full ${maxWidth} flex-col overflow-hidden rounded-2xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/40 outline-none`}
+            className={`relative flex w-full ${maxWidth} flex-col overflow-hidden rounded-2xl border border-surface-border bg-background shadow-2xl shadow-black/40 outline-none`}
           >
             {title && (
               <div className="flex shrink-0 items-center justify-between border-b border-foreground-200/10 px-5 py-3.5">

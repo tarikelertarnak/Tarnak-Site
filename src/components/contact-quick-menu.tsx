@@ -343,8 +343,8 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
           // sekilli/pill gorunum diger butonlardan kopyaliyordu.
           'inline-flex h-10 items-center gap-2 rounded-lg px-3.5 text-sm font-medium outline-none transition-colors',
           open
-            ? 'bg-primary/90 text-white'
-            : 'bg-primary text-white hover:bg-primary/90',
+            ? 'bg-primary/90 text-primary-fg'
+            : 'bg-primary text-primary-fg hover:bg-primary/90',
         )}
       >
         <MailIcon size={15} />
@@ -355,7 +355,7 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
       {open && (
         <div
           role="menu"
-          className="absolute left-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/25"
+          className="absolute left-0 top-full z-50 mt-2 w-[min(24rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl border border-surface-border bg-background shadow-2xl shadow-black/25"
         >
           {/* Arama */}
           <div className="border-b border-foreground-200/10 p-2">

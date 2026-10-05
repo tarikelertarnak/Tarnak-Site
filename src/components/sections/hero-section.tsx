@@ -6,6 +6,7 @@ import type { CvDoc } from '@/lib/cv'
 import { TypewriterEffect } from '@lobehub/ui/awesome'
 import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
+import { SiteLogo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { CvPicker } from '@/components/ui/cv-picker'
 import { BriefcaseIcon, ChatIcon, FileIcon, SendIcon, UserPlusIcon } from '@/components/ui/icons'
@@ -115,7 +116,7 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           >
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
 startContent={<BriefcaseIcon size={16} />}
               href="/projects/"
             >
@@ -123,7 +124,7 @@ startContent={<BriefcaseIcon size={16} />}
             </Button>
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
               startContent={<SendIcon size={16} />}
               href="/contact/"
             >
@@ -132,11 +133,11 @@ startContent={<BriefcaseIcon size={16} />}
             <CvPicker
               cvs={cvs}
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
             />
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
               startContent={<FileIcon size={16} />}
               href="/blog/"
             >
@@ -144,7 +145,7 @@ startContent={<BriefcaseIcon size={16} />}
             </Button>
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
               startContent={<UserPlusIcon size={16} />}
               href="/about/"
             >
@@ -152,7 +153,7 @@ startContent={<BriefcaseIcon size={16} />}
             </Button>
             <Button
               color="primary"
-              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              className="h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
               startContent={<ChatIcon size={16} />}
               href="/chat/"
             >
@@ -168,25 +169,21 @@ startContent={<BriefcaseIcon size={16} />}
           animate="show"
           className="hidden flex-col items-center justify-center gap-4 md:flex"
         >
-          <motion.div
-            variants={item}
-            className="flex items-center justify-center"
-          >
-            <img
-              src="/tarnak-white.svg"
-              alt="TARNAK — kuş logosu ve TARIK ELER imzası"
-              width={220}
-              height={220}
-              className="hidden h-44 w-44 opacity-90 dark:block sm:h-56 sm:w-56"
-            />
-            <img
-              src="/tarnak.svg"
-              alt="TARNAK — kuş logosu ve TARIK ELER imzası"
-              width={220}
-              height={220}
-              className="block h-44 w-44 opacity-90 dark:hidden sm:h-56 sm:w-56"
-            />
-          </motion.div>
+<motion.div
+              variants={item}
+              className="flex items-center justify-center"
+            >
+              {/* Tek dosya, tema-uyumlu logo. Önce IKI ayrı dış SVG
+               * kullanılıyordu (`tarnak.svg` açık tema + `tarnak-white.svg`
+               * koyu tema) ve `dark:block/dark:hidden` ile değiştiriliyordu.
+               * Yeni `SiteLogo` fill'i `currentColor`, çerçevesi `--tbg`
+               * olduğu için CSS temasını kendisi okur: dış dosya, `dark:`
+               * varyantı ve iki kopya gereksiz. */}
+              <SiteLogo
+                size={224}
+                className="h-44 w-44 opacity-90 sm:h-56 sm:w-56"
+              />
+            </motion.div>
 
           {/* Scroll-down indicator */}
           <motion.a

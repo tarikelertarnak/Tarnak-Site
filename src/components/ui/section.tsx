@@ -20,9 +20,13 @@ export const Section = React.forwardRef<HTMLDivElement, SectionProps>(
         )}
       >
         <div id={id} className="absolute -top-20 sm:-top-24" />
-        {framed
+{framed
           ? (
-              <div className="w-full max-w-6xl rounded-3xl border border-foreground-200/10 bg-background p-4 sm:p-6 lg:p-10">
+              // DIŞ GRUP (surface-1): `bg-surface-1` kartın (`bg-background` =
+              // surface-2) İÇİNDE koyu temada koyu, açık temada gri. Once
+              // ikisi de `bg-background` idi → konteyner ve kart birebir aynı
+              // renkte, hover olmadan sıfır ayrışma (2026-10-05).
+              <div className="w-full max-w-6xl rounded-3xl border border-surface-border bg-surface-1 p-4 sm:p-6 lg:p-10">
                 {children}
               </div>
             )

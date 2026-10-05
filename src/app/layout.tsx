@@ -98,19 +98,29 @@ export async function generateMetadata(): Promise<Metadata> {
       ...(BING_VERIFICATION ? { 'msvalidate.01': BING_VERIFICATION } : {}),
     },
     formatDetection: { email: false, address: false, telephone: false },
-icons: {
-        icon: [
-          { url: '/favicon.ico?v=3', sizes: '48x48', type: 'image/x-icon' },
-          { url: '/favicon.svg?v=3', type: 'image/svg+xml' },
-          { url: '/android-chrome-192x192.png?v=3', sizes: '192x192', type: 'image/png' },
-          { url: '/android-chrome-512x512.png?v=3', sizes: '512x512', type: 'image/png' },
-          { url: '/logo.png?v=2', sizes: '512x512', type: 'image/png' },
-        ],
-        apple: [
-          { url: '/apple-touch-icon.png?v=3', sizes: '180x180', type: 'image/png' },
-        ],
-      },
-      manifest: '/site.webmanifest',
+// Favicon seti artık `Pictures\Önemli\TARNAK\favicons\favicons-logo_framed.zip`
+    // içinden geliyor (çerçeveli marka logosu, 2026-10-05). ZIP'in kendi
+    // snippet.html'i ile birebir aynı dosyalar; `android-chrome-*` ve
+    // `/logo.png` gibi VAR OLMAYAN dosyalara işaret eden eski girdiler
+    // kaldırıldı — tarayıcı 404 alıyordu.
+    // `?v=4` cache kırmak için: dosya içeriği değişti, aynı URL'de eski
+    // favicon 30 gün (SWR) servis edilirdi.
+    icons: {
+      icon: [
+        { url: '/favicon.ico?v=4', sizes: '48x48', type: 'image/x-icon' },
+        { url: '/favicon.svg?v=4', type: 'image/svg+xml' },
+        { url: '/favicon-16x16.png?v=4', sizes: '16x16', type: 'image/png' },
+        { url: '/favicon-32x32.png?v=4', sizes: '32x32', type: 'image/png' },
+        { url: '/favicon-48x48.png?v=4', sizes: '48x48', type: 'image/png' },
+        { url: '/favicon-96x96.png?v=4', sizes: '96x96', type: 'image/png' },
+        { url: '/icon-192x192.png?v=4', sizes: '192x192', type: 'image/png' },
+        { url: '/icon-512x512.png?v=4', sizes: '512x512', type: 'image/png' },
+      ],
+      apple: [
+        { url: '/apple-touch-icon.png?v=4', sizes: '180x180', type: 'image/png' },
+      ],
+    },
+    manifest: '/site.webmanifest',
     openGraph: {
       type: 'website',
       url: `${SITE_URL}/`,
@@ -119,14 +129,14 @@ icons: {
       description,
       locale: 'tr_TR',
       images: [
-        { url: `${SITE_URL}/tarik-eler-tarnak-logo.png`, width: 512, height: 512, alt: 'Tarık Eler Tarnak logosu' },
+        { url: `${SITE_URL}/icon-512x512.png`, width: 512, height: 512, alt: 'Tarık Eler Tarnak logosu' },
       ],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [`${SITE_URL}/tarik-eler-tarnak-logo.png`],
+      images: [`${SITE_URL}/icon-512x512.png`],
     },
   }
 }
@@ -182,8 +192,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   'TARIK ELER TARNAK',
                 ],
                 url: SITE_URL,
-                image: `${SITE_URL}/tarik-eler-tarnak-logo.png`,
-                logo: `${SITE_URL}/tarik-eler-tarnak-logo.png`,
+                image: `${SITE_URL}/icon-512x512.png`,
+                logo: `${SITE_URL}/icon-512x512.png`,
                 jobTitle: 'Web Developer',
                 // 2026-09-24: github.io siteleri yayindan kaldirildi — sameAs'ta
                 // sadece AKTIF adresler kalir (arama motorlarına olu baglantilar

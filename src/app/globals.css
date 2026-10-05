@@ -14,35 +14,66 @@
    Renk de ekleniyor: yazi duz beyaz kalir, hover'da antd link mavisine donmez.
    NOT: eskiden `a.bg-[#e5e7eb]` idi; butonlar maviye (`bg-primary`) cevrilince
    o kural ise durmustu ve butonlar saydam gorunuyordu. Artik primary tabanli. */
-a.bg-primary { background-color: var(--tprimary); color: #fff; }
-a.hover\:bg-primary\/90:hover { background-color: color-mix(in srgb, var(--tprimary) 90%, transparent); color: #fff; }
+a.bg-primary { background-color: var(--tprimary); color: var(--tprimary-fg); }
+a.hover\:bg-primary\/90:hover { background-color: color-mix(in srgb, var(--tprimary) 90%, transparent); color: var(--tprimary-fg); }
 a.hover\:text-white:hover { color: #fff; }
 
+/* Kullanıcı isteği (2026-10-05): `bg-primary` üstündeki yazı ve ikon artık
+ * temaya göre değişir — açık temada SİYAH, koyu temada beyaz.
+ * Tailwind'in `text-primary-foreground` utility'si zaten `--color-primary-foreground`
+ * token'ını okuyor, ama bileşenlerdeki sert `text-white` onu eziyordu. O
+ * sertleşmeler `--tprimary-fg`'ye bağlandı (aşağıdaki utility).
+ * `bg-danger`, `bg-white/10`, `dark:text-white` gibi FARKLI zeminler
+ * bilinçli olarak dokunulmadı. */
+@utility text-primary-fg {
+    color: var(--tprimary-fg);
+}
+
+/* Split butonlarin iki parca arasindaki ince ayiricisi (2026-10-05) degerleri
+ * ana tema bloklarinda tanimli (asagida). BURADA ayri `:root`/`.dark` blogu
+ * acmamak `theme-contrast.test.ts`'in `themeBlock()` ayristiricisini bozuyor:
+ * dosyada birden fazla `:root` olunca regex ilkini (token'siz olani) yakaliyor
+ * ve tum token'lar `undefined` donuyordu. Tek blok kurali bu yuzden onemli. */
 @theme {
     /* Custom xs breakpoint for extra small devices (480px+) */
     --breakpoint-xs: 480px;
 }
 
+/*
+   Katmanlı yüzey hiyerarşisi (2026-10-05) — SORUN: dış grup ile iç kart
+   AYNI renkti. Canlı ölçüm: konteyner `rgb(231,232,235)`, kart da
+   `rgb(231,232,235)` — birebir aynı, hover olmadan sıfır ayrışma. İkisi de
+   `--tsurface` idi, çünkü kart VE kutu aynı utility'yi (`bg-background`)
+   kullanıyordu; ayrım için iki AYRI token gerekiyor.
+
+   Kural (koyu tema): sayfa > dış grup > kart. Dış grup sayfadan KOYU, kart
+   ondan AÇIK. Aydınlık temada mantık tersine döner: sayfa beyaz, dış grup
+   açık gri, kart beyaz (grubun üstünde öne çıkar).
+
+     --tsurface-0  sayfa zemini (body)
+     --tsurface-1  DIŞ GRUP / bölüm konteyneri
+     --tsurface-2  İÇ KART (surface-1'den belirgin farklı)
+     --tsurface-3  kart İÇİ eleman: arama kutusu, filtre, placeholder
+
+   `--color-background` = `--tsurface-2` (kart): 31 dosyada `bg-background`
+   kullanımı KART içindir; dış kutular `bg-surface-1` alır. Geriye dönük
+   uyum için `--tsurface` de `--tsurface-1`'e eşitlendi.
+*/
 @theme inline {
     /* Themed color tokens — `t*` vars flip with the .dark/.light class so the
        SAME utility (e.g. text-foreground) reads "white-ish" in dark mode and
        "black-ish" in light mode. primary (blue) stays identical in both. */
-    /* `bg-background` = KART/panel/modal/dropdown/girdi yüzeyidir (77
-       kullanım), sayfa zemini DEĞİLDİR — sayfa zemini `body` ve
-       `ThemedBackground` (`bg-white dark:bg-black`) üzerinden gelir.
-       `--tbg`'ye eşitlendiği için yüzey ana arka plana birebir yapışıyordu:
-       light'ta #fff üstünde #fff, dark'ta #050507 üstünde #050507 → light
-       temada hiçbir kart/gruplama görünmüyordu.
-
-       2026-10-04 (kullanıcı isteği): hem light hem dark temada grup/kutu
-       yüzeyi "fazla açık"tı → bir kademe koyulaştırıldı. Yeni `--tsurface`
-       token'ı bunun icin ayrıldı: `--tfg-200` ÖNCEKİ ÇÖZÜMDEKİ KART
-       rengini hem de metin/kenarlık merdivenini (`text-foreground-200`,
-       `border-foreground-200/10`) taşıyor; onu koyulaştırmak kenarlıkları da
-       koyulaştırıp ikinci bir regresyon yaratırdı. Kart yüzeyi artık
-       bağımsız ayarlanabilir.
+    /* `bg-background` = İÇ KART yüzeyi (31 dosya), sayfa zemini DEĞİLDİR —
+       sayfa zemini `body` üzerinden gelir. Kartın DIŞINDA kalan bölüm
+       konteynerleri `bg-surface-1` kullanır; ikisi artık FARKLI token.
        Alt basamaklar: `bg-background/80`, `/95` gibi yarı saydam barlar. */
-    --color-background: var(--tsurface);
+    --color-background: var(--tsurface-2);
+    /* Dış grup / bölüm konteyneri — koyu temada sayfadan koyu, karttan koyu. */
+    --color-surface-1: var(--tsurface-1);
+    /* Kart içi eleman: arama kutusu, filtre çubuğu, görsel placeholder. */
+    --color-surface-3: var(--tsurface-3);
+    /* Kart kenarlığı — hover'sız bile ayrışmayı garantiler. */
+    --color-surface-border: var(--tsurface-border);
     --color-foreground: var(--tfg);
     --color-foreground-200: var(--tfg-200);
     --color-foreground-300: var(--tfg-300);
@@ -61,11 +92,36 @@ a.hover\:text-white:hover { color: #fff; }
     --color-danger: #dc2626;
 }
 
-/* Default (light) theme — white background, dark text. */
-:root {
+/* LIGHT (varsayilan) yuzey hiyerarsisi — sayfa beyaz, dis grup gri, kart beyaz.
+ *
+ * SELECTOR ONEMI — bu satir olmadan tema degiskenleri UYGULANMIYORDU.
+ * `@theme inline` derlemede kendi `:root { --tsurface-2: ... }` ciktisini
+ * URETIR ve bu cikti dosyadaki bloklarindan SONRA gelir. Duz `:root`
+ * yazarsak derleyicinin degeri kazanir ve koyu tema degerleri hic
+ * uygulanmaz. Canli olcumde tam olarak bu olmustu: `html.class="dark"` ve
+ * siyah body vardi ama `--tsurface-2` light degerinde kalip karti koyu
+ * temada BEYAZ birakiyordu.
+ * `html[data-theme="light"]` ozelgulugu (0,1,1) > `:root` (0,1,0) oldugu
+ * icin tema degerleri her zaman kazanir. `data-theme`'i
+ * `ThemeInitScript` her yuklemede yaziyor.
+ *
+ * Yuzey mantigi: kart, ustundeki ACIK GRI gruba gore daha ACIK olmali ki
+ * one ciksin (sayfaya gore degil — sayfa zaten beyaz).
+ *   surface-0 #ffffff (sayfa) > surface-1 #e4e6ea (dis grup, koyu)
+ *                                  > surface-2 #ffffff (kart, acik)
+ * Iki komsu katman 1.00'a dusunce ayrim kaybolur; bu yuzden ince bir
+ * kenarlik (`--tsurface-border`) de kondu — hover olmadan da kartin cizgisi
+ * gorunur. */
+html[data-theme='light'] {
     --tbg: #ffffff;
-    /* Kutu/grup kart yüzeyi — sayfa zemininden bir kademe koyu. */
-    --tsurface: #e7e8eb;
+    /* Dış grup / bölüm konteyneri — sayfadan bir kademe koyu. */
+    --tsurface: #e4e6ea;
+    --tsurface-0: #ffffff;
+    --tsurface-1: #e4e6ea;
+    --tsurface-2: #ffffff;
+    --tsurface-3: #f1f2f5;
+    --tsurface-border: rgba(0, 0, 0, 0.12);
+    --tsplit-divider: rgba(0, 0, 0, 0.30);
     --tfg: #18181b;
     --tfg-200: #f4f4f5;
     --tfg-300: #eceef1;
@@ -76,17 +132,44 @@ a.hover\:text-white:hover { color: #fff; }
     --tfg-800: #18181b;
     --tfg-900: #09090b;
     --tfg-950: #000000;
-    --tprimary: #2563eb;
-    --tprimary-fg: #ffffff;
-    --tsecondary: #2563eb;
-    --tsecondary-fg: #ffffff;
+    --tprimary: #3b82f6;
+    /* Kullanıcı isteği (2026-10-05): açık temada primary buton yazısı ve
+     * ikonu SİYAH. Önceden her iki temada da beyazdı; mavi zemin üstünde
+     * beyaz okunuyordu ama istenen görünüm bu değil.
+     *
+     * RENK ÇAKIŞMASI (bilinçli seçim): kullanıcı SİYAH yazı istedi, mavi
+     * `#2563eb` üzerinde siyah SADECE 4.06:1 veriyor — WCAG AA (4.5:1)
+     * düşüyor. Zemini koyulaştırmak kötüleştiriyor (#1d4ed8 → 3.13:1)
+     * çünkü siyah ile zemin aynı tarafa gidiyor. Tek yol zeminin parlak
+     * tona çekilmesi: `--tprimary` `#3b82f6` (blue-500) oldu ve siyah
+     * yazı 5.71:1 ile AA'yı geçiyor.
+     *
+     * Koyu temada siyah yazı koyu zeminde okunmaz, orada beyaz kalır:
+     * `--tprimary #2563eb` + beyaz = 5.17:1.
+     * İki temada aynı mavi yerine iki farklı ton kullanılıyor çünkü
+     * kontrast yönü temayla birlikte ters dönüyor. */
+    --tprimary-fg: #000000;
+    --tsecondary: #3b82f6;
+    --tsecondary-fg: #000000;
 }
 
-/* Dark theme — black background, light text (site is designed dark-first). */
-.dark {
-    --tbg: #050507;
-    /* Kutu/grup kart yüzeyi — sayfa zemininden bir kademe koyu. */
-    --tsurface: #131317;
+/* DARK yuzey hiyerarsisi — sayfa > dis grup (en koyu) > kart (belirgin acik).
+ * Ayni SELECTOR ONEMI gecerli: `html[data-theme="dark"]`, `.dark` degil.
+ * `.dark` sinifi yalnizca `dark:` varyantlarini aktiflestirir; yuzey
+ * DEGISKENLERI bu blokta tanimlanir. Koyu temada kontrast yonu ters doner:
+ * dis grup sayfadan KOYU, kart ondan ACIK olmali.
+ * Araliklar 0↔1 = 1.06:1, 1↔2 = 1.14:1, 2↔3 = 1.18:1. Kullanici degerleri
+ * taban alindi; ilk denemede `#0f0f12` sayfaya yalniz 1.03:1 idi, yani dis
+ * grup sayfaya yapisiyordu — degerler bu yuzden acildi. */
+html[data-theme='dark'] {
+    --tbg: #0a0a0c;
+    --tsurface: #121216;
+    --tsurface-0: #0a0a0c;
+    --tsurface-1: #121216;
+    --tsurface-2: #1f1f26;
+    --tsurface-3: #2c2c34;
+    --tsurface-border: rgba(255, 255, 255, 0.10);
+    --tsplit-divider: rgba(255, 255, 255, 0.32);
     --tfg: #ededed;
     --tfg-200: #1a1a1f;
     --tfg-300: #25252b;
@@ -97,7 +180,7 @@ a.hover\:text-white:hover { color: #fff; }
     --tfg-800: #e4e4e7;
     --tfg-900: #fafafa;
     --tfg-950: #ffffff;
-    --tprimary: #3b82f6;
+    --tprimary: #2563eb;
     --tprimary-fg: #ffffff;
     --tsecondary: #60a5fa;
 --tsecondary-fg: #ffffff;

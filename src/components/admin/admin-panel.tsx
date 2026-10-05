@@ -1725,7 +1725,7 @@ const clearMessages = async () => {
                                         <button
                                           type="button"
                                           onClick={() => addGithubRepo(repo)}
-                                          className="shrink-0 h-8 rounded-lg bg-primary px-3 text-xs font-semibold text-white hover:bg-primary/90"
+                                          className="shrink-0 h-8 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-fg hover:bg-primary/90"
                                         >
                                           Ekle
                                         </button>

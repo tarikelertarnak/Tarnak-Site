@@ -114,7 +114,7 @@ function CreditGroup({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-2xl border border-foreground-200/10 bg-background">
+    <div className="rounded-2xl border border-surface-border bg-background">
       <div className="border-b border-foreground-200/10 px-6 pb-4 pt-5">
         <h2 className="flex items-center gap-3 text-lg font-bold text-foreground">
           {icon}

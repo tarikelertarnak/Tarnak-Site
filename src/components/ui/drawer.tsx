@@ -86,7 +86,7 @@ export function Drawer({
             animate={{ x: 0 }}
             exit={{ x: initialX }}
             transition={{ type: 'spring', stiffness: 360, damping: 34 }}
-            className={`absolute top-0 ${side === 'right' ? 'right-0' : 'left-0'} flex h-full w-full ${width} flex-col border-${side === 'right' ? 'l' : 'r'} border-foreground-200/15 bg-background shadow-2xl shadow-black/40 outline-none`}
+            className={`absolute top-0 ${side === 'right' ? 'right-0' : 'left-0'} flex h-full w-full ${width} flex-col border-${side === 'right' ? 'l' : 'r'} border-surface-border bg-background shadow-2xl shadow-black/40 outline-none`}
           >
             {title && (
               <div className="flex shrink-0 items-center justify-between border-b border-foreground-200/10 px-5 py-3.5">

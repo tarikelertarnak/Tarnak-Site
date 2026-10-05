@@ -48,7 +48,7 @@ export function Footer({ content }: { content: SiteContent }) {
       )}
     >
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 md:px-8">
-        <div className="relative rounded-3xl border border-foreground-200/15 bg-background">
+        <div className="relative rounded-3xl border border-surface-border bg-background">
           {/* Notr ust cerceve — RENKLI gradient yok (kart tam siyah kalir) */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground-200/25 to-transparent" />

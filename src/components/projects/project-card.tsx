@@ -22,7 +22,7 @@ import {
   SearchIcon,
   StarOutlineIcon,
 } from '@/components/ui/icons'
-import { SPLIT_DIVIDER, SPLIT_PART, SPLIT_WRAP } from '@/components/ui/split-button'
+import { SplitButton } from '@/components/ui/split-button'
 import { StarRating } from '@/components/ui/star-rating'
 import { readProjectStats, recordDownload, recordProjectView } from '@/lib/project-stats'
 
@@ -328,7 +328,7 @@ function DownloadCombobox({
           className={cn(
             'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
             isSelected
-              ? 'border-primary bg-primary text-white'
+              ? 'border-primary bg-primary text-primary-fg'
               : 'border-white/25 bg-transparent hover:border-white/50',
           )}
         >
@@ -944,7 +944,7 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
     = selectedCurrent?.label ?? downloadOptions[0]?.label ?? t('projects.download')
 
   return (
-    <Card className="group h-full overflow-visible rounded-2xl border-foreground-200/10 bg-background transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
+    <Card className="group h-full overflow-visible rounded-2xl border-surface-border bg-background transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5">
       <CardBody className="flex flex-col gap-3 rounded-2xl p-3 sm:p-4">
         {/* Media box — rectangular, multi-media player */}
         <ProjectMedia project={project} isGithub={isGithub} />
@@ -1056,41 +1056,41 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
               onClick={() => {
                 recordView()
               }}
-              className="inline-flex h-10 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-2 text-sm font-medium text-white no-underline transition-colors hover:bg-primary/90 hover:text-white"
+              className="inline-flex h-10 min-w-[7.5rem] flex-1 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-primary px-2 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
             >
               {/* Tek isim: "Projeyi Aç". GitHub projesi olsa bile aynı etiket —
                   buton zaten GitHub linkine gidiyor, ayrı "GitHub'da aç" yazısı
                   gereksizdi. */}
               {t('projects.open')}
-              <ArrowUpRightIcon size={14} className="shrink-0 text-white" />
+              <ArrowUpRightIcon size={14} className="shrink-0 text-primary-fg" />
             </a>
 
             {downloadOptions.length > 0 && (
               <div className="relative shrink-0 self-center" ref={comboboxRef}>
                 {/* Indir + acilir liste TEK yuvarlak kutu: ayirici ince cizgi,
-                    birlese ic koseler duz (SPLIT_WRAP/SPLIT_PART/SPLIT_DIVIDER). */}
-                <div className={SPLIT_WRAP}>
-                  <a
-                    href={currentDownloadUrl ?? '#'}
-                    onClick={() => trackDownload()}
-                    title={currentDownloadLabel}
-                    aria-label={currentDownloadLabel}
-                    className={cn(SPLIT_PART, 'w-10 px-0')}
-                  >
-                    <DownloadIcon size={15} />
-                  </a>
-                  <button
-                    type="button"
-                    ref={triggerRef}
-                    onClick={() => setComboboxOpen(o => !o)}
-                    aria-label={t('projects.selectVersion')}
-                    aria-expanded={comboboxOpen}
-                    title={t('projects.selectVersion')}
-                    className={cn(SPLIT_PART, SPLIT_DIVIDER)}
-                  >
-                    <ChevronDownIcon size={13} />
-                  </button>
-                </div>
+                    birlese ic koseler duz (geometri: `SplitButton`, bkz. split-button.tsx). */}
+                <SplitButton
+                  parts={[
+                    {
+                      href: currentDownloadUrl ?? '#',
+                      title: currentDownloadLabel,
+                      'aria-label': currentDownloadLabel,
+                      onClick: () => trackDownload(),
+                      iconOnly: true,
+                      children: <DownloadIcon size={15} />,
+                    },
+                    {
+                      onClick: () => setComboboxOpen(o => !o),
+                      title: t('projects.selectVersion'),
+                      'aria-label': t('projects.selectVersion'),
+                      'aria-expanded': comboboxOpen,
+                      'aria-haspopup': true,
+                      iconOnly: true,
+                      ref: triggerRef,
+                      children: <ChevronDownIcon size={13} />,
+                    },
+                  ]}
+                />
                 {comboboxOpen && (
                   <DownloadCombobox
                     options={downloadOptions}

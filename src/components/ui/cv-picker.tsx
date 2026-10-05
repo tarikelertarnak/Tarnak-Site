@@ -7,7 +7,7 @@ import { useLocale, useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ChevronDownIcon, DownloadIcon, EyeIcon } from '@/components/ui/icons'
-import { SPLIT_DIVIDER, SPLIT_WRAP } from '@/components/ui/split-button'
+import { SplitButton } from '@/components/ui/split-button'
 
 /**
  * CV seçici — aramalı (search) combobox.
@@ -55,46 +55,38 @@ export function CvPicker({
 if (cvs.length <= 1) {
     const href = cvs[0]?.href ?? '/cv/tarikeler-cv.pdf'
     /*
-      Tek kayit -> birleşik (split) buton. Daha once iki ayri buton gibi
-      duruyordu; `SPLIT_WRAP` tek yuvarlak kutuyu iki yariye boluyor ve
-      birlese ic koseleri duz birakıyor (bkz. split-button.tsx).
-      `startContent`/`endContent` ve `size` bilerek dusurulur: iki yarinin
-      ikonu ve icerigi kendi kuralim.
+      Tek kayit -> birlesik (split) buton: [goz ikonu CV] | [indir].
+      Geometrinin TEK sahibi `SplitButton` (bkz. split-button.tsx). Burada
+      elle `<div>` + iki `<Button>` yazmak yazildi ve sonuc bozuk oldu:
+      LobeButton her parçaya kendi `rounded-lg`/padding'ini dayatıyor, iki
+      parça arasında çatlak ve yuvarlak ic koseler kaliyordu. Artik
+      parçalar sade `<a>` — indirme `download` ozniteligi ve yeni sekme
+      `target` semantigi aynen korunuyor.
       Ikon once, sonra yazi (kullanici istegi): goz simgesi "CV" kelimesinin
-      SOLUNDA — LobeButton `iconPosition="start"` ile bunu destekliyor.
-
-      `className` BILINCLI OLARAK yarilara GEÇIRILMEZ. Hero cagirani
-      `h-11 ... rounded-lg px-4 py-2 ...` yaziyor; bu iki yariya birden
-      uygulaninca her yari kendi `rounded-lg`'ini aliyor ve split'in orta
-      köşeleri yeniden yuvarlaniyor — yani birlestirme tam bozuluyor.
-      Geometri SPLIT_WRAP/SPLIT_PART'e devredildi; renk/varyant `shared`
-      icinden geliyor. Iki çağrı noktası da zaten ek geometri vermiyor.
+      SOLUNDA.
     */
-    const { startContent: _s, endContent: _e, size: _sz, className: _cn, ...shared } = rest
-
     return (
-      <div className={SPLIT_WRAP}>
-        {/* Ana kisim: goz ikonu + "CV" -> CV'yi yeni sekmede goruntule */}
-        <Button
-          {...shared}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          startContent={<EyeIcon size={16} />}
-        >
-          CV
-        </Button>
-        {/* Indirme kismi: ince ayirici cizgi + sabit genislik */}
-        <Button
-          {...shared}
-          className={SPLIT_DIVIDER}
-          href={href}
-          download
-          aria-label={t('about.cvDownload')}
-        >
-          <DownloadIcon size={16} />
-        </Button>
-      </div>
+      <SplitButton
+        parts={[
+          {
+            href,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            children: (
+              <>
+                <EyeIcon size={16} />
+                CV
+              </>
+            ),
+          },
+          {
+            href,
+            download: true,
+            'aria-label': t('about.cvDownload'),
+            children: <DownloadIcon size={16} />,
+          },
+        ]}
+      />
     )
   }
 

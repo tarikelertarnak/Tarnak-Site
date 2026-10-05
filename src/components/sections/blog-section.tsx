@@ -154,7 +154,7 @@ icon={<NewspaperIcon size={36} className="inline-block" />}
             <Button
               href="/blog"
               color="primary"
-              className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90"
+              className="h-11 items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90"
               endContent={<span aria-hidden="true">→</span>}
             >
               {t('blog.all')}
@@ -249,7 +249,7 @@ icon={<NewspaperIcon size={36} className="inline-block" />}
               >
                 {shown.map(post => (
                   <a key={post.id} href={`/blog/${post.slug}`} className="group">
-                    <div className="flex h-full flex-col gap-3 rounded-3xl border border-foreground-200/15 bg-background p-5 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-primary/30 group-hover:shadow-xl group-hover:shadow-primary/5">
+                    <div className="flex h-full flex-col gap-3 rounded-3xl border border-surface-border bg-background p-5 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-primary/30 group-hover:shadow-xl group-hover:shadow-primary/5">
                       <div className="flex flex-col gap-1">
                         <div className="flex flex-row items-center justify-between gap-2">
                           <p className="text-xs text-foreground-500">
@@ -286,7 +286,7 @@ icon={<NewspaperIcon size={36} className="inline-block" />}
                             />
                             <BlogStats slug={post.slug} />
                           </div>
-                          <span className="ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white transition-all duration-200 hover:bg-primary/90">
+                          <span className="ml-auto inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-all duration-200 hover:bg-primary/90">
                             {t('projects.open')}
                             {' '}
                             <ArrowUpRightIcon size={16} />
