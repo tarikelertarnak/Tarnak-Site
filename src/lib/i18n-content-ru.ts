@@ -111,7 +111,7 @@ export const ruContentOverlay: DeepPartial<SiteContent> = {
   },
   profile: {
     firstName: 'TARIK',
-    lastName: 'TARNAK',
+    lastName: 'ELER',
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: 'Разработчик и системный архитектор',

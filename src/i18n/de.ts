@@ -331,6 +331,8 @@ const de: Record<string, string> = {
   'about.infoDiscord': 'Discord',
   'about.infoCardTitle': 'Persönliche Informationen',
   'about.infoName': 'Name',
+  'about.infoLastName': 'Nachname',
+  'about.infoNickname': 'Alias',
   'about.infoTitle': 'Titel',
   'contact.quickMenu': 'Kontaktdaten',
   'contact.searchPlaceholder': 'Suchen...',

@@ -330,6 +330,8 @@ const ja: Record<string, string> = {
   'about.infoDiscord': 'Discord',
   'about.infoCardTitle': 'プロフィール情報',
   'about.infoName': '名前',
+  'about.infoLastName': '苗字',
+  'about.infoNickname': '別名',
   'about.infoTitle': '役職',
   'contact.quickMenu': '連絡先',
   'contact.searchPlaceholder': '検索...',

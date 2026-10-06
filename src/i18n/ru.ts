@@ -330,6 +330,8 @@ const ru: Record<string, string> = {
   'about.infoDiscord': 'Discord',
   'about.infoCardTitle': 'Личная информация',
   'about.infoName': 'Имя',
+  'about.infoLastName': 'Фамилия',
+  'about.infoNickname': 'Псевдоним',
   'about.infoTitle': 'Должность',
   'contact.quickMenu': 'Контактные данные',
   'contact.searchPlaceholder': 'Поиск...',

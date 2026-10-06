@@ -111,7 +111,7 @@ export const jaContentOverlay: DeepPartial<SiteContent> = {
   },
   profile: {
     firstName: 'TARIK',
-    lastName: 'TARNAK',
+    lastName: 'ELER',
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: '開発者 & システムアーキテクト',

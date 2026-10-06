@@ -656,7 +656,7 @@ async function getDefaultContent(): Promise<SiteContent> {
     },
     profile: {
       firstName: 'TARIK',
-      lastName: 'TARNAK',
+      lastName: 'ELER',
       displayName: 'TARIKELER',
       nickname: 'Tarnak',
       title: '',

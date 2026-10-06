@@ -103,19 +103,47 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                   {t('about.infoCardTitle')}
                 </h3>
                 <div className="mt-2 grid w-full grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
-                  <InfoRow label={t('about.infoName')} value={`${content.profile.firstName} ${content.profile.lastName}`} action={(
+                  {/*
+                    AD / SOYAD (2026-10-05, kullanıcı).
+                    Önce tek satırda `TARIK ELER TARNAK` birleşik
+                    gösteriliyordu — kullanıcı "Ad kısmında sadece TARIK,
+                    yanında Soyad olsun o da ELER yazsın, takma isim altta
+                    o da Tarnak olsun" dedi.
+
+                    Yapı:
+                      Ad (TARIK) | Soyad (ELER)      ← 2 kolon, yan yana
+                      Takma ad (Tarnak)               ← alt satır, tam genişlik
+
+                    Kopyala düğmesi artık SADECE "Ad" satırında; eskiden
+                    birleşik üç kelimeyi kopyalıyordu.
+                  */}
+                  <InfoRow
+                    label={t('about.infoName')}
+                    value={content.profile.firstName}
+                    action={(
                       <CopyValueButton
                         copied={copiedKey === 'name'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
-                        onClick={() =>
-                          copyValue(
-                            'name',
-                            `${content.profile.firstName} ${content.profile.lastName}`,
-                          )}
+                        onClick={() => copyValue('name', content.profile.firstName)}
                       />
                     )}
                   />
+                  <InfoRow label={t('about.infoLastName')} value={content.profile.lastName} />
+                  <div className="sm:col-span-2">
+                    <InfoRow
+                      label={t('about.infoNickname')}
+                      value={content.profile.nickname}
+                      action={(
+                        <CopyValueButton
+                          copied={copiedKey === 'nickname'}
+                          label={t('about.copy')}
+                          copiedLabel={t('about.copied')}
+                          onClick={() => copyValue('nickname', content.profile.nickname)}
+                        />
+                      )}
+                    />
+                  </div>
                   <InfoRow
                     label={t('about.infoPhone')}
                     value={content.contact.phone}

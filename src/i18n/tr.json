@@ -443,5 +443,7 @@
   "stars.likes": "beğeni",
   "stars.unlike": "Yıldızı kaldır",
   "chat.rateLimited": "Çok hızlı gidiyorsun. {seconds} saniye sonra tekrar dene.",
-  "chat.rateLimitedCooldown": "Çok hızlı gidiyorsun. {seconds} saniye sonra tekrar gönderebilirsin."
+  "chat.rateLimitedCooldown": "Çok hızlı gidiyorsun. {seconds} saniye sonra tekrar gönderebilirsin.",
+  "about.infoLastName": "Soyad",
+  "about.infoNickname": "Takma ad"
 }

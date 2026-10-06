@@ -2,6 +2,7 @@ import { statSync } from 'node:fs'
 import path from 'node:path'
 import type { MetadataRoute } from 'next'
 import { getPosts } from '@/lib/blog'
+import { TRANSLATED_LOCALES } from '@/lib/i18n'
 import { siteUrl } from '@/lib/site-url'
 
 /**
@@ -74,12 +75,34 @@ const CONTENT_LASTMOD = contentLastmod()
  */
 const canonicalUrl = (p: string) => (p === '/' ? siteUrl('/') : siteUrl(`${p}/`))
 
+/**
+ * hreflang alternatifi (2026-10-05, SEO).
+ *
+ * Sitemap'te `alternates.languages` doldurulunca Next her `<url>` icin
+ * `<xhtml:link rel="alternate" hreflang="...">` uretir. Google bunu
+ * sayfanin `<head>` indeki hreflang ile birlikte okur; ikisi tutarli
+ * olmalidir (her ikisi de `TRANSLATED_LOCALES`).
+ *
+ * `x-default` → `tr`.
+ */
+function alternatesFor(routePath: string): MetadataRoute.Sitemap[number]['alternates'] {
+  const languages = Object.fromEntries(
+    TRANSLATED_LOCALES.map((l) => {
+      const suffix = routePath === '/' ? '' : routePath
+      const localePath = l === 'tr' ? suffix || '/' : `${suffix}/${l}`
+      return [l, canonicalUrl(localePath)]
+    }),
+  )
+  return { languages: { ...languages, 'x-default': canonicalUrl(routePath) } }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = STATIC_ROUTES.map(({ path: routePath, priority, freq }) => ({
     url: canonicalUrl(routePath),
     lastModified: CONTENT_LASTMOD,
     changeFrequency: freq,
     priority,
+    alternates: alternatesFor(routePath),
   }))
 
   // Blog posts: best-effort. Bir hata sitemap'i BOZMAMALI — Google'a yarim ve

@@ -140,14 +140,22 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
   return (
     <Section className="flex-col pt-16 sm:pt-24 lg:pt-32" id="blog" framed>
       <FadeUpSection className="flex w-full flex-col">
-        <SectionTitle
+        {/*
+        Baslik seviyesi — 2026-10-05 (SEO).
+        `/blog` sayfasinda konu basligi olmadigi icin `h1` dogru.
+        Ana sayfada ise `h1` zaten hero'da var; burada `h1` kullanmak
+        sayfada IKINCI h1 uretiyordu (canli olcum: ana sayfada 2 adet
+        `<h1>` — "TARIK ELER TARNAK -TARNAK" ve "BLOG"). Arama motorlari
+        tek h1 bekler; ikincisi bolum basligidir, `h2` olmali.
+      */}
+      <SectionTitle
           title=""
           subTitle={t('blog.sub')}
           description={t('blog.desc')}
-icon={<NewspaperIcon size={36} className="inline-block" />}
-            headingLevel="h1"
-            big
-          />
+          icon={<NewspaperIcon size={36} className="inline-block" />}
+          headingLevel={onBlogPage ? 'h1' : 'h2'}
+          big
+        />
 
         {!onBlogPage && (
           <div className="mb-4 flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-3">

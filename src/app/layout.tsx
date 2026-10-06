@@ -4,6 +4,7 @@ import { EmotionStyleRegistry } from '@/components/emotion-style-registry'
 import { LocaleProvider } from '@/components/locale-provider'
 import { MusicPlayer } from '@/components/music-player'
 import { Providers } from '@/components/providers'
+import { TRANSLATED_LOCALES } from '@/lib/i18n'
 import { GLOBAL_SHORTCUTS, Shortcuts } from '@/components/shortcuts'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { Sidebar } from '@/components/sidebar'
@@ -83,6 +84,21 @@ export async function generateMetadata(): Promise<Metadata> {
       types: {
         'application/rss+xml': [{ url: '/feed.xml', title: 'Tarık Eler (Tarnak) — Blog' }],
       },
+      /*
+        hreflang — 2026-10-05 (SEO).
+        Sitede 8 dil icerik var ama HICBIR hreflang bildirimi yoktu; canli
+        olcumde `hreflang=` sayisi 0. Google bunu "cok dilli site ama
+        hangi dil hangi sayfa belirsiz" olarak okuyor ve yalnizca TR'yi
+        indeksleyebiliyor.
+
+        Next.js bu nesneyi `<link rel="alternate" hreflang="...">` taglerine
+        cevirir. `x-default` → `tr` (varsayilan dil).
+        DIL LISTESI `TRANSLATED_LOCALES`'ten gelir: icerigi cevrilmemis bir
+        dil icin hreflang bildirmek yanlis sinyal verir.
+      */
+      languages: Object.fromEntries(
+        TRANSLATED_LOCALES.map(l => [l, `/${l === 'tr' ? '' : l}`]),
+      ),
     },
     other: {
       // 2026-10-02: pages.dev subdomain'inde DNS TXT dogrulamasi YAPILAMAZ (zone
@@ -167,28 +183,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{
             __html: JSON.stringify([
               {
-                '@context': 'https://schema.org',
+'@context': 'https://schema.org',
                 '@type': 'Person',
+                // 2026-10-05 (kullanıcı): isim sırası netleştirildi —
+                // Tarık (ad) / Eler (soyad) / Tarnak (takma ad, marka).
+                // `name` resmî tam ad; `alternateName` içinde takma ad ve
+                // yaygın yazım varyantları.
                 name: 'Tarık Eler',
                 alternateName: [
                   'Tarnak',
+                  'Tarık Eler Tarnak',
                   'TARIK ELER',
+                  'tarik eler',
+                  'tarık eler',
                   'tarikeler',
                   'elertarik',
-                  'tarık eler',
-                  'tarik eler',
-                  'tarik tarnak',
-                  'tarnak tarik',
-                  'tarnak eler',
-                  'eler tarnak',
-                  'tarik tarnak eler',
-                  'tarnak tarik eler',
-                  'tarik eler tarnak',
-                  'tarnak tarik',
-                  'tarik tarnak',
-                  'eler tarik',
-                  'tarnak eler tarik',
-                  'tarik eler tarnak',
                   'tarikelertarnak',
                   'TARIK ELER TARNAK',
                 ],

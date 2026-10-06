@@ -111,7 +111,7 @@ export const ptContentOverlay: DeepPartial<SiteContent> = {
   },
   profile: {
     firstName: 'TARIK',
-    lastName: 'TARNAK',
+    lastName: 'ELER',
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: 'Desenvolvedor & Arquiteto de Sistemas',

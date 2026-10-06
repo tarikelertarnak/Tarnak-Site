@@ -34,6 +34,20 @@ export const LOCALES: readonly Locale[] = [
 /** Right-to-left locales (Arabic, Persian, Hebrew). */
 export const RTL_LOCALES: ReadonlySet<string> = new Set(['ar', 'fa', 'he'])
 
+/**
+ * Gerçekten ÇEVİRİ YAPILMIŞ diller — `hreflang` alternatifi olarak
+ * sitemap/canonical'da SADECE bunlar ilan edilir.
+ *
+ * Neden `LOCALES` (24 dil) değil: `hreflang` "bu dilde şu sayfa şu
+ * içerikle var" DEDİR. İçeriği çevrilmemiş bir dil için `hreflang`
+ * bildirmek yanlış sinyal verir ve Google bunu spam/hataya sayabilir.
+ * Şu an içerik sözlüğü 8 dil (tr/en/de/es/fr/ja/pt/ru); yeni bir dil
+ * çevrilince buraya eklenmeli.
+ *
+ * `x-default` = `tr` (varsayılan dil).
+ */
+export const TRANSLATED_LOCALES: readonly Locale[] = ['tr', 'en', 'de', 'es', 'fr', 'ja', 'pt', 'ru']
+
 /** accept-language base (e.g. `pt-BR` -> `pt`, `zh-Hans` -> `zh`) → Locale. */
 const LANG_TABLE: Record<string, Locale> = {
   tr: 'tr', en: 'en', es: 'es', de: 'de', ja: 'ja', fr: 'fr', pt: 'pt',

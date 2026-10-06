@@ -93,7 +93,7 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
   },
   profile: {
     firstName: 'TARIK',
-    lastName: 'TARNAK',
+    lastName: 'ELER',
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: '',
