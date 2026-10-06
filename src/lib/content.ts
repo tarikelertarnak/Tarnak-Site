@@ -539,7 +539,7 @@ export async function saveAdmin(admin: AdminCredentials): Promise<PersistResult>
 async function getDefaultContent(): Promise<SiteContent> {
   return {
     hero: {
-      name: 'TARIK ELER TARNAK',
+      name: 'TARIK ELER',
       tagline: 'Yazılımcı & Sistem Mimarisi',
       badge: '',
       // Sabit bio metni kaldırıldı; admin `hero.description` alanına yazınca

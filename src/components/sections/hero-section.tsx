@@ -65,16 +65,24 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
                 'text-5xl sm:text-7xl md:text-7xl lg:text-8xl',
               ].join(' ')}
             >
-              <span className="block pl-1">
+<span className="block pl-1">
                 {name}
-                {' '}
-                -
+                {' - '}
               </span>
+              {/*
+                TAKMA AD (2026-10-06, kullanıcı).
+                Önce burada SABIT "TARNAK" yaziyordu; `hero.name` de
+                "TARIK ELER TARNAK" oldugu icin ekranda
+                "TARIK ELER TARNAK - TARNAK" cikiyordu.
+                Artik `hero.name` = "TARIK ELER" (tek kaynak) ve takma ad
+                `profile.nickname`'ten geliyor: "TARIK ELER - TARNAK".
+                Boylece admin panelden takma ad degisince burasi da degisir.
+              */}
               <a
                 href={`${SITE_URL}/`}
                 className="block pl-1 no-underline"
               >
-                TARNAK
+                {content.profile.nickname.toUpperCase()}
               </a>
             </h1>
           </motion.div>

@@ -2,9 +2,11 @@
 
 import type { SiteContent } from '@/lib/content'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
+import { usePopoverPosition } from '@/components/ui/use-popover-position'
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -51,8 +53,6 @@ import { copyText } from '@/lib/clipboard'
  * Negatif ust bosluk paneli SADECE yukari kaydirir; dikeyde yer acmaz,
  * dolayisiyla bu deger degismedi.
  */
-const PANEL_CHROME = 80
-
 /** Kanal ikonu: yerlesik kanallar sabit, sosyaller mdi adiyla. */
 function ChannelIcon({ icon, size = 18 }: { icon: string, size?: number }) {
   switch (icon) {
@@ -167,14 +167,37 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
   const [q, setQ] = useState('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [copyFailed, setCopyFailed] = useState(false)
-  const [activeIndex, setActiveIndex] = useState(0)
-  // Panel yuksekligi: tetikleyicinin altindaki bosluga gore olculur.
-  const [maxHeight, setMaxHeight] = useState(360)
+const [activeIndex, setActiveIndex] = useState(0)
 
-  const rootRef = useRef<HTMLDivElement>(null)
+  /*
+    Konum (2026-10-06). `gap: 6` = kullanıcı "hemen altında çok az
+    boşlukla" dedi.
+
+    ÖNCE burada `maxHeight` state'i + `measureHeight()` + `window.scrollBy`
+    vardı ve panel YÜKSEKLİĞİ listenin üstünde hesaplanıyordu
+    (PANEL_CHROME=80 tahmini). Artık GEREK YOK: `usePopoverPosition`
+    panelin kendi boyutunu ölçüp hem konumu hem `maxHeight`'ını
+    uyguluyor. İki kaynaklı yükseklik hesabı birbirini eziyordu
+    (portal `maxHeight` uygularken liste kendi `maxHeight`'ını
+    taşıyordu) — tek kaynağa indirildi, `measureHeight` ve
+    `window.scrollBy` hack'i silindi.
+  */
+
+const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  /*
+    Konum (2026-10-06). `gap: 6` = kullanıcı "hemen altında çok az
+    boşlukla" dedi — önceki `-mt-7` butonun üstüne biniyordu.
+  */
+  const {
+    triggerRef,
+    panelRef,
+    ready,
+    portalStyle,
+  } = usePopoverPosition<HTMLDivElement>(open, 6)
 
   const channels = useMemo(
     () => buildContactChannels(content, t),
@@ -183,39 +206,15 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
   const filtered = useMemo(() => filterChannels(channels, q), [channels, q])
   const groups = useMemo(() => groupChannels(filtered), [filtered])
 
-  /**
-   * Paneli ASAGI acmak icin gereken alani olc.
-   * Kullanici "uzayabildigi kadar buyuk olsun" istedi — sabit 22rem yerine
-   * tetikleyicinin altindaki GERCEK bosluk kullaniliyor.
-   *
-   * ⚠️ `PANEL_CHROME`: olculen yukseklik yalnizca LISTEYE uygulaniyor, ama
-   * panelin toplam yuksekligi = liste + arama kutusu + kenarliklar. Bunu
-   * hesaba katmazsak panel ekranin altindan TASIYORDU (gercek tarayicida
-   * olculdu: `altTasti: true`).
-   */
-  const measureHeight = () => {
-    const rect = rootRef.current?.getBoundingClientRect()
-    if (!rect || typeof window === 'undefined') {
-      return
-    }
-    const vh = window.innerHeight
-    const available = vh - rect.bottom - PANEL_CHROME
-    const capped = Math.min(available, Math.floor(vh * 0.85))
-    const height = Math.max(240, capped)
-    setMaxHeight(height)
+/*
+    PANEL YÜKSEKLİĞİ VE KONUM ARTIK BURADA DEĞİL.
+    `measureHeight()` + `PANEL_CHROME(80)` + `window.scrollBy` hack'i
+    kaldırıldı: konumu ve `maxHeight`'ı `usePopoverPosition` ölçüp
+    uyguluyor. Eski kod "sığmıyorsa sayfayı aşağı kaydır" diyerek
+    ekranı kaydırıyordu; portal + sabit konum bunu gereksiz kılıyor.
+  */
 
-    // Panel ASAGI acildigi icin ekranin altindan tasma ihtimali var
-    // (ozellikle footer'da). Yukari/YUKARI kaydirmak yerine — kullanici
-    // "sayfa uste kayiyor" diye sikayet etti — paneli ortaya cikarmak icin
-    // ASAGI kaydiriyoruz. Sayfanin sonundaysak zaten kaydiracak yer yoktur.
-    const deficit = rect.bottom + PANEL_CHROME + height - vh
-    if (deficit > 0) {
-      window.scrollBy({ top: deficit, behavior: 'smooth' })
-    }
-  }
-
-  const openMenu = () => {
-    measureHeight()
+const openMenu = () => {
     setOpen(true)
     setQ('')
     setActiveIndex(0)
@@ -231,8 +230,19 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
     if (!open) {
       return
     }
-    const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+const onDown = (e: MouseEvent) => {
+      const t = e.target as Node
+      /*
+        PORTAL DÜZELTMESİ (2026-10-06). Panel artık `document.body`
+        altına portal'lanıyor, tetikleyicinin `rootRef`inden DIŞINDA.
+        Eski kontrol (`rootRef.contains(target)`) panelin içine tıklayınca
+        "dışarı tıklandı" sayıp paneli KAPATTI — yani listeye hiç
+        tıklayamıyordun. İki kapsayıcıyı da kontrol etmek zorunlu.
+      */
+      const icerde
+        = (rootRef.current?.contains(t) ?? false)
+          || (panelRef.current?.contains(t) ?? false)
+      if (!icerde) {
         setOpen(false)
       }
     }
@@ -244,10 +254,10 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
     return () => {
-      document.removeEventListener('mousedown', onDown)
+document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, panelRef])
 
   // Bilesen kalkarken bekleyen zamanlayiciyi temizle (sizinti olmasin)
   useEffect(() => () => {
@@ -341,9 +351,10 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
   const indexOf = (channel: ContactChannel) =>
     filtered.findIndex(c => c.id === channel.id)
 
-  return (
-    <div ref={rootRef} className="relative">
+return (
+    <div className="relative">
       <button
+        ref={triggerRef as React.RefObject<HTMLButtonElement>}
         type="button"
         onClick={() => (open ? setOpen(false) : openMenu())}
         aria-expanded={open}
@@ -363,21 +374,35 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
           open ? 'bg-primary/90' : '',
         )}
       >
-        <MailIcon size={15} />
+{/*
+          `shrink-0`: buton artık flex (`HERO_BTN_BODY` -> `inline-flex`).
+          Flex item'ları dar alanda EZILIR; ikon 15px/13px yerine 8px'e
+          düşüp ok ikonu ile hizasını kaybediyordu. `shrink-0` ikisini de
+          sabit tutar.
+        */}
+        <MailIcon size={15} className="shrink-0" />
         {t('contact.quickMenu')}
-        <ChevronDownIcon size={13} className={cn('transition-transform', open && 'rotate-180')} />
+        <ChevronDownIcon
+          size={13}
+          className={cn('shrink-0 transition-transform', open && 'rotate-180')}
+        />
       </button>
 
-      {open && (
+{open && createPortal(
         <div
+          ref={panelRef as React.RefObject<HTMLDivElement>}
           role="menu"
-          // Panel tetikleyicinin alt kenarına (top-full) yapışıp `mt-2` ile
-          // 8px aşağı kayıyordu; kullanıcı butonla panel arasındaki boşluğu
-          // panelin tetikleyiciden kopuk durduğu gibi okuyordu. `-mt-7` (28px)
-          // panelin üst kenarını butonun 20px ÜSTÜNE taşıyor: buton yüksekliği
-          // 40px, eşleşme 20+8 px -> panel butonun üst yarısıyla hizalı.
-          // Yön KORUNDU: hâlâ `top-full` (aşağı), sadece yukarı kaydırıldı.
-          className="absolute left-0 top-full z-50 -mt-7 w-[min(24rem,calc(100vw-2.5rem))] overflow-hidden rounded-2xl border border-surface-border bg-background shadow-2xl shadow-black/25"
+          style={portalStyle}
+          /*
+            KONUM (2026-10-06, kullanıcı).
+            Önce: `absolute left-0 top-full -mt-7` → panel tetikleyicinin
+            28px ÜSTÜNE biniyordu ("butonun üstüne açılıyor" şikayeti).
+            Artık konum `usePopoverPosition` hesaplıyor:
+            alt → üst → sağ → sol, tetikleyiciyle ARALARINDA boşluk
+            bırakarak. `left-0 top-full` ve `-mt-7` kaldırıldı — portal
+            `position: fixed` kullandığı için zaten gerek yok.
+          */
+          className="z-50 flex w-64 flex-col overflow-hidden rounded-2xl border border-surface-border bg-background shadow-2xl shadow-black/25"
         >
           {/* Arama */}
           <div className="border-b border-foreground-200/10 p-2">
@@ -418,11 +443,15 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
             </p>
           )}
 
-          {/* Kanallar — yukseklik olculen bosluga gore */}
+{/*
+            Kanallar — yüksekliği PANEL belirler (`portalStyle.maxHeight`),
+            liste kendi maxHeight'ını taşımaz (çift kaynak → birbirini ezdi).
+            `min-h-0` flex çocuğunun küçülmesini engeller; olmadan liste
+            panelin maxHeight'ını taşıp ekrandan taşıyordu.
+          */}
           <div
             ref={listRef}
-            style={{ maxHeight }}
-            className="overflow-y-auto p-1.5"
+            className="min-h-0 flex-1 overflow-y-auto p-1.5"
           >
             {isEmpty && (
               <p className="px-2.5 py-6 text-center text-xs text-foreground-500">
@@ -474,8 +503,9 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
                 </ul>
               </>
             )}
-          </div>
-        </div>
+</div>
+        </div>,
+        document.body,
       )}
     </div>
   )

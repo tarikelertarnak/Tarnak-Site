@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
+import { usePopoverPosition } from '@/components/ui/use-popover-position'
 import type { ReactNode } from 'react'
 import {
   CheckIcon,
@@ -58,17 +60,35 @@ export function SearchableCombobox({
   allLabel = '',
   badge,
 }: SearchableComboboxProps) {
-  const [open, setOpen] = useState(false)
+const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
+
+  /*
+    Konum (2026-10-06, kullanıcı "Sürüm seç" için de aynısını istedi).
+    Önce `absolute left-0 top-full mt-2` idi: sabit 8px boşluk bırakıyordu
+    ve dar ekranda panel ekrandan taşabiliyordu. Artık ortak çözümleyici:
+    alt → üst → sağ → sol, asla tetikleyicinin üstüne binmez.
+  */
+  const {
+    triggerRef,
+    panelRef,
+    ready,
+    portalStyle,
+  } = usePopoverPosition<HTMLDivElement>(open, 6)
 
   useEffect(() => {
     if (!open)
       return
     const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+      const t = e.target as Node
+      // PORTAL: panel `document.body` altında, `rootRef` disinda —
+      // eski tek-kapsayici kontrolu listeye tiklayinca paneli kapatiyordu.
+      const icerde
+        = (rootRef.current?.contains(t) ?? false)
+          || (panelRef.current?.contains(t) ?? false)
+      if (!icerde)
         setOpen(false)
-      }
     }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape')
@@ -80,7 +100,7 @@ export function SearchableCombobox({
       document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
-  }, [open])
+  }, [open, panelRef])
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
@@ -92,9 +112,10 @@ export function SearchableCombobox({
   const triggerText = multiple ? placeholder : optionsLabel(options, selected) || placeholder
   const selectedOption = multiple ? undefined : options.find(o => o.value === selected[0])
 
-  return (
+return (
     <div ref={rootRef} className="relative">
       <button
+        ref={triggerRef as React.RefObject<HTMLButtonElement>}
         type="button"
         onClick={() => {
           setOpen(v => !v)
@@ -128,8 +149,12 @@ export function SearchableCombobox({
         />
       </button>
 
-      {open && (
-        <div className="absolute left-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/20">
+{open && createPortal(
+        <div
+          ref={panelRef as React.RefObject<HTMLDivElement>}
+          style={portalStyle}
+          className="z-50 flex w-64 flex-col overflow-hidden rounded-xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/20"
+        >
           {/* Search */}
           <div className="border-b border-foreground-200/10 p-2">
             <div className="relative">
@@ -213,8 +238,9 @@ export function SearchableCombobox({
                 </li>
               )
             })}
-          </ul>
-        </div>
+</ul>
+        </div>,
+        document.body,
       )}
     </div>
   )

@@ -67,9 +67,28 @@ export const HERO_BTN_EDGE = 'border border-primary-fg'
  * `text-[13px] font-medium` = ölçülen `13px` / `fw 500`.
  *
  * `gap-1.5` = ölçülen 6px. `px-3.5` = ölçülen 14px.
+ *
+ * ⚠️ `inline-flex` ZORUNLU (2026-10-06, kullanıcı "İletişim Bilgileri
+ * butonu bozuk" dedi): buradaki `items-center` ve `gap-1.5` YALNIZCA flex
+ * container'da çalışır. Ham `<button>` öğesi `display:inline-block`
+ * olduğu için bu iki sınıf HİÇBİR ŞEY yapmıyordu. Tailwind preflight SVG'ye
+ * `display:block` verdiğinden ikonlar blok seviyesine düşüp ALT ALTA
+ * diziliyordu.
+ *
+ * Canlı ölçüm (localhost:3000, CDP) — düzeltmeden ÖNCE, üç tetikleyicinin
+ * üçünde de aynı:
+ *   display          inline-block      ← flex değil
+ *   alignItems       center            ← uygulanmiyor
+ *   gap              6px               ← uygulanmiyor
+ *   MailIcon  merkezY  1248.5
+ *   Chevron  merkezY  1282.9  ← buton alt kenarı 1280 → DIŞARI TAŞIYOR
+ *   her iki ikonun x  356.4 (aynı)    ← yan yana değil, alt alta
+ *
+ * `whitespace-nowrap`: flex'e geçince dar kartlarda etiket iki satıra
+ * bölünüp butonu iki satırlı yapabiliyordu.
  */
 export const HERO_BTN_BODY
-  = 'h-10 items-center gap-1.5 rounded-md px-3.5 text-[13px] font-medium no-underline transition-colors'
+  = 'inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-md px-3.5 text-[13px] font-medium no-underline transition-colors'
 
 /**
  * Hover/active/focus — normal butonla aynı.

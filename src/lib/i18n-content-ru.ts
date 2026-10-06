@@ -5,7 +5,7 @@ type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]>
 /** Русский — overlay over the Turkish base (data/content.json). */
 export const ruContentOverlay: DeepPartial<SiteContent> = {
   hero: {
-    name: 'TARIK ELER TARNAK',
+    name: 'TARIK ELER',
     tagline: 'Разработчик и системный архитектор',
     badge: '',
     description:

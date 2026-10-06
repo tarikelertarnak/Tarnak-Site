@@ -331,7 +331,7 @@ const es: Record<string, string> = {
   'about.infoCardTitle': 'Información personal',
   'about.infoName': 'Nombre',
   'about.infoLastName': 'Apellido',
-  'about.infoNickname': 'Alias',
+  'about.infoNickname': 'Apodo',
   'about.infoTitle': 'Título',
   'contact.quickMenu': 'Datos de contacto',
   'contact.searchPlaceholder': 'Buscar...',

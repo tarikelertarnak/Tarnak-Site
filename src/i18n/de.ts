@@ -332,7 +332,7 @@ const de: Record<string, string> = {
   'about.infoCardTitle': 'Persönliche Informationen',
   'about.infoName': 'Name',
   'about.infoLastName': 'Nachname',
-  'about.infoNickname': 'Alias',
+  'about.infoNickname': 'Spitzname',
   'about.infoTitle': 'Titel',
   'contact.quickMenu': 'Kontaktdaten',
   'contact.searchPlaceholder': 'Suchen...',

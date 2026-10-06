@@ -250,39 +250,84 @@ describe('ContactQuickMenu', () => {
     expect(screen.getByRole('menu')).toBeTruthy()
   })
 
-  // ------------------------------------------------------- YON: HER ZAMAN ASAGI
-  // Kullanici geri bildirimi: "combobox asagi dogru acilmali". Onceki surum
-  // altta yer yoksa YUKARI aciyordu; bu degisti. Panel artik her kosulda
-  // `top-full` ile asagi acilir.
+  // ------------------------------------------------------- KONUM
+  //
+  // 2026-10-06 (kullanıcı): "butonun hemen altında çok az boşlukla
+  // açılsın; altına açılamazsa üste, sağa, sola; garanti görünsün, yani
+  // içi ve butonun üstüne gelmesin."
+  //
+  // ESKİ KURAL: "her zaman aşağı (`top-full`), asla yukarı". Kullanıcı
+  // bunu DEĞİŞTİRDİ — alt→üst→sağ→sol sırası yeni kuraldır. Artık
+  // konum sınıfla değil, `usePopoverPosition`'ın hesapladığı inline
+  // `style` (position:fixed) ile uygulanır; portaldan dolayı panel
+  // `body` altındadır, tetikleyicinin `relative` kapsayıcısında değil.
 
-  it('panel ASAGI konumlanir', () => {
+  it('panel tetikleyicinin ALTINDA, 6px boslukla konumlanir', () => {
+    stubRect(60, 100)
     render(<ContactQuickMenu content={CONTENT} />)
     open()
-    expect(screen.getByRole('menu').className).toContain('top-full')
+    const menu = screen.getByRole('menu')
+    const style = menu.getAttribute('style') ?? ''
+    expect(style).toContain('position: fixed')
+    // tetikleyici alt kenarı 100 + gap 6 = 106
+    expect(style).toContain('top: 106px')
+    expect(style).not.toContain('visibility: hidden')
   })
 
-  function stubTriggerRect(top: number, bottom: number) {
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
-      top,
-      bottom,
-      left: 0,
-      right: 0,
-      width: 320,
-      height: bottom - top,
-      x: 0,
-      y: top,
-      toJSON: () => ({}),
-    } as DOMRect)
-  }
-
-  it('altta yer OLSUN ya da OLMASIN asagi acilir (yukari asla)', () => {
-    // jsdom pencere yuksekligi 768; tetikleyici ekranin EN ALTINDA
-    stubTriggerRect(660, 700)
+  it('panel portal ile body altina tasinir (tetikleyicinin icinde degil)', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
-    const cls = screen.getByRole('menu').className
-    expect(cls).toContain('top-full')
-    expect(cls).not.toContain('bottom-full')
+    expect(screen.getByRole('menu').parentElement).toBe(document.body)
+  })
+
+  /*
+    Ölçüm stub'ı — TETİKLEYİCİ ve PANEL ayrı boyutlarda.
+
+    Önceki tek mockReturnValue her element için AYNI rect'i döndürüyordu,
+    yani panel de 320x40 ölçülüyordu; testler 415px'lik gerçek paneli
+    varsayınca hesap tutmuyordu (top: 706px çıkıyordu, 239px bekleniyordu).
+    Şimdi BUTTON = tetikleyici, diğerleri = 256x415 panel.
+  */
+  function stubRect(top: number, bottom: number) {
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+      const isTrigger = this.tagName === 'BUTTON'
+      return {
+        top: isTrigger ? top : 0,
+        bottom: isTrigger ? bottom : 415,
+        left: isTrigger ? 100 : 0,
+        right: isTrigger ? 260 : 256,
+        width: isTrigger ? 160 : 256,
+        height: isTrigger ? bottom - top : 415,
+        x: isTrigger ? 100 : 0,
+        y: isTrigger ? top : 0,
+        toJSON: () => ({}),
+      } as DOMRect
+    })
+  }
+
+  it('altta yer YOKSA ustune gecer (yeni kural: alt -> ust -> sag -> sol)', () => {
+    // jsdom viewport 768; tetikleyici ekranin altina yakin (alt kenar 700)
+    // -> altta 768-700-6-8 = 54px kaldi, panel 415px -> sigmaz
+    // -> ustune gecmeli; panelin ust kenari tetikleyicinin 6px USTUNDE
+    stubRect(660, 700)
+    render(<ContactQuickMenu content={CONTENT} />)
+    open()
+    const style = screen.getByRole('menu').getAttribute('style') ?? ''
+    // tetikleyici ust kenari 660 - gap 6 - panel 415 = 239
+    expect(style).toContain('top: 239px')
+  })
+
+  it('hicbir dikey yon sigmazsa yana duser ve gorunur kalir', () => {
+    // tetikleyici tam orta: ust ~330px, alt ~330px; panel 415px
+    // sag: jsdom innerWidth 1024, tetikleyici sag kenar 260 -> 750px yer var
+    stubRect(344, 384)
+    render(<ContactQuickMenu content={CONTENT} />)
+    open()
+    const style = screen.getByRole('menu').getAttribute('style') ?? ''
+    expect(style).not.toContain('visibility: hidden')
+    // saga: tetikleyici sag kenari 260 + gap 6 = 266
+    // sag: tetikleyici sag kenari 260 + gap 6 = 266
+    expect(style).toContain('left: 266px')
   })
 
   // ------------------------------------------------------- KAYDIRMA REGRESYONU
@@ -296,34 +341,40 @@ describe('ContactQuickMenu', () => {
   })
 
   // ------------------------------------------------------- BOYUT: ALANA GORE
-  it('panel yuksekligi alttaki bosluga gore olculur', () => {
-    // 768 - 700 (tetikleyici alti) - 24 pay = 44 → asgari 240'a dusmeli
-    stubTriggerRect(660, 700)
+  // 2026-10-06: maxHeight artik LISTEDE degil PANELDE (portalStyle).
+  // Eski 'measureHeight()' + PANEL_CHROME(80) tahmini silindi; yukseklik
+  // panelin kendi olcumunden geliyor. Liste kendi maxHeight'ini tasimaz.
+  it('maxHeight PANELDE uygulanir, listede degil (tek kaynak)', () => {
+    stubRect(60, 100)
     render(<ContactQuickMenu content={CONTENT} />)
     open()
-    const list = screen.getByRole('menu').querySelector<HTMLElement>('[class*="overflow-y-auto"]')
-    expect(list?.style.maxHeight).toBe('240px')
+    const menu = screen.getByRole('menu')
+    expect(menu.getAttribute('style')).toMatch(/max-height: \d+px/)
+    const list = menu.querySelector<HTMLElement>('[class*="overflow-y-auto"]')
+    expect(list?.style.maxHeight).toBe('')
   })
 
-  it('altta cok yer varsa panel buyur', () => {
-    // 768 - 100 (tetikleyici alti) - 80 (panel arama kutusu payi) = 588
-    stubTriggerRect(60, 100)
+  it('altta cok yer varsa panel ekrana sigacak kadar buyur', () => {
+    stubRect(60, 100)
     render(<ContactQuickMenu content={CONTENT} />)
     open()
-    const list = screen.getByRole('menu').querySelector<HTMLElement>('[class*="overflow-y-auto"]')
-    expect(list?.style.maxHeight).toBe('588px')
+    const style = screen.getByRole('menu').getAttribute('style') ?? ''
+    const m = style.match(/max-height: (\d+)px/)
+    expect(m).not.toBeNull()
+    // 768 - 2*8 (padding) = 752 tavan; asla ekrani asamaz
+    expect(Number(m?.[1])).toBeLessThanOrEqual(752)
   })
 
   it('panel TOPLAM yuksekligi ekrani asmaz (arama kutusu dahil)', () => {
     // Regresyon: yukseklik yalnizca listeye uygulaniyordu, arama kutusu
-    // hesaba katilmiyordu → panel ekranin altindan tasiyordu.
-    stubTriggerRect(60, 100)
+    // hesaba katilmiyordu -> panel ekranin altindan tasiyordu.
+    // Artik maxHeight PANELDE oldugu icin arama kutusu otomatik sayilir.
+    stubRect(60, 100)
     render(<ContactQuickMenu content={CONTENT} />)
     open()
-    const list = screen.getByRole('menu').querySelector<HTMLElement>('[class*="overflow-y-auto"]')
-    const h = Number.parseInt(list?.style.maxHeight ?? '0', 10)
-    // liste + PANEL_CHROME(80) tetikleyicinin altindaki boslugu asmamali
-    expect(100 + h + 80).toBeLessThanOrEqual(768)
+    const style = screen.getByRole('menu').getAttribute('style') ?? ''
+    const h = Number(style.match(/max-height: (\d+)px/)?.[1] ?? '0')
+    expect(100 + h).toBeLessThanOrEqual(768)
   })
 
   // ------------------------------------------------------- KLAVYE GEZINMESI

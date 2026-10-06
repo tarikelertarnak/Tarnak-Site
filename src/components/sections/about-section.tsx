@@ -129,21 +129,54 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                       />
                     )}
                   />
-                  <InfoRow label={t('about.infoLastName')} value={content.profile.lastName} />
-                  <div className="sm:col-span-2">
-                    <InfoRow
-                      label={t('about.infoNickname')}
-                      value={content.profile.nickname}
-                      action={(
-                        <CopyValueButton
-                          copied={copiedKey === 'nickname'}
-                          label={t('about.copy')}
-                          copiedLabel={t('about.copied')}
-                          onClick={() => copyValue('nickname', content.profile.nickname)}
-                        />
-                      )}
-                    />
-                  </div>
+                  {/*
+                    SOYAD — kopyala düğmesi 2026-10-06'da eklendi.
+                    Önce yalnız "Ad" satırında vardı; bu yüzden kartta
+                    "TARIK [kopyala]" ile "ELER" (düğmesiz, sağ uca
+                    yapışmış) yan yana duruyordu — gözde eksik/bozuk
+                    görünüyordu. Artık ÜÇ isim satırının da düğmesi var ve
+                    hepsi aynı hizada.
+                  */}
+                  <InfoRow
+                    label={t('about.infoLastName')}
+                    value={content.profile.lastName}
+                    action={(
+                      <CopyValueButton
+                        copied={copiedKey === 'lastName'}
+                        label={t('about.copy')}
+                        copiedLabel={t('about.copied')}
+                        onClick={() => copyValue('lastName', content.profile.lastName)}
+                      />
+                    )}
+                  />
+                  {/*
+                    TAKMA AD SATIRI (2026-10-06, kullanıcı "bozuk" dedi).
+
+                    Sorun: bu satir `sm:col-span-2` ile TAM GENISLIK
+                    yapildigi icin `InfoRow`'un `justify-between` davranisi
+                    etiketi kartin sol ucuna, "Tarnak" degerini sag ucuna
+                    yapistiriyordu — aralarinda kartin tamami bos kaliyordu,
+                    "Takma ad" ve "Tarnak" birbirinden copuk duruyordu.
+                    Telefonda `grid-cols-1` oldugu icin ayni sorun gorunmuyor,
+                    bu yuzden masaustunde fark ediliyordu.
+
+                    Duzeltme: `sm:col-span-2` KALDIRILDI. Artik diger
+                    satirlarla ayni 2 kolonlu gridde, "Ad | Soyad"in altinda
+                    SOL kolonda duruyor. Kopyala dugmesi de ayni hucreye
+                    geri geldi (onceden sadece "Ad" satirinda vardi).
+                  */}
+                  <InfoRow
+                    label={t('about.infoNickname')}
+                    value={content.profile.nickname}
+                    action={(
+                      <CopyValueButton
+                        copied={copiedKey === 'nickname'}
+                        label={t('about.copy')}
+                        copiedLabel={t('about.copied')}
+                        onClick={() => copyValue('nickname', content.profile.nickname)}
+                      />
+                    )}
+                  />
                   <InfoRow
                     label={t('about.infoPhone')}
                     value={content.contact.phone}
