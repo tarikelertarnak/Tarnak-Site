@@ -4,7 +4,6 @@ import { EmotionStyleRegistry } from '@/components/emotion-style-registry'
 import { LocaleProvider } from '@/components/locale-provider'
 import { MusicPlayer } from '@/components/music-player'
 import { Providers } from '@/components/providers'
-import { TRANSLATED_LOCALES } from '@/lib/i18n'
 import { GLOBAL_SHORTCUTS, Shortcuts } from '@/components/shortcuts'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { Sidebar } from '@/components/sidebar'
@@ -85,20 +84,24 @@ export async function generateMetadata(): Promise<Metadata> {
         'application/rss+xml': [{ url: '/feed.xml', title: 'Tarık Eler (Tarnak) — Blog' }],
       },
       /*
-        hreflang — 2026-10-05 (SEO).
-        Sitede 8 dil icerik var ama HICBIR hreflang bildirimi yoktu; canli
-        olcumde `hreflang=` sayisi 0. Google bunu "cok dilli site ama
-        hangi dil hangi sayfa belirsiz" olarak okuyor ve yalnizca TR'yi
-        indeksleyebiliyor.
+        hreflang — 2026-10-05 eklendi, 2026-10-06 KALDIRILDI.
 
-        Next.js bu nesneyi `<link rel="alternate" hreflang="...">` taglerine
-        cevirir. `x-default` → `tr` (varsayilan dil).
-        DIL LISTESI `TRANSLATED_LOCALES`'ten gelir: icerigi cevrilmemis bir
-        dil icin hreflang bildirmek yanlis sinyal verir.
+        Neden geri alindi: Sitede yol bazli dil yonlendirmesi YOK.
+        Dil, `site-locale` cookie'si + Accept-Language ile cozuluyor
+        (bkz. src/lib/i18n.ts: detectLocale/resolveLocale) — yani her sayfa
+        icin TEK bir URL var. `TRANSLATED_LOCALES.map(...)` ile uretilen
+        `/en/`, `/de/` ... adresleri canlida 404 donuyordu.
+
+        Canli olcum (2026-10-06): /en/ /de/ /es/ /fr/ /ja/ /pt/ /ru/ -> hepsi 404.
+        Google'a 404'e giden hreflang vermek "bu sayfa bu dilde de var"
+        yalanidir: linkleri bos cikarir, crawl butcesi harcanir ve
+        dogrulanamayan alternatifler sinyal kalitesini dusurur.
+
+        Dogru cozum yol bazli i18n routing'i (orn. app/[locale]/...) +
+        o sayfalarin sitemap'e eklenmesi — ayri bir is. Bu kadar kazanmak
+        icin kirilmis hreflang bildirmektense hic bildirmemek daha iyi.
       */
-      languages: Object.fromEntries(
-        TRANSLATED_LOCALES.map(l => [l, `/${l === 'tr' ? '' : l}`]),
-      ),
+      // languages: ...  // 2026-10-06: yol bazli locale route yok, bildirim kaldirildi.
     },
     other: {
       // 2026-10-02: pages.dev subdomain'inde DNS TXT dogrulamasi YAPILAMAZ (zone
@@ -190,17 +193,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 // `name` resmî tam ad; `alternateName` içinde takma ad ve
                 // yaygın yazım varyantları.
                 name: 'Tarık Eler',
-                alternateName: [
-                  'Tarnak',
-                  'Tarık Eler Tarnak',
-                  'TARIK ELER',
-                  'tarik eler',
-                  'tarık eler',
-                  'tarikeler',
-                  'elertarik',
-                  'tarikelertarnak',
-                  'TARIK ELER TARNAK',
-                ],
+                // 2026-10-06: 9 varyanttan 3'e indirildi. `alternateName`
+                // "bu kişinin diğer gerçek adları" demektir; 'tarikelertarnak',
+                // 'elertarik', 'tarik eler tarnak' gibi heceleme varyantları
+                // Google'a spam sinyali veriyor. Gercek alternatifler:
+                // marka/takma ad + yaygin buyuk-harf yazim.
+                alternateName: ['Tarnak', 'Tarık Eler Tarnak', 'TARIK ELER'],
                 url: SITE_URL,
                 image: `${SITE_URL}/icon-512x512.png`,
                 logo: `${SITE_URL}/icon-512x512.png`,
@@ -219,27 +217,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 '@context': 'https://schema.org',
                 '@type': 'WebSite',
                 name: 'Tarık Eler (Tarnak)',
-                alternateName: [
-                  'Tarnak',
-                  'tarikelertarnak',
-                  'tarikeler',
-                  'tarık eler',
-                  'tarik eler',
-                  'tarik tarnak',
-                  'tarnak tarik',
-                  'tarnak eler',
-                  'eler tarnak',
-                  'tarik tarnak eler',
-                  'tarnak tarik eler',
-                  'tarik eler tarnak',
-                  'tarnak tarik',
-                  'tarik tarnak',
-                  'eler tarik',
-                  'tarnak eler tarik',
-                  'tarik eler tarnak',
-                  'tarikelertarnak',
-                  'TARIK ELER TARNAK',
-                ],
+                // 2026-10-06: 19 varyant -> 1. WebSite icin `alternateName`
+                // gereksiz: `name` zaten "Tarık Eler (Tarnak)" diyor.
+                alternateName: ['Tarnak'],
                 url: SITE_URL,
                 inLanguage: ['tr', 'en'],
                 // 2026-10-04: `potentialAction: SearchAction` KALDIRILDI.

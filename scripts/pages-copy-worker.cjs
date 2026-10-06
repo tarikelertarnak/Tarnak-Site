@@ -199,6 +199,102 @@ ensureModule('picocolors');
   }
 }
 
+// ---------------------------------------------------------------------------
+// BOYUT TRIMI — 25 MiB Pages Function limiti (hata 8000101).
+//
+// 2026-10-06 deploy "[code: 8000101] Function exceeded the uncompressed size
+// limit of 25 MiB" ile dustu. .open-next olcumunde server-functions 50 MB,
+// middleware 5.4 MB -> toplam ~55 MB. En buyuk TEK olu y:
+// next/dist/server/capsize-font-metrics.json = 4.1 MB.
+//
+// Bu dosya next/font GOOGLE icin build aninda kullanilan font olcum
+// verisidir. Projede `next/font` KULLANIMI YOK (grep sonucu: 0 import,
+// public/ ve src/ altinda 0 woff2/ttf) -> dosya calisma aninda hic
+// okunmuyor, sadece yuk. Next onu `require` ile cektiği icin Pages
+// bundle'ina DAHIL ediliyor ve butceyi yiyor.
+//
+// Ayrica react-dom'un *.development.js dosyalari: NODE_ENV=production'da
+// kullanilmaz, zaten `/* webpackIgnore: true */` ile isaretli (asagida).
+// Bunlar da referanssiz olduklari icin silmek guvenli.
+{
+  const trimmed = [];
+  const cut = (file, why) => {
+    for (const base of ['server-functions', 'middleware']) {
+      const walk = d => {
+        let entries;
+        try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
+        for (const e of entries) {
+          const p = path.join(d, e.name);
+          if (e.isDirectory()) walk(p);
+          else if (e.name === file) {
+            const sz = fs.statSync(p).size;
+            fs.rmSync(p, { force: true });
+            trimmed.push(`${(sz / 1048576).toFixed(1)} MB  ${path.relative(openNextDir, p).replace(/\\/g, '/')}  (${why})`);
+          }
+        }
+      };
+      walk(path.join(openNextDir, base));
+    }
+  };
+  cut('capsize-font-metrics.json', 'next/font kullanilmiyor');
+  const devWalk = d => {
+    let entries;
+    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) devWalk(p);
+      else if (e.name.endsWith('.development.js')) {
+        const sz = fs.statSync(p).size;
+        fs.rmSync(p, { force: true });
+        trimmed.push(`${(sz / 1048576).toFixed(1)} MB  ${path.relative(openNextDir, p).replace(/\\/g, '/')}  (NODE_ENV=production)`);
+      }
+    }
+  };
+  for (const base of ['server-functions', 'middleware']) devWalk(path.join(openNextDir, base));
+
+  // ---------------------------------------------------------------------
+  // MIDDLEWARE KALDIRMA — 3.0 MB kazanc.
+  //
+  // Projede `middleware.ts` YOK (`src/middleware.ts` ve kok `middleware.ts`
+  // dosyalari mevcut degil). OpenNext yine de `.open-next/middleware/`
+  // altinda tam bir Next runtime bundle'i uretiyor ve `_worker.js` onu
+  // import ediyor — 3.02 MB, hicbir sey yapmayan bir fonksiyon.
+  //
+  // OpenNext'in middleware kaynagi yokken yaptigi sey `request`'i oldugu
+  // gibi geri dondurmek. `_worker.js`te o cagriyi yerinde bu degisimle
+  // degistirip middleware klasorunu siliyoruz: ayni davranis, 3 MB yok.
+  {
+    const mwDir = path.join(openNextDir, 'middleware');
+    const repoRoot = path.resolve(__dirname, '..');
+    const srcHasMw = ['middleware.ts', 'middleware.tsx', 'middleware.js']
+      .some(f => fs.existsSync(path.join(repoRoot, 'src', f)) || fs.existsSync(path.join(repoRoot, f)));
+    if (fs.existsSync(mwDir) && !srcHasMw) {
+      let sz = 0;
+      const w = d => {
+        let st; try { st = fs.statSync(d) } catch { return }
+        if (st.isDirectory()) { for (const n of fs.readdirSync(d)) w(path.join(d, n)); return }
+        sz += st.size;
+      };
+      w(mwDir);
+      const workerPath = path.join(openNextDir, '_worker.js');
+      if (fs.existsSync(workerPath)) {
+        let code = fs.readFileSync(workerPath, 'utf8');
+        code = code.replace(/^\s*\/\/ @ts-expect-error: Will be resolved by wrangler build\s*\nimport \{ handler as middlewareHandler \} from "\.\/middleware\/handler\.mjs";\s*\n/m, '');
+        code = code.replace(/const reqOrResp = await middlewareHandler\(request, env, ctx\);/, 'const reqOrResp = request; // middleware yok (src/middleware.ts yok)');
+        fs.writeFileSync(workerPath, code);
+      }
+      fs.rmSync(mwDir, { recursive: true, force: true });
+      trimmed.push(`${(sz / 1048576).toFixed(1)} MB  middleware/  (kaynak middleware.ts yok, no-op)`);
+    }
+  }
+
+  if (trimmed.length) {
+    const total = trimmed.reduce((s, l) => s + parseFloat(l), 0);
+    for (const l of trimmed) console.log(`[pages-copy-worker] trim  ${l}`);
+    console.log(`[pages-copy-worker] trimmed ${trimmed.length} dosya, ${total.toFixed(1)} MB kazanc (25 MiB limiti icin)`);
+  }
+}
+
 // Flatten OpenNext assets/ into the output root — Pages serves static files from
 // the deploy directory root ("/"), so /assets/_next/... URLs would 404 (Next.js
 // emits absolute /_next/static/... links). Copy everything from assets/ up one
