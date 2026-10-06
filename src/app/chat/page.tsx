@@ -43,27 +43,38 @@ export default async function ChatPage() {
     <div className="min-h-screen w-full relative">
       <Navigation content={content} />
       <main id="main" className="">
-        <Section className="flex-col pt-24 sm:pt-28 lg:pt-32 min-h-[100svh]">
+        <Section className="flex-col justify-center min-h-[100svh]">
           {/*
-            2026-10-04 (kullanici istegi): CHAT basligi ana sayfadaki
-            "HAKKIMDA" basligiyla BIREBIR ayni olsun. Iki sayfa da ayni
-            `SectionTitle` bilesenini `big` moduyla kullanir — oyun
-            sayfada kopyalanmadi, ortak bilesen zaten ayni CSS'i verir
-            (alt cizgi, primary renk, uppercase, tracking-tight).
-            Once burada `big` verilmedigi icin baslik kucuk gradient etiketi +
-            duz buyuk metin olarak cikiyordu.
-            Eski "Chat With Me / Leave a message or just say hello" metni
-            kaldirildi -> `description` bos. Baslikta mesaj balonu ikonu
-            (`ChatIcon`) var; HAKKIMDA'nın ikonu `UserIcon`.
+            ORTALAMA (2026-10-06, kullanıcı: "çok altta kalmış, ortala").
+
+            Ölçüm (localhost, 943px viewport) — deneme/yanılma:
+              önce  kart merkezi y=622   (ekran merkezi 471 → 151px aşağı)
+              sonra kart merkezi y=632   (flex-1 ekleyince DAHA KÖTÜ)
+
+            Neden `flex-1` yetmiyor: `flex-1` kartı "başlıktan SONRA kalan
+            alanın" ortasına koyar. Başlık bloğu + üst dolgu 208px yer
+            kapladığı için kalan alanın merkezi, ekran merkezinden ~104px
+            AŞAĞIDA kalıyor — kartı ne kadar "esnetirsek esnetelim" ekran
+            ortasına getiremiyoruz. Kartın ekran ortasına gelmesi için
+            başlığın akışta YER TUTMAMASI gerekiyor.
+
+            Çözüm: başlık `absolute` (üstte durur, yer kaplamaz), kart
+            `flex-1` ile bölümün TAMAMINI doldurur → kart tam ortada.
+            Kart 464px, ekran 943px → kart 239..703; başlık 96..192 →
+            ÇAKIŞMA YOK.
           */}
-          <SectionTitle
-            title=""
-            subTitle={content.chat.subtitle}
-            description=""
-            icon={<ChatIcon size={34} className="inline-block" />}
-            big
-          />
-          <ChatWindow content={content} userName={userName} />
+          <div className="absolute inset-x-0 top-24 z-10 sm:top-28 lg:top-32">
+            <SectionTitle
+              title=""
+              subTitle={content.chat.subtitle}
+              description=""
+              icon={<ChatIcon size={34} className="inline-block" />}
+              big
+            />
+          </div>
+          <div className="flex w-full flex-1 items-center justify-center">
+            <ChatWindow content={content} userName={userName} />
+          </div>
         </Section>
       </main>
     </div>

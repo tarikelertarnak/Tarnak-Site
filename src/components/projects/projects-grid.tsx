@@ -65,8 +65,6 @@ const REPO_DESCRIPTIONS_TR: Record<string, string> = {
   'AI-Jailbreak': 'AI model güvenlik sınır testleri için prompt koleksiyonu.',
   'OfficeSetupWizard':
     'Tek tıkla Microsoft Office LTSC Professional Plus 2024 kurulum ve aktivasyonu (Office Deployment Tool sarmalayıcısı).',
-  'Player':
-    'Müzik, video, ses, eklenti ve AI entegrasyonlu modern, çok platformlu medya oynatıcısı.',
 }
 
 function githubRepoToProject(repo: GitHubRepo, tr: boolean): ProjectItem {
@@ -150,6 +148,8 @@ export function ProjectsGrid({
       const merged: ProjectItem[] = [
         ...repos.map(r => githubRepoToProject(r, !isEn)),
       ].filter(
+        // Gizlenen depolar `github-client`'da TEK yerde elenir (hem API hem
+        // snapshot yolu); burada ikinci filtre yok.
         p => !seen.has(p.title.toLowerCase()),
       )
       merged.unshift(...projects)
@@ -260,7 +260,7 @@ export function ProjectsGrid({
   const shown = filtered
 
   return (
-    <div className="flex w-full max-w-6xl flex-col gap-4">
+    <div className="flex w-full max-w-6xl flex-col gap-6">
       {showSearch && (
         <div className="flex w-full flex-col gap-3">
           {/* Search — below the title, above the filters */}

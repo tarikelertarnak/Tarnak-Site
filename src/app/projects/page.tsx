@@ -31,18 +31,36 @@ export default async function ProjectsPage() {
       <Navigation content={content} />
       <RememberListPath path="/projects" />
       <main id="main" className="w-full">
-        <Section
-          className="flex-col pt-24 sm:pt-28 lg:pt-32 min-h-[100svh]"
-          framed
-        >
+{/*
+            BOŞLUK DENGESİ (2026-10-06, kullanıcı: "üstteki yazılarla
+            alttaki kısımın boşlukları eşit ve ortalanmış olsun").
+
+            Ölçüm (localhost, canlı):
+              projeler : navbar→başlık 157px, başlık→içerik  40px  ← DENGSİZ
+              hakkımda : navbar→başlık 148px, başlık→içerik 136px  ← dengeli
+
+            Sebep: başlık `framed` kutunun İÇİNDEydi; kutunun 40px iç
+            dolgusu başlığın üstüne eklendiği için yukarıdaki boşluk
+            şişiyor, aşağıdaki kalıyordu.
+
+            Çözüm: başlık kendi `Section`'ında (çerçevesiz), içerik ayrı
+            `framed` Section'da — `/about/` ile ana sayfanın yaptığı gibi.
+            İki boşluk artık bağımsız ayarlanabiliyor.
+          */}
+        {/* `pb-16 sm:pb-24 lg:pb-24`: ölçümle ayarlandı — navbar→başlık 148px,
+            başlık→çerçeve 136px. `/about/` ile birebir aynı (148/136). */}
+        <Section className="flex-col pt-28 sm:pt-32 pb-16 sm:pb-24 lg:pb-24">
           <SectionTitle
             title=""
             subTitle={content.projects.subtitle}
             description={content.projects.description}
-icon={<FolderIcon size={36} className="inline-block" />}
-              headingLevel="h1"
-              big
-            />
+            icon={<FolderIcon size={36} className="inline-block" />}
+            headingLevel="h1"
+            big
+          />
+        </Section>
+
+        <Section className="flex-col pb-16 sm:pb-20 lg:pb-24" framed>
 
           {/* GitHub Projects button */}
           <div className="mx-auto mb-8 flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-2">

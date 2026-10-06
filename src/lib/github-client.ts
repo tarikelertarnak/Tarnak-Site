@@ -8,6 +8,19 @@ import type {
 const API_BASE = 'https://api.github.com'
 
 /**
+ * KULLANICI İSTEĞİYLE GİZLENEN DEPOLAR (2026-10-06).
+ *
+ * `Player` GitHub'da gerçek bir depo ama projeler sayfasında
+ * görünmek istenmiyor. Filtre TEK YERDE, verinin ÇIKTIĞI noktada
+ * uygulanır: hem `/api/github` yanıtını hem `public/github-data.json`
+ * snapshot'ını kapsar (ikisi de aşağıdaki `fetchUserData`'dan geçer).
+ *
+ * Grid tarafında ikinci bir filtre KONULMADI — aynı kural iki yerde
+ * yaşarsa biri unutulur ve depo geri sızar.
+ */
+const EXCLUDED_REPOS = new Set(['Player'])
+
+/**
  * User profile + repo list.
  *
  * Static export (GitHub Pages): no /api/* routes exist, so a build-time
@@ -33,7 +46,8 @@ async function fetchUserData(
       repos: GitHubRepo[] | null
     }
     if (data.success) {
-      return { profile: data.profile, repos: data.repos ?? [] }
+      const repos = (data.repos ?? []).filter(r => !EXCLUDED_REPOS.has(r.name))
+      return { profile: data.profile, repos }
     }
     throw new Error('GitHub verisi alınamadı.')
   }
@@ -48,7 +62,8 @@ async function fetchUserData(
   if (!snap.success) {
     throw new Error('GitHub verisi alınamadı.')
   }
-  return { profile: snap.profile, repos: snap.repos ?? [] }
+  const repos = (snap.repos ?? []).filter(r => !EXCLUDED_REPOS.has(r.name))
+  return { profile: snap.profile, repos }
 }
 
 async function getJSON<T>(url: string): Promise<T> {

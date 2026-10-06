@@ -22,6 +22,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { SiteLogo } from '@/components/logo'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
+import { PANEL_SURFACE, PANEL_SURFACE_BORDER } from '@/lib/panel-surface'
 import { ProfileEditDrawer } from '@/components/profile/profile-edit-drawer'
 import {
   ChatIcon,
@@ -234,12 +235,12 @@ export function Sidebar() {
   }
 
   const sidebarInner = (
-    <nav className="flex h-full flex-col bg-[#0a0a0e]" aria-label="Sidebar navigation" aria-modal="true" role="dialog" onClickCapture={closeOnNavigate}>
+    <nav className={`flex h-full flex-col ${PANEL_SURFACE}`} aria-label="Sidebar navigation" aria-modal="true" role="dialog" onClickCapture={closeOnNavigate}>
       {/* Brand — same layout as header: logo + "TARIK ELER — TARNAK" side by side
           Logo 2026-10-05: `logo-framed-*.svg` çerçeveli marka. İki ayrı `<img>` +
           `dark:block/dark:hidden` yerine tek inline `SiteLogo` — `fill` yazı
           rengini, `stroke` sayfa zeminini alır, tema CSS'ten okunur. */}
-      <div className="flex items-center gap-2.5 border-b border-white/5 px-5 py-4">
+      <div className={`flex items-center gap-2.5 ${PANEL_SURFACE_BORDER} px-5 py-4`}>
         <SiteLogo size={30} className="shrink-0" />
         <span className="truncate text-base font-bold tracking-tight text-foreground">
           TARIK ELER

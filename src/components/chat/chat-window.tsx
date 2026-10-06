@@ -305,6 +305,45 @@ export function ChatWindow({
               </Button>
             </div>
             {/*
+              MESAJ KUTUSU (2026-10-06, kullanıcı: "arka kutu koymamışsın,
+              ana sayfa gibi").
+
+              Giriş yapılmadan mesaj gönderilemez; ama sohbet sayfası
+              giriş kartıyla bomboş kalıyordu. Ana sayfadaki iletişim
+              formunun YAZI ALANI görünümü burada pasif olarak gösteriliyor:
+              yazı yazılabilir, "Gönder" düğmesi girişe götürür. Böylece
+              sayfa sohbet gibi görünür ve ne yapılacağı belli olur.
+
+              `aria-disabled` + `readOnly`: erişilebilir ama gönderilemez.
+            */}
+            <form
+              className="mt-2 flex w-full flex-col gap-2"
+              onSubmit={(e) => {
+                e.preventDefault()
+                window.location.href = '/login?next=/chat'
+              }}
+            >
+              {/*
+                Düz `<textarea>` (Lobe `Textarea` DEĞİL): bu bir ÖNİZLEME
+                kutusu — kontrollü değil, `value`/`onValueChange` borcu yok.
+                Görsel olarak ana sayfadaki iletişim formunun kutusuyla aynı
+                sınıfları kullanıyor.
+              */}
+              <textarea
+                rows={3}
+                placeholder={t('chat.placeholder')}
+                className="w-full resize-none rounded-xl border border-foreground-200/20 bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-primary/50"
+              />
+              <Button
+                type="submit"
+                color="primary"
+                className="w-full font-semibold"
+              >
+                <SendIcon size={18} />
+                {t('chat.send')}
+              </Button>
+            </form>
+            {/*
               "Görsel, ses ve dosya gönderebilirsiniz. Sohbet yalnızca
               aramızda." ipucu KALDIRILDI (2026-10-05, kullanıcı). Kayıt
               çağrısının altındaki bu satır yerine boşluk kalmıyor — kart

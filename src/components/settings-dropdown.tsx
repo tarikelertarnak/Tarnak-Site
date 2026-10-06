@@ -21,7 +21,6 @@ import {
   SunIcon,
   ThemeSystemIcon,
   UserIcon,
-  VolumeIcon,
 } from '@/components/ui/icons'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { flagIcons } from '@/components/ui/flag-icons'
@@ -416,14 +415,16 @@ export function SettingsModal({
             />
           </Section>
 
-          {/* Music — taslak */}
-          <Section title={t('settings.music')} icon={<VolumeIcon size={16} />}>
-            <Toggle
-              checked={cur.musicEnabled}
-              onChange={v => setDraft({ ...cur, musicEnabled: v })}
-              label={t('settings.musicEnabled')}
-            />
-          </Section>
+          {/*
+            MÜZİK BÖLÜMÜ KALDIRILDI (2026-10-06, kullanıcı).
+
+            Neden ölüydü: `content.settings.musicSrc` veri dosyasında YOK
+            (`settings` = `{githubUsername, defaultTheme, backgroundImage}`).
+            `layout.tsx` yalnızca `musicSrc` varsa `MusicPlayer` render ediyor,
+            `footer.tsx` de `hasMusicPlayer = Boolean(musicSrc)` ile alt boşluğu
+            ona göre ayarlıyor. Yani açık hiçbir şey yoktu — ayar yalnızca
+            görünmez bir özelliği kontrol ediyordu.
+          */}
 
           {/* Reset */}
           <button

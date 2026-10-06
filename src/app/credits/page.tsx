@@ -60,8 +60,14 @@ const TESTERS: TesterItem[] = [
 ]
 
 const TRANSLATORS: TranslatorItem[] = [
-  { lang: 'Türkçe', name: 'TARIK ELER', noteTr: 'Yerelleştirme & çeviri', noteEn: 'Localization & translation' },
-  { lang: 'English', name: 'TARIK ELER', noteTr: 'Yerelleştirme & çeviri', noteEn: 'Localization & translation' },
+  /*
+    'Türkçe / English — TARIK ELER — Yerelleştirme & çeviri' satırları
+    2026-10-06'da kullanıcı isteğiyle SİLİNDİ: bunlar çeviri yapan ayrı
+    kişiler değil, sitenin sahibinin kendi dilleri — listede "çevirmen"
+    gibi görünüyordu. Boş bırakmak yerine grup hiç render edilmiyor
+    (CreditsBrowser boş diziyi atlar), yani "Çevirmenler" başlığı boş
+    kutu olarak çıkmıyor.
+  */
 ]
 
 export default async function CreditsPage() {
@@ -99,8 +105,11 @@ export default async function CreditsPage() {
           </div>
         </Section>
 
-        {/* Contributors / Team / Sponsors — searchable, filterable, sortable */}
-        <Section className="flex-col pb-24 sm:pb-32">
+{/* Contributors / Team / Sponsors — searchable, filterable, sortable
+        `framed`: ana sayfadaki Blog/Projects bölümleriyle AYNI dış grup
+        çerçevesi (2026-10-06, kullanıcı "katkıda bulunanlarda dış gruplama
+        çerçeve olmalı, ana sayfa gibi" dedi). */}
+        <Section className="flex-col pb-24 sm:pb-32" framed>
           <CreditsBrowser
             contributors={CONTRIBUTORS}
             team={TEAM}

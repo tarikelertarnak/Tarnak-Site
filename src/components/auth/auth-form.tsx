@@ -246,9 +246,11 @@ function AuthFormInner({ mode }: { mode: AuthMode }) {
         <h1 className="text-xl sm:text-2xl font-bold">
           {isLogin ? t('auth.login') : t('auth.register')}
         </h1>
-        {isLogin && (
-          <p className="text-sm text-foreground/60 text-center">{t('auth.loginUserSub')}</p>
-        )}
+        {/*
+          "Ad veya e-posta adresinizle giriş yapın." ALT BAŞLIK
+          2026-10-06'da kullanıcı isteğiyle KALDIRILDI — başlığın altında
+          form varken gereksiz tekrar ediyordu.
+        */}
       </CardHeader>
 
       <CardBody

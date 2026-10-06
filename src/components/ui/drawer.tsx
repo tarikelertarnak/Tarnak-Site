@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import { CloseIcon } from '@/components/ui/icons'
+import { PANEL_SURFACE, PANEL_SURFACE_BORDER } from '@/lib/panel-surface'
 
 interface DrawerProps {
   open: boolean
@@ -86,7 +87,7 @@ export function Drawer({
             animate={{ x: 0 }}
             exit={{ x: initialX }}
             transition={{ type: 'spring', stiffness: 360, damping: 34 }}
-            className={`absolute top-0 ${side === 'right' ? 'right-0' : 'left-0'} flex h-full w-full ${width} flex-col border-${side === 'right' ? 'l' : 'r'} border-surface-border bg-background shadow-2xl shadow-black/40 outline-none`}
+            className={`absolute top-0 ${side === 'right' ? 'right-0' : 'left-0'} flex h-full w-full ${width} flex-col border-${side === 'right' ? 'l' : 'r'} ${PANEL_SURFACE_BORDER} ${PANEL_SURFACE} shadow-2xl shadow-black/40 outline-none`}
           >
             {title && (
               <div className="flex shrink-0 items-center justify-between border-b border-foreground-200/10 px-5 py-3.5">

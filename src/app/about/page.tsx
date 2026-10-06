@@ -1,5 +1,7 @@
 import { Navigation } from '@/components/navigation'
-import { BriefcaseIcon, CodeIcon, GithubIcon, HeartIcon, ShieldIcon, StarIcon, UserIcon } from '@/components/ui/icons'
+import { Button } from '@/components/ui/button'
+import { ContactQuickMenu } from '@/components/contact-quick-menu'
+import { BriefcaseIcon, ChevronRightIcon, CodeIcon, GithubIcon, HeartIcon, ShieldIcon, StarIcon, UserIcon } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 
@@ -187,6 +189,35 @@ export default async function AboutPage() {
                 {about.description}
               </p>
             )}
+
+            {/*
+              EYLEM SATIRI (2026-10-06, kullanıcı: "hakkımdaki daha fazla
+              ile iletişim bilgileri de olsun").
+
+              Ana sayfadaki `AboutSection` zaten "Daha Fazlası" +
+              "İletişim Bilgileri" satırını taşıyor; `/about/` sayfasında
+              eşdeğer satır yoktu. Aynı iki bileşen, aynı sınıflar —
+              ana sayfa = tek kaynak, sayfalar arası ayrışma yok.
+              "Daha Fazlası" `/about/`'in kendisine gider (oradan
+              içeriğin tamamı okunur), "İletişim Bilgileri" açılır menüyü
+              açar.
+            */}
+            <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-3">
+              <Button
+                color="primary"
+                href="/about/"
+                className="h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
+                endContent={<ChevronRightIcon size={15} className="shrink-0" />}
+              >
+                {/*
+                Sunucu bileşeni olduğu için `t()` yok; ana sayfadaki
+                `about.more` etiketinin aynısı elle kullanılıyor
+                (`isEn ? 'Learn more' : 'Daha Fazlası'`).
+              */}
+                {isEn ? 'Learn more' : 'Daha Fazlası'}
+              </Button>
+              <ContactQuickMenu content={content} />
+            </div>
           </div>
         </Section>
 
@@ -254,7 +285,7 @@ export default async function AboutPage() {
         </Section>
 
         {/* Focus areas */}
-        <Section className="flex-col pb-12 sm:pb-16">
+        <Section className="flex-col pb-12 sm:pb-16" framed>
           <div className="mx-auto w-full max-w-5xl">
             <h2 className="mb-6 text-center text-2xl font-bold text-foreground sm:text-3xl">
               {isEn ? 'Areas I Focus On' : 'Üzerinde Çalıştığım Alanlar'}
@@ -306,7 +337,7 @@ export default async function AboutPage() {
         </Section>
 
         {/* Values */}
-        <Section className="flex-col pb-16 sm:pb-24">
+        <Section className="flex-col pb-16 sm:pb-24" framed>
           <div className="mx-auto w-full max-w-4xl">
             <h2 className="mb-6 text-center text-2xl font-bold text-foreground sm:text-3xl">
               {isEn ? 'My Values' : 'Değerlerim'}
