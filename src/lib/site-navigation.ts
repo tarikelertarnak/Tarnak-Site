@@ -40,7 +40,6 @@ interface Labels {
   credits: string
   login: string
   panel: string
-  editor: string
   contact: string
   pages: string
   sections: string
@@ -86,7 +85,6 @@ function buildStaticGroups(l: Labels): NavGroup[] {
       entries: [
         { id: 'login', label: l.login, href: '/login' },
         { id: 'panel', label: l.panel, href: '/admin' },
-        { id: 'editor', label: l.editor, href: '/puck' },
       ],
     },
   ]
@@ -145,7 +143,6 @@ export function buildSiteNavigation(
     credits: t('nav.credits'),
     login: t('nav.login'),
     panel: t('nav.adminPanel'),
-    editor: t('nav.pageEditor'),
     contact: t('footer.contactTitle'),
     pages: t('nav.pages'),
     sections: t('nav.sections'),

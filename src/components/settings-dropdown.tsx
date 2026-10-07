@@ -378,6 +378,7 @@ export function SettingsModal({
               options={themeOptions}
               value={cur.theme}
               onChange={v => setDraft({ ...cur, theme: v as ThemeMode })}
+              label={t('settings.themeLabel')}
             />
           </Section>
 
@@ -508,19 +509,33 @@ function RadioGroup<T extends string>({
   options,
   value,
   onChange,
+  label,
 }: {
   options: { value: T, label: string, icon?: React.ReactNode }[]
   value: T
   onChange: (v: T) => void
+  /** `aria-label` — ekran okuyucuya grubun ne olduğunu söyler. */
+  label: string
 }) {
+  /*
+    ERİŞİLEBİLİRLİK DÜZELTMESİ (2026-10-07, Faz 1 · Playwright yazarken
+    yakalandı): seçenekler düz `<button>` olarak basılıyordu. Bu, birbirini
+    dışlayan (radio) bir grup olduğu halde ekran okuyucuya "hangi seçili?"
+    bilgisini VERMİYORDU — kullanıcı koyu temanın açık olduğunu duyamıyor.
+
+    Doğru semantik: kapsayıcı `role="radiogroup"`, her seçenek
+    `role="radio"` + `aria-checked`.
+  */
   return (
-    <div className="grid grid-cols-3 gap-1.5">
+    <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label={label}>
       {options.map((o) => {
         const active = o.value === value
         return (
           <button
             key={o.value}
             type="button"
+            role="radio"
+            aria-checked={active}
             onClick={() => onChange(o.value)}
             className={cn(
               'flex items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors',

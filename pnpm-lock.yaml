@@ -17,10 +17,10 @@ importers:
     dependencies:
       '@ant-design/nextjs-registry':
         specifier: ^1.3.0
-        version: 1.3.0(@ant-design/cssinjs@2.1.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(antd@6.5.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(next@16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 1.3.0(@ant-design/cssinjs@2.1.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(antd@6.5.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(next@16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@arcjet/next':
         specifier: 1.13.0
-        version: 1.13.0(next@16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
+        version: 1.13.0(next@16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
       '@emotion/css':
         specifier: latest
         version: 11.13.5
@@ -50,10 +50,10 @@ importers:
         version: 0.20.2(@types/react@19.1.10)(immer@11.1.16)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(use-sync-external-store@1.6.0(react@19.1.0))
       '@supabase/ssr':
         specifier: ^0.12.4
-        version: 0.12.5(@supabase/supabase-js@2.113.0)
+        version: 0.12.5(@supabase/supabase-js@2.113.0(@opentelemetry/api@1.9.1))
       '@supabase/supabase-js':
         specifier: ^2.112.2
-        version: 2.113.0
+        version: 2.113.0(@opentelemetry/api@1.9.1)
       antd:
         specifier: ^6.5.3
         version: 6.5.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -80,7 +80,7 @@ importers:
         version: 12.43.0(@emotion/is-prop-valid@1.4.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next:
         specifier: ^16.4.0
-        version: 16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       pg:
         specifier: ^8.23.0
         version: 8.23.0
@@ -105,7 +105,13 @@ importers:
         version: 15.5.7
       '@opennextjs/cloudflare':
         specifier: ^1.20.6
-        version: 1.20.6(next@16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.132.0(@types/node@20.19.11))
+        version: 1.20.6(next@16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.132.0(@types/node@20.19.11))
+      '@playwright/test':
+        specifier: ^1.64.0
+        version: 1.64.0
+      '@sentry/cloudflare':
+        specifier: ^11.5.0
+        version: 11.5.0(wrangler@4.132.0(@types/node@20.19.11))
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.12
@@ -2568,6 +2574,10 @@ packages:
       rclone.js:
         optional: true
 
+  '@opentelemetry/api@1.9.1':
+    resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
+    engines: {node: '>=8.0.0'}
+
   '@pierre/diffs@1.2.12':
     resolution: {integrity: sha512-pY/gmgWL03WnagqCyCnBi3QtRXUv4hCIY6FYqd5b1ZGaoI6a4Bsji8j+yRl2RfzPh/8Hf19rCl1GE80G6a1cLQ==}
     peerDependencies:
@@ -2601,6 +2611,11 @@ packages:
   '@pkgr/core@0.2.9':
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
+
+  '@playwright/test@1.64.0':
+    resolution: {integrity: sha512-oTN9FNYuN6bqQMwiho6jJKLCG2/QOYCixGXuCjRmzOq23eODeukuY2XiAVoVpAECbuezMt1MHQjAiQxK8F+Y+g==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
@@ -3720,6 +3735,36 @@ packages:
     resolution: {integrity: sha512-at8QVep6S3h5Y6gSbdGU06bRY5WJkf6WUduM9YtvYMbYhB1MOFfUgc6kehitQXzOtMSaT70q7f9ydPhpqu821w==}
     cpu: [x64]
     os: [win32]
+
+  '@sentry/cloudflare@11.5.0':
+    resolution: {integrity: sha512-hGaoNxCyOVoZOixDGWl3dA1d5bmKobmoX89fxM8btkbCu6YkxoVuhOqYWAfCXhwGQyVUMKv/UfvcSeP+qGhUJw==}
+    engines: {node: '>=20.19.0 <22.0.0 || >=22.12.0 <23.0.0 || >=23.2.0'}
+    peerDependencies:
+      '@cloudflare/workers-types': ^4.x || ^5.x
+      wrangler: ^4.x
+    peerDependenciesMeta:
+      '@cloudflare/workers-types':
+        optional: true
+      wrangler:
+        optional: true
+
+  '@sentry/conventions@0.26.0':
+    resolution: {integrity: sha512-ttSRcoLf2kIENDIFzH12aJaVMdxnidMYLvVNwEX/JjXfXaQot8u5M47QmgAFOOhVJ4nQ2uU8wTCh+fwSPrrCfg==}
+    engines: {node: '>=14'}
+
+  '@sentry/core@11.5.0':
+    resolution: {integrity: sha512-flEMRAfk8t3JW7w32shN6piuLJESkuryF90WzMn75ZGEiVoXkhStOvLT8qX8SQaLeFll4vLp7nDPdTsdJe1APw==}
+    engines: {node: '>=20.19.0 <22.0.0 || >=22.12.0 <23.0.0 || >=23.2.0'}
+
+  '@sentry/opentelemetry@11.5.0':
+    resolution: {integrity: sha512-k+YlAjKO9iPOb1w/KXjIPZE2P4PcxhuoafXr1EN0yCCs0BFgkgQNDP/S+nw78GLzb2SLs3MtwWbLHOMLMRJM5Q==}
+    engines: {node: '>=20.19.0 <22.0.0 || >=22.12.0 <23.0.0 || >=23.2.0'}
+    peerDependencies:
+      '@opentelemetry/api': ^1.9.0
+
+  '@sentry/server-utils@11.5.0':
+    resolution: {integrity: sha512-cUALUPgVW2jND2RGWyNH9v3epsKz5Ce3QujfnpFAdHKFVj4tjjZMU0FYlbFo9SBxosWPTnZzjIuNO6GROQwR1Q==}
+    engines: {node: '>=20.19.0 <22.0.0 || >=22.12.0 <23.0.0 || >=23.2.0'}
 
   '@shikijs/core@4.4.2':
     resolution: {integrity: sha512-StyzbAyxg2/tBGf78gwbBkGyeQ73lf8UiJArFaQhTQIDqQOCKPCQFanvrs4/Yv3Yfyc+ONInJM6K+FMIf+P+kA==}
@@ -6803,6 +6848,16 @@ packages:
   pkg-types@2.2.0:
     resolution: {integrity: sha512-2SM/GZGAEkPp3KWORxQZns4M+WSeXbC2HEvmOIJe3Cmiv6ieAJvdVhDldtHqM5J1Y7MrR1XhkBT/rMlhh9FdqQ==}
 
+  playwright-core@1.64.0:
+    resolution: {integrity: sha512-T9r+MZkTECl2+oUcZ26YgZzTrYidTsIhYYkJix+6iDOymOb1FB2RLLSOxRGnZGv5DStt+aduIVbt+E8WygXYpg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  playwright@1.64.0:
+    resolution: {integrity: sha512-kVzTnYFYEyQ9RGzBjNCd2+yEqWmVbxl3AHPynv3qQ6JTjv4a+kwRcnqQwIpuP3NnrnIrE/Q6wWAIAvMfIE2/Yg==}
+    engines: {node: '>=20'}
+    hasBin: true
+
   pluralize@8.0.0:
     resolution: {integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==}
     engines: {node: '>=4'}
@@ -8206,11 +8261,11 @@ snapshots:
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
 
-  '@ant-design/nextjs-registry@1.3.0(@ant-design/cssinjs@2.1.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(antd@6.5.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(next@16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@ant-design/nextjs-registry@1.3.0(@ant-design/cssinjs@2.1.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(antd@6.5.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(next@16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
       '@ant-design/cssinjs': 2.1.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       antd: 6.5.4(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
-      next: 16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next: 16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
 
@@ -8301,7 +8356,7 @@ snapshots:
     dependencies:
       '@arcjet/sprintf': 1.13.0
 
-  '@arcjet/next@1.13.0(next@16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
+  '@arcjet/next@1.13.0(next@16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
     dependencies:
       '@arcjet/body': 1.13.0
       '@arcjet/env': 1.13.0
@@ -8311,7 +8366,7 @@ snapshots:
       '@arcjet/protocol': 1.13.0
       '@arcjet/transport': 1.13.0
       arcjet: 1.13.0
-      next: 16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next: 16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
 
   '@arcjet/protocol@1.13.0':
     dependencies:
@@ -11251,7 +11306,7 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.19.1
 
-  '@opennextjs/aws@4.1.4(next@16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
+  '@opennextjs/aws@4.1.4(next@16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@aws-sdk/client-cloudfront': 3.984.0
@@ -11267,30 +11322,32 @@ snapshots:
       cookie: 1.1.1
       esbuild: 0.25.4
       express: 5.2.1
-      next: 16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next: 16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       path-to-regexp: 6.3.0
       urlpattern-polyfill: 10.1.0
       yaml: 2.8.1
     transitivePeerDependencies:
       - supports-color
 
-  '@opennextjs/cloudflare@1.20.6(next@16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.132.0(@types/node@20.19.11))':
+  '@opennextjs/cloudflare@1.20.6(next@16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(wrangler@4.132.0(@types/node@20.19.11))':
     dependencies:
       '@ast-grep/napi': 0.40.5
       '@dotenvx/dotenvx': 1.31.0
-      '@opennextjs/aws': 4.1.4(next@16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
+      '@opennextjs/aws': 4.1.4(next@16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0))
       ci-info: 4.3.0
       cloudflare: 4.5.0
       comment-json: 4.6.2
       enquirer: 2.4.1
       glob: 12.0.0
-      next: 16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      next: 16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       ts-tqdm: 0.8.6
       wrangler: 4.132.0(@types/node@20.19.11)
       yargs: 18.1.0
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@opentelemetry/api@1.9.1': {}
 
   '@pierre/diffs@1.2.12(@shikijs/themes@4.4.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
@@ -11317,6 +11374,10 @@ snapshots:
       shiki: 4.4.2
 
   '@pkgr/core@0.2.9': {}
+
+  '@playwright/test@1.64.0':
+    dependencies:
+      playwright: 1.64.0
 
   '@polka/url@1.0.0-next.29': {}
 
@@ -12752,6 +12813,35 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.63.1':
     optional: true
 
+  '@sentry/cloudflare@11.5.0(wrangler@4.132.0(@types/node@20.19.11))':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@sentry/conventions': 0.26.0
+      '@sentry/core': 11.5.0
+      '@sentry/opentelemetry': 11.5.0(@opentelemetry/api@1.9.1)
+      '@sentry/server-utils': 11.5.0
+      magic-string: 0.30.21
+    optionalDependencies:
+      wrangler: 4.132.0(@types/node@20.19.11)
+
+  '@sentry/conventions@0.26.0': {}
+
+  '@sentry/core@11.5.0':
+    dependencies:
+      '@sentry/conventions': 0.26.0
+
+  '@sentry/opentelemetry@11.5.0(@opentelemetry/api@1.9.1)':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@sentry/conventions': 0.26.0
+      '@sentry/core': 11.5.0
+
+  '@sentry/server-utils@11.5.0':
+    dependencies:
+      '@opentelemetry/api': 1.9.1
+      '@sentry/conventions': 0.26.0
+      '@sentry/core': 11.5.0
+
   '@shikijs/core@4.4.2':
     dependencies:
       '@shikijs/primitive': 4.4.2
@@ -13038,9 +13128,9 @@ snapshots:
       '@supabase/phoenix': 0.4.5
       tslib: 2.8.1
 
-  '@supabase/ssr@0.12.5(@supabase/supabase-js@2.113.0)':
+  '@supabase/ssr@0.12.5(@supabase/supabase-js@2.113.0(@opentelemetry/api@1.9.1))':
     dependencies:
-      '@supabase/supabase-js': 2.113.0
+      '@supabase/supabase-js': 2.113.0(@opentelemetry/api@1.9.1)
       cookie: 1.1.1
 
   '@supabase/storage-js@2.113.0':
@@ -13048,13 +13138,15 @@ snapshots:
       iceberg-js: 0.8.1
       tslib: 2.8.1
 
-  '@supabase/supabase-js@2.113.0':
+  '@supabase/supabase-js@2.113.0(@opentelemetry/api@1.9.1)':
     dependencies:
       '@supabase/auth-js': 2.113.0
       '@supabase/functions-js': 2.113.0
       '@supabase/postgrest-js': 2.113.0
       '@supabase/realtime-js': 2.113.0
       '@supabase/storage-js': 2.113.0
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.1
 
   '@swc/helpers@0.5.17':
     dependencies:
@@ -16386,7 +16478,7 @@ snapshots:
     dependencies:
       content-type: 2.1.0
 
-  next@16.4.0(@babel/core@7.29.7)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  next@16.4.0(@babel/core@7.29.7)(@opentelemetry/api@1.9.1)(@playwright/test@1.64.0)(@types/node@20.19.11)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@next/env': 16.4.0
       '@swc/helpers': 0.5.23
@@ -16405,6 +16497,8 @@ snapshots:
       '@next/swc-linux-x64-musl': 16.4.0
       '@next/swc-win32-arm64-msvc': 16.4.0
       '@next/swc-win32-x64-msvc': 16.4.0
+      '@opentelemetry/api': 1.9.1
+      '@playwright/test': 1.64.0
       sharp: 0.35.5(@types/node@20.19.11)
     transitivePeerDependencies:
       - '@babel/core'
@@ -16640,6 +16734,12 @@ snapshots:
       confbox: 0.2.2
       exsolve: 1.0.7
       pathe: 2.0.3
+
+  playwright-core@1.64.0: {}
+
+  playwright@1.64.0:
+    dependencies:
+      playwright-core: 1.64.0
 
   pluralize@8.0.0: {}
 
