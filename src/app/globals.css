@@ -217,18 +217,7 @@ html[data-theme='dark'] {
         }
     };
 
-    --keyframes-pulse-soft: {
-        0%, 100% {
-            opacity: 1;
-            transform: scale(1);
-        }
-        50% {
-            opacity: 0.6;
-            transform: scale(0.85);
-        }
-    };
-
-    --keyframes-shimmer: {
+--keyframes-shimmer: {
         0% {
             background-position: -200% 0;
         }
@@ -277,7 +266,6 @@ html[data-theme='dark'] {
     --animation-gradient: animatedTextGradient 6s ease infinite alternate;
     --animation-marquee: marquee 30s linear infinite;
     --animation-float: float 6s ease-in-out infinite;
-    --animation-pulse-soft: pulse-soft 2s ease-in-out infinite;
     --animation-spin-slow: spin-slow 90s linear infinite;
     --animation-spin-reverse: spin-reverse 120s linear infinite;
 }
@@ -288,9 +276,6 @@ html[data-theme='dark'] {
 }
 .animate-float {
     animation: var(--animation-float);
-}
-.animate-pulse-soft {
-    animation: var(--animation-pulse-soft);
 }
 .animate-spin-slow {
     animation: var(--animation-spin-slow);
@@ -335,7 +320,6 @@ body {
 
     .marquee-track,
     .animate-float,
-    .animate-pulse-soft,
     .animate-spin-slow,
     .animate-spin-reverse,
     .animate-twinkle,
@@ -592,10 +576,6 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb {
 /* ---------- Float ---------- */
 .animate-float {
     animation: var(--animation-float);
-}
-
-.animate-pulse-soft {
-    animation: var(--animation-pulse-soft);
 }
 
 /* ---------- Shimmer (kart parlaması) ---------- */
