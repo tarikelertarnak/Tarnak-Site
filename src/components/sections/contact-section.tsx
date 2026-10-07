@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { useContactForm } from '@/hooks/use-contact-form'
+import { HONEYPOT_FIELD } from '@/lib/validations'
 
 /**
  * Iletisim karti / yerel ikonlar KALDIRILDI.
@@ -209,6 +210,24 @@ export function ContactSection({ content }: { content: SiteContent }) {
         <Card className="p-4 sm:p-6 lg:p-8 w-full max-w-6xl">
           <form onSubmit={handleSubmit}>
             <CardBody className="flex flex-col w-full gap-4 sm:gap-6 lg:gap-8">
+              {/*
+                HONEYPOT (2026-10-07, Faz 1 · form güvenliği).
+                İnsan göremez, göremeyen de dokunulamaz; botlar görünmez
+                alanları da doldurduğu için dolu gelen istek sunucuda
+                sessizce düşürülüyor. `display:none` KULLANMIYORUZ — bazı
+                botlar onu yok sayıp doldurmaz; ekran dışına taşımak daha
+                güvenilir tuzak.
+              */}
+              <input
+                type="text"
+                name={HONEYPOT_FIELD}
+                tabIndex={-1}
+                autoComplete="off"
+                aria-hidden="true"
+                defaultValue=""
+                style={{ position: 'absolute', left: '-9999px', width: '1px', height: '1px', opacity: '0' }}
+              />
+
               <div className="flex flex-col space-y-4 sm:space-y-6 w-full">
                 <Input
                   type="text"

@@ -62,9 +62,18 @@ async function getKv(): Promise<KVNamespaceLike | null> {
 /* ── Limit tanımları: TEK YERDE, kolay değiştirilir ─────────────────────── */
 
 export const LIMITS = {
-  /** Chat: en pahalı uç nokta. Dakikada 10 + saatte 60 (çift pencere). */
+  /** Chat: en pahalı uç nokta. Dakikada 10 + saatte 60 + günde 200. */
   chat: { limit: 10, windowMs: 60_000 },
   chatHourly: { limit: 60, windowMs: 3_600_000 },
+  /**
+   * GÜNLÜK pencere (2026-10-07, Faz 1 · chat güvenliği: "IP/oturum başına
+   * günlük limit"). Dakika + saat pencereleri toplamda günde teorik
+   * 1440 mesaja izin veriyordu (birisi dakikada 10 kez istek atarak). Günlük
+   * pencere spam'ı ve kötüye kullanımı keser.
+   * 200 = normal kullanıcının bir günde rahatlıkla geçebileceği, spam'in
+   * ise takılacağı bir tavan.
+   */
+  chatDaily: { limit: 200, windowMs: 86_400_000 },
   /** Dosya yükleme: chat ile aynı sınıfta. */
   chatUpload: { limit: 10, windowMs: 60_000 },
   /** İletişim formu: saatte 5 (sahte başvuru + Discord webhook unafiyeti). */

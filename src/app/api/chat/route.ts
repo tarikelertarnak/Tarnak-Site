@@ -132,6 +132,12 @@ export async function POST(req: Request) {
   if (!hourly.ok)
     return rateLimitResponse(hourly)
 
+  // 2026-10-07 (Faz 1): dakika + saat yetmiyordu — günde teorik 1440
+  // mesaj gönderilebiliyordu. Günlük pencere spam'ı kesiyor.
+  const daily = await checkLimit('chat-day', { ...LIMITS.chatDaily, failClosed: false }, req)
+  if (!daily.ok)
+    return rateLimitResponse(daily)
+
   // Eski 10 sn bekleme koruması KORUNDU: dakikalık limit 10 olduğu için
   // dakikada 10 hızlı mesaj hâlâ mümkün; 10 sn cooldown kullanıcıyı
   // kelebek etmeyi engeller.

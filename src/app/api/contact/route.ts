@@ -5,7 +5,7 @@ import env from '@/lib/env'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
 import { LIMITS, checkLimit, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { isMissingColumnError } from '@/lib/postgrest'
-import { contactFormSchema } from '@/lib/validations'
+import { contactFormSchema, HONEYPOT_FIELD } from '@/lib/validations'
 
 const supabaseAdmin
   = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE
@@ -192,6 +192,17 @@ export async function POST(req: Request) {
   const values = contactFormSchema.safeParse(body)
   if (!values.success) {
     return NextResponse.json({ success: false, message: 'Invalid data' }, { status: 400 })
+  }
+
+  /*
+    HONEYPOT (2026-10-07, Faz 1 · form güvenliği).
+    Görünmez alan dolu geldiyse bu bir bot. İsteği `200` ile "başarılı"
+    kapatıyoruz: bot geri bildirim almaz (daha fazla denemez), gerçek
+    kullanıcı ise alanı göremediği için hiçbir zaman dolu gelmez.
+    Doğrulama zaten `contactFormSchema` içinde; burada sadece davranış.
+  */
+  if ((values.data as Record<string, unknown>)[HONEYPOT_FIELD]) {
+    return NextResponse.json({ success: true, message: 'Message sent successfully!' })
   }
 
   const contactEmail

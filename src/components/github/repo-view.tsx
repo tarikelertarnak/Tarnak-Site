@@ -13,6 +13,7 @@ import { BackToListButton } from '@/components/back-to-list-button'
 import { useLocale, useT } from '@/components/locale-provider'
 import { Navigation } from '@/components/navigation'
 import { cn } from '@/components/ui/cn'
+import { sanitizeRenderedHtml } from '@/lib/markdown'
 import { Link } from '@/components/ui/link'
 import {
   clientFetchFileContent,
@@ -708,7 +709,7 @@ export function GithubRepoView({
                     ? (
                         <div
                           className="markdown-body px-5 py-4 text-sm leading-relaxed sm:px-6 sm:text-base"
-                          dangerouslySetInnerHTML={{ __html: readmeHtml }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeRenderedHtml(readmeHtml) }}
                         />
                       )
                     : (

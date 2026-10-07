@@ -5,8 +5,23 @@ import { E164_MAX_DIGITS, PHONE_MAX_CHARS, normalizePhone } from '@/lib/phone'
 /** E-posta için makul üst sınır. Telefon için E.164 (15 hane) geçerli. */
 const CONTACT_VALUE_MAX = 254
 
+/**
+ * HONEYPOT (2026-10-07, Faz 1 · form güvenliği).
+ *
+ * İnsan bu alanı göremez (`position:absolute; left:-9999px` + `aria-hidden`
+ * + `tabIndex={-1}` + `autoComplete="off"`). Botlar formu doldururken görünmez
+ * alanları da doldurur; dolu gelirse istek sessizce 200 "başarılı" ile
+ * kapatılır — kullanıcıya hata da görmez, bot da geri bildirim almaz.
+ *
+ * Sunucu tarafı `contactFormSchema` içinde zorunlu: istemci alanı hiç
+ * göndermezse bile boş string kabul edilir, dolu gelirse doğrulama patlar.
+ */
+export const HONEYPOT_FIELD = 'companyWebsite'
+
 export const contactFormSchema = z
   .object({
+    /** Bot tuzağı. Gerçek kullanıcı daima boş bırakır. */
+    [HONEYPOT_FIELD]: z.string().max(200).optional().default(''),
     name: z
       .string()
       .min(2, 'Name must be at least 2 characters')
