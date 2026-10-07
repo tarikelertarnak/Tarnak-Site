@@ -5,25 +5,10 @@ import dns from 'node:dns'
 // IPv4'ü önce çözmek bunu kökten çözer (tüm sunucu sürecinde geçerli: dev + prod).
 dns.setDefaultResultOrder('ipv4first')
 
-// Google AdSense yalnizca NEXT_PUBLIC_ADSENSE_CLIENT tanimliysa CSP'ye eklenir.
-// Boylece reklam agi baglanmadigi surece politika dar kalir; "ileride lazim olur"
-// diye kalici olarak genisletmeyiz.
-const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT || ''
-const AD_SCRIPT_SRC = ADSENSE_CLIENT
-  ? ' https://pagead2.googlesyndication.com https://partner.googleadservices.com https://tpc.googlesyndication.com'
-  : ''
-const AD_FRAME_SRC = ADSENSE_CLIENT
-  ? ' https://googleads.g.doubleclick.net https://tpc.googlesyndication.com https://www.google.com'
-  : ''
-
-// Google Sign-In ("Google ile devam et"): gsi/client script'i + hesap seçici
-// iframe'i accounts.google.com'dan yüklenir. GOOGLE_CLIENT_ID tanımlıysa ve
-// ayrıca adını GOOGLE_ENABLED ile tasdik edersek... daha güzeli: client id
-// gömülüyse (NEXT_PUBLIC_GOOGLE_CLIENT_ID doluysa) izinleri ekle — böylece
-// "ileride lazım olur" diye varsayılan politikayı genişletmeyiz.
-const GOOGLE_SIGNIN = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-  ? ' https://accounts.google.com'
-  : ''
+// 2026-10-07: Google AdSense / Google Sign-In izinleri (`AD_SCRIPT_SRC`,
+// `AD_FRAME_SRC`, `GOOGLE_SIGNIN`) CSP'den KALDIRILDI ve src/lib/csp-nonce.ts
+// içine taşındı — CSP artık burada değil, src/proxy.ts üzerinden gönderiliyor
+// (nonce her istekte benzersiz olmalı, `headers()` bunu yapamaz).
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -60,7 +45,25 @@ const nextConfig = {
           // Aynı origin frame'lere izin ver — admin editörün Önizleme iframe'i /puck/* embed eder
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          /*
+            Permissions-Policy (2026-10-07 düzeltmesi):
+              `microphone=()` YANLIŞTI — sitede /chat üzerinde sesli sohbet var
+              ve tarayıcı bu satır sayesinde mikrofon iznini hiç vermiyordu.
+              Doğrusu `microphone=(self)`: yalnızca kendi origin'imiz (aynı
+              sayfa) erişebilir, üçüncü taraf iframe'ler erişemez.
+              Ödenekli özellik kullanılmıyor → `payment=()`; WebUSB yok → `usb=()`.
+          */
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(self), geolocation=(), payment=(), usb=()' },
+          /*
+            Strict-Transport-Security (2026-10-07 doğrulama):
+            `preload` yalnızca `max-age >= 31536000` (1 yıl) ile anlamlıdır —
+            preload listesine kayıt olabilmek için tarayıcı bu eşiği arar.
+            Mevcut 63072000 (2 yıl) eşiğin 2 katı: preload kriterini fazlasıyla
+            karşılıyor, DEĞER DEĞİŞTİRİLMEDİ (yalnızca doğrulandı).
+            Not: `includeSubDomains` + `preload` bir kez gönderildikten sonra
+            tarayıcıdan geri alınamaz; alt subdomain'lerinin hepsi HTTPS
+            sunuyor olduğundan güvenli.
+          */
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           /*
             2026-10-06 canlı ölçümde eksik olanlar eklendi:
@@ -72,24 +75,81 @@ const nextConfig = {
             varyanttır (birlikte kullanılır, izolasyonu tamamen kapatmaz).
           */
           { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
+          /*
+            CORP (2026-10-07 kontrolü):
+            `same-origin` yalnızca AYNI origin'in kaynaklarımızı okumasına izin
+            verir. Bu sitede üçüncü taraf script YOK: Giscus yorum embed'i,
+            analytics veya CDN script'i kullanılmıyor. iframe'ler SADEce kendi
+            origin'imizden (`/puck/*` editör önizlemesi) geliyor. Dolayısıyla
+            `same-origin` daraltma YAPMADAN doğru değer; Google OAuth açılır
+            pencere olarak çalıştığı için COOP da `same-origin-allow-popups`
+            (bileşik pencereyi kesmez) olarak kalmalı.
+            Giscus/Disqus gibi bir yorum embed'i EKLENIRSE bu satır
+            `same-site` veya `cross-origin` yapılmalı, yoksa gömülü yorumlar
+            boş çizilir.
+          */
           { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
-          {
-            key: 'Content-Security-Policy',
-            // inline script (tema init) ve HeroUI/iconify için pragmatik CSP
-            value: [
-              "default-src 'self'",
-              `script-src 'self' 'unsafe-inline' 'unsafe-eval'${AD_SCRIPT_SRC}${GOOGLE_SIGNIN}`,
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data: https:",
-              "connect-src 'self' https: wss:",
-              `frame-src 'self'${AD_FRAME_SRC}${GOOGLE_SIGNIN}`,
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-            ].join('; '),
-          },
+          /*
+            2026-10-07: canlı ölçümde eksik olan iki başlık eklendi.
+              X-Permitted-Cross-Domain-Policies → eski Flash/PDF tabanlı
+                cross-domain policy dosyalarının (crossdomain.xml) uygulanmasını
+                kapatır. Bugün kullanılmıyor ama başlık göndermek "policy yok"
+                varsayılanından daha güvenli.
+              Origin-Agent-Cluster → origin'ı keyfi bir agent cluster'a bağlar;
+                cross-origin izolasyon (COOP/COEP) uygulanmadığı için sitenin
+                işleyişini değiştirmez, sadece saldırı yüzeyini daraltır.
+          */
+          { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
+          { key: 'Origin-Agent-Cluster', value: '?1' },
+          /*
+            ⚠️ CSP ARTIK BURADA DEĞİL (2026-10-07) ⚠️
+
+            CSP, `next.config.mjs` içinden KALDIRILDI ve `src/proxy.ts` +
+            `src/lib/csp-nonce.ts` tarafına taşındı. Sebep: nonce her istekte
+            benzersiz olmak zorunda, `headers()` ise statik çalışır ve
+            request'e erişemez. Buradaki eski politika `script-src` içinde
+            `'unsafe-inline' 'unsafe-eval'` taşıyordu — bu ikisi CSP'yi tamamen
+            etkisiz hale getiriyordu (satır içi script + eval serbest = politika
+            uygulanmıyor).
+
+            Yeni yer: `src/proxy.ts` istek + yanıt header'ına
+            `Content-Security-Policy-Report-Only` yazar, politika metnini
+            `buildCspValue()` üretir.
+
+            ══════════════════════════════════════════════════════════════
+            ENFORCING (ZORUNLU) MODA GEÇİŞ TALİMATI
+            ══════════════════════════════════════════════════════════════
+            1) src/proxy.ts → `withCsp()` içinde tek satırı değiştir:
+                 response.headers.set('Content-Security-Policy-Report-Only', csp)
+               şu hale gelsin:
+                 response.headers.set('Content-Security-Policy', csp)
+               (İSTEK header'ındaki `Content-Security-Policy-Report-Only` KALMALI —
+                Next nonce'u oradan okuyor: parse-request-headers.js sırasıyla
+                `content-security-policy` sonra `content-security-policy-report-only`
+                arar; ikisini birden göndermek nonce bağını bozmaz.)
+            2) src/lib/csp-nonce.ts → TODO notunu takip et: gerçek bir rapor
+               toplayıcı varsa `report-to <grup>` direktifini ekle.
+            3) EN ÖNEMLİ ENGEL — src/app/layout.tsx:
+               `export const dynamic = 'force-static'` yüzünden `headers()`
+               boş döner, yani statik sayfalarda tema init script'i nonce
+               ALAMAZ. Enforcing modda o script engellenir ve tema/FOUC
+               davranışı bozulur. Geçişten önce ikisinden birini yap:
+                 a) `force-static`'ı kaldır (dikkat: bu sitenin public
+                    sayfalarını statik üretip CDN'den sunma stratejisini ve
+                    Cloudflare Workers CPU bütçesini etkiler — 2026-10-03
+                    1102 düzeltmesinin dayandığı varsayımdır), ya da
+                 b) tema script'ini `src/app/layout.tsx`'te olduğu gibi
+                    build-time'da SHA-256 hash'leyip `script-src`'e
+                    `'sha256-...'` olarak ekle.
+               Aynı sorun JSON-LD bloğunda da var (çalışmadığı için düşük risk).
+            4) `style-src 'unsafe-inline'` PRAGMATİK KALDI: Emotion/antd/heroUI
+               stilleri satır içi basıyor, stillere nonce verilemez. Kalması
+               script enjeksiyonunu engellemez — script zaten nonce'lu.
+            5) Doğrulama: `npm run build` + canlıda tarayıcı konsolunda CSP
+               ihlal mesajı OLMAMALI, tema değiştirme çalışmalı.
+            ══════════════════════════════════════════════════════════════
+          */
         ],
       },
       {
