@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Navigation } from '@/components/navigation'
+import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
+import { CRUMBS } from '@/lib/breadcrumb'
 import { RememberListPath } from '@/components/remember-list-path'
 import { BlogSection } from '@/components/sections/blog-section'
 import { getPosts } from '@/lib/blog'
@@ -41,6 +43,11 @@ export default async function BlogPage() {
       <Navigation content={content} />
       <RememberListPath path="/blog" />
       <main id="main" className="contents">
+        {/* Breadcrumb (Faz 2 · SEO 2) */}
+        <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">
+          <Breadcrumb items={CRUMBS['/blog']} />
+          <BreadcrumbJsonLd items={CRUMBS['/blog']} />
+        </div>
         <BlogSection posts={posts} />
       </main>
     </div>

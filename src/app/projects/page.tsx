@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Navigation } from '@/components/navigation'
+import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
+import { CRUMBS } from '@/lib/breadcrumb'
 import { ProjectsGrid } from '@/components/projects/projects-grid'
 import { RememberListPath } from '@/components/remember-list-path'
 import { FolderIcon, GithubIcon } from '@/components/ui/icons'
@@ -31,6 +33,11 @@ export default async function ProjectsPage() {
       <Navigation content={content} />
       <RememberListPath path="/projects" />
       <main id="main" className="w-full">
+        {/* Breadcrumb (Faz 2 · SEO 2) */}
+        <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">
+          <Breadcrumb items={CRUMBS['/projects']} />
+          <BreadcrumbJsonLd items={CRUMBS['/projects']} />
+        </div>
         {/*
             BOŞLUK DENGESİ (2026-10-06, kullanıcı: "üstteki yazılarla
             alttaki kısımın boşlukları eşit ve ortalanmış olsun").

@@ -1,6 +1,7 @@
 import type { NextRequest as NextRequestType } from 'next/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { buildCspValue, generateCspNonce } from '@/lib/csp-nonce'
+import { PERMANENT_REDIRECTS } from '@/lib/breadcrumb'
 import { updateSession } from '@/lib/supabase/middleware'
 
 /**
@@ -12,6 +13,35 @@ import { updateSession } from '@/lib/supabase/middleware'
  */
 const CANONICAL_HOST = 'tarikelertarnak.pages.dev'
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0'])
+
+/**
+ * 301 kalıcı yönlendirme (Faz 2 · SEO 2: "adı değişen sayfalar için 301
+ * yönlendirme yapısı (tek dosyada)").
+ *
+ * Harita `src/lib/breadcrumb.ts` → `PERMANENT_REDIRECTS` içinde; burada
+ * sadece uygulanıyor. Yeni bir taşıma eklemek için proxy'ye dokunmak
+ * GEREKMEZ — tek dosyaya satır ekle.
+ *
+ * 301 (kalıcı) seçildi: arama motorları "eski URL'nin yerine şu geldi"
+ * diye link equity'yi taşır. 302/307 "geçici" der ve equity taşınmaz.
+ *
+ * Dizi eşleşmesi YOK: sorgu dizesi ve hash korunur, böylece
+ * `/profil?utm=x` → `/about?utm=x` olur.
+ */
+function permanentRedirect(request: NextRequestType): NextResponse | null {
+  const { pathname } = request.nextUrl
+  // Trailing slash normalize (Next `trailingSlash: true` kullanıyor).
+  const yol = pathname.length > 1 && pathname.endsWith('/')
+    ? pathname.slice(0, -1)
+    : pathname
+
+  const hedef = PERMANENT_REDIRECTS[yol]
+  if (!hedef || hedef === yol) return null
+
+  const url = request.nextUrl.clone()
+  url.pathname = `${hedef}/` // trailingSlash: true ile tutarlı
+  return NextResponse.redirect(url, 301)
+}
 
 function redirectToCanonical(request: NextRequestType): NextResponse | null {
   const host = (request.headers.get('host') ?? '').split(':')[0].toLowerCase()
@@ -27,6 +57,10 @@ export async function proxy(request: NextRequestType) {
   const maintenance = maintenanceResponse(request)
   if (maintenance)
     return maintenance
+
+  const moved = permanentRedirect(request)
+  if (moved)
+    return moved
 
   const guard = redirectToCanonical(request)
   if (guard)

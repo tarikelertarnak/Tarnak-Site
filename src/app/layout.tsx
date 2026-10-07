@@ -151,14 +151,14 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       locale: 'tr_TR',
       images: [
-        { url: `${SITE_URL}/icon-512x512.png`, width: 512, height: 512, alt: 'Tarık Eler Tarnak logosu' },
+      { url: '/opengraph-image', width: 1200, height: 630, alt: 'Tarik Eler (Tarnak) - Yazilimci & Sistem Mimarisi' },
       ],
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [`${SITE_URL}/icon-512x512.png`],
+      images: ['/opengraph-image'],
     },
   }
 }
@@ -242,17 +242,25 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 // marka/takma ad + yaygin buyuk-harf yazim.
                 'alternateName': ['Tarnak', 'Tarık Eler Tarnak', 'TARIK ELER'],
                 'url': SITE_URL,
-                'image': `${SITE_URL}/icon-512x512.png`,
+                'image': `${SITE_URL}/opengraph-image`,
                 'logo': `${SITE_URL}/icon-512x512.png`,
                 'jobTitle': 'Web Developer',
-                // 2026-09-24: github.io siteleri yayindan kaldirildi — sameAs'ta
-                // sadece AKTIF adresler kalir (arama motorlarına olu baglantilar
-                // bildirmeyiz; bunlar sinyal kirletir).
-                'sameAs': [
-                  'https://github.com/tarikelertarnak',
-                  'https://github.com/TARIKELER-TARNAK',
-                  'https://tarikelertarnak.pages.dev',
-                ],
+                /*
+                 * sameAs (Faz 2 · SEO 3, kullanıcı isteği): "sosyal linkleri
+                 * content dosyasından oku, bilmediğin linki uydurma".
+                 *
+                 * ÖNCE HATA: `tarikelertarnak.pages.dev` (sitenin KENDİ adresi)
+                 * sameAs içindeydi. `sameAs` = "bu kişinin başka yerlerdeki
+                 * profilleri"; sitenin kendi adresi orada olmaz, `url`
+                 * alanında durur. Google'a yanlış sinyal veriyordu.
+                 *
+                 * Şimdi: `content.nav.social` içindeki GERÇEK, boş olmayan
+                 * http(s) bağlantıları. Admin panelinden sosyal eklenip
+                 * çıkarılınca JSON-LD otomatik güncellenir; uydurma link yok.
+                 */
+                'sameAs': (content.social ?? [])
+                  .map((s: { href?: string }) => s?.href?.trim())
+                  .filter((h: string | undefined): h is string => !!h && /^https?:\/\//i.test(h)),
                 'knowsAbout': ['Next.js', 'TypeScript', 'Web Development', 'React', 'Yapay Zeka'],
               },
               {

@@ -1,9 +1,12 @@
 import { Navigation } from '@/components/navigation'
+import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
+import { CRUMBS } from '@/lib/breadcrumb'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 
 // 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
 export const dynamic = 'force-static'
+
 
 export async function generateMetadata() {
   const locale = await getStaticLocale()
@@ -29,6 +32,11 @@ export default async function GithubPage() {
     <div className="min-h-screen w-full relative">
       <Navigation content={content} />
       <main id="main" className="">
+        {/* Breadcrumb (Faz 2 · SEO 2): görünür navigasyon + BreadcrumbList */}
+        <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">
+          <Breadcrumb items={CRUMBS['/github']} />
+          <BreadcrumbJsonLd items={CRUMBS['/github']} />
+        </div>
         <Section className="flex-col items-center justify-center pt-32 min-h-[80svh]">
           <SectionTitle
             title=""

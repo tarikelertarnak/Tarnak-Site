@@ -1,4 +1,7 @@
 import { Navigation } from '@/components/navigation'
+import { pageMetadata } from '@/lib/page-metadata'
+import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
+import { CRUMBS } from '@/lib/breadcrumb'
 import { ContactSection } from '@/components/sections/contact-section'
 import { getStaticLocalizedContent } from '@/lib/i18n-server'
 
@@ -16,6 +19,12 @@ import { getStaticLocalizedContent } from '@/lib/i18n-server'
  */
 export const dynamic = 'force-static'
 
+export const metadata = pageMetadata({
+  path: '/contact',
+  title: 'İletişim',
+  description: 'Tarık Eler (Tarnak) ile iletişime geç: e-posta, telefon, Discord ve iletişim formu.',
+})
+
 export default async function ContactPage() {
   const content = await getStaticLocalizedContent()
 
@@ -23,6 +32,11 @@ export default async function ContactPage() {
     <div className="min-h-screen w-full relative">
       <Navigation content={content} />
       <main id="main" className="w-full">
+        {/* Breadcrumb (Faz 2 · SEO 2): görünür navigasyon + BreadcrumbList */}
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+          <Breadcrumb items={CRUMBS['/contact']} />
+          <BreadcrumbJsonLd items={CRUMBS['/contact']} />
+        </div>
         <ContactSection content={content} />
       </main>
     </div>
