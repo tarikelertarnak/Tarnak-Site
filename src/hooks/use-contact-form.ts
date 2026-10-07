@@ -2,7 +2,7 @@ import type { ContactApiResponse, ContactFormData } from '@/lib/validations'
 import { useT } from '@/components/locale-provider'
 import { E164_MAX_DIGITS, validatePhone } from '@/lib/phone'
 import { parsePhone } from '@/components/ui/phone-input'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { COUNTRIES } from '@/lib/countries-data'
 import { contactFormSchema } from '@/lib/validations'
 
@@ -17,6 +17,11 @@ interface UseContactFormReturn {
   formData: ContactFormData
   errors: FormErrors
   isSubmitting: boolean
+  /**
+   * 429 sonrası kalan saniye; >0 iken gönderim kilitli.
+   * Sunucu `Retry-After` döndüğünde dolar, saniyede bir azalır.
+   */
+  cooldown: number
   isSubmitted: boolean
   updateField: (field: keyof ContactFormData, value: string) => void
   submitForm: () => Promise<keyof ContactFormData | 'ok' | null>
@@ -114,6 +119,8 @@ export function useContactForm(): UseContactFormReturn {
   const [formData, setFormData] = useState<ContactFormData>(initialFormData)
   const [errors, setErrors] = useState<FormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  /** 429 sonrasi kalan saniye (0 = kisit yok). */
+  const [cooldown, setCooldown] = useState(0)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [touchedFields, setTouchedFields] = useState<Set<keyof ContactFormData>>(
     new Set(),
@@ -192,6 +199,14 @@ export function useContactForm(): UseContactFormReturn {
     [t, formData.contactMethod],
   )
 
+  // Geri sayım efekti (chat-window.tsx ile ayni desen)
+  useEffect(() => {
+    if (cooldown <= 0)
+      return
+    const timer = setTimeout(() => setCooldown(c => Math.max(0, c - 1)), 1000)
+    return () => clearTimeout(timer)
+  }, [cooldown])
+
   const validateField = useCallback(
     (field: keyof ContactFormData, value: string, showError = false) => {
       const message = smartMessage(field, value)
@@ -267,6 +282,12 @@ export function useContactForm(): UseContactFormReturn {
     keyof ContactFormData | 'ok' | null
   > => {
     try {
+      // Kilit aktifse gönderme — kullanıcı `Retry-After` dolmadan denemesin.
+      // (429 sonrası `setCooldown` ile başlar, aşağıda geri sayılır.)
+      if (cooldown > 0) {
+        setErrors({ general: t('form.errRateLimited', { seconds: cooldown }) })
+        return null
+      }
       setErrors({})
       setTouchedFields(
         new Set<keyof ContactFormData>(['name', 'contactValue', 'message']),
@@ -305,6 +326,20 @@ export function useContactForm(): UseContactFormReturn {
       const result: ContactApiResponse = await response.json()
       if (!response.ok) {
         setErrors({ general: result.message || 'Failed to send message' })
+        /*
+          429 COOLDOWN (2026-10-06, kullanıcı: "contact 429 cooldown olsun").
+          `/api/contact` KV tabanlı hız sınırı uygular; aşılınca 429 +
+          `Retry-After` döner. Kullanıcı dakikalarca deneyip yine 429
+          almamasın diye geri sayım başlatıyoruz.
+
+          `Retry-After` saniye veya HTTP-datesi olabilir; saniye olanı
+          kullanıyoruz, yoksa 60 sn varsayılan. (Chat'teki cooldown ile
+          aynı davranış — `chat-window.tsx`.)
+        */
+        if (response.status === 429) {
+          const retryAfter = Number(response.headers.get('Retry-After'))
+          setCooldown(Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 60)
+        }
         return null
       }
       if (result.success) {
@@ -334,7 +369,7 @@ export function useContactForm(): UseContactFormReturn {
     finally {
       setIsSubmitting(false)
     }
-  }, [formData, validateField, country])
+  }, [formData, validateField, country, cooldown, t])
 
   const resetForm = useCallback(() => {
     setFormData(initialFormData)
@@ -348,6 +383,8 @@ export function useContactForm(): UseContactFormReturn {
     formData,
     errors,
     isSubmitting,
+    /** 429 sonrası kalan saniye; >0 iken gönderim butonu kilitli. */
+    cooldown,
     isSubmitted,
     updateField,
     submitForm,

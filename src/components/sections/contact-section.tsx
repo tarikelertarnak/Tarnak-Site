@@ -37,6 +37,8 @@ export function ContactSection({ content }: { content: SiteContent }) {
     formData,
     errors,
     isSubmitting,
+    /** 429 sonrası kalan saniye; >0 iken gönderim butonu kilitli. */
+    cooldown,
     isSubmitted,
     updateField,
     submitForm,
@@ -298,11 +300,22 @@ export function ContactSection({ content }: { content: SiteContent }) {
                   endContent={<SendIcon size={16} />}
                   className="font-semibold w-full sm:w-auto"
                   isLoading={isSubmitting}
-                  isDisabled={isSubmitting}
+                  isDisabled={isSubmitting || cooldown > 0}
                 >
                   {isSubmitting
                     ? t('contact.sending')
-                    : t('contact.sendMessage')}
+                    : cooldown > 0
+                      ? (
+                          /*
+                            429 SONRASI GERİ SAYIM (2026-10-06).
+                            Sunucu KV hız sınırı aşılınca 429 + Retry-After
+                            döner; hook `cooldown`'u saniyede bir azaltır ve
+                            bu buton kilitli kalır — kullanıcı her denemede
+                            429 almaz, kalan süreyi görür.
+                          */
+                          t('form.infoRateLimited', { seconds: cooldown })
+                        )
+                      : t('contact.sendMessage')}
                 </Button>
               </div>
             </CardFooter>

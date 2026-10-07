@@ -346,6 +346,8 @@ const fr: Record<string, string> = {
   'footer.backToTop': 'Haut de page',
   'common.showMore': 'Afficher plus ({count})',
   'common.showMoreAria': 'Afficher {count} cartes de plus',
+  'form.errRateLimited': 'Vous allez trop vite. Réessayez dans {seconds} secondes.',
+  'form.infoRateLimited': 'Vous avez envoyé trop de messages. Réessayez dans {seconds} secondes.',
 }
 
 export default fr

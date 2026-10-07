@@ -346,6 +346,8 @@ const ru: Record<string, string> = {
   'footer.backToTop': 'Наверх',
   'common.showMore': 'Показать ещё ({count})',
   'common.showMoreAria': 'Показать ещё карточек: {count}',
+  'form.errRateLimited': 'Слишком часто. Повторите через {seconds} секунд.',
+  'form.infoRateLimited': 'Слишком много сообщений. Повторите через {seconds} секунд.',
 }
 
 export default ru

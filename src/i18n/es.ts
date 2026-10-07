@@ -346,6 +346,8 @@ const es: Record<string, string> = {
   'footer.backToTop': 'Volver arriba',
   'common.showMore': 'Ver más ({count})',
   'common.showMoreAria': 'Mostrar {count} tarjetas más',
+  'form.errRateLimited': 'Vas demasiado rápido. Inténtalo de nuevo en {seconds} segundos.',
+  'form.infoRateLimited': 'Has enviado demasiados mensajes. Inténtalo de nuevo en {seconds} segundos.',
 }
 
 export default es

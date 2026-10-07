@@ -346,6 +346,8 @@ const ja: Record<string, string> = {
   'footer.backToTop': 'トップへ戻る',
   'common.showMore': 'さらに表示 ({count})',
   'common.showMoreAria': 'さらに {count} 件を表示',
+  'form.errRateLimited': '少し速すぎます。{seconds} 秒後に再試行してください。',
+  'form.infoRateLimited': 'メッセージが多すぎます。{seconds} 秒後に再試行してください。',
 }
 
 export default ja

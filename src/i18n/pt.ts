@@ -346,6 +346,8 @@ const pt: Record<string, string> = {
   'footer.backToTop': 'Voltar ao topo',
   'common.showMore': 'Ver mais ({count})',
   'common.showMoreAria': 'Mostrar mais {count} cartões',
+  'form.errRateLimited': 'Está a ir depressa demais. Tente novamente em {seconds} segundos.',
+  'form.infoRateLimited': 'Enviou mensagens a mais. Tente novamente em {seconds} segundos.',
 }
 
 export default pt

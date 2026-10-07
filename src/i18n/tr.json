@@ -457,5 +457,7 @@
   "about.infoLastName": "Soyad",
   "about.infoNickname": "Takma ad",
   "common.showMore": "Daha Fazlasını Göster ({count})",
-  "common.showMoreAria": "Devamını gör, {count} kart kaldı"
+  "common.showMoreAria": "Devamını gör, {count} kart kaldı",
+  "form.errRateLimited": "Çok hızlı gidiyorsun. {seconds} saniye sonra tekrar dene.",
+  "form.infoRateLimited": "Bir süre çok fazla mesaj gönderdin. {seconds} saniye sonra tekrar dene."
 }

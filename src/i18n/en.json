@@ -457,5 +457,7 @@
   "about.infoLastName": "Last name",
   "about.infoNickname": "Nickname",
   "common.showMore": "Show More ({count})",
-  "common.showMoreAria": "Show {count} more cards"
+  "common.showMoreAria": "Show {count} more cards",
+  "form.errRateLimited": "You are going too fast. Try again in {seconds} seconds.",
+  "form.infoRateLimited": "You sent too many messages. Try again in {seconds} seconds."
 }

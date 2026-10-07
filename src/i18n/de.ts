@@ -347,6 +347,8 @@ const de: Record<string, string> = {
   'footer.backToTop': 'Nach oben',
   'common.showMore': 'Mehr anzeigen ({count})',
   'common.showMoreAria': 'Noch {count} Karten anzeigen',
+  'form.errRateLimited': 'Du bist zu schnell. In {seconds} Sekunden erneut versuchen.',
+  'form.infoRateLimited': 'Du hast zu viele Nachrichten gesendet. In {seconds} Sekunden erneut versuchen.',
 }
 
 export default de
