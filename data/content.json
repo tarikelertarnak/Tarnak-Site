@@ -1,6 +1,6 @@
 {
   "hero": {
-    "name": "TARIK ELER TARNAK",
+    "name": "TARIK ELER",
     "tagline": "Yazılımcı & Sistem Mimarisi",
     "badge": "",
     "description": "",
@@ -9,15 +9,15 @@
     "emoji": "🚀",
     "stats": [
       {
-        "label": "Projeler",
+        "label": "Projects",
         "value": "10+"
       },
       {
-        "label": "Teknolojiler",
+        "label": "Technologies",
         "value": "15+"
       },
       {
-        "label": "Odak",
+        "label": "Focus",
         "value": "100%"
       }
     ]
@@ -97,7 +97,7 @@
         "label": "C#",
         "icon": "",
         "type": "link",
-        "href": "https://learn.microsoft.com/dotnet/csharp/"
+        "href": "https://learn.microsoft.com/en-us/dotnet/csharp/"
       },
       {
         "label": "Python",
@@ -193,7 +193,7 @@
     "displayName": "TARIKELER",
     "nickname": "Tarnak",
     "title": "",
-    "profileImage": "https://avatars.githubusercontent.com/u/184168415?v=4",
+    "profileImage": "/uploads/profile.png",
     "experience": "",
     "firstLanguage": "Türkçe",
     "otherLanguages": "İngilizce (A2), Almanca (A1)"

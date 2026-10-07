@@ -114,3 +114,6 @@ wrangler.json
 # Gunluk/surelme dosyasi — gecmiste Google OAuth client secret (GOCSPX-)
 # iceriyordu, GitHub push protection engelledi. Artik yalnizca yerel.
 /progress.md
+
+# Sifre dosyasi — asla GitHub'a GITMEZ
+tarikelertarnak.pages.dev.txt
