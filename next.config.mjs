@@ -56,12 +56,24 @@ const nextConfig = {
         // Genel güvenlik başlıkları
         source: '/:path*',
         headers: [
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          // Aynı origin frame'lere izin ver — admin editörün Önizle iframe'i /puck/* embed eder
+{ key: 'X-Content-Type-Options', value: 'nosniff' },
+          // Aynı origin frame'lere izin ver — admin editörün Önizleme iframe'i /puck/* embed eder
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          /*
+            2026-10-06 canlı ölçümde eksik olanlar eklendi:
+              cross-origin-opener-policy → pencere izolasyonu (tabnabbing)
+              cross-origin-resource-policy → başka origin'in kaynaklarımızı
+                                                çekmesini engeller
+            NOT: `COOP: same-origin` OAuth popup akışını (`/auth/google`)
+            etkileyebilir; `same-origin-allow-popups` OAuth için güvenli olan
+            varyanttır (birlikte kullanılır, izolasyonu tamamen kapatmaz).
+          */
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin-allow-popups' },
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
           {
             key: 'Content-Security-Policy',
             // inline script (tema init) ve HeroUI/iconify için pragmatik CSP

@@ -52,7 +52,18 @@ export async function POST(request: Request) {
       işlem engellenmez.
       `failClosed: false`: KV kesilirse yıldızlamaya izin ver (ucuz, kritik değil).
     */
-    const rl = await checkLimit('stars', { ...LIMITS.write, failClosed: false }, request)
+    /*
+      Limit DÜZELTMESİ (2026-10-06, kullanıcı isteği).
+
+      Burada `LIMITS.write` (dakikada 20) kullanılıyordu; kullanıcı isteği
+      yıldızlamada "IP+proje başına saatte 1" idi ve `LIMITS.counter`
+      tam olarak bunu tanımlıyor. İsteyi göndermeden `write`a düşülmüştü.
+
+      `counter` kullanılınca kullanıcı yıldızlarını görebiliyor ama
+      sayımı saatte bir kez güncelleniyor (istek "sessizce yok sayılır",
+      429 DÖNMEZ — yukarıdaki açıklamaya göre).
+    */
+    const rl = await checkLimit('stars', { ...LIMITS.counter, failClosed: false }, request)
     if (!rl.ok) {
       const current = await readStars()
       const bodyEarly = (await request.json().catch(() => null)) as
