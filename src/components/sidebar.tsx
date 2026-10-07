@@ -32,7 +32,7 @@ import {
   LoginIcon,
   LogoutIcon,
   NewspaperIcon,
-  ShieldIcon,
+  PanelIcon,
   UserIcon,
 } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
@@ -76,28 +76,6 @@ function CreditsIcon({ size = 18, className }: { size?: number, className?: stri
           d="M9 8h6m-5 4h4M5 3v12l7 5l7-5V3M5 3H2m3 0h14m0 0h3"
         />
       </g>
-    </svg>
-  )
-}
-
-/** Page Editor icon — pen + square. */
-function EditSquareIcon({ size = 18, className }: { size?: number, className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z" />
     </svg>
   )
 }
@@ -313,32 +291,13 @@ export function Sidebar() {
       <div className="flex flex-col gap-1 px-3.5 py-5">
         {/* Session-dependent buttons */}
         {sessionChecked && sessionUser?.role === 'admin' && (
-          <>
-            <p className="px-3 pb-1 pt-1 text-[10px] font-bold uppercase tracking-widest text-foreground-500/70">
-              {t('nav.adminPanel') ?? 'Admin Panel'}
-            </p>
-            <Link
-              href="/admin"
-              className="flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
-            >
-              <ShieldIcon size={20} />
-              <span>{t('nav.panel') ?? 'Panel'}</span>
-            </Link>
-            <button
-              onClick={() => {
-                setIsOpen(false)
-                const page
-                  = pathname === '/'
-                    ? 'home'
-                    : pathname.replace(/^\//, '').replace(/\//g, '-') || 'home'
-                router.push(`/admin/puck/${page}`)
-              }}
-              className="flex w-full items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
-            >
-              <EditSquareIcon size={20} />
-              <span>{t('nav.pageEditor') ?? 'Sayfa Düzenleyici'}</span>
-            </button>
-          </>
+          <Link
+            href="/admin"
+            className="flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
+          >
+            <PanelIcon size={20} />
+            <span>{t('nav.adminPanel') ?? 'Admin Paneli'}</span>
+          </Link>
         )}
         {/* Oturum yoksa: Giriş Yap | Kayıt Ol.
             Oturum varsa AYNI yerde profil + çıkış (2026-10-06: profil/çıkış

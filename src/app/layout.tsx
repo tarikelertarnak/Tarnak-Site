@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { headers } from 'next/headers'
 import { AntdRegistry } from '@ant-design/nextjs-registry'
 import { EmotionStyleRegistry } from '@/components/emotion-style-registry'
 import { LocaleProvider } from '@/components/locale-provider'
@@ -18,6 +19,7 @@ import {
   GOOGLE_SITE_VERIFICATION,
   YANDEX_VERIFICATION,
 } from '@/lib/search-verification'
+import { generateCspNonce } from '@/lib/csp-nonce'
 import { getLocaleDirection, getStaticLocale } from '@/lib/i18n-server'
 import { SITE_URL } from '@/lib/site-url'
 import '@fontsource/montserrat/400.css'
@@ -164,6 +166,23 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const content = await getContent()
   const locale = await getStaticLocale()
+  /*
+   * CSP nonce (2026-10-07). `src/proxy.ts` her istekte nonce üretip `x-nonce`
+   * istek header'ı olarak taşıyor; tema init script'i buradan alıyor.
+   *
+   * ⚠️ `export const dynamic = 'force-static'` yüzünden Next `headers()`'ı
+   * BOŞ döndürür (bkz. next/dist/server/request/headers.js — forceStatic
+   * durumunda boş Headers döner, dinamik bailout da olmaz). Yani statik
+   * üretilen bu layout'ta nonce `undefined` kalır ve tema script'i nonce'suz
+   * basılır. Şu an CSP REPORT-ONLY olduğu için bu bir ihlal değil, sadece
+   * raporlanan bir eksik. Enforcing'e geçmeden önce ya `force-static`
+   * kaldırılmalı ya da tema script'i build-time hash ile CSP'ye eklenmeli
+   * (bkz. next.config.mjs "ENFORCING MODA GEÇİŞ" bloğu).
+   *
+   * `x-nonce` yoksa (statik export / build) yeni nonce üretiyoruz: yine de
+   * geçerli bir nonce, sadece header ile eşleşmeyebilir.
+   */
+  const nonce = (await headers()).get('x-nonce') ?? generateCspNonce()
   const musicSrc = content.settings?.musicSrc
   const defaultTheme
     = (content.settings?.defaultTheme as 'light' | 'dark' | 'system' | 'auto' | undefined)
@@ -178,7 +197,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const initialThemeData = initialThemeClass
 
   return (
-    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass} data-theme={initialThemeData}>
+    // `data-scroll-behavior="smooth"` Next'in uyarisini keser: global
+// `scroll-behavior: smooth` (globals.css) aktifken rota gecislerinde
+// kaydirma animasyonunu Next'in devralabilmesini saglar.
+<html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass} data-theme={initialThemeData} data-scroll-behavior="smooth">
       {/* `suppressHydrationWarning` (2026-10-06):
           React konsoluna düşen "A tree hydrated but some attributes of the
           server rendered HTML didn't match" hatasının KESİN kaynağı ölçüldü:
@@ -200,6 +222,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* SEO — Person + WebSite structured data (Google / Yandex rich snippets) */}
         <script
           type="application/ld+json"
+          // nonce: JSON-LD `type="application/ld+json"` tarayıcıda ÇALIŞMAZ
+          // (veri bloğu), ama nonce eklemek zararı yok ve politika ile tutarlı.
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: JSON.stringify([
               {
@@ -249,7 +274,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             ]),
           }}
         />
-        <ThemeInitScript defaultTheme={safeDefaultTheme} />
+        <ThemeInitScript defaultTheme={safeDefaultTheme} nonce={nonce} />
         <Providers
           backgroundImage={content.settings?.backgroundImage || ''}
           defaultTheme={defaultTheme}

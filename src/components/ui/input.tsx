@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent, ReactNode } from 'react'
 import { Input as LobeInput } from '@lobehub/ui/base-ui'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { EyeIcon, EyeOffIcon } from '@/components/ui/icons'
@@ -64,7 +64,11 @@ export function Input({
   ...rest
 }: InputProps) {
   const { t } = useT()
-  const inputId = id || `input-${Math.random().toString(36).slice(2, 8)}`
+  // 2026-10-07: `Math.random()` ile id üretmek hydration mismatch'e yol açıyordu
+  // (sunucu ve istemci farklı id yazıyor, React uyarıyor, sayfa bozuluyordu).
+  // React'in `useId()`'si SSR'da kararlıdır — tek doğru çözüm bu.
+  const reactId = useId()
+  const inputId = id || `input-${reactId.replace(/:/g, '')}`
   const isPassword = type === 'password'
   const [showPassword, setShowPassword] = useState(false)
   const inputVariant = variant === 'bordered' ? 'outlined' : 'filled'

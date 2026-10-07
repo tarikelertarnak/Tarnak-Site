@@ -44,12 +44,17 @@ const SCRIPT = `
 })();
 `
 
-export function ThemeInitScript({ defaultTheme }: { defaultTheme: string }) {
+export function ThemeInitScript({ defaultTheme, nonce }: { defaultTheme: string, nonce?: string }) {
   // React 19 hoists the script to head and runs it when it is first added to the DOM.
   // body may not be parsed yet → the script null-checks body.
+  //
+  // `nonce` (2026-10-07): CSP nonce tabanlı politika için gerekli — nonce
+  // olmadan bu satır içi script 'unsafe-inline' olmadan çalışmaz.
+  // Kaynak: src/proxy.ts (x-nonce) → src/app/layout.tsx.
   return (
     <script
       id="theme-init"
+      nonce={nonce}
       // the loop variable is used inside the script scope — it comes from SSR, a fixed XSS-free enum.
       dangerouslySetInnerHTML={{ __html: `var defaultTheme='${defaultTheme}';\n${SCRIPT}` }}
     />

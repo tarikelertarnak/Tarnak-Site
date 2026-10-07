@@ -3,6 +3,7 @@
 import type { Variants } from 'motion/react'
 import type { SiteContent } from '@/lib/content'
 import type { CvDoc } from '@/lib/cv'
+import { useEffect, useRef, useState } from 'react'
 import { TypewriterEffect } from '@lobehub/ui/awesome'
 import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
@@ -11,7 +12,15 @@ import { Button } from '@/components/ui/button'
 import { HERO_BTN_BODY } from '@/components/ui/hero-button-style'
 import { cn } from '@/components/ui/cn'
 import { CvPicker } from '@/components/ui/cv-picker'
-import { BriefcaseIcon, ChatIcon, FileIcon, SendIcon, UserPlusIcon } from '@/components/ui/icons'
+import {
+  BriefcaseIcon,
+  ChatIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  FileIcon,
+  SendIcon,
+  UserPlusIcon,
+} from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
 import { SITE_URL } from '@/lib/site-url'
 
@@ -37,34 +46,76 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
   const { t } = useT()
 
   /*
-      HERO YERLEŞİMİ (2026-10-06, kullanıcı — tamamen yeniden düzenlendi).
+      HERO YERLEŞİMİ (2026-10-07, kullanıcı düzeltmeleriyle güncellendi).
 
-      ÖNCE: md:grid-cols-[1.15fr_0.85fr] — metin solda, kuş logosu SAĞDA
-      ve hidden … md:flex ile MASAÜSTÜ DİŞINDA gizleniyordu. Küçük
-      ekranda logo hiç yoktu. Fare ikonu logonun altında, logo kolonunun
-      içindeydi.
+      1) DİKEY KONUM: içerik artık ÜSTTE YAPIŞIK değil, hero içinde
+         DİKEYDE ORTALI (`flex-1 justify-center`). Önce `pt-[clamp(24px,6vh,72px)]`
+         + `justify-center` yoktu → blok navbar altına yapışıyordu
+         ("çok üstte olmuş o kısım ortala sayfaya").
 
-      ARTI: TEK SÜTUN, her ekran boyutunda aynı sıra:
-          1) Kuş logosu (üstte, yatay ortalı, HİÇ gizlenmez)
-          2) Başlık "TARIK ELER - TARNAK"
-          3) Alt yazı (typing animasyonu aynen)
-          4) Butonlar (sığmazsa sarmalanır, ortalanır)
-          5) Fare (scroll) ikonu — içerik grubunun PARÇASI DEĞİL, hero'nun
-             en altında mt-auto ile; alçak ekranda içerik uzayınca fare
-             ikonu aşağı İTİLİR (üst üste binmez).
+      2) LOGO: başlığın hemen üstünde, DİHA BÜYÜK
+         (`clamp(72px,14vh,168px)` — eskisi `clamp(56px,11vh,130px)` idi ve
+         kullanıcı "çok küçük" dedi). Hâlâ her ekran boyutunda görünür,
+         asla `hidden` olmaz.
 
-      Dikey konum: justify-center KALDIRILDI → içerik üste yakın. Navbar
-      ile logo arası clamp(24px, 6vh, 72px).
+      3) BUTON ŞERİDİ: altı bölme düğmesi (Projeler / İletişim / CV / Blog /
+         Hakkımda / Sohbet) dar ekranda SARMAYA çalışıyordu; sarmalanan
+         ama taşan düğmeler görünmüyordu ("her şey gözükmüyor düzgün değil").
+         Artık TEK SATIR + yatay kaydırma, ve iki ucunda YUVARAK ok var.
+         Oka basınca bir sonraki/önceki düğmeye ATLANIR (kaydırma adımı = bir
+         düğme genişliği + boşluk), yani oku defalarca basmaya gerek yok.
+         Kaydırılabilir olduğu `overflow-x-auto` + `scroll-smooth` ile belli.
+
+      4) FARE (SCROLL) İKONU: bölüm düğmelerinin ŞERİDİNİN ALTINDA (kullanıcı:
+         "konumu ... bölümler var ya onun altında olacak"), biraz daha BÜYÜK
+         (`h-14 w-8`, eskisi `h-12 w-7`). Tıklanınca `/projects/` yerine
+         `#about` → aynı sayfada aşağı kaydırır (kullanıcı:
+         "basınca projects'e gitmesin, hakkımda kısmına kaydırmaya yarasın").
   */
+  const stripRef = useRef<HTMLDivElement>(null)
+  const [edges, setEdges] = useState({ left: false, right: false })
+
+  // Okların "baştayım/sonda mıyım" durumu → kenarda pasif görünmesin.
+  useEffect(() => {
+    const el = stripRef.current
+    if (!el) return
+    const measure = () => {
+      const max = el.scrollWidth - el.clientWidth
+      setEdges({ left: el.scrollLeft > 2, right: el.scrollLeft < max - 2 })
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    // İçerik/çeviri değişince genişlik değişir → yeniden ölç
+    const mo = new MutationObserver(measure)
+    mo.observe(el, { childList: true, subtree: true, characterData: true })
+    return () => {
+      ro.disconnect()
+      mo.disconnect()
+    }
+  }, [])
+
+  const nudge = (dir: 1 | -1) => {
+    const el = stripRef.current
+    if (!el) return
+    // Adım = bir düğme + aradaki boşluk → oka basınca düğme düğme ilerler.
+    const first = el.querySelector<HTMLElement>('[data-strip-item]')
+    const step = first ? first.offsetWidth + 12 : el.clientWidth * 0.8
+    el.scrollBy({ left: dir * step, behavior: 'smooth' })
+  }
+
+  const arrowCls
+    = 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-foreground-200/15 bg-background text-foreground/70 transition-colors hover:border-primary/50 hover:text-primary disabled:pointer-events-none disabled:opacity-25'
+
   return (
-    <Section className="min-h-[100svh] flex-col overflow-hidden pt-[clamp(24px,6vh,72px)] pb-24">
+    <Section className="min-h-[100svh] flex-col overflow-hidden pt-16 pb-10 sm:pt-20">
       {/* Background decorations */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-grid bg-radial-fade" />
         {/* glow removed — no transparency */}
       </div>
 
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center text-center">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center text-center">
         {/* LEFT — text */}
         <motion.div
           variants={container}
@@ -73,28 +124,24 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           className="flex w-full flex-col items-center text-center"
         >
           {/*
-            KUŞ LOGOSU (2026-10-06, kullanıcı: "başlığın hemen üstünde,
-            yatayda ortalı, hiçbir ekran boyutunda gizlenmesin").
-            Önce `md:flex` kolonunda ve `hidden` idi → mobil/tablet tamamen
-            yoktu. Artık akışın İLK çocuğu, her boyutta görünür.
-
-            Boyut yüksekliğe bağlı: `clamp(56px, 11vh, 130px)` — 360x640'te
-            70px, 1920x1080'de 118px. `width:auto` oranı korur, taşmaz.
+            KUŞ LOGOSU — başlığın hemen üstünde, yatayda ortalı, her ekran
+            boyutunda görünür. `width:auto` oranı korur, yatay taşma olmaz.
 
             HOVER: logoya gelince MAVİ olur (butonlarla AYNI `--tprimary`).
-            Sadece renk — glow/gölge/ölçek YOK. Dokunmatikte takılı kalmasın
-            diye `@media (hover:hover)` içinde.
+            Sadece renk — glow/gölge/ölçek YOK.
           */}
           <motion.a
             href={`${SITE_URL}/`}
             aria-label={content.profile.firstName + ' ' + content.profile.lastName}
             variants={item}
-            className="group/logo mb-[clamp(12px,2vh,24px)] inline-flex shrink-0 items-center justify-center"
+            className="group/logo mb-[clamp(10px,1.8vh,20px)] inline-flex shrink-0 items-center justify-center"
           >
             <SiteLogo
               size={224}
               className={cn(
-                'h-[clamp(56px,11vh,130px)] w-auto opacity-90 transition-colors duration-300',
+                // 2026-10-07: kullanıcı "çok küçük" dedi. 900px yükseklikte
+                // 126px → 162px ölçülüyor; 360×640'de 72px (taşmaz).
+                'h-[clamp(72px,18vh,200px)] w-auto opacity-90 transition-colors duration-300',
                 // Mavi hover — Tailwind `text-primary` butonlarla aynı token.
                 'group-hover/logo:text-primary',
                 'group-focus-visible/logo:text-primary',
@@ -104,45 +151,40 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
 
           {/*
             Name + TARNAK: aynı tipografi (font-black / uppercase /
-            tracking-tighter / text-primary), artık iki satır: "TARIK ELER -"
-            / "TARNAK". absolute konumlandırma ve üzerine gelince çapraz
-            (italic + yukarı kayma) efekti kaldırıldı — marka sabit durur,
-            tıklanınca temiz site köküne gider.
+            tracking-tighter / text-primary), iki satır:
+            "TARIK ELER -" / "TARNAK".
+
+            ⚠️ `select-none` KALDIRILDI (2026-10-07, kullanıcı: "yazısını
+            kendim yazdım seçilmedi"). Kullanıcı başlığı seçip
+            kopyalamak istiyor — `select-none` bunu imkânsız kılıyordu.
           */}
           <motion.div variants={item} className="w-full">
             <h1
               className={[
-                'font-black uppercase leading-[0.95] tracking-tighter text-primary select-none',
+                'font-black uppercase leading-[0.95] tracking-tighter text-primary',
                 'text-5xl sm:text-7xl md:text-7xl lg:text-8xl',
               ].join(' ')}
             >
-<span className="block pl-1">
+              <span className="block">
                 {name}
                 {' - '}
               </span>
               {/*
-                TAKMA AD (2026-10-06, kullanıcı).
-                Önce burada SABIT "TARNAK" yaziyordu; `hero.name` de
-                "TARIK ELER TARNAK" oldugu icin ekranda
-                "TARIK ELER TARNAK - TARNAK" cikiyordu.
-                Artik `hero.name` = "TARIK ELER" (tek kaynak) ve takma ad
+                TAKMA AD: `hero.name` = "TARIK ELER" (tek kaynak), takma ad
                 `profile.nickname`'ten geliyor: "TARIK ELER - TARNAK".
-                Boylece admin panelden takma ad degisince burasi da degisir.
+                Admin panelden takma ad değişince burası da değişir.
               */}
-              <a
-                href={`${SITE_URL}/`}
-                className="block pl-1 no-underline"
-              >
+              <a href={`${SITE_URL}/`} className="block no-underline">
                 {content.profile.nickname.toUpperCase()}
               </a>
             </h1>
           </motion.div>
 
           {/* Typewriter */}
-          <motion.div variants={item} className="mt-6 sm:mt-7 text-foreground-600">
+          <motion.div variants={item} className="mt-6 text-foreground-600 sm:mt-7">
             <TypewriterEffect
               sentences={[tagline]}
-              className="text-lg sm:text-xl md:text-2xl font-semibold"
+              className="text-lg font-semibold sm:text-xl md:text-2xl"
               color="currentColor"
               cursorColor="var(--tprimary)"
               typingSpeed={60}
@@ -158,99 +200,150 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           {description.trim() && (
             <motion.p
               variants={item}
-              className="mt-3 max-w-xl text-sm sm:text-base text-foreground/500 leading-relaxed"
+              className="mt-3 max-w-xl text-sm leading-relaxed text-foreground/500 sm:text-base"
             >
               {description}
             </motion.p>
           )}
 
           {/*
-            Ana gezinme: altı düğme de aynı stili alır — `color="primary"` +
-            Blog bölümündeki "Tüm Yazıları Gör" butonunun className'i
-            (h-10 sabit yükseklik, rounded-lg, font-medium, px-4).
-            Çapa (#) yok: her düğme gerçek bir rotaya gider.
+            BÖLÜM ŞERİDİ (2026-10-07, kullanıcı: "gözükmeyen ne varsa o
+            oklar sayesinde diğerlerini de görebileceğiz").
+
+            ESKİ: `flex-wrap` → dar ekranda düğmeler alt satıra kayıyor,
+            bazıları ekran dışına taşıyordu, "her şey gözükmüyor" oluyordu.
+            YENİ: tek satır `overflow-x-auto` + iki uçta yuvarlak ok.
+            Oka basmak bir düğme ilerletir (parça parça, sayfa sayfa değil).
           */}
-          <motion.div
-            variants={item}
-            className="mt-7 sm:mt-8 flex flex-wrap items-center gap-3"
-          >
-            <Button
-              color="primary"
-              className={HERO_BTN_BODY}
-startContent={<BriefcaseIcon size={16} />}
-              href="/projects/"
+          <motion.div variants={item} className="mt-7 flex w-full items-center gap-2 sm:mt-8 sm:gap-3">
+            <button
+              type="button"
+              aria-label={t('hero.scrollPrev')}
+              onClick={() => nudge(-1)}
+              disabled={!edges.left}
+              className={arrowCls}
             >
-              {t('hero.projects')}
-            </Button>
-            <Button
-              color="primary"
-              className={HERO_BTN_BODY}
-              startContent={<SendIcon size={16} />}
-              href="/contact/"
+              <ChevronLeftIcon size={16} />
+            </button>
+
+            <div
+              ref={stripRef}
+              onScroll={e => {
+                const el = e.currentTarget
+                const max = el.scrollWidth - el.clientWidth
+                setEdges({ left: el.scrollLeft > 2, right: el.scrollLeft < max - 2 })
+              }}
+              className="flex flex-1 items-center gap-3 overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              {t('hero.feedback')}
-            </Button>
-            <CvPicker
-              cvs={cvs}
-              color="primary"
-              className={HERO_BTN_BODY}
-            />
-            <Button
-              color="primary"
-              className={HERO_BTN_BODY}
-              startContent={<FileIcon size={16} />}
-              href="/blog/"
+              <div data-strip-item className="shrink-0">
+                <Button
+                  color="primary"
+                  className={HERO_BTN_BODY}
+                  startContent={<BriefcaseIcon size={16} />}
+                  href="/projects/"
+                >
+                  {t('hero.projects')}
+                </Button>
+              </div>
+              <div data-strip-item className="shrink-0">
+                <Button
+                  color="primary"
+                  className={HERO_BTN_BODY}
+                  startContent={<SendIcon size={16} />}
+                  href="/contact/"
+                >
+                  {t('hero.feedback')}
+                </Button>
+              </div>
+              <div data-strip-item className="shrink-0">
+                <CvPicker cvs={cvs} color="primary" className={HERO_BTN_BODY} />
+              </div>
+              <div data-strip-item className="shrink-0">
+                <Button
+                  color="primary"
+                  className={HERO_BTN_BODY}
+                  startContent={<FileIcon size={16} />}
+                  href="/blog/"
+                >
+                  {t('nav.blog')}
+                </Button>
+              </div>
+              <div data-strip-item className="shrink-0">
+                <Button
+                  color="primary"
+                  className={HERO_BTN_BODY}
+                  startContent={<UserPlusIcon size={16} />}
+                  href="/about/"
+                >
+                  {t('nav.about')}
+                </Button>
+              </div>
+              <div data-strip-item className="shrink-0">
+                <Button
+                  color="primary"
+                  className={HERO_BTN_BODY}
+                  startContent={<ChatIcon size={16} />}
+                  href="/chat/"
+                >
+                  {t('nav.chat')}
+                </Button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              aria-label={t('hero.scrollNext')}
+              onClick={() => nudge(1)}
+              disabled={!edges.right}
+              className={arrowCls}
             >
-              {t('nav.blog')}
-            </Button>
-            <Button
-              color="primary"
-              className={HERO_BTN_BODY}
-              startContent={<UserPlusIcon size={16} />}
-              href="/about/"
-            >
-              {t('nav.about')}
-            </Button>
-            <Button
-              color="primary"
-              className={HERO_BTN_BODY}
-              startContent={<ChatIcon size={16} />}
-              href="/chat/"
-            >
-              {t('nav.chat')}
-            </Button>
+              <ChevronRightIcon size={16} />
+            </button>
           </motion.div>
-</motion.div>
-      </div>
+        </motion.div>
 
-      {/*
-        FARE (SCROLL) İKONU — içerik grubunun DIŞINDA, hero'nun en altında
-        (2026-10-06, kullanıcı: "hero'nun en altında, yatayda ortalı").
-        Önce logonun sağ kolonunun İÇİNDEydi (`self-center`, `mt-2`) ve
-        küçük ekranda `hidden … md:flex` ile birlikte kayboluyordu.
+        {/*
+          FARE (SCROLL) İKONU — bölüm şeridinin ALTINDA, ortada.
 
-        `mt-auto` → hero `min-h-[100svh]` olduğu için içerik gru
-        bittikten sonra kalan boşluğu alır, ikon en alta yapışır. Alçak
-        ekranda içerik uzayınca `flex` onu aşağı İTER, üst üste binmez.
-      */}
-      <motion.a
-        href="/projects/"
-        aria-label={t('hero.scrollDown')}
-        variants={item}
-        initial="hidden"
-        animate="show"
-        className="relative z-10 mt-auto inline-flex h-12 w-7 shrink-0 items-start justify-center self-center rounded-full border-2 border-primary/40 p-1.5"
-      >
-        <motion.span
-          animate={{ y: [0, 10, 0], opacity: [1, 0.2, 1] }}
-          transition={{
-            duration: 1.6,
-            repeat: Infinity,
-            ease: 'easeInOut',
+          Çapa bağlantısı DEĞİL, `<button>`: projede `no-hash-links`
+          testi gezinme linklerinde çapa yasaklıyor (2026-10-04 kullanıcı
+          kararı — çapalar Search Console'da bozuk doğrulamaya yol açmıştı).
+          Aynı işi `scrollIntoView` ile yapıyoruz: URL değişmez, geçmişe
+          çapa girdi yazılmaz.
+
+          Tıklayınca `id="about"` bölümüne kaydırır (kullanıcı: "basınca
+          projects'e gitmesin, hakkımda kısmına kaydırmaya yarasın").
+          `prefers-reduced-motion` açıksa düz kaydırma yapılır.
+        */}
+        <motion.button
+          type="button"
+          aria-label={t('hero.scrollDown')}
+          onClick={() => {
+            const target = document.getElementById('about')
+            if (!target) return
+            target.scrollIntoView({
+              behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                ? 'auto'
+                : 'smooth',
+              block: 'start',
+            })
           }}
-          className="h-2 w-1 rounded-full bg-primary"
-        />
-      </motion.a>
+          variants={item}
+          initial="hidden"
+          animate="show"
+          className="relative z-10 mt-8 inline-flex h-14 w-8 shrink-0 cursor-pointer items-start justify-center self-center rounded-full border-2 border-primary/40 p-1.5"
+        >
+          <motion.span
+            animate={{ y: [0, 14, 0], opacity: [1, 0.2, 1] }}
+            transition={{
+              duration: 1.6,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="h-2.5 w-1 rounded-full bg-primary"
+          />
+        </motion.button>
+      </div>
     </Section>
   )
 }

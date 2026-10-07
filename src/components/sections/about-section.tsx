@@ -249,23 +249,23 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
             <h3 className="text-base sm:text-lg font-semibold">
               {t('about.languagesTitle')}
             </h3>
-            {/* Cerceve: tablo govdesi sayfa zemine yapisip "Diller" basligindan
-                  kopuyordu. `border` + `rounded-xl` ile ayri bir yuzey. */}
-{/*
-                DİLLER KARTI (2026-10-06, kullanıcı):
-                "ANA DİL" şu an küçük, farklı fontlu, garip bir rozet;
-                A2/A1 ise düz metin. Üç seviye etiketi de AYNI stilde,
-                ince MAVİ çerçeveli pill olacak: yazı mavi, arka plan şeffaf,
-                  yazı boyutu/fontu aynı.
-              */}
-            <div className="w-full overflow-x-auto rounded-xl border border-foreground/200/15">
+            {/*
+                DİLLER KARTI (2026-10-06 + 2026-10-07 düzeltmeleri):
+
+                Kullanıcı 2026-10-07: "çok bordera değiyor" → içerik
+                çerçeveye yapışıyordu. Çözüm: çerçeve KALDI ama içine
+                yatay boşluk (`px-3 sm:px-4`) eklendi; hücreler de `py-2.5`
+                ile dikeyde nefes alıyor. `overflow-x-auto` korunuyor —
+                uzun dil adları yatay kaydırılabilir.
+            */}
+            <div className="w-full overflow-x-auto rounded-xl border border-foreground/200/15 px-3 sm:px-4">
               <table className="w-full text-left text-xs sm:text-sm">
                 <tbody>
                   <tr className="border-b border-foreground/200/10">
-                    <td className="py-2 pr-3 text-sm font-medium sm:text-base">
+                    <td className="py-2.5 pr-3 text-sm font-medium sm:text-base">
                       {content.profile.firstLanguage}
                     </td>
-                    <td className="py-2 text-right">
+                    <td className="py-2.5 text-right">
                       {/* `LEVELED_PILL`: üç seviye için TEK sınıf seti */}
                       <span className={LEVEL_BADGE_PILL}>
                         {t('about.infoFirstLanguage')}
@@ -277,10 +277,10 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                       key={row.name}
                       className="border-b border-foreground/200/10 last:border-b-0"
                     >
-                      <td className="py-2 pr-3 text-sm text-foreground/80 sm:text-base">
+                      <td className="py-2.5 pr-3 text-sm text-foreground/80 sm:text-base">
                         {row.name}
                       </td>
-                      <td className="py-2 text-right">
+                      <td className="py-2.5 text-right">
                         <span className={LEVEL_BADGE_PILL}>
                           {row.level}
                         </span>
@@ -382,7 +382,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
  * normal yazı boyutu/fontu.
  */
 const LEVEL_BADGE_PILL
-  = 'inline-flex items-center rounded-full border border-primary/70 bg-transparent px-2.5 py-0.5 text-xs font-semibold normal-case text-primary'
+  = 'inline-flex items-center rounded-full border border-primary/70 bg-transparent px-2.5 py-0.5 text-xs font-normal normal-case text-primary'
 function parseLanguages(raw: string): { name: string, level: string }[] {
   return raw
     .split(',')

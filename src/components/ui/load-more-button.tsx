@@ -16,6 +16,7 @@
  */
 import { Button } from '@/components/ui/button'
 import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
+import { ArrowDownIcon } from '@/components/ui/icons'
 import { useT } from '@/components/locale-provider'
 
 export function LoadMoreButton({
@@ -38,6 +39,9 @@ export function LoadMoreButton({
         onClick={onClick}
         className={`${HERO_BTN_TRIGGER} font-semibold`}
         aria-label={t('common.showMoreAria', { count: remaining })}
+        // 2026-10-07 (kullanıcı): butonun SAĞINDA aşağı bakan ok + ikon
+        // olsun — "daha fazlası var aşağıda" yönünü tek bakışta anlatır.
+        endContent={<ArrowDownIcon size={16} className="shrink-0" />}
       >
         {t('common.showMore', { count: remaining })}
       </Button>

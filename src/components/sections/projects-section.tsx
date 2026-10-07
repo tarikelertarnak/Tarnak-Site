@@ -52,6 +52,14 @@ export function ProjectsSection({
         </div>
       </FadeUpSection>
 
+      {/*
+        BÖLÜM BOŞLUĞU (2026-10-07) — "Tüm Projeler / GitHub Projeleri"
+        buton satırı ile arama kutusu ARASI BOŞLUK YOKTU, butonlar arama
+        kutusuna yapışıyordu (kullanıcı: "search'a temas ediyor").
+        `--section-gap` (24px) tek kaynak — diğer bölümlerle aynı.
+      */}
+      <div aria-hidden className="h-[var(--section-gap)]" />
+
       <ProjectsGrid
         projects={content.projects.items}
         githubUsername={githubUsername}

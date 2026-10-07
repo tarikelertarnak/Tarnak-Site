@@ -88,7 +88,7 @@ export const HERO_BTN_EDGE = 'border border-primary-fg'
  * bölünüp butonu iki satırlı yapabiliyordu.
  */
 export const HERO_BTN_BODY
-  = 'inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-md px-3.5 text-[13px] font-medium no-underline transition-colors'
+    = 'inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-md px-3.5 text-[13px] font-medium no-underline select-text transition-colors'
 
 /**
  * Hover/active/focus — normal butonla aynı.

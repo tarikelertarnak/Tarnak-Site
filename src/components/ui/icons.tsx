@@ -112,6 +112,14 @@ export function ChevronDownIcon({ size = 18, className }: IconProps) {
   )
 }
 
+export function ChevronLeftIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size, className)} style={{ transform: 'scaleX(-1)' }}>
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  )
+}
+
 export function ChevronRightIcon({ size = 18, className }: IconProps) {
   return (
     <svg {...base(size, className)}>
@@ -323,6 +331,18 @@ export function LogoutIcon({ size = 18, className }: IconProps) {
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
       <path d="m16 17 5-5-5-5" />
       <path d="M21 12H9" />
+    </svg>
+  )
+}
+
+/** Admin Paneli (lucide `layout-dashboard`, ISC) — ızgara + panel ikonu. */
+export function PanelIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <rect width="7" height="9" x="3" y="3" rx="1" />
+      <rect width="7" height="5" x="14" y="3" rx="1" />
+      <rect width="7" height="9" x="14" y="12" rx="1" />
+      <rect width="7" height="5" x="3" y="16" rx="1" />
     </svg>
   )
 }

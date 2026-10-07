@@ -177,6 +177,16 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
           tightGap
         />
 
+        {/*
+          BÖLÜM BOŞLUĞU — başlık çizgisi ile buton arası (2026-10-07).
+          `tightGap` başlık sarmalayıcısının `pb-*` değerini sıfırlar, ama
+          başlığın kendi `pb-3` + `border-b-4` alt çizgisi yerinde kalır.
+          Sonuç: "Tüm Yazıları Gör" butonu alt çizgiye YAPIŞIYORDU
+          (kullanıcı: "blog'da o alt çizgiye değiyor"). Araya `--section-gap`
+          (24px) koyuyoruz → diğer bölümlerle aynı boşluk.
+        */}
+        <div aria-hidden className="h-[var(--section-gap)]" />
+
         {!onBlogPage && (
           <div className="flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-3">
             <Button
