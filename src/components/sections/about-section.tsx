@@ -59,14 +59,17 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
           description={about.description}
           icon={<UserIcon size={34} className="inline-block" />}
           big
+          tightGap
         />
         {/*
           BÖLÜM BOŞLUĞU — ÜST (2026-10-06, kullanıcı kuralı: "başlık ile
           butonlar arasındaki boşluk, butonlar ile içerik arasındaki
           boşlukla AYNI olsun").
-          Ölçüm (1440px): başlık→buton 32px, buton→kart 64px → 32px
-          DENGEYDI. Altta sabit `--section-gap` (24px) var; üste de aynı
-          değişken eklenince iki taraf birebir eşitlenir.
+
+          `tightGap` olmadan `SectionTitle` kendi `pb-8 sm:pb-10 lg:pb-12`
+          alt boşluğunu getiriyor (48px) → başlık→buton 72px, buton→kart 0px
+          (ölçülen). Alt boşluk sıfırlanıp İKİ taraf da tek kaynaktan
+          (`--section-gap`) verildi.
         */}
         <div aria-hidden className="h-[var(--section-gap)]" />
         {/*

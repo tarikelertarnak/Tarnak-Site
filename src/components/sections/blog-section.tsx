@@ -174,6 +174,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
           icon={<NewspaperIcon size={36} className="inline-block" />}
           headingLevel={onBlogPage ? 'h1' : 'h2'}
           big
+          tightGap
         />
 
         {!onBlogPage && (
