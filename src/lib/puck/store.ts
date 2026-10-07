@@ -7,10 +7,10 @@
  */
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { createAdminClient } from '@/lib/supabase/admin'
 // Baked into the worker bundle at build time (Workers has no fs).
 import bundledPagesJson from '../../../data/puck-pages.json'
 import bundledVersionsJson from '../../../data/puck-versions.json'
-import { createAdminClient } from '@/lib/supabase/admin'
 import { normalizePage } from './normalize'
 
 const DATA_DIR = path.join(process.cwd(), 'data')

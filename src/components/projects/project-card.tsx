@@ -5,11 +5,11 @@ import type { ProjectItem } from '@/lib/content'
 import { motion } from 'motion/react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { SiteLogo } from '@/components/logo'
-import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
 import { useT } from '@/components/locale-provider'
+import { SiteLogo } from '@/components/logo'
 import { Card, CardBody } from '@/components/ui/card'
 import { cn } from '@/components/ui/cn'
+import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
 import {
   ArrowUpRightIcon,
   CheckIcon,
@@ -499,7 +499,7 @@ function DownloadCombobox({
           </div>
         )}
       </div>
-<div className="max-h-64 overscroll-contain overflow-y-auto py-1.5 [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin]">
+      <div className="max-h-64 overscroll-contain overflow-y-auto py-1.5 [scrollbar-color:rgba(255,255,255,0.18)_transparent] [scrollbar-width:thin]">
         {totalCount === 0
           ? (
               <p className="px-3 py-3 text-center text-xs text-foreground-500">
@@ -512,7 +512,9 @@ function DownloadCombobox({
                 {selected.size > 0 && (
                   <div className="mx-1.5 mb-1.5 flex items-center gap-2 rounded-lg border border-foreground/15 bg-foreground/[0.06] px-2.5 py-2">
                     <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
-                      {selected.size} seçildi
+                      {selected.size}
+                      {' '}
+                      seçildi
                     </span>
                     <button
                       type="button"
@@ -750,7 +752,7 @@ function ProjectMedia({
   const prev = () => setIndex(i => (i - 1 + count) % count)
   const next = () => setIndex(i => (i + 1) % count)
 
-const mediaNode = (src: string, video: boolean, controls: boolean) =>
+  const mediaNode = (src: string, video: boolean, controls: boolean) =>
     video ? (
       <video
         key={src}
@@ -912,7 +914,7 @@ export function ProjectCard({ project }: { project: ProjectItem }) {
   const { t } = useT()
   const tags = project.tags ?? []
 
-const [comboboxOpen, setComboboxOpen] = useState(false)
+  const [comboboxOpen, setComboboxOpen] = useState(false)
   const comboboxRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   /** İki parçalı butonun sarmalayıcısı — menü hizası ayırıcı çizgiye bağlı. */
@@ -1161,22 +1163,22 @@ const [comboboxOpen, setComboboxOpen] = useState(false)
                   ref={splitWrapRef}
                   parts={[
                     {
-                      href: currentDownloadUrl ?? '#',
-                      title: currentDownloadLabel,
+                      'href': currentDownloadUrl ?? '#',
+                      'title': currentDownloadLabel,
                       'aria-label': currentDownloadLabel,
-                      onClick: () => trackDownload(),
-                      iconOnly: true,
-                      children: <DownloadIcon size={15} />,
+                      'onClick': () => trackDownload(),
+                      'iconOnly': true,
+                      'children': <DownloadIcon size={15} />,
                     },
                     {
-                      onClick: () => setComboboxOpen(o => !o),
-                      title: t('projects.selectVersion'),
+                      'onClick': () => setComboboxOpen(o => !o),
+                      'title': t('projects.selectVersion'),
                       'aria-label': t('projects.selectVersion'),
                       'aria-expanded': comboboxOpen,
                       'aria-haspopup': true,
-                      iconOnly: true,
-                      ref: triggerRef,
-                      children: <ChevronDownIcon size={13} />,
+                      'iconOnly': true,
+                      'ref': triggerRef,
+                      'children': <ChevronDownIcon size={13} />,
                     },
                   ]}
                 />

@@ -8,7 +8,7 @@ import { cn } from '@/components/ui/cn'
 import { EyeIcon, EyeOffIcon } from '@/components/ui/icons'
 
 export interface InputProps {
-  id?: string
+  'id'?: string
   'label'?: string
   'type'?: string
   'variant'?: 'faded' | 'bordered' | 'flat' | 'underlined'
@@ -82,7 +82,8 @@ export function Input({
           {required && <span className="text-danger"> *</span>}
         </label>
       )}
-      <LobeInput id={inputId}
+      <LobeInput
+        id={inputId}
         {...rest}
         ref={inputRef}
         type={effectiveType}
@@ -120,8 +121,8 @@ export function Input({
         }
         aria-label={ariaLabel}
         autoComplete={autoComplete}
-      pattern={pattern}
-      inputMode={inputMode}
+        pattern={pattern}
+        inputMode={inputMode}
         data-invalid={isInvalid ? '' : undefined}
       />
       {isInvalid && errorMessage && (

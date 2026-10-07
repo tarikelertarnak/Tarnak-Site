@@ -20,8 +20,8 @@ function mount() {
   return render(<Shortcuts shortcuts={GLOBAL_SHORTCUTS} />)
 }
 
-describe('Shortcuts', () => {
-  it('Ctrl+B yan paneli açar (sidebar:request-toggle)', () => {
+describe('shortcuts', () => {
+  it('ctrl+B yan paneli açar (sidebar:request-toggle)', () => {
     const spy = vi.fn()
     window.addEventListener('sidebar:request-toggle', spy)
     mount()
@@ -30,7 +30,7 @@ describe('Shortcuts', () => {
     window.removeEventListener('sidebar:request-toggle', spy)
   })
 
-  it('Cmd+B de çalışır (Mac)', () => {
+  it('cmd+B de çalışır (Mac)', () => {
     const spy = vi.fn()
     window.addEventListener('sidebar:request-toggle', spy)
     mount()
@@ -109,7 +109,7 @@ describe('Shortcuts', () => {
     window.removeEventListener('sidebar:request-toggle', spy)
   })
 
-  it('Shift basılıyken Ctrl kombinasyonu çalışmaz', () => {
+  it('shift basılıyken Ctrl kombinasyonu çalışmaz', () => {
     const spy = vi.fn()
     window.addEventListener('sidebar:request-toggle', spy)
     mount()
@@ -128,7 +128,7 @@ describe('Shortcuts', () => {
     window.removeEventListener('sidebar:request-toggle', spy)
   })
 
-  it('Ctrl+K arama, Ctrl+/ ayarlar eventlerini yollar', () => {
+  it('ctrl+K arama, Ctrl+/ ayarlar eventlerini yollar', () => {
     const search = vi.fn()
     const settings = vi.fn()
     window.addEventListener('search:request-open', search)

@@ -406,7 +406,7 @@ export async function fetchUserProfile(username: string): Promise<GitHubUserProf
  * token'ının görebildiği HER özel repoyu okuyabiliyordu. Bu yüzden girdi
  * beyaz listeyle (pattern) sınırlandırılır, URL birleştirme ile değil.
  */
-const SAFE_SEGMENT = /^[A-Za-z0-9._-]+$/
+const SAFE_SEGMENT = /^[\w.-]+$/
 
 function assertSafeSegment(value: string, label: string): void {
   if (

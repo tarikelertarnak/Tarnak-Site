@@ -64,7 +64,7 @@ function open() {
   fireEvent.click(screen.getByRole('button', { name: /İletişim Bilgileri/ }))
 }
 
-describe('ContactQuickMenu', () => {
+describe('contactQuickMenu', () => {
   it('kapaliyken yalnizca tetikleyici butonu gosterir', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     expect(screen.getByRole('button', { name: /İletişim Bilgileri/ })).toBeTruthy()
@@ -223,7 +223,7 @@ describe('ContactQuickMenu', () => {
     expect(within(screen.getByRole('menu')).getByText('Kayıtlı iletişim bilgisi yok.')).toBeTruthy()
   })
 
-  it('Escape ile kapanir', () => {
+  it('escape ile kapanir', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
     expect(screen.getByRole('menu')).toBeTruthy()
@@ -378,7 +378,7 @@ describe('ContactQuickMenu', () => {
   })
 
   // ------------------------------------------------------- KLAVYE GEZINMESI
-  it('ArrowDown aktif satiri ilerletir', () => {
+  it('arrowDown aktif satiri ilerletir', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
 
@@ -392,7 +392,7 @@ describe('ContactQuickMenu', () => {
     expect(activeIdx()).toBe(1)
   })
 
-  it('ArrowUp son satirdan ilk satira doner (basa sarmali)', () => {
+  it('arrowUp son satirdan ilk satira doner (basa sarmali)', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
 

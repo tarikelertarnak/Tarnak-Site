@@ -60,22 +60,22 @@ const GOOGLE_SIGNIN = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
  */
 export function buildCspValue(nonce: string): string {
   return [
-    "default-src 'self'",
+    'default-src \'self\'',
     `script-src 'self' 'nonce-${nonce}'${AD_SCRIPT_SRC}${GOOGLE_SIGNIN}`,
     // Emotion/antd/heroUI stil etiketlerini satır içi basıyor; stil tarafında
     // nonce kullanılamaz (stillere nonce verilmez, hash gerekir) → pragma korunur.
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https:",
-    "connect-src 'self' https: wss:",
+    'style-src \'self\' \'unsafe-inline\'',
+    'img-src \'self\' data: blob: https:',
+    'font-src \'self\' data: https:',
+    'connect-src \'self\' https: wss:',
     `frame-src 'self'${AD_FRAME_SRC}${GOOGLE_SIGNIN}`,
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
+    'object-src \'none\'',
+    'base-uri \'self\'',
+    'form-action \'self\'',
     // X-Frame-Options'in CSP karşılığı. Report-only modda tarayıcı bunu
     // UYGULAMAZ (frame-ancestors report-only'da yok sayılır) — enforcing'e
     // geçince devreye girer.
-    "frame-ancestors 'self'",
+    'frame-ancestors \'self\'',
     // TODO(csp-report): `report-to csp-endpoint` ekle (endpoint kurulunca).
   ].join('; ')
 }

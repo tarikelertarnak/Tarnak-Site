@@ -11,12 +11,14 @@ const API = 'https://api.github.com'
 async function gh(path) {
   const token = process.env.GITHUB_TOKEN
   const headers = {
-    Accept: 'application/vnd.github+json',
+    'Accept': 'application/vnd.github+json',
     'User-Agent': 'tarnak-site-builder',
   }
-  if (token) headers.Authorization = `Bearer ${token}`
+  if (token)
+    headers.Authorization = `Bearer ${token}`
   const res = await fetch(`${API}${path}`, { headers, signal: AbortSignal.timeout(30_000) })
-  if (!res.ok) throw new Error(`GitHub API ${res.status}: ${path}`)
+  if (!res.ok)
+    throw new Error(`GitHub API ${res.status}: ${path}`)
   return res.json()
 }
 
@@ -52,11 +54,11 @@ async function main() {
 
   const dest = join(process.cwd(), 'public', 'github-data.json')
   await mkdir(dirname(dest), { recursive: true })
-  await writeFile(dest, JSON.stringify(out, null, 2) + '\n', 'utf-8')
+  await writeFile(dest, `${JSON.stringify(out, null, 2)}\n`, 'utf-8')
   console.log(`github-data.json written: ${out.repos.length} repos`)
 }
 
-main().catch(err => {
+main().catch((err) => {
   // Build'i KIRMA. public/github-data.json commit'te oldugu icin API'ye
   // ulasilamasa da site calisir. Cloudflare'de GITHUB_TOKEN yoksa 60 istek/saat
   // limiti kolayca dolar; eskiden process.exit(1) build'i patlatiyordu.

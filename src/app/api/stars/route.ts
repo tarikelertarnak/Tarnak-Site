@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { NextResponse } from 'next/server'
-import { LIMITS, checkLimit } from '@/lib/rate-limit-kv'
+import { checkLimit, LIMITS } from '@/lib/rate-limit-kv'
 
 const DATA_DIR = path.join(process.cwd(), 'data')
 const STARS_FILE = path.join(DATA_DIR, 'stars.json')

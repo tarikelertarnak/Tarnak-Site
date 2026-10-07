@@ -1,15 +1,13 @@
 'use client'
 import type { ThemeMode } from '@/components/theme'
 import type { Locale, LocalePref } from '@/lib/i18n'
-import { LOCALES } from '@/lib/i18n'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocale, useT } from '@/components/locale-provider'
 import { useTheme } from '@/components/theme'
 import { cn } from '@/components/ui/cn'
 import { Drawer } from '@/components/ui/drawer'
-import { Modal } from '@/components/ui/modal'
+import { flagIcons } from '@/components/ui/flag-icons'
 import {
   AutoIcon,
   CheckIcon,
@@ -20,10 +18,10 @@ import {
   RotateCcwIcon,
   SunIcon,
   ThemeSystemIcon,
-  UserIcon,
 } from '@/components/ui/icons'
+import { Modal } from '@/components/ui/modal'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
-import { flagIcons } from '@/components/ui/flag-icons'
+import { LOCALES } from '@/lib/i18n'
 
 const MUSIC_KEY = 'site-music-enabled'
 const REDUCE_MOTION_KEY = 'site-reduce-motion'

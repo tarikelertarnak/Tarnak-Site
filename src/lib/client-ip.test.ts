@@ -28,7 +28,7 @@ describe('clientIp', () => {
 
   // ------------------------------------------------------- GUVENLIK
 
-  it('XFF cokluysa SON degeri alir (Cloudflare sona ekler) — SPOOF ENGELI', () => {
+  it('xFF cokluysa SON degeri alir (Cloudflare sona ekler) — SPOOF ENGELI', () => {
     // Saldirgan basa "9.9.9.9" koymus; gercek IP Cloudflare'in ekledigi son deger
     expect(clientIp(req({ 'x-forwarded-for': '9.9.9.9, 203.0.113.5' })))
       .toBe('203.0.113.5')
@@ -43,7 +43,7 @@ describe('clientIp', () => {
     expect(a).toBe('203.0.113.5')
   })
 
-  it('XFF varken cf-connecting-ip yok sayilir (Vercel\'de istemci uydurabilir)', () => {
+  it('xFF varken cf-connecting-ip yok sayilir (Vercel platformunda istemci uydurabilir)', () => {
     // Vercel cf-connecting-ip YAZMAZ → istemci kendisi gonderebilir.
     // XFF (platform tarafindan ezilir) daha guvenilir oldugu icin o kazanmali.
     expect(clientIp(req({
@@ -52,11 +52,11 @@ describe('clientIp', () => {
     }))).toBe('203.0.113.5')
   })
 
-  it('XFF yoksa cf-connecting-ip yedek olarak kullanilir', () => {
+  it('xFF yoksa cf-connecting-ip yedek olarak kullanilir', () => {
     expect(clientIp(req({ 'cf-connecting-ip': '198.51.100.7' }))).toBe('198.51.100.7')
   })
 
-  it('XFF ve cf yoksa x-real-ip kullanilir', () => {
+  it('xFF ve cf yoksa x-real-ip kullanilir', () => {
     expect(clientIp(req({ 'x-real-ip': '198.51.100.9' }))).toBe('198.51.100.9')
   })
 
@@ -68,7 +68,7 @@ describe('clientIp', () => {
       .toBe('198.51.100.7')
   })
 
-  it('IPv6 adresleri kabul eder', () => {
+  it('iPv6 adresleri kabul eder', () => {
     expect(clientIp(req({ 'x-forwarded-for': '2001:db8::1' }))).toBe('2001:db8::1')
   })
 

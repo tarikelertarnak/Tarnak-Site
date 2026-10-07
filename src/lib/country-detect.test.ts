@@ -48,7 +48,7 @@ describe('countryFromLanguages', () => {
     expect(countryFromLanguages(['zh-Hans-CN'])).toBe('CN')
   })
 
-  it('BCP-47 dil kodunu ülke sanmaz', () => {
+  it('bCP-47 dil kodunu ülke sanmaz', () => {
     // `an` Landänska işaretçisi; ISO'da da Hollanda Antilleri var.
     // Bölge sayılmamalı, `an` için dil ülkesi de yok -> bos.
     expect(countryFromLanguages(['an'])).toBe('')

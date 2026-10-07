@@ -4,8 +4,6 @@ import type { BlogPost } from '@/lib/content'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { FadeUpSection } from '@/components/fade-up-section'
-import { LoadMoreButton } from '@/components/ui/load-more-button'
-import { useRowPagination } from '@/lib/use-row-pagination'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,9 +14,11 @@ import {
   SearchIcon,
 } from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
+import { LoadMoreButton } from '@/components/ui/load-more-button'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { StarRating } from '@/components/ui/star-rating'
+import { useRowPagination } from '@/lib/use-row-pagination'
 
 type SortKey = 'newest' | 'oldest' | 'az' | 'za' | 'views'
 
@@ -167,7 +167,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
         `<h1>` — "TARIK ELER TARNAK -TARNAK" ve "BLOG"). Arama motorlari
         tek h1 bekler; ikincisi bolum basligidir, `h2` olmali.
       */}
-      <SectionTitle
+        <SectionTitle
           title=""
           subTitle={t('blog.sub')}
           description={t('blog.desc')}
@@ -288,7 +288,8 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
             )
           : (
               <div
-                ref={gridRef} data-paged-grid
+                ref={gridRef}
+                data-paged-grid
                 className="grid w-full max-w-6xl grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
               >
                 {shown.map(post => (
@@ -339,7 +340,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
                       </div>
                     </div>
                   </a>
-))}
+                ))}
               </div>
             )}
 

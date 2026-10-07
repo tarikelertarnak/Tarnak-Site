@@ -10,9 +10,9 @@ import {
   SearchIcon,
 } from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
+import { LoadMoreButton } from '@/components/ui/load-more-button'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { clientFetchUserRepos } from '@/lib/github-client'
-import { LoadMoreButton } from '@/components/ui/load-more-button'
 import { useRowPagination } from '@/lib/use-row-pagination'
 
 /** All sort types — the direction is embedded in the option itself (no separate ASC/DESC buttons needed). */
@@ -374,22 +374,23 @@ export function ProjectsGrid({
             </p>
           )
         : (
-<div
-                ref={gridRef} data-paged-grid
-                className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6"
-              >
-                {shown.map(project => (
-                  <ProjectCard key={project.title} project={project} />
-                ))}
-              </div>
-            )}
+            <div
+              ref={gridRef}
+              data-paged-grid
+              className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6"
+            >
+              {shown.map(project => (
+                <ProjectCard key={project.title} project={project} />
+              ))}
+            </div>
+          )}
 
-        {/* "Daha Fazlasını Göster (X)" — grid ile arasi `--section-gap` */}
-        {hasMore && (
-          <LoadMoreButton remaining={remaining} onClick={loadMore} />
-        )}
+      {/* "Daha Fazlasını Göster (X)" — grid ile arasi `--section-gap` */}
+      {hasMore && (
+        <LoadMoreButton remaining={remaining} onClick={loadMore} />
+      )}
 
-        {actions}
+      {actions}
     </div>
   )
 }

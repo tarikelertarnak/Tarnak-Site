@@ -9,37 +9,20 @@
  */
 
 import { motion } from 'motion/react'
-import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { SiteLogo } from '@/components/logo'
 import { useT } from '@/components/locale-provider'
+import { SiteLogo } from '@/components/logo'
 
 export function TopBar() {
   const { t } = useT()
-  const pathname = usePathname()
-  const router = useRouter()
   const [scrolled, setScrolled] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [adminChecked, setAdminChecked] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
-    fetch('/api/admin/session')
-      .then(r => r.json())
-      .then((data) => {
-        if (cancelled)
-          return
-        setIsAdmin(data.user?.role === 'admin')
-        setAdminChecked(true)
-      })
-      .catch(() => {
-        if (!cancelled)
-          setAdminChecked(true)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  /*
+    2026-10-07 (Faz 1 · lint temizliği): burada `pathname`, `router`,
+    `isAdmin` ve `adminChecked` vardı ve HİÇBİRİ okunmuyordu. `isAdmin`
+    yüzünden her sayfa yüklemesinde `/api/admin/session` isteği atılıyor,
+    yanıtı çöpe gidiyordu. Kaldırıldı: boşuna istek + boşuna render.
+  */
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)

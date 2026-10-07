@@ -50,7 +50,7 @@ export interface ContactSource {
 export function foldForSearch(input: string): string {
   return input
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036F]/g, '')
     .toLowerCase()
     .replace(/ı/g, 'i')
     .trim()

@@ -1,16 +1,16 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
-import { usePopoverPosition } from '@/components/ui/use-popover-position'
-import type { ReactNode } from 'react'
 import {
   CheckIcon,
   ChevronDownIcon,
   CloseIcon,
   SearchIcon,
 } from '@/components/ui/icons'
+import { usePopoverPosition } from '@/components/ui/use-popover-position'
 
 interface SearchableComboboxOption {
   value: string
@@ -60,7 +60,7 @@ export function SearchableCombobox({
   allLabel = '',
   badge,
 }: SearchableComboboxProps) {
-const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -112,7 +112,7 @@ const [open, setOpen] = useState(false)
   const triggerText = multiple ? placeholder : optionsLabel(options, selected) || placeholder
   const selectedOption = multiple ? undefined : options.find(o => o.value === selected[0])
 
-return (
+  return (
     <div ref={rootRef} className="relative">
       <button
         ref={triggerRef as React.RefObject<HTMLButtonElement>}
@@ -149,7 +149,7 @@ return (
         />
       </button>
 
-{open && createPortal(
+      {open && createPortal(
         <div
           ref={panelRef as React.RefObject<HTMLDivElement>}
           style={portalStyle}
@@ -238,7 +238,7 @@ return (
                 </li>
               )
             })}
-</ul>
+          </ul>
         </div>,
         document.body,
       )}

@@ -95,7 +95,7 @@ describe('resolveFilters', () => {
 
   // ------------------------------------------------------------- GUVENLIK
 
-  it('BEYAZ LISTEDE OLMAYAN kolonda filtre denemesini reddeder', () => {
+  it('bEYAZ LISTEDE OLMAYAN kolonda filtre denemesini reddeder', () => {
     // `listColumns`'ta olan ama `filters`'ta TANIMLI OLMAYAN bir kolon
     const out = resolveFilters(RESOURCE, params('f_title=gizli'))
     expect(out).toEqual([])
@@ -117,7 +117,7 @@ describe('resolveFilters', () => {
     expect(resolveFilters(RESOURCE, params('f_published=TRUE'))).toEqual([])
   })
 
-  it('SQL/PostgREST enjeksiyon denemesi beyaz listede kalir', () => {
+  it('sQL/PostgREST enjeksiyon denemesi beyaz listede kalir', () => {
     // Deger beyaz listede yoksa hic uygulanmaz — sorguya girmez.
     expect(resolveFilters(RESOURCE, params('f_kind=image,id.gt.0'))).toEqual([])
     expect(resolveFilters(RESOURCE, params('f_kind=*'))).toEqual([])

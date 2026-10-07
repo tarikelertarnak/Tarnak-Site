@@ -493,23 +493,23 @@ export function CreditsBrowser({
 
       {catAllows('sponsors')
         && (sponsorsLoadingCard || shownSponsors.length > 0 || sponsorsEmptyCard) && (
-          <CreditGroup
-            icon={(
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                <polyline points="17 6 23 6 23 12" />
-              </svg>
-            )}
-            title={t('credits.sponsors')}
-            description={t('credits.sponsorsDescription')}
-          >
-            {sponsorsLoadingCard
-              ? <EmptyRow text={t('common.loading')} />
-              : sponsorsEmptyCard
-                ? <EmptyRow text={t('credits.sponsorsEmpty')} />
-                : shownSponsors.map((e, i) => e.render(i + 1))}
-          </CreditGroup>
-        )}
+        <CreditGroup
+          icon={(
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+              <polyline points="17 6 23 6 23 12" />
+            </svg>
+          )}
+          title={t('credits.sponsors')}
+          description={t('credits.sponsorsDescription')}
+        >
+          {sponsorsLoadingCard
+            ? <EmptyRow text={t('common.loading')} />
+            : sponsorsEmptyCard
+              ? <EmptyRow text={t('credits.sponsorsEmpty')} />
+              : shownSponsors.map((e, i) => e.render(i + 1))}
+        </CreditGroup>
+      )}
 
       {noResults && (
         <p className="text-foreground-500 py-10 text-center text-sm">

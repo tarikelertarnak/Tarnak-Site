@@ -2,6 +2,7 @@
 
 import type { FormEvent } from 'react'
 import type { SiteContent } from '@/lib/content'
+import type { SessionUser } from '@/lib/supabase/session'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
@@ -9,14 +10,13 @@ import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardFooter } from '@/components/ui/card'
-import { PhoneInput, EMPTY_PHONE, parsePhone } from '@/components/ui/phone-input'
-import type { SessionUser } from '@/lib/supabase/session'
 import {
   ArrowLeftIcon,
   ErrorIcon,
   SendIcon,
 } from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
+import { EMPTY_PHONE, parsePhone, PhoneInput } from '@/components/ui/phone-input'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { useContactForm } from '@/hooks/use-contact-form'
@@ -56,8 +56,13 @@ export function ContactSection({ content }: { content: SiteContent }) {
    * `*` isareti gosterilmez, profilindeki deger varsa otomatik dolar.
    * Giris yapmamis kullanici icin zorunlu kalir.
    */
-  const [session, setSession] = useState<SessionUser | null>(null)
-  const [sessionChecked, setSessionChecked] = useState(false)
+  /*
+    2026-10-07 (Faz 1 · lint temizliği): `session` ve `sessionChecked`
+    state'leri bir zamanlar okunuyordu, artık hiç kullanılmıyor — JSX'te
+    `{session && …}` yok. Formu dolduran şey doğrudan `u` (fetch'in
+    döndürdüğü kullanıcı), state değil. State'ler kaldırıldı; istek
+    korundu çünkü form ön-doldurması ondan geliyor.
+  */
 
   useEffect(() => {
     let alive = true
@@ -68,8 +73,6 @@ export function ContactSection({ content }: { content: SiteContent }) {
           return
         }
         const u: SessionUser | null = d?.success && d.user ? d.user : null
-        setSession(u)
-        setSessionChecked(true)
         if (u) {
           if (u.fullName) {
             updateField('name', u.fullName)
@@ -85,7 +88,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
           }
         }
       })
-      .catch(() => setSessionChecked(true))
+      .catch(() => { /* oturum yok / ağ hatası: form boş kalır, kritik değil */ })
     return () => {
       alive = false
     }

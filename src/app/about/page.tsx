@@ -1,6 +1,6 @@
+import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { Navigation } from '@/components/navigation'
 import { Button } from '@/components/ui/button'
-import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { BriefcaseIcon, ChevronRightIcon, CodeIcon, GithubIcon, HeartIcon, ShieldIcon, StarIcon, UserIcon } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'

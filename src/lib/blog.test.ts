@@ -82,7 +82,7 @@ afterEach(() => {
 })
 
 describe('upsertPost', () => {
-  it('Supabase YAPILANDIRILMAMISSA yerel dosyaya yazar ve ok:true doner', async () => {
+  it('supabase YAPILANDIRILMAMISSA yerel dosyaya yazar ve ok:true doner', async () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', '')
     vi.stubEnv('SUPABASE_SERVICE_ROLE', '')
 
@@ -94,7 +94,7 @@ describe('upsertPost', () => {
     expect(result.localOk).toBe(true)
   })
 
-  it('Supabase yazimi BASARISIZSA ok:false doner — sessiz basari YOK (regresyon)', async () => {
+  it('supabase yazimi BASARISIZSA ok:false doner — sessiz basari YOK (regresyon)', async () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
     vi.stubEnv('SUPABASE_SERVICE_ROLE', 'fake-key')
     createClientMock.mockReturnValue(makeClient({
@@ -112,7 +112,7 @@ describe('upsertPost', () => {
     expect(result.localOk).toBe(true)
   })
 
-  it('Supabase yazimi basariliysa ok:true doner', async () => {
+  it('supabase yazimi basariliysa ok:true doner', async () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
     vi.stubEnv('SUPABASE_SERVICE_ROLE', 'fake-key')
     createClientMock.mockReturnValue(makeClient({ error: null }))
@@ -137,7 +137,7 @@ describe('upsertPost', () => {
 })
 
 describe('deletePost', () => {
-  it('Supabase silme BASARISIZSA ok:false doner', async () => {
+  it('supabase silme BASARISIZSA ok:false doner', async () => {
     vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://example.supabase.co')
     vi.stubEnv('SUPABASE_SERVICE_ROLE', 'fake-key')
     createClientMock.mockReturnValue(makeClient({

@@ -1,6 +1,7 @@
 // One-shot: convert react-international-phone countryData.ts into our static list.
 // Input format tuples: [name, iso2, dialCode, (format|undefined), (priority|undefined), (areaCodes|undefined)]
-const fs = require('fs')
+const fs = require('node:fs')
+
 const src = fs.readFileSync(
   'C:/Users/TARIKELER/AppData/Local/Temp/opencode/riph/react-international-phone-master/src/data/countryData.ts',
   'utf8',
@@ -12,8 +13,9 @@ const arrStart = src.indexOf('[', src.indexOf('=', start))
 let depth = 0
 let end = -1
 for (let i = arrStart; i < src.length; i++) {
-  if (src[i] === '[')
+  if (src[i] === '[') {
     depth++
+  }
   else if (src[i] === ']') {
     depth--
     if (depth === 0) {
@@ -95,7 +97,7 @@ export interface CountryRecord {
 export const COUNTRIES: CountryRecord[] = [
 `
 for (const c of sorted) {
-  ts += `  { name: '${c.name.replace(/'/g, "\\'")}', iso2: '${c.iso2}', code: '${c.code}' },\n`
+  ts += `  { name: '${c.name.replace(/'/g, '\\\'')}', iso2: '${c.iso2}', code: '${c.code}' },\n`
 }
 ts += `]\n`
 

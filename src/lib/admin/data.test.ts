@@ -18,7 +18,7 @@ describe('slugify', () => {
 
   // Regresyon: 'İ'.toLowerCase() 'i' + U+0307 uretir; birlestirici nokta
   // tireye donusup "i-stanbul" gibi bozuk slug cikariyordu.
-  it('İ ile baslayan kelimelerde birlesik nokta sizmasina izin vermez', () => {
+  it('i̇ ile baslayan kelimelerde birlesik nokta sizmasina izin vermez', () => {
     expect(slugify('İstanbul Rehberi')).toBe('istanbul-rehberi')
     expect(slugify('İçerik Yönetimi')).toBe('icerik-yonetimi')
     expect(slugify('İlk Yazı')).toBe('ilk-yazi')
@@ -143,7 +143,7 @@ describe('missingColumnFrom', () => {
     })).toBe('phone')
   })
 
-  it('PGRST204 mesajindan kolon adini cikarir', () => {
+  it('pGRST204 mesajindan kolon adini cikarir', () => {
     expect(missingColumnFrom({
       code: 'PGRST204',
       message: 'Could not find the \'phone\' column of \'messages\' in the schema cache',

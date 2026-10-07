@@ -13,12 +13,12 @@
  * Burada yalnızca DOM ölçümü + portal var.
  */
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type React from 'react'
+import type { PopoverPlacement, PopoverPosition } from '@/lib/popover-position'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import {
   computePopoverPosition,
-  type PopoverPlacement,
-  type PopoverPosition,
+
 } from '@/lib/popover-position'
 
 /** Panelin DOM'a ilk çizimi (genişlik/yükseklik ölçümü için). */
@@ -40,7 +40,8 @@ export function usePopoverPosition<T extends HTMLElement = HTMLDivElement>(
   const recalc = useCallback(() => {
     const trigger = triggerRef.current
     const panel = panelRef.current
-    if (!trigger || !panel) return
+    if (!trigger || !panel)
+      return
 
     const r = trigger.getBoundingClientRect()
     const p = panel.getBoundingClientRect()
@@ -87,7 +88,8 @@ export function usePopoverPosition<T extends HTMLElement = HTMLDivElement>(
     }
     const panel = panelRef.current
     const trigger = triggerRef.current
-    if (!panel || !trigger) return
+    if (!panel || !trigger)
+      return
 
     const apply = () => recalc()
     apply()
@@ -101,7 +103,8 @@ export function usePopoverPosition<T extends HTMLElement = HTMLDivElement>(
 
   // Kaydirma/ekran boyutu degisince yeniden konumla (portal fixed).
   useEffect(() => {
-    if (!open) return
+    if (!open)
+      return
     const onViewport = () => recalc()
     window.addEventListener('resize', onViewport)
     window.addEventListener('scroll', onViewport, true)

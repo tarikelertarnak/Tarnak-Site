@@ -20,7 +20,7 @@ export const Section = React.forwardRef<HTMLDivElement, SectionProps>(
         )}
       >
         <div id={id} className="absolute -top-20 sm:-top-24" />
-{framed
+        {framed
           ? (
               // DIŞ GRUP (surface-1): `bg-surface-1` kartın (`bg-background` =
               // surface-2) İÇİNDE koyu temada koyu, açık temada gri. Once
@@ -95,7 +95,8 @@ export function SectionTitle({
           // edilmesin — ölçülen 48px = sarmalayıcı 0 + başlık `pb-3`(12px)
           // + Section `pt` payı. Boşluk tek kaynaktan gelmeli.
           tightGap && '!pb-0',
-        )}>
+        )}
+        >
           {icon}
           {subTitle}
         </Heading>

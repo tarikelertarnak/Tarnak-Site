@@ -278,7 +278,7 @@ export function AdminPanel({
     }))
   }
 
-const clearMessages = async () => {
+  const clearMessages = async () => {
     setSaving(true)
     try {
       for (const message of messages) {
@@ -1243,7 +1243,9 @@ const clearMessages = async () => {
               />
             </Field>
             <p className="mt-3 text-xs text-foreground-500">
-              CV PDF dosyasını <code>public/cv/tarikeler-cv.pdf</code>
+              CV PDF dosyasını
+              {' '}
+              <code>public/cv/tarikeler-cv.pdf</code>
               konumuna koy; yukarıdaki yolu bu dosyaya göre ayarla.
               Özgeçmiş verisi aşağıdan güncellenir.
             </p>
@@ -1768,7 +1770,7 @@ const clearMessages = async () => {
         </div>
       ),
     },
-{
+    {
       key: 'blog',
       label: (
         <span className="inline-flex items-center gap-1.5">
@@ -1892,7 +1894,7 @@ const clearMessages = async () => {
           </Button>
         </div>
       </div>
-{/* İçerik kabı: SADECE dikey kaydırma. Yatay kaydırma hiçbir yerde
+      {/* İçerik kabı: SADECE dikey kaydırma. Yatay kaydırma hiçbir yerde
           olmaz — taşan tablolar kendi `overflow-x-auto` kutusunda kayar. */}
       <div className="w-full overflow-y-auto overflow-x-hidden">
         {/* Sekme şeridi: yatay kaydırma yalnızca SEKME LİSTESİNİN kendi
@@ -2341,7 +2343,9 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
     <div className="space-y-4 pt-4">
       <div className="flex flex-row items-center justify-between">
         <p className="text-sm text-foreground-500">
-          {posts.length} yazı
+          {posts.length}
+          {' '}
+          yazı
         </p>
         {!editing && (
           <Button
@@ -2457,7 +2461,8 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
                   {' '}
                   ·
                   {' '}
-                  /blog/{post.slug}
+                  /blog/
+                  {post.slug}
                 </p>
               </div>
               <Button size="sm" variant="light" onPress={() => setEditing({ ...post })}>

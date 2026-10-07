@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
+import type { PersistenceCheck } from '@/lib/persistence'
 import { adminDb, missingColumnFrom } from '@/lib/admin/data'
 import { RESOURCES } from '@/lib/admin/resources'
-import type { PersistenceCheck } from '@/lib/persistence'
 import { checkPersistence } from '@/lib/persistence'
 
 /**

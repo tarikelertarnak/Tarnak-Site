@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
-
 import type { ContactSource } from '@/lib/contact-channels'
+
+import { describe, expect, it } from 'vitest'
 import {
   buildContactChannels,
   filterChannels,
@@ -139,7 +139,7 @@ describe('filterChannels', () => {
     expect(out[0].label).toBe('Instagram')
   })
 
-  it('ASCII yazimla TURKCE etiketi bulur (iletisim -> İletişim)', () => {
+  it('aSCII yazimla TURKCE etiketi bulur (iletisim -> İletişim)', () => {
     // Konum kanallarinin etiketi t('contact.mapsGoogle') = 'contact.mapsGoogle'
     // oldugu icin burada e-posta etiketi uzerinden davranisi dogruluyoruz:
     // arama hem etiket hem deger hem anahtar kelimede calisir.

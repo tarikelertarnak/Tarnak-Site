@@ -1,9 +1,10 @@
 import assert from 'node:assert'
 import { describe, it } from 'vitest'
+import { parsePhone } from '@/components/ui/phone-input'
 import {
   COUNTRY_CODE_MAX,
-  E164_MAX_DIGITS,
   countryLengthRange,
+  E164_MAX_DIGITS,
   maxNumberDigits,
   minNumberDigits,
   normalizePhone,
@@ -11,9 +12,8 @@ import {
   sanitizeNumber,
   validatePhone,
 } from '@/lib/phone'
-import { parsePhone } from '@/components/ui/phone-input'
 
-describe('ITU-T E.164 temel limitleri', () => {
+describe('iTU-T E.164 temel limitleri', () => {
   it('uluslararasi numara en fazla 15 hane', () => {
     assert.equal(E164_MAX_DIGITS, 15)
   })
@@ -35,17 +35,17 @@ describe('ITU-T E.164 temel limitleri', () => {
 })
 
 describe('dinamik ulke uzunluklari (libphonenumber metadatasi)', () => {
-  it('Turkiye standart olarak 10 hanedir', () => {
+  it('turkiye standart olarak 10 hanedir', () => {
     assert.equal(countryLengthRange('tr').max, 10)
     assert.equal(maxNumberDigits('90', 'tr'), 10)
     assert.equal(minNumberDigits('90', 'tr'), 10)
   })
 
-  it('ABD 10 hanedir', () => {
+  it('aBD 10 hanedir', () => {
     assert.equal(countryLengthRange('us').max, 10)
   })
 
-  it('Almanya degisken uzunluktur (cok genis aralik)', () => {
+  it('almanya degisken uzunluktur (cok genis aralik)', () => {
     const de = countryLengthRange('de')
     assert.ok(de.max > de.min, `DE araligi sabit olmamali: ${de.min}-${de.max}`)
   })
@@ -70,13 +70,13 @@ describe('dogrulama: gecerli girisler asla engellenmez', () => {
     assert.equal(r.verdict, 'valid')
   })
 
-  it('TR icin yanlis uzunluk tooShort', () => {
+  it('tR icin yanlis uzunluk tooShort', () => {
     const r = validatePhone('90', '532123', 'tr')
     assert.equal(r.ok, false)
     assert.equal(r.verdict, 'tooShort')
   })
 
-  it('TR icin asiri uzunluk engellenir', () => {
+  it('tR icin asiri uzunluk engellenir', () => {
     const r = validatePhone('90', '53212345678', 'tr')
     assert.equal(r.ok, false)
   })
@@ -129,7 +129,7 @@ describe('kutu kurallari: sadece rakam, 0 ile baslamaz', () => {
     assert.equal(sanitizeNumber('1'.repeat(20), '90', 'tr').length, 10)
     // DE degisken uzunluklu: tavan ulke kuralindan gelir ama E.164'u aslamaz.
     const deLen = sanitizeNumber('1'.repeat(20), '', 'de').length
-    assert.ok(deLen <= 15 && deLen >= 11, 'DE tavanı ' + deLen)
+    assert.ok(deLen <= 15 && deLen >= 11, `DE tavanı ${deLen}`)
   })
 
   it('normalizePhone trunk prefixi atar', () => {

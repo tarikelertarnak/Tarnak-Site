@@ -1,0 +1,148 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+# Aynı branch için yeni push gelirse önceki koşuyu iptal et (gerekirse).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ── 1) Sır taraması — EN ERKEN. Anahtar varsa hiçbir şey çalışmaz. ────────
+  secrets:
+    name: Secret taraması (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # GEÇMİŞ tarama için şart
+          persist-credentials: false
+      - name: gitleaks (geçmiş dahil)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Raporu PR'a yorum olarak bırak
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: false
+      # NOT: Bulgu çıkarsa burası KIRMIZI olur ve işler durur.
+      # Bulunan anahtarı önce İPTAL ET, sonra commit'i temizle.
+
+  # ── 2) Kurulum + kalite kapıları ──────────────────────────────────────────
+  quality:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Bağımlılıkları kur (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript strict kontrolü
+        run: pnpm exec tsc --noEmit
+
+      # LINT KAPISI — değişen dosyalar (2026-10-07 düzeltmesi)
+      #
+      # Neden tüm repo değil? Depoda 35 ESKİ stil hatası var (ts/no-use-
+      # before-define, react-hooks/exhaustive-deps, kullanılmayan yakalama
+      # grupları). Bunları tek seferde düzeltmek 300+ satırlık riskli bir
+      # refactor demek; şimdilik gerekçeleriyle `eslint.config.mjs`'de
+      # belgelendi. Kapı, YENİ kodun temiz olmasını garanti eder: PR'da
+      # değişen dosyalar tam kapıdan geçer, eski kod PR'ı bloklamaz.
+      #
+      # Tam repo taraması aşağıda rapor olarak çalışır (kırmaz), böylece
+      # kalıntı görünür ve kademeli olarak azaltılabilir.
+      - name: Lint (değişen dosyalar — KAPI)
+        run: |
+          BASE=$(git fetch --no-tags --depth=1 origin "${{ github.base_ref || 'master' }}" 2>/dev/null && git rev-parse FETCH_HEAD || echo "")
+          if [ -n "$BASE" ]; then
+            FILES=$(git diff --name-only "$BASE" -- '*.ts' '*.tsx' '*.js' '*.mjs' '*.cjs' | tr '\n' ' ')
+          else
+            FILES=$(git diff --name-only HEAD~1 -- '*.ts' '*.tsx' '*.js' '*.mjs' '*.cjs' | tr '\n' ' ')
+          fi
+          echo "Lint edilen dosyalar: $FILES"
+          if [ -n "$FILES" ]; then
+            pnpm exec eslint --max-warnings 0 $FILES
+          else
+            echo "Değişen kaynak dosya yok, lint atlandı."
+          fi
+
+      - name: Lint (tam repo taraması — RAPOR, kırmaz)
+        run: pnpm exec eslint . --format stylish || true
+
+      - name: Vitest
+        run: pnpm exec vitest run --reporter=dot
+
+      - name: Build
+        run: pnpm exec next build
+        env:
+          # Build sırasında gerçek sır GİRMEYİZ — yer tutucular yeterli.
+          # Supabase/Google olmadan da build geçmeli (kod buna zorunlu).
+          NEXT_PUBLIC_SITE_URL: https://example.com
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
+  # ── 3) Playwright (Ucuz testler + tarayıcı akışları) ─────────────────────
+  e2e:
+    name: Playwright ( Chromium)
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Playwright testleri
+        run: pnpm exec playwright test
+        env:
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  # ── 4) Kullanılmayan bağımlılık denetimi (Faz 1 · 3) ────────────────────
+  unused-deps:
+    name: Kullanılmayan paket taraması
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: depcheck (rapor; başarısız olmaz)
+        run: pnpm dlx depcheck --json > depcheck.json || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: depcheck
+          path: depcheck.json
+          retention-days: 7

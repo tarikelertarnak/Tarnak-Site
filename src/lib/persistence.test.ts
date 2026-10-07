@@ -44,7 +44,7 @@ describe('checkPersistence', () => {
     expect(result.note).toContain('çalışıyor')
   })
 
-  it('SALT-OKUNUR dosya sisteminde ok:false ve KRITIK uyari doner (Vercel senaryosu)', async () => {
+  it('sALT-OKUNUR dosya sisteminde ok:false ve KRITIK uyari doner (Vercel senaryosu)', async () => {
     writeFileMock.mockRejectedValue(
       Object.assign(new Error('EROFS: read-only file system'), { code: 'EROFS' }),
     )

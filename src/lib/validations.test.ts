@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import contentJson from '../../data/content.json'
 import { contentSchema } from '@/lib/validations'
+import contentJson from '../../data/content.json'
 
 /**
  * Icerik semasi testleri.

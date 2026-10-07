@@ -230,7 +230,7 @@ describe('globals.css tema kontrasti', () => {
   /**
    * Sert `text-white` primary butonun uzerinde kalirsa token degisimi
    * HICBIR SEYE ETKI ETMEZ — CSS specificity'de utility sinifi utility'yi
-* KAPSAM DISI (bilinçli): `bg-primary/15` gibi saydam tonlar zemin degil —
+   * KAPSAM DISI (bilinçli): `bg-primary/15` gibi saydam tonlar zemin degil —
    * bir panelin USTUNDE, orada beyaz yazi dogru. `bg-danger`,
    * `bg-white/10`, `dark:text-white` tamamen farkli tokenlar. Bu test
    * dosyanin kendisi de yorumlarinda kelimeyi geciyor, atlanir.

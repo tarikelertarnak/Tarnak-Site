@@ -52,7 +52,7 @@ describe('saveContent', () => {
     expect(result.error).toBeUndefined()
   })
 
-  it('SALT-OKUNUR dosya sisteminde ok:false + aciklayici mesaj doner (regresyon)', async () => {
+  it('sALT-OKUNUR dosya sisteminde ok:false + aciklayici mesaj doner (regresyon)', async () => {
     writeFileMock.mockRejectedValue(readonlyError())
 
     const { saveContent } = await import('@/lib/content')
@@ -78,7 +78,7 @@ describe('saveAdmin', () => {
     expect(result.ok).toBe(true)
   })
 
-  it('SALT-OKUNUR sistemde ok:false doner ve ESKI SIFRENIN gecerli kaldigini soyler', async () => {
+  it('sALT-OKUNUR sistemde ok:false doner ve ESKI SIFRENIN gecerli kaldigini soyler', async () => {
     writeFileMock.mockRejectedValue(readonlyError())
 
     const { saveAdmin } = await import('@/lib/content')

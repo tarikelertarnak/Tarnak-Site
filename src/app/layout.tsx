@@ -1,26 +1,26 @@
 import type { Metadata, Viewport } from 'next'
-import { headers } from 'next/headers'
 import { AntdRegistry } from '@ant-design/nextjs-registry'
+import { headers } from 'next/headers'
 import { EmotionStyleRegistry } from '@/components/emotion-style-registry'
 import { LocaleProvider } from '@/components/locale-provider'
 import { MusicPlayer } from '@/components/music-player'
 import { Providers } from '@/components/providers'
-import { GLOBAL_SHORTCUTS, Shortcuts } from '@/components/shortcuts'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { SearchDialog } from '@/components/search-dialog'
+import { GLOBAL_SHORTCUTS, Shortcuts } from '@/components/shortcuts'
 import { Sidebar } from '@/components/sidebar'
 import { SkipLink } from '@/components/skip-link'
 import { ThemeInitScript } from '@/components/theme-init-script'
-import { TopBar } from '@/components/top-bar'
 
-import { SearchDialog } from '@/components/search-dialog'
+import { TopBar } from '@/components/top-bar'
 import { getContent } from '@/lib/content'
+import { generateCspNonce } from '@/lib/csp-nonce'
+import { getLocaleDirection, getStaticLocale } from '@/lib/i18n-server'
 import {
   BING_VERIFICATION,
   GOOGLE_SITE_VERIFICATION,
   YANDEX_VERIFICATION,
 } from '@/lib/search-verification'
-import { generateCspNonce } from '@/lib/csp-nonce'
-import { getLocaleDirection, getStaticLocale } from '@/lib/i18n-server'
 import { SITE_URL } from '@/lib/site-url'
 import '@fontsource/montserrat/400.css'
 import '@fontsource/montserrat/500.css'
@@ -70,8 +70,8 @@ export async function generateMetadata(): Promise<Metadata> {
     creator: 'Tarık Eler (Tarnak)',
     publisher: 'Tarık Eler (Tarnak)',
     robots: {
-      index: true,
-      follow: true,
+      'index': true,
+      'follow': true,
       'max-image-preview': 'large',
       // max-snippet:-1 = Google istediği kadar uzun metin gösterebilir
       // (yazı seçiminde "tarik eler" görünsün diye önemli).
@@ -120,7 +120,7 @@ export async function generateMetadata(): Promise<Metadata> {
       ...(BING_VERIFICATION ? { 'msvalidate.01': BING_VERIFICATION } : {}),
     },
     formatDetection: { email: false, address: false, telephone: false },
-// Favicon seti artık `Pictures\Önemli\TARNAK\favicons\favicons-logo_framed.zip`
+    // Favicon seti artık `Pictures\Önemli\TARNAK\favicons\favicons-logo_framed.zip`
     // içinden geliyor (çerçeveli marka logosu, 2026-10-05). ZIP'in kendi
     // snippet.html'i ile birebir aynı dosyalar; `android-chrome-*` ve
     // `/logo.png` gibi VAR OLMAYAN dosyalara işaret eden eski girdiler
@@ -198,9 +198,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     // `data-scroll-behavior="smooth"` Next'in uyarisini keser: global
-// `scroll-behavior: smooth` (globals.css) aktifken rota gecislerinde
-// kaydirma animasyonunu Next'in devralabilmesini saglar.
-<html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass} data-theme={initialThemeData} data-scroll-behavior="smooth">
+  // `scroll-behavior: smooth` (globals.css) aktifken rota gecislerinde
+  // kaydirma animasyonunu Next'in devralabilmesini saglar.
+    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass} data-theme={initialThemeData} data-scroll-behavior="smooth">
       {/* `suppressHydrationWarning` (2026-10-06):
           React konsoluna düşen "A tree hydrated but some attributes of the
           server rendered HTML didn't match" hatasının KESİN kaynağı ölçüldü:
@@ -228,42 +228,42 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           dangerouslySetInnerHTML={{
             __html: JSON.stringify([
               {
-'@context': 'https://schema.org',
+                '@context': 'https://schema.org',
                 '@type': 'Person',
                 // 2026-10-05 (kullanıcı): isim sırası netleştirildi —
                 // Tarık (ad) / Eler (soyad) / Tarnak (takma ad, marka).
                 // `name` resmî tam ad; `alternateName` içinde takma ad ve
                 // yaygın yazım varyantları.
-                name: 'Tarık Eler',
+                'name': 'Tarık Eler',
                 // 2026-10-06: 9 varyanttan 3'e indirildi. `alternateName`
                 // "bu kişinin diğer gerçek adları" demektir; 'tarikelertarnak',
                 // 'elertarik', 'tarik eler tarnak' gibi heceleme varyantları
                 // Google'a spam sinyali veriyor. Gercek alternatifler:
                 // marka/takma ad + yaygin buyuk-harf yazim.
-                alternateName: ['Tarnak', 'Tarık Eler Tarnak', 'TARIK ELER'],
-                url: SITE_URL,
-                image: `${SITE_URL}/icon-512x512.png`,
-                logo: `${SITE_URL}/icon-512x512.png`,
-                jobTitle: 'Web Developer',
+                'alternateName': ['Tarnak', 'Tarık Eler Tarnak', 'TARIK ELER'],
+                'url': SITE_URL,
+                'image': `${SITE_URL}/icon-512x512.png`,
+                'logo': `${SITE_URL}/icon-512x512.png`,
+                'jobTitle': 'Web Developer',
                 // 2026-09-24: github.io siteleri yayindan kaldirildi — sameAs'ta
                 // sadece AKTIF adresler kalir (arama motorlarına olu baglantilar
                 // bildirmeyiz; bunlar sinyal kirletir).
-                sameAs: [
+                'sameAs': [
                   'https://github.com/tarikelertarnak',
                   'https://github.com/TARIKELER-TARNAK',
                   'https://tarikelertarnak.pages.dev',
                 ],
-                knowsAbout: ['Next.js', 'TypeScript', 'Web Development', 'React', 'Yapay Zeka'],
+                'knowsAbout': ['Next.js', 'TypeScript', 'Web Development', 'React', 'Yapay Zeka'],
               },
               {
                 '@context': 'https://schema.org',
                 '@type': 'WebSite',
-                name: 'Tarık Eler (Tarnak)',
+                'name': 'Tarık Eler (Tarnak)',
                 // 2026-10-06: 19 varyant -> 1. WebSite icin `alternateName`
                 // gereksiz: `name` zaten "Tarık Eler (Tarnak)" diyor.
-                alternateName: ['Tarnak'],
-                url: SITE_URL,
-                inLanguage: ['tr', 'en'],
+                'alternateName': ['Tarnak'],
+                'url': SITE_URL,
+                'inLanguage': ['tr', 'en'],
                 // 2026-10-04: `potentialAction: SearchAction` KALDIRILDI.
                 // Iki neden: (1) Google Kasim 2024'te sitelinks arama kutusu
                 // ozelligini kaldirdi, schema.org uzerinden isteniyorsa bile

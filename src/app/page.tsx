@@ -9,7 +9,6 @@ import { getPosts } from '@/lib/blog'
 import { getCvs } from '@/lib/cv'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 
-
 /**
  * 2026-10-02 Cloudflare 1102 fix: prerender at build time and serve from the
  * Pages CDN. Without this the route stays dynamic (cookies()/headers() via

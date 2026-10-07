@@ -8,9 +8,9 @@ import { Suspense, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/components/ui/cn'
-import { PhoneInput, EMPTY_PHONE } from '@/components/ui/phone-input'
+import { Input } from '@/components/ui/input'
+import { EMPTY_PHONE, PhoneInput } from '@/components/ui/phone-input'
 import { normalizePhone } from '@/lib/phone'
 
 export type AuthMode = 'login' | 'signup'
@@ -92,7 +92,7 @@ function AuthFormInner({ mode }: { mode: AuthMode }) {
         setError(t('auth.errEmailEmpty'))
         return
       }
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      if (!/^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(email.trim())) {
         setLoading(false)
         setError(t('auth.errEmailInvalid'))
         return
@@ -127,8 +127,8 @@ function AuthFormInner({ mode }: { mode: AuthMode }) {
             email: email.trim(),
             password,
             phone: (phoneValue.code || phoneValue.number)
-        ? `+${phoneValue.code}${phoneValue.number}`
-        : undefined,
+              ? `+${phoneValue.code}${phoneValue.number}`
+              : undefined,
           }
       const res = await fetch(endpoint, {
         method: 'POST',

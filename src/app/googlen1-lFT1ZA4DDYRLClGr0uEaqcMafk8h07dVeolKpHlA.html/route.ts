@@ -10,9 +10,9 @@
 // degistirirsen GSC dogrulamasi kacar: jetonu GSC'den tekrar al, sonra
 // bu klasoru `google` + <yeni token> + `.html` adiyla yeniden olustur.
 
-import { GSC_VERIFICATION_TOKEN } from '@/lib/gsc';
+import { GSC_VERIFICATION_TOKEN } from '@/lib/gsc'
 
-export const dynamic = 'force-static';
+export const dynamic = 'force-static'
 
 export function GET() {
   return new Response(`google-site-verification:${GSC_VERIFICATION_TOKEN}`, {
@@ -20,5 +20,5 @@ export function GET() {
       'Content-Type': 'text/plain; charset=utf-8',
       'X-Content-Type-Options': 'nosniff',
     },
-  });
+  })
 }

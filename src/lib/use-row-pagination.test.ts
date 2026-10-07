@@ -7,7 +7,7 @@ import { computeNextRows, computeVisibleCount } from '@/lib/use-row-pagination'
   SIĞIYORSA buton çıkmadan hepsi görünmeli.
 */
 describe('computeVisibleCount', () => {
-  describe('N = 3', () => {
+  describe('n = 3', () => {
     it('4 kart: 2 satır ister ama toplam 4 → hepsi görünür, buton yok', () => {
       expect(computeVisibleCount(4, 3, 2)).toBe(4)
     })
@@ -26,24 +26,24 @@ describe('computeVisibleCount', () => {
     it('20 kart: 6 görünür, 14 gizli', () => {
       expect(computeVisibleCount(20, 3, 2)).toBe(6)
     })
-    it('BOŞ HÜCRE: 5 kart, N=3 → 1 satırda 2 boş hücre var, 2 kart sığıyor → hepsi görünür', () => {
+    it('bOŞ HÜCRE: 5 kart, N=3 → 1 satırda 2 boş hücre var, 2 kart sığıyor → hepsi görünür', () => {
       // 2 satır ister = 6, ama total 5 → görünen 5, son satırda 1 boş hücre
       expect(computeVisibleCount(5, 3, 2)).toBe(5)
     })
-    it('BOŞ HÜCRE: 2 satır = 5 kart, N=4, kalan 2 boş hücreye sığıyor → buton yok', () => {
+    it('bOŞ HÜCRE: 2 satır = 5 kart, N=4, kalan 2 boş hücreye sığıyor → buton yok', () => {
       // 2 satır ister = 8, total 5 → görünen 5, son satırda 3 boş hücre
       expect(computeVisibleCount(5, 4, 2)).toBe(5)
     })
   })
 
-  describe('N = 2', () => {
+  describe('n = 2', () => {
     it('10 kart: 2×2 = 4 görünür, 6 gizli', () => {
       expect(computeVisibleCount(10, 2, 2)).toBe(4)
     })
     it('4 kart → hepsi görünür', () => {
       expect(computeVisibleCount(4, 2, 2)).toBe(4)
     })
-    it('BOŞ HÜCRE kuralı tam satır durumunda tetiklenmez (N=2, 1 satır = 2 kart = dolu satır)', () => {
+    it('bOŞ HÜCRE kuralı tam satır durumunda tetiklenmez (N=2, 1 satır = 2 kart = dolu satır)', () => {
       // 1 satır × 2 sütun = 2 kart → satır TAM. Boş hücre yok, 3. kart
       // yeni satır gerektirir. (Testi yazarken "1 boş hücre" sanılmıştı;
       // olamaz — tam satır.)
@@ -51,7 +51,7 @@ describe('computeVisibleCount', () => {
     })
   })
 
-  describe('N = 1 (mobil)', () => {
+  describe('n = 1 (mobil)', () => {
     it('10 kart: 2 satır = 2 görünür', () => {
       expect(computeVisibleCount(10, 1, 2)).toBe(2)
     })
@@ -60,7 +60,7 @@ describe('computeVisibleCount', () => {
     })
   })
 
-  it('Pencere genişleyince N değişse de düzen bozulmaz (satır sayısı sabit)', () => {
+  it('pencere genişleyince N değişse de düzen bozulmaz (satır sayısı sabit)', () => {
     // Aynı veri, farklı N: görünen kart sayısı N ile orantılı
     const veri = Array.from({ length: 10 }, (_, i) => i)
     expect(veri.slice(0, computeVisibleCount(10, 3, 2))).toHaveLength(6) // 2 satır × 3
@@ -68,7 +68,7 @@ describe('computeVisibleCount', () => {
     expect(veri.slice(0, computeVisibleCount(10, 1, 2))).toHaveLength(2) // 2 satır × 1
   })
 
-  it('N ölçülmeden (0) en az 1 sütun sayılır — NaN/0 üretmez', () => {
+  it('n ölçülmeden (0) en az 1 sütun sayılır — NaN/0 üretmez', () => {
     expect(computeVisibleCount(10, 0, 2)).toBe(2)
   })
 

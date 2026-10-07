@@ -1,10 +1,10 @@
-import { guardWrite } from '@/lib/rate-guard'
+import type { ResourceDef } from '@/lib/admin/resources'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 
 import { adminDb, buildPayload, writeWithColumnFallback } from '@/lib/admin/data'
-import type { ResourceDef } from '@/lib/admin/resources'
 import { getResource } from '@/lib/admin/resources'
+import { guardWrite } from '@/lib/rate-guard'
 import { isAdminUser } from '@/lib/supabase/session'
 
 /**

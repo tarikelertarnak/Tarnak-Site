@@ -22,7 +22,8 @@ export function useComputedGridCols(el: HTMLDivElement | null): number {
     }
     const measure = () => {
       const n = getComputedStyle(el)
-        .gridTemplateColumns.split(' ')
+        .gridTemplateColumns
+        .split(' ')
         .filter(Boolean)
         .length
       if (n > 0) {

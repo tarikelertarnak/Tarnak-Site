@@ -1,4 +1,3 @@
-import { guardWrite } from '@/lib/rate-guard'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 import {
@@ -10,6 +9,7 @@ import {
   removePuckVersion,
   savePuckPage,
 } from '@/lib/puck/store'
+import { guardWrite } from '@/lib/rate-guard'
 import { isAdminUser } from '@/lib/supabase/session'
 
 export const dynamic = 'force-dynamic'

@@ -27,8 +27,10 @@ const ALLOWED_PATHS: RegExp[] = [
   /^\/repos\/[^/]+\/[^/]+\/contents\/.+$/,
 ]
 
-/** origin + pathname allowlist. String prefix yerine URL ayristirma:
- *  userinfo / port / yuzde-kodlama kacislarini da kapatir. */
+/**
+ * origin + pathname allowlist. String prefix yerine URL ayristirma:
+ *  userinfo / port / yuzde-kodlama kacislarini da kapatir.
+ */
 function isAllowedTarget(target: string): boolean {
   let u: URL
   try {

@@ -14,7 +14,7 @@
  *   }
  */
 
-import { LIMITS, checkLimit, rateLimitResponse } from '@/lib/rate-limit-kv'
+import { checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
 
 /**
  * @param req    İstek (IP için)

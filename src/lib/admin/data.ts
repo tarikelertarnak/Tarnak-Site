@@ -1,6 +1,6 @@
-import { createClient } from '@supabase/supabase-js'
-
 import type { FieldDef, ResourceDef } from '@/lib/admin/resources'
+
+import { createClient } from '@supabase/supabase-js'
 import { writableFieldNames } from '@/lib/admin/resources'
 import { missingColumnFrom } from '@/lib/postgrest'
 
@@ -23,7 +23,8 @@ export function adminDb() {
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
-/** Turkce karakterleri de dogru ceviren slug uretici.
+/**
+ * Turkce karakterleri de dogru ceviren slug uretici.
  *
  *  Neden once NFD: JS'te `'İ'.toLowerCase()` tek bir 'i' DEGIL,
  *  'i' + U+0307 (birlesik nokta) uretir. O nokta da alfanumerik olmadigi
@@ -35,7 +36,7 @@ export function adminDb() {
 export function slugify(input: string): string {
   return input
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u0300-\u036F]/g, '')
     .toLowerCase()
     .replace(/ı/g, 'i')
     .replace(/[^a-z0-9]+/g, '-')

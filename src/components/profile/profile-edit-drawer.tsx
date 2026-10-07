@@ -1,16 +1,16 @@
 'use client'
 
+import type { SessionUser } from '@/lib/supabase/session'
 import { Icon } from '@iconify/react'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
 
+import { useCallback, useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/components/ui/cn'
 import { Drawer } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/components/ui/cn'
-import { PhoneInput, parsePhone, EMPTY_PHONE } from '@/components/ui/phone-input'
-import type { SessionUser } from '@/lib/supabase/session'
+import { EMPTY_PHONE, parsePhone, PhoneInput } from '@/components/ui/phone-input'
 
 /**
  * Profil düzenleme — sağdan açılan drawer.
@@ -91,7 +91,7 @@ export function ProfileEditDrawer({
       const res = await fetch('/api/auth/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({
+        body: JSON.stringify({
           fullName,
           phone: (phoneValue.code || phoneValue.number)
             ? `+${phoneValue.code}${phoneValue.number}`

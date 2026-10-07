@@ -8,11 +8,11 @@ import { roleLabel } from '@/lib/permissions'
 import { getSessionUser } from '@/lib/supabase/session'
 
 export const metadata = {
-    title: 'Admin Panel',
-    // 2026-10-04: noindex — panel sayfasi arama motorlarina acik bir sayfa
-    // degil (once layout'tan index:true miras aliyordu).
-    robots: { index: false, follow: false },
-  }
+  title: 'Admin Panel',
+  // 2026-10-04: noindex — panel sayfasi arama motorlarina acik bir sayfa
+  // degil (once layout'tan index:true miras aliyordu).
+  robots: { index: false, follow: false },
+}
 export const dynamic = 'force-dynamic'
 export default async function AdminPage() {
   const user = await getSessionUser()

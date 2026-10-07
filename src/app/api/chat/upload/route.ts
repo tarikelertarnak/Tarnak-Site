@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { NextResponse } from 'next/server'
 import { MAX_UPLOAD_BYTES, saveUploadedFile } from '@/lib/chat'
-import { LIMITS, checkLimit, rateLimitResponse } from '@/lib/rate-limit-kv'
+import { checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { getSessionUser, hasSessionPermission } from '@/lib/supabase/session'
 
 export async function POST(req: Request) {

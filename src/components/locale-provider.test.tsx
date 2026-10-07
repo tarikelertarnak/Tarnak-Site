@@ -35,7 +35,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-describe('LocaleProvider', () => {
+describe('localeProvider', () => {
   it('detectedLocale VERILIRSE onu kullanir (sunucu karari kazanir)', () => {
     // Istemci "tr" diyor ama sunucu "en" demis → sunucu kazanmali
     setNavigatorLanguage('tr-TR')

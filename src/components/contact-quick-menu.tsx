@@ -1,12 +1,12 @@
 'use client'
 
+import type { ContactChannel } from '@/lib/contact-channels'
 import type { SiteContent } from '@/lib/content'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
-import { usePopoverPosition } from '@/components/ui/use-popover-position'
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -19,9 +19,9 @@ import {
   SearchIcon,
   socialIcon,
 } from '@/components/ui/icons'
-import { buildContactChannels, filterChannels, groupChannels } from '@/lib/contact-channels'
-import type { ContactChannel } from '@/lib/contact-channels'
+import { usePopoverPosition } from '@/components/ui/use-popover-position'
 import { copyText } from '@/lib/clipboard'
+import { buildContactChannels, filterChannels, groupChannels } from '@/lib/contact-channels'
 
 /**
  * Iletisim hizli erisim menusu.
@@ -167,7 +167,7 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
   const [q, setQ] = useState('')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [copyFailed, setCopyFailed] = useState(false)
-const [activeIndex, setActiveIndex] = useState(0)
+  const [activeIndex, setActiveIndex] = useState(0)
 
   /*
     Konum (2026-10-06). `gap: 6` = kullanıcı "hemen altında çok az
@@ -183,7 +183,7 @@ const [activeIndex, setActiveIndex] = useState(0)
     `window.scrollBy` hack'i silindi.
   */
 
-const rootRef = useRef<HTMLDivElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -206,7 +206,7 @@ const rootRef = useRef<HTMLDivElement>(null)
   const filtered = useMemo(() => filterChannels(channels, q), [channels, q])
   const groups = useMemo(() => groupChannels(filtered), [filtered])
 
-/*
+  /*
     PANEL YÜKSEKLİĞİ VE KONUM ARTIK BURADA DEĞİL.
     `measureHeight()` + `PANEL_CHROME(80)` + `window.scrollBy` hack'i
     kaldırıldı: konumu ve `maxHeight`'ı `usePopoverPosition` ölçüp
@@ -214,7 +214,7 @@ const rootRef = useRef<HTMLDivElement>(null)
     ekranı kaydırıyordu; portal + sabit konum bunu gereksiz kılıyor.
   */
 
-const openMenu = () => {
+  const openMenu = () => {
     setOpen(true)
     setQ('')
     setActiveIndex(0)
@@ -230,7 +230,7 @@ const openMenu = () => {
     if (!open) {
       return
     }
-const onDown = (e: MouseEvent) => {
+    const onDown = (e: MouseEvent) => {
       const t = e.target as Node
       /*
         PORTAL DÜZELTMESİ (2026-10-06). Panel artık `document.body`
@@ -254,7 +254,7 @@ const onDown = (e: MouseEvent) => {
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
     return () => {
-document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('mousedown', onDown)
       document.removeEventListener('keydown', onKey)
     }
   }, [open, panelRef])
@@ -351,7 +351,7 @@ document.removeEventListener('mousedown', onDown)
   const indexOf = (channel: ContactChannel) =>
     filtered.findIndex(c => c.id === channel.id)
 
-return (
+  return (
     <div className="relative">
       <button
         ref={triggerRef as React.RefObject<HTMLButtonElement>}
@@ -374,7 +374,7 @@ return (
           open ? 'bg-primary/90' : '',
         )}
       >
-{/*
+        {/*
           `shrink-0`: buton artık flex (`HERO_BTN_BODY` -> `inline-flex`).
           Flex item'ları dar alanda EZILIR; ikon 15px/13px yerine 8px'e
           düşüp ok ikonu ile hizasını kaybediyordu. `shrink-0` ikisini de
@@ -388,7 +388,7 @@ return (
         />
       </button>
 
-{open && createPortal(
+      {open && createPortal(
         <div
           ref={panelRef as React.RefObject<HTMLDivElement>}
           role="menu"
@@ -443,7 +443,7 @@ return (
             </p>
           )}
 
-{/*
+          {/*
             Kanallar — yüksekliği PANEL belirler (`portalStyle.maxHeight`),
             liste kendi maxHeight'ını taşımaz (çift kaynak → birbirini ezdi).
             `min-h-0` flex çocuğunun küçülmesini engeller; olmadan liste
@@ -503,7 +503,7 @@ return (
                 </ul>
               </>
             )}
-</div>
+          </div>
         </div>,
         document.body,
       )}

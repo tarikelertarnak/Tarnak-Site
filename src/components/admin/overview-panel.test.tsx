@@ -96,7 +96,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('OverviewPanel', () => {
+describe('overviewPanel', () => {
   it('yukleniyor durumunu gosterir, sonra veriyi cizer', async () => {
     // Ilk iddia icin fetch BILEREK hic cozulmez: aksi halde testing-library'nin
     // act() sarmalayicisi mikrogorevleri de bosaltir ve veri aninda gelir,
@@ -195,7 +195,7 @@ describe('OverviewPanel', () => {
     expect(card.disabled).toBe(true)
   })
 
-  it('API hata dondurunce hata mesajini gosterir', async () => {
+  it('aPI hata dondurunce hata mesajini gosterir', async () => {
     mockFetch({ success: false, message: 'Yetkisiz.' })
     render(<OverviewPanel />)
 
@@ -237,7 +237,7 @@ describe('OverviewPanel', () => {
     expect(screen.getByText(/Kalıcılık çalışıyor/)).toBeTruthy()
   })
 
-  it('SALT-OKUNUR sistemde KRITIK uyariyi gosterir (Vercel senaryosu)', async () => {
+  it('sALT-OKUNUR sistemde KRITIK uyariyi gosterir (Vercel senaryosu)', async () => {
     mockFetch({
       ...PAYLOAD,
       persistence: {

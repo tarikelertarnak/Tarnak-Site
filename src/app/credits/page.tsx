@@ -1,12 +1,10 @@
-import { Navigation } from '@/components/navigation'
+import type { ContributorItem, DonorItem, TeamItem, TesterItem, TranslatorItem } from '@/components/credits/credits-browser'
 import {
+
   CreditsBrowser,
-  type ContributorItem,
-  type DonorItem,
-  type TeamItem,
-  type TesterItem,
-  type TranslatorItem,
+
 } from '@/components/credits/credits-browser'
+import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 
@@ -82,7 +80,7 @@ export default async function CreditsPage() {
         {/* Hero */}
         <Section className="flex-col pt-28 sm:pt-32 pb-12 sm:pb-16" id="credits">
           <div className="flex flex-col items-center justify-center pb-8 sm:pb-10 lg:pb-12 text-center">
-<h1 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
+            <h1 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width={38}
@@ -105,7 +103,7 @@ export default async function CreditsPage() {
           </div>
         </Section>
 
-{/* Contributors / Team / Sponsors — searchable, filterable, sortable
+        {/* Contributors / Team / Sponsors — searchable, filterable, sortable
         `framed`: ana sayfadaki Blog/Projects bölümleriyle AYNI dış grup
         çerçevesi (2026-10-06, kullanıcı "katkıda bulunanlarda dış gruplama
         çerçeve olmalı, ana sayfa gibi" dedi). */}

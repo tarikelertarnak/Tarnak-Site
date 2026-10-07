@@ -1,6 +1,6 @@
+import de from './de'
 /* Index for non-tr/en locale dictionaries. */
 import es from './es'
-import de from './de'
 import fr from './fr'
 import ja from './ja'
 import pt from './pt'

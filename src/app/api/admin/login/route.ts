@@ -1,8 +1,8 @@
-import { guardWrite } from '@/lib/rate-guard'
 import { NextResponse } from 'next/server'
 import { createSessionToken, hashPassword, verifyCredentials } from '@/lib/auth'
 import { clientIp } from '@/lib/client-ip'
 import { getAdmin, saveAdmin } from '@/lib/content'
+import { guardWrite } from '@/lib/rate-guard'
 
 // Simple brute-force protection (in-memory): lock per IP for 15 min after 5 failed attempts
 const MAX_ATTEMPTS = 5

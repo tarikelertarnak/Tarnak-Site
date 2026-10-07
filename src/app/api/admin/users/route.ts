@@ -1,4 +1,3 @@
-import { guardWrite } from '@/lib/rate-guard'
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import {
@@ -6,6 +5,7 @@ import {
   isValidRole,
   ROLE_PRESETS,
 } from '@/lib/permissions'
+import { guardWrite } from '@/lib/rate-guard'
 import { isAdminUser } from '@/lib/supabase/session'
 
 export const dynamic = 'force-dynamic'

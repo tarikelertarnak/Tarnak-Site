@@ -15,10 +15,11 @@ import { SITE_URL } from '@/lib/site-url'
 // sitemap ve sayfalar icin de gecerli (hepsi build-donmuş).
 export const dynamic = 'force-static'
 
-const escapeXml = (s: string) =>
-  s.replace(/[<>&'"]/g, (c) => (
+function escapeXml(s: string) {
+  return s.replace(/[<>&'"]/g, c => (
     { '<': '&lt;', '>': '&gt;', '&': '&amp;', '\'': '&apos;', '"': '&quot;' }[c] as string
   ))
+}
 
 export async function GET() {
   const posts = await getPosts()

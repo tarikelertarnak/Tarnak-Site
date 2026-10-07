@@ -1,9 +1,9 @@
+import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 /**
  * CV belgeleri — kaynak: Supabase `cvs` tablosu, fallback: content.about.cv.href.
  * Site tarafında tek kaynak; birden fazla kayıt varsa combobox gösterilir.
  */
 import { cache } from 'react'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import bundledContentJson from '../../data/content.json'
 
 export interface CvDoc {

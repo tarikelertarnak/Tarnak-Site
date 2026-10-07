@@ -1,7 +1,7 @@
-import { defineCloudflareConfig } from "@opennextjs/cloudflare";
+import { defineCloudflareConfig } from '@opennextjs/cloudflare'
 // KV cache handler'i modul olarak verilmeli. "cf-kv-incremental-cache" bir NAME
 // sabiti; string olarak yazilinca build config dogrulamasinda PATLAR.
-import kvIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cache/kv-incremental-cache";
+import kvIncrementalCache from '@opennextjs/cloudflare/overrides/incremental-cache/kv-incremental-cache'
 
 // 2026-10-02: Cloudflare 1102 ("Worker exceeded resource limits") KOK NEDENI.
 //
@@ -18,4 +18,4 @@ import kvIncrementalCache from "@opennextjs/cloudflare/overrides/incremental-cac
 // KV, Free plan icin dogru tercih.
 export default defineCloudflareConfig({
   incrementalCache: kvIncrementalCache,
-});
+})

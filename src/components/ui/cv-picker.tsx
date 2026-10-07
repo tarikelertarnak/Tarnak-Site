@@ -5,8 +5,8 @@ import type { CvDoc } from '@/lib/cv'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocale, useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { ChevronDownIcon, DownloadIcon, EyeIcon } from '@/components/ui/icons'
+import { Input } from '@/components/ui/input'
 import { SplitButton } from '@/components/ui/split-button'
 
 /**
@@ -47,12 +47,12 @@ export function CvPicker({
   const needle = q.trim().toLowerCase()
   const filtered = needle
     ? ordered.filter(c =>
-      c.label.toLowerCase().includes(needle) || c.lang.toLowerCase().includes(needle))
+        c.label.toLowerCase().includes(needle) || c.lang.toLowerCase().includes(needle))
     : ordered
 
   const label = t('about.cvView')
 
-if (cvs.length <= 1) {
+  if (cvs.length <= 1) {
     const href = cvs[0]?.href ?? '/cv/tarikeler-cv.pdf'
     /*
       Tek kayit -> birlesik (split) buton: [goz ikonu CV] | [indir].
@@ -81,9 +81,9 @@ if (cvs.length <= 1) {
           },
           {
             href,
-            download: true,
+            'download': true,
             'aria-label': t('about.cvDownload'),
-            children: <DownloadIcon size={16} />,
+            'children': <DownloadIcon size={16} />,
           },
         ]}
       />

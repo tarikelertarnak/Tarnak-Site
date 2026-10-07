@@ -1,7 +1,7 @@
-import { guardWrite } from '@/lib/rate-guard'
 import { NextResponse } from 'next/server'
 import { hashPassword, verifyPassword } from '@/lib/auth'
 import { getAdmin, saveAdmin } from '@/lib/content'
+import { guardWrite } from '@/lib/rate-guard'
 import { isAdminUser } from '@/lib/supabase/session'
 
 export async function POST(req: Request) {

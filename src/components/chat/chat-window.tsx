@@ -562,8 +562,8 @@ export function ChatWindow({
                   isIconOnly
                   aria-label={t('chat.send')}
                   onPress={() => send()}
-isLoading={sending}
-              isDisabled={!text.trim() || uploading || cooldown > 0 || sending}
+                  isLoading={sending}
+                  isDisabled={!text.trim() || uploading || cooldown > 0 || sending}
                   className="shrink-0"
                 >
                   <SendIcon size={20} />

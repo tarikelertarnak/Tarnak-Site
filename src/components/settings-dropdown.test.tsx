@@ -129,7 +129,7 @@ describe('ayarlar paneli: Kaydet kapisi', () => {
     expect(setPrefSpy).not.toHaveBeenCalled()
   })
 
-  it('Kaydet tusu taslagi uygular', () => {
+  it('kaydet tusu taslagi uygular', () => {
     renderPanel()
     fireEvent.click(motionToggle())
     fireEvent.click(screen.getByTestId('locale-pick'))
@@ -140,7 +140,7 @@ describe('ayarlar paneli: Kaydet kapisi', () => {
     expect(openSpy).toHaveBeenCalledWith(false)
   })
 
-  it('Kaydet degisiklik yoksa pasif', () => {
+  it('kaydet degisiklik yoksa pasif', () => {
     renderPanel()
     // `toBeDisabled` yerine dogrudan DOM: bu projede jest-dom kurulu degil.
     const btn = screen.getByRole('button', { name: /settings\.save/ })

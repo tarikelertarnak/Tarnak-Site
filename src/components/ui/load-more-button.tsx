@@ -1,5 +1,6 @@
 'use client'
 
+import { useT } from '@/components/locale-provider'
 /**
  * "Daha Fazlasını Göster (X)" düğmesi — Projeler ve Blog ORTAK.
  *
@@ -17,7 +18,6 @@
 import { Button } from '@/components/ui/button'
 import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
 import { ArrowDownIcon } from '@/components/ui/icons'
-import { useT } from '@/components/locale-provider'
 
 export function LoadMoreButton({
   remaining,
@@ -30,7 +30,8 @@ export function LoadMoreButton({
   className?: string
 }) {
   const { t } = useT()
-  if (remaining <= 0) return null
+  if (remaining <= 0)
+    return null
 
   return (
     <div className={`flex justify-center ${className ?? 'mt-[var(--section-gap)]'}`}>

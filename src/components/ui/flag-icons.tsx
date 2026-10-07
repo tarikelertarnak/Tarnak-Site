@@ -1,19 +1,19 @@
 import type { SVGProps } from 'react'
-import { FlagTrIcon, FlagEnIcon } from '@/components/ui/icons'
+import { FlagEnIcon, FlagTrIcon } from '@/components/ui/icons'
 
 /** Flag icon props. */
 export interface FlagIconProps extends SVGProps<SVGSVGElement> {
   size?: number
 }
 
-export { FlagTrIcon, FlagEnIcon }
+export { FlagEnIcon, FlagTrIcon }
 
 function base(size = 16, className?: string) {
   return {
-    width: size,
-    height: size,
-    viewBox: '0 0 512 512',
-    fill: 'none',
+    'width': size,
+    'height': size,
+    'viewBox': '0 0 512 512',
+    'fill': 'none',
     className,
     'aria-hidden': true,
   } as const
@@ -35,12 +35,12 @@ export function FlagEsIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flages', (
-        <>
+<>
           <path fill="#aa151b" d="M0 0h512v128H0zm0 384h512V512H0z" />
           <path fill="#f1bf00" d="M0 128h512v256H0z" />
           <path fill="#aa151b" d="M226 195h60v122h-60z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -50,12 +50,12 @@ export function FlagDeIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagde', (
-        <>
+<>
           <path fill="#000" d="M0 0h512v171H0z" />
           <path fill="#dd0000" d="M0 171h512v170H0z" />
           <path fill="#ffce00" d="M0 341h512v171H0z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -65,12 +65,12 @@ export function FlagFrIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagfr', (
-        <>
+<>
           <path fill="#0055a4" d="M0 0h171v512H0z" />
           <path fill="#fff" d="M171 0h170v512H171z" />
           <path fill="#ef4135" d="M341 0h171v512H341z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -80,11 +80,11 @@ export function FlagJaIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagja', (
-        <>
+<>
           <path fill="#fff" d="M0 0h512v512H0z" />
           <circle cx="256" cy="256" r="115" fill="#bc002d" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -94,13 +94,13 @@ export function FlagPtIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagpt', (
-        <>
+<>
           <path fill="#009c3b" d="M0 0h512v512H0z" />
           <path fill="#ffdf00" d="m256 74l182 182l-182 182L74 256z" />
           <circle cx="256" cy="256" r="82" fill="#002776" />
           <path fill="#fff" d="M230 216h76v62c0 30-19 52-38 52s-38-22-38-52z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -110,12 +110,12 @@ export function FlagRuIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagru', (
-        <>
+<>
           <path fill="#fff" d="M0 0h512v171H0z" />
           <path fill="#0039a6" d="M0 171h512v170H0z" />
           <path fill="#d52b1e" d="M0 341h512v171H0z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -125,12 +125,12 @@ export function FlagItIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagit', (
-        <>
+<>
           <path fill="#009246" d="M0 0h171v512H0z" />
           <path fill="#fff" d="M171 0h170v512H171z" />
           <path fill="#ce2b37" d="M341 0h171v512H341z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -140,7 +140,7 @@ export function FlagZhIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagzh', (
-        <>
+<>
           <path fill="#de2910" d="M0 0h512v512H0z" />
           <path fill="#ffde00" d="m118 74l12 38h40l-32 24l12 38l-32-24l-32 24l12-38l-32-24h40z" />
           <path fill="#ffde00" d="M196 116l6 20h21l-17 13l6 20l-17-13l-17 13l6-20l-17-13h21z" />
@@ -148,7 +148,7 @@ export function FlagZhIcon({ size = 16, className }: FlagIconProps) {
           <path fill="#ffde00" d="M190 204l6 20h21l-17 13l6 20l-17-13l-17 13l6-20l-17-13h21z" />
           <path fill="#ffde00" d="M170 238l6 20h21l-17 13l6 20l-17-13l-17 13l6-20l-17-13h21z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -158,12 +158,12 @@ export function FlagNlIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagnl', (
-        <>
+<>
           <path fill="#ae1c28" d="M0 0h512v171H0z" />
           <path fill="#fff" d="M0 171h512v170H0z" />
           <path fill="#21468b" d="M0 341h512v171H0z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -173,11 +173,11 @@ export function FlagPlIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagpl', (
-        <>
+<>
           <path fill="#fff" d="M0 0h512v256H0z" />
           <path fill="#dc143c" d="M0 256h512v256H0z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -187,7 +187,7 @@ export function FlagKoIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagko', (
-        <>
+<>
           <path fill="#fff" d="M0 0h512v512H0z" />
           <circle cx="256" cy="256" r="120" fill="#cd2e3a" />
           <path fill="#0047a0" d="M256 136a120 120 0 0 0 0 240 96 96 0 0 1 0-240" />
@@ -202,7 +202,7 @@ export function FlagKoIcon({ size = 16, className }: FlagIconProps) {
             <path d="M64 200h60M64 312h60M388 200h60M388 312h60" />
           </g>
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -212,12 +212,12 @@ export function FlagArIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagar', (
-        <>
+<>
           <path fill="#165d31" d="M0 0h512v512H0z" />
           <path fill="#fff" d="M96 316h320v40H96z" />
           <path fill="#fff" d="M196 156l12 28-24 16l28 4l12 26l12-26l28-4l-24-16l12-28l-28 12z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -227,11 +227,11 @@ export function FlagIdIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagid', (
-        <>
+<>
           <path fill="#ce1126" d="M0 0h512v256H0z" />
           <path fill="#fff" d="M0 256h512v256H0z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -241,11 +241,11 @@ export function FlagViIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagvi', (
-        <>
+<>
           <path fill="#da251d" d="M0 0h512v512H0z" />
           <path fill="#ffff00" d="m256 92l38 116l122 1l-99 72l38 116l-99-73l-99 73l38-116l-99-72l122-1z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -255,7 +255,7 @@ export function FlagFaIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagfa', (
-        <>
+<>
           <path fill="#239f40" d="M0 0h512v128H0z" />
           <path fill="#fff" d="M0 128h512v256H0z" />
           <path fill="#da0000" d="M0 384h512v128H0z" />
@@ -278,7 +278,7 @@ export function FlagFaIcon({ size = 16, className }: FlagIconProps) {
             <path d="M350 384l10 24h-20zm20 0l10 24h-20z" />
           </g>
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -288,11 +288,11 @@ export function FlagUkIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flaguk', (
-        <>
+<>
           <path fill="#0057b7" d="M0 0h512v256H0z" />
           <path fill="#ffd700" d="M0 256h512v256H0z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -302,12 +302,12 @@ export function FlagThIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagth', (
-        <>
+<>
           <path fill="#a51931" d="M0 0h512v85H0zm0 427h512v85H0z" />
           <path fill="#f4f5f8" d="M0 85h512v86H0zm0 256h512v86H0z" />
           <path fill="#2d2a4a" d="M0 171h512v170H0z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -317,12 +317,12 @@ export function FlagCsIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagcs', (
-        <>
+<>
           <path fill="#fff" d="M0 0h512v256H0z" />
           <path fill="#d7141a" d="M0 256h512v256H0z" />
           <path fill="#11457e" d="M0 0l256 256L0 512z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -332,12 +332,12 @@ export function FlagHuIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flaghu', (
-        <>
+<>
           <path fill="#cd2a3e" d="M0 0h512v171H0z" />
           <path fill="#fff" d="M0 171h512v170H0z" />
           <path fill="#436f4d" d="M0 341h512v171H0z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -347,12 +347,12 @@ export function FlagRoIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagro', (
-        <>
+<>
           <path fill="#002b7f" d="M0 0h171v512H0z" />
           <path fill="#fcd116" d="M171 0h170v512H171z" />
           <path fill="#ce1126" d="M341 0h171v512H341z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -362,12 +362,12 @@ export function FlagSvIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagsv', (
-        <>
+<>
           <path fill="#006aa7" d="M0 0h512v512H0z" />
           <path fill="#fecc00" d="M0 200h512v112H0z" />
           <path fill="#fecc00" d="M170 0h112v512H170z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -377,7 +377,7 @@ export function FlagElIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flagel', (
-        <>
+<>
           <path fill="#0d5eaf" d="M0 0h512v512H0z" />
           <g fill="#fff">
             <path d="M0 0h512v51H0zm0 115h512v51H0zm0 230h512v51H0zm0 115h512v51H0z" />
@@ -385,7 +385,7 @@ export function FlagElIcon({ size = 16, className }: FlagIconProps) {
           </g>
           <path fill="#0d5eaf" d="M93 0h70v148H0v51h163v108h51V199h298v-51H214V0z" />
         </>
-      ))}
+))}
     </svg>
   )
 }
@@ -395,7 +395,7 @@ export function FlagHeIcon({ size = 16, className }: FlagIconProps) {
   return (
     <svg {...base(size, className)}>
       {mask('svgt-flaghe', (
-        <>
+<>
           <path fill="#fff" d="M0 0h512v512H0z" />
           <path fill="#0038b8" d="M0 0h512v56H0zm0 456h512v56H0z" />
           <g fill="none" stroke="#0038b8" strokeWidth="13">
@@ -403,7 +403,7 @@ export function FlagHeIcon({ size = 16, className }: FlagIconProps) {
             <path d="m256 262l28 48h-56zm0-63l52 90l-52 89l-52-90z" />
           </g>
         </>
-      ))}
+))}
     </svg>
   )
 }

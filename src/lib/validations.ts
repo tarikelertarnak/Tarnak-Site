@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import { E164_MAX_DIGITS, PHONE_MAX_CHARS, normalizePhone } from '@/lib/phone'
+import { E164_MAX_DIGITS, normalizePhone } from '@/lib/phone'
 
 /** E-posta için makul üst sınır. Telefon için E.164 (15 hane) geçerli. */
 const CONTACT_VALUE_MAX = 254

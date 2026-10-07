@@ -1,6 +1,5 @@
 'use client'
 
-import type { ButtonProps } from '@/components/ui/button'
 import type { ReactNode } from 'react'
 import { cn } from '@/components/ui/cn'
 import {
@@ -38,24 +37,24 @@ import {
  * (`<button>`) semantiği KORUNUR, ki bu iki kullanımın da ihtiyacı.
  */
 
-export type SplitButtonPartProps = {
+export interface SplitButtonPartProps {
   /** Görünür içerik: ikon + yazı. */
-  children: ReactNode
-  href?: string
-  onClick?: () => void
+  'children': ReactNode
+  'href'?: string
+  'onClick'?: () => void
   /** Sadece ikon (sağ kare yarı için). */
-  label?: string
+  'label'?: string
   /** `download` özniteliği — indirme yarıları için. */
-  download?: boolean | string
-  target?: string
-  rel?: string
-  title?: string
+  'download'?: boolean | string
+  'target'?: string
+  'rel'?: string
+  'title'?: string
   'aria-label'?: string
   'aria-expanded'?: boolean
   'aria-haspopup'?: boolean
   /** Sabit kare genişlikte ikon yarı (ikon ortalanır). */
-  iconOnly?: boolean
-  ref?: React.Ref<HTMLButtonElement>
+  'iconOnly'?: boolean
+  'ref'?: React.Ref<HTMLButtonElement>
 }
 
 /** Sağ (ikon) yarının kare genişliği — 40px buton yüksekliğiyle aynı. */
@@ -203,7 +202,12 @@ export function SplitButton({
             {...(p.rel ? { rel: p.rel } : {})}
             {...(p.title ? { title: p.title } : {})}
             {...(p['aria-label'] ? { 'aria-label': p['aria-label'] } : {})}
-            onClick={p.onClick ? (e: React.MouseEvent) => { if (!isModifiedClick(e)) p.onClick!() } : undefined}
+            onClick={p.onClick
+              ? (e: React.MouseEvent) => {
+                  if (!isModifiedClick(e))
+                    p.onClick!()
+                }
+              : undefined}
             style={isIcon ? { width: ICON_PART_WIDTH } : undefined}
             className={cn(base, isIcon && 'px-0')}
           >

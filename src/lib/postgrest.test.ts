@@ -15,7 +15,7 @@ describe('isMissingColumnError', () => {
     expect(isMissingColumnError({ code: '42703' })).toBe(true)
   })
 
-  it('PGRST204 (PostgREST sema onbellegi) kodunu TANIR — regresyon', () => {
+  it('pGRST204 (PostgREST sema onbellegi) kodunu TANIR — regresyon', () => {
     // Olculdu: Supabase bilinmeyen kolonda bunu donduruyor.
     expect(isMissingColumnError({
       code: 'PGRST204',
@@ -42,7 +42,7 @@ describe('missingColumnFrom', () => {
     })).toBe('phone')
   })
 
-  it('PGRST204 mesajindan kolon adini cikarir', () => {
+  it('pGRST204 mesajindan kolon adini cikarir', () => {
     expect(missingColumnFrom({
       code: 'PGRST204',
       message: 'Could not find the \'phone\' column of \'messages\' in the schema cache',

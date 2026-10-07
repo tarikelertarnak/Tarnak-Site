@@ -36,7 +36,7 @@ afterEach(() => {
   vi.clearAllMocks()
 })
 
-describe('GET /api/github', () => {
+describe('gET /api/github', () => {
   it('kullanici adi bos ise 400 doner', async () => {
     const res = await call('')
     expect(res.status).toBe(400)
@@ -107,7 +107,7 @@ describe('GET /api/github', () => {
   })
 })
 
-describe('GitHubApiError / isGitHubNotFound', () => {
+describe('gitHubApiError / isGitHubNotFound', () => {
   it('durum kodunu tasir', () => {
     const err = new github.GitHubApiError(404, 'profile: x')
     expect(err.status).toBe(404)

@@ -22,7 +22,7 @@ function render(parts: Parameters<typeof SplitButton>[0]['parts']) {
   return renderToStaticMarkup(<SplitButton parts={parts} />)
 }
 
-describe('SplitButton', () => {
+describe('splitButton', () => {
   it('iki parcayi tek yuvarlak kutu icinde birlestirir', () => {
     const html = render([
       { href: '/cv.pdf', children: 'CV' },
@@ -96,7 +96,7 @@ describe('SplitButton', () => {
   it('indirme yarisi <a download> olarak basilir (indirme calisir)', () => {
     const html = render([
       { href: '/cv.pdf', target: '_blank', rel: 'noopener noreferrer', children: 'CV' },
-      { href: '/cv.pdf', download: true, 'aria-label': 'CV Indir', children: <span>D</span> },
+      { 'href': '/cv.pdf', 'download': true, 'aria-label': 'CV Indir', 'children': <span>D</span> },
     ])
 
     expect(html).toContain('href="/cv.pdf"')
@@ -111,12 +111,12 @@ describe('SplitButton', () => {
     const html = render([
       { href: '/z.zip', onClick: () => {}, iconOnly: true, children: <span>D</span> },
       {
-        onClick: () => {},
-        iconOnly: true,
+        'onClick': () => {},
+        'iconOnly': true,
         'aria-label': 'Surum sec',
         'aria-expanded': true,
         'aria-haspopup': true,
-        children: <span>V</span>,
+        'children': <span>V</span>,
       },
     ])
 

@@ -32,7 +32,6 @@ import { COUNTRIES } from '@/lib/countries-data'
  */
 const KNOWN = new Set(COUNTRIES.map(c => c.iso2.toUpperCase()))
 
-
 /**
  * Yalın dil -> ülke. Dil kodu tek başına ülke vermediğinde (en, tr, ar, de…)
  * o dilin en olası ülkesi. Anahtarlar küçük harf.

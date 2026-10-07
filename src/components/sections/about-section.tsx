@@ -1,13 +1,12 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import type { CvDoc } from '@/lib/cv'
 import type { SiteContent, ToolboxItem as ToolboxItemType } from '@/lib/content'
+import type { CvDoc } from '@/lib/cv'
 import { Popover } from '@lobehub/ui/base-ui'
 import { useState } from 'react'
-import { FadeUpSection } from '@/components/fade-up-section'
-import { techIcon } from '@/components/ui/tech-icons'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
+import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { BentoBox, BentoBoxItem } from '@/components/ui/bento-box'
 import { Button } from '@/components/ui/button'
@@ -18,7 +17,6 @@ import {
   ChevronRightIcon,
   CodeIcon,
   CopyIcon,
-  EyeIcon,
   FileIcon,
   LaptopIcon,
   LinkIcon,
@@ -28,6 +26,7 @@ import {
   UserIcon,
 } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
+import { techIcon } from '@/components/ui/tech-icons'
 
 /** Interest icons — iconify id → SVG (no iconify dependency). */
 const INTEREST_ICONS: Record<string, ReactNode> = {
@@ -505,7 +504,7 @@ function CvEntryItem({
 
 function ToolboxItem({ item }: { item: ToolboxItemType }) {
   const { t } = useT()
-const isCommand = item.type === 'command'
+  const isCommand = item.type === 'command'
   const href = item.href?.trim() ?? ''
   /*
     İKON (2026-10-06, kullanıcı): "her teknolojinin KENDİ ikonu olsun

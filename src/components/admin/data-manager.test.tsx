@@ -21,9 +21,9 @@ vi.mock('@/components/ui/button', () => ({
     isDisabled,
     'aria-label': ariaLabel,
   }: {
-    children?: React.ReactNode
-    onPress?: () => void
-    isDisabled?: boolean
+    'children'?: React.ReactNode
+    'onPress'?: () => void
+    'isDisabled'?: boolean
     'aria-label'?: string
   }) => (
     <button type="button" disabled={isDisabled} aria-label={ariaLabel} onClick={onPress}>
@@ -82,7 +82,14 @@ vi.mock('@/components/ui/drawer', () => ({
     open: boolean
     children?: React.ReactNode
     title?: string
-  }) => (open ? <div data-testid="drawer"><h2>{title}</h2>{children}</div> : null),
+  }) => (open
+    ? (
+        <div data-testid="drawer">
+          <h2>{title}</h2>
+          {children}
+        </div>
+      )
+    : null),
 }))
 
 // ---------------------------------------------------------------- yardimcilar
@@ -155,7 +162,7 @@ afterEach(() => {
 
 // ---------------------------------------------------------------- testler
 
-describe('DataManager', () => {
+describe('dataManager', () => {
   it('acilista listeyi ceker ve satirlari gosterir', async () => {
     const { calls } = installFetch(() => listResponse(POST_ROWS))
     render(<DataManager />)
@@ -274,7 +281,7 @@ describe('DataManager', () => {
     })
   })
 
-  it('Yeni ile cekmeceyi acar ve Kaydet POST atar', async () => {
+  it('yeni ile cekmeceyi acar ve Kaydet POST atar', async () => {
     const { calls } = installFetch((url, method) => {
       if (method === 'POST')
         return { success: true, row: { id: 3 }, message: 'Kayıt oluşturuldu.' }
@@ -384,7 +391,7 @@ describe('DataManager', () => {
 
   // ------------------------------------------------------------ CSV disa aktarma
 
-  it('CSV indir: all=1 ile ceker, dosya uretir ve icerigi dogru olur', async () => {
+  it('cSV indir: all=1 ile ceker, dosya uretir ve icerigi dogru olur', async () => {
     const { calls } = installFetch(() => listResponse(POST_ROWS))
     const blobs: Blob[] = []
     URL.createObjectURL = vi.fn((b: Blob) => {
@@ -417,7 +424,7 @@ describe('DataManager', () => {
     expect(URL.revokeObjectURL).toHaveBeenCalled()
   })
 
-  it('CSV indir: aktif arama filtresini korur', async () => {
+  it('cSV indir: aktif arama filtresini korur', async () => {
     const { calls } = installFetch(() => listResponse([POST_ROWS[0]]))
     URL.createObjectURL = vi.fn(() => 'blob:fake')
     URL.revokeObjectURL = vi.fn()
@@ -438,7 +445,7 @@ describe('DataManager', () => {
     })
   })
 
-  it('CSV indir: kayit yoksa uyarir, dosya uretmez', async () => {
+  it('cSV indir: kayit yoksa uyarir, dosya uretmez', async () => {
     installFetch(() => listResponse([], 0))
     const createSpy = vi.fn(() => 'blob:fake')
     URL.createObjectURL = createSpy
@@ -453,7 +460,7 @@ describe('DataManager', () => {
     expect(createSpy).not.toHaveBeenCalled()
   })
 
-  it('CSV indir: ust sinira takilirsa kullaniciyi uyarir', async () => {
+  it('cSV indir: ust sinira takilirsa kullaniciyi uyarir', async () => {
     installFetch(() => ({ ...listResponse(POST_ROWS, 9000), truncated: true }))
     URL.createObjectURL = vi.fn(() => 'blob:fake')
     URL.revokeObjectURL = vi.fn()
@@ -547,7 +554,7 @@ describe('DataManager', () => {
     expect((screen.getByLabelText('Okunma') as HTMLSelectElement).value).toBe('')
   })
 
-  it('CSV indir aktif filtreyi de tasir', async () => {
+  it('cSV indir aktif filtreyi de tasir', async () => {
     const { calls } = installFetch(() => listResponse([POST_ROWS[0]]))
     URL.createObjectURL = vi.fn(() => 'blob:fake')
     URL.revokeObjectURL = vi.fn()

@@ -6,7 +6,6 @@ const EnvSchema = z.object({
   DISCORD_WEBHOOK_URL: z.string().optional(),
 })
 
-// eslint-disable-next-line node/prefer-global/process
 const { data: env, error } = EnvSchema.safeParse(process.env)
 
 if (error) {

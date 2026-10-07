@@ -2,9 +2,9 @@ import arcjet, { protectSignup } from '@arcjet/next'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import env from '@/lib/env'
-import { clientIp, rateLimit } from '@/lib/rate-limit'
-import { LIMITS, checkLimit, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { isMissingColumnError } from '@/lib/postgrest'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
+import { checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { contactFormSchema, HONEYPOT_FIELD } from '@/lib/validations'
 
 const supabaseAdmin

@@ -105,12 +105,14 @@ export const TECH_ICONS: readonly TechIcon[] = [
  *   findTechIcon('something')    -> undefined
  */
 export function findTechIcon(name: string): string | undefined {
-  if (!name) return undefined
+  if (!name)
+    return undefined
   const normalized = name.toLowerCase().replace(/[\s._-]+/g, '')
 
   // Tam eslesme
   const exact = TECH_ICONS.find(t => t.key === normalized)
-  if (exact) return exact.icon
+  if (exact)
+    return exact.icon
 
   // Iceren eslesme (or. "python 3" -> "python")
   const partial = TECH_ICONS.find(t =>

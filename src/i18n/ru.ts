@@ -197,7 +197,7 @@ const ru: Record<string, string> = {
   'hero.blog': 'Блог',
   'hero.feedback': 'Контакты',
   'hero.projects': 'Проекты',
-'hero.scrollDown': 'Прокрутить вниз',
+  'hero.scrollDown': 'Прокрутить вниз',
   'hero.techStack': 'Технологии',
   'lang.en': 'Английский',
   'lang.tr': 'Турецкий',

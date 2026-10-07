@@ -35,11 +35,11 @@ export function missingColumnFrom(error: PostgrestLikeError): string | null {
     return null
   }
   // 42703: "column messages.phone does not exist"
-  const match = /column\s+[^.]+\.([a-z0-9_]+)\s+does not exist/i.exec(error.message || '')
+  const match = /column\s[^.]+\.(\w+)\s+does not exist/i.exec(error.message || '')
   if (match) {
     return match[1]
   }
   // PGRST204: "Could not find the 'phone' column of 'messages' in the schema cache"
-  const alt = /Could not find the '([a-z0-9_]+)' column/i.exec(error.message || '')
+  const alt = /Could not find the '(\w+)' column/i.exec(error.message || '')
   return alt ? alt[1] : null
 }

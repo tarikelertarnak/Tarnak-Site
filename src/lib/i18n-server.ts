@@ -1,18 +1,18 @@
 import type { SiteContent } from '@/lib/content'
 import type { Locale, LocalePref } from '@/lib/i18n'
-import { cache } from 'react'
 import { cookies, headers } from 'next/headers'
+import { cache } from 'react'
 import { getContent } from '@/lib/content'
 import {
   detectLocale,
   detectLocaleFromCountry,
   LOCALE_COOKIE,
-  resolveLocale,
   localeDirection,
+  resolveLocale,
 } from '@/lib/i18n'
+import { deContentOverlay } from '@/lib/i18n-content-de'
 import { enContentOverlay } from '@/lib/i18n-content-en'
 import { esContentOverlay } from '@/lib/i18n-content-es'
-import { deContentOverlay } from '@/lib/i18n-content-de'
 import { frContentOverlay } from '@/lib/i18n-content-fr'
 import { jaContentOverlay } from '@/lib/i18n-content-ja'
 import { ptContentOverlay } from '@/lib/i18n-content-pt'

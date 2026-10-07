@@ -1,4 +1,5 @@
-import { createClient as createSupabaseClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Service-role Supabase client — yalnızca sunucu tarafında (API route).

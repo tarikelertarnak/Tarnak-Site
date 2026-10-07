@@ -1,17 +1,18 @@
 'use client'
 
+import type { CsvColumn } from '@/lib/admin/csv'
+import type { FieldDef, ResourceDef } from '@/lib/admin/resources'
+
 import { Icon } from '@iconify/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-
 import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
 import { Drawer } from '@/components/ui/drawer'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { type CsvColumn, csvFilename, toCsv } from '@/lib/admin/csv'
-import type { FieldDef, ResourceDef } from '@/lib/admin/resources'
-import { RESOURCES } from '@/lib/admin/resources'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
+import { Textarea } from '@/components/ui/textarea'
+import { csvFilename, toCsv } from '@/lib/admin/csv'
+import { RESOURCES } from '@/lib/admin/resources'
 
 /**
  * Genel admin veri yoneticisi.
@@ -523,8 +524,9 @@ export function DataManager({ initialResource }: { initialResource?: string } = 
                       type="button"
                       className="inline-flex items-center gap-1 hover:text-foreground"
                       onClick={() => {
-                        if (sort === f.name)
+                        if (sort === f.name) {
                           setDir(dir === 'asc' ? 'desc' : 'asc')
+                        }
                         else {
                           setSort(f.name)
                           setDir('asc')

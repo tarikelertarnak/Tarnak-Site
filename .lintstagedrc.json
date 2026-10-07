@@ -1,0 +1,16 @@
+{
+  "//": "lint-staged (Faz 1 · kod kalitesi). Commit ÖNCESİ sadece DEĞİŞEN dosyalara bakar → hızlı.",
+  "//typecheck": "tsc burada DEĞİL: tsc dosya listesi kabul etmez, tüm projeyi kontrol eder. Bu yüzden `.husky/pre-commit` içinde lint-staged'den SONRA ayrı bir adımda çalışır.",
+  "//eslint": "Next 16'da `next lint` kaldırıldı; doğrudan `eslint` çağrılıyor. CI da aynı komutu kullanıyor.",
+  "*.{ts,tsx}": [
+    "eslint --fix --max-warnings 0",
+    "prettier --write"
+  ],
+  "*.{js,mjs,cjs,jsx}": [
+    "eslint --fix --max-warnings 0",
+    "prettier --write"
+  ],
+  "*.{json,css,md,yml,yaml}": [
+    "prettier --write"
+  ]
+}

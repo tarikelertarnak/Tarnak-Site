@@ -1,9 +1,9 @@
 import type { ContactApiResponse, ContactFormData } from '@/lib/validations'
-import { useT } from '@/components/locale-provider'
-import { E164_MAX_DIGITS, validatePhone } from '@/lib/phone'
-import { parsePhone } from '@/components/ui/phone-input'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useT } from '@/components/locale-provider'
+import { parsePhone } from '@/components/ui/phone-input'
 import { COUNTRIES } from '@/lib/countries-data'
+import { E164_MAX_DIGITS, validatePhone } from '@/lib/phone'
 import { contactFormSchema } from '@/lib/validations'
 
 interface FormErrors {
@@ -170,7 +170,7 @@ export function useContactForm(): UseContactFormReturn {
             : t('form.errEmailEmpty')
         }
         if (formData.contactMethod === 'email') {
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+          if (!/^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(v)) {
             return t('form.errEmailInvalid')
           }
           return undefined
@@ -231,7 +231,7 @@ export function useContactForm(): UseContactFormReturn {
       setFormData(prev => ({ ...prev, [field]: value }))
       // Stale closure düzeltmesi: setTouchedFields callback'i içinde
       // validateField çağrılır, böylece touchedFields her zaman günceldir.
-      setTouchedFields(prev => {
+      setTouchedFields((prev) => {
         const next = new Set(prev).add(field)
         // validateField'i burada çağırmak için güncel touchedFields'e ihtiyaç var
         // ama setState callback'i içinde başka setState çağırmak sorun yaratır.

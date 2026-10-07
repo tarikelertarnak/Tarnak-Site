@@ -1,6 +1,6 @@
+import type { MetadataRoute } from 'next'
 import { statSync } from 'node:fs'
 import path from 'node:path'
-import type { MetadataRoute } from 'next'
 import { getPosts } from '@/lib/blog'
 import { siteUrl } from '@/lib/site-url'
 
@@ -23,7 +23,7 @@ import { siteUrl } from '@/lib/site-url'
  */
 
 /** Indexable public routes, most important first. */
-const STATIC_ROUTES: Array<{ path: string; priority: number; freq: 'daily' | 'weekly' | 'monthly' }> = [
+const STATIC_ROUTES: Array<{ path: string, priority: number, freq: 'daily' | 'weekly' | 'monthly' }> = [
   { path: '/', priority: 1, freq: 'daily' },
   { path: '/projects', priority: 0.8, freq: 'weekly' },
   { path: '/blog', priority: 0.8, freq: 'daily' },

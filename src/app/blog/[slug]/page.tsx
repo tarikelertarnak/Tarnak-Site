@@ -4,10 +4,10 @@ import { notFound } from 'next/navigation'
 import { TrackBlogView } from '@/app/blog/[slug]/track-view'
 import { BackToListButton } from '@/components/back-to-list-button'
 import { Navigation } from '@/components/navigation'
-import { getPostBySlug } from '@/lib/blog'
+import { getPostBySlug, getPosts } from '@/lib/blog'
 import { t } from '@/lib/i18n'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
-import { getPosts } from '@/lib/blog'
+
 import { renderMarkdown } from '@/lib/markdown'
 import { siteUrl } from '@/lib/site-url'
 
@@ -163,31 +163,31 @@ export default async function PostPage({ params }: PostPageProps) {
               __html: JSON.stringify({
                 '@context': 'https://schema.org',
                 '@type': 'BlogPosting',
-                mainEntityOfPage: {
+                'mainEntityOfPage': {
                   '@type': 'WebPage',
                   '@id': siteUrl(`/blog/${post.slug}`),
                 },
-                headline: post.title,
-                description: post.excerpt || undefined,
-                datePublished: `${post.date}T12:00:00Z`,
-                dateModified: `${post.date}T12:00:00Z`,
-                inLanguage: 'tr',
-                keywords: post.tags?.join(', ') || undefined,
-                wordCount: post.content.split(/\s+/).filter(Boolean).length,
-                timeRequired: `PT${Math.max(1, Math.round(post.content.split(/\s+/).filter(Boolean).length / 200))}M`,
-                author: {
+                'headline': post.title,
+                'description': post.excerpt || undefined,
+                'datePublished': `${post.date}T12:00:00Z`,
+                'dateModified': `${post.date}T12:00:00Z`,
+                'inLanguage': 'tr',
+                'keywords': post.tags?.join(', ') || undefined,
+                'wordCount': post.content.split(/\s+/).filter(Boolean).length,
+                'timeRequired': `PT${Math.max(1, Math.round(post.content.split(/\s+/).filter(Boolean).length / 200))}M`,
+                'author': {
                   '@type': 'Person',
-                  name: 'Tarık Eler',
-                  alternateName: ['Tarnak', 'tarikelertarnak'],
-                  url: siteUrl('/'),
+                  'name': 'Tarık Eler',
+                  'alternateName': ['Tarnak', 'tarikelertarnak'],
+                  'url': siteUrl('/'),
                 },
-                publisher: {
+                'publisher': {
                   '@type': 'Person',
-                  name: 'Tarık Eler',
-                  alternateName: ['Tarnak'],
-                  url: siteUrl('/'),
+                  'name': 'Tarık Eler',
+                  'alternateName': ['Tarnak'],
+                  'url': siteUrl('/'),
                 },
-                image: `${siteUrl('/')}/tarik-eler-tarnak-logo.png`,
+                'image': `${siteUrl('/')}/tarik-eler-tarnak-logo.png`,
               }),
             }}
           />

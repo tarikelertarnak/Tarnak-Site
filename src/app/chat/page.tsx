@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
 import { ChatWindow } from '@/components/chat/chat-window'
-import { ChatIcon } from '@/components/ui/icons'
 import { Navigation } from '@/components/navigation'
+import { ChatIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { getLocalizedContent } from '@/lib/i18n-server'
-import { getSessionUser, sessionUserName } from '@/lib/supabase/session'
 import { siteUrl } from '@/lib/site-url'
+import { getSessionUser, sessionUserName } from '@/lib/supabase/session'
 
 export const dynamic = 'force-dynamic'
 

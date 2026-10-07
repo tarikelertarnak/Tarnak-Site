@@ -81,32 +81,32 @@ describe('toCsv', () => {
 
   it('= ile baslayan degeri etkisizlestirir', () => {
     const out = csv([{ name: '=1+1' }])
-    expect(out).toContain("'=1+1")
+    expect(out).toContain('\'=1+1')
   })
 
-  it('HYPERLINK formulunu etkisizlestirir', () => {
+  it('hYPERLINK formulunu etkisizlestirir', () => {
     const evil = '=HYPERLINK("http://kotu.example","tikla")'
     const out = csv([{ name: evil }])
     // Formul artik calismaz: onunde ' var ve hucre tirnakli
-    expect(out).toContain("'=HYPERLINK")
+    expect(out).toContain('\'=HYPERLINK')
     expect(out).not.toMatch(/\r\n=HYPERLINK/)
   })
 
   it('cmd komut calistirma payloadini etkisizlestirir', () => {
     const out = csv([{ name: `=cmd|'/c calc'!A1` }])
-    expect(out).toContain("'=cmd")
+    expect(out).toContain('\'=cmd')
   })
 
   it('+, -, @ ile baslayanlari da etkisizlestirir', () => {
-    expect(csv([{ name: '+1' }])).toContain("'+1")
-    expect(csv([{ name: '-1' }])).toContain("'-1")
-    expect(csv([{ name: '@SUM(A1)' }])).toContain("'@SUM(A1)")
+    expect(csv([{ name: '+1' }])).toContain('\'+1')
+    expect(csv([{ name: '-1' }])).toContain('\'-1')
+    expect(csv([{ name: '@SUM(A1)' }])).toContain('\'@SUM(A1)')
   })
 
   it('normal metni DEGISTIRMEZ (yanlis pozitif yok)', () => {
     const out = csv([{ name: 'Merhaba dünya' }])
     expect(out).toContain('Merhaba dünya')
-    expect(out).not.toContain("'Merhaba")
+    expect(out).not.toContain('\'Merhaba')
   })
 
   it('basligi da kacistan gecirir', () => {

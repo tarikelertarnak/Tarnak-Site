@@ -1,4 +1,3 @@
-import { guardWrite } from '@/lib/rate-guard'
 import { Buffer } from 'node:buffer'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
@@ -6,6 +5,7 @@ import process from 'node:process'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { getContent, saveContent } from '@/lib/content'
+import { guardWrite } from '@/lib/rate-guard'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { getSessionUser } from '@/lib/supabase/session'
@@ -120,7 +120,8 @@ export async function POST(req: Request) {
   }
 }
 
-/** Yeni avatarı Supabase'e yazar (user_metadata + profiles.avatar_url).
+/**
+ * Yeni avatarı Supabase'e yazar (user_metadata + profiles.avatar_url).
  *
  *  Service role anahtari SUNUCUDA kalir; route disina sizmaz. Panel zaten
  *  content.json'a yaziyor, bu yalnizca oturum/profil tarafini senkronlar.

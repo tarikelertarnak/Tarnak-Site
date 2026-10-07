@@ -1,8 +1,8 @@
 // Verifies every IANA timezone → ISO2 entry in use-contact-form.ts:
 // 1) exists in the generated COUNTRIES list, 2) has no duplicate timezone keys.
 // Run: node scripts/check-country-map.cjs
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
+const path = require('node:path')
 
 const root = path.join(__dirname, '..')
 const hook = fs.readFileSync(path.join(root, 'src/hooks/use-contact-form.ts'), 'utf8')

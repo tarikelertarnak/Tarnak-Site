@@ -197,7 +197,7 @@ const es: Record<string, string> = {
   'hero.blog': 'Blog',
   'hero.feedback': 'Contacto',
   'hero.projects': 'Proyectos',
-'hero.scrollDown': 'Desplázate hacia abajo',
+  'hero.scrollDown': 'Desplázate hacia abajo',
   'hero.techStack': 'Tecnologías',
   'lang.en': 'Inglés',
   'lang.tr': 'Turco',

@@ -4,8 +4,8 @@ import { addMessage, deleteMessage, getMessages } from '@/lib/chat'
 import { clientIp } from '@/lib/client-ip'
 import {
   BODY_LIMITS,
-  LIMITS,
   checkLimit,
+  LIMITS,
   rateLimitResponse,
   withRateLimitHeaders,
 } from '@/lib/rate-limit-kv'

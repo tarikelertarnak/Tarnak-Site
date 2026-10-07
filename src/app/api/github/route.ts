@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { fetchUserProfile, fetchUserRepos, isGitHubNotFound } from '@/lib/github'
-import { GITHUB_CACHE_TTL_S, CachedNotFoundError, cachedJson } from '@/lib/kv-cache'
+import { cachedJson, CachedNotFoundError, GITHUB_CACHE_TTL_S } from '@/lib/kv-cache'
 
 interface GithubUserData {
   profile: Awaited<ReturnType<typeof fetchUserProfile>> | null
@@ -50,12 +50,14 @@ export async function GET(req: Request) {
       const [profile, repos] = await Promise.all([
         fetchUserProfile(username).catch((error) => {
           console.error(`[api/github] failed to fetch profile (${username}):`, error)
-          if (isGitHubNotFound(error)) notFound = true
+          if (isGitHubNotFound(error))
+            notFound = true
           return null
         }),
         fetchUserRepos(username).catch((error) => {
           console.error(`[api/github] failed to fetch repos (${username}):`, error)
-          if (isGitHubNotFound(error)) notFound = true
+          if (isGitHubNotFound(error))
+            notFound = true
           return null
         }),
       ])

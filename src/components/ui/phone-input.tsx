@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useT } from '@/components/locale-provider'
-import { Input } from '@/components/ui/input'
 import { CountrySelect } from '@/components/ui/country-select'
+import { Input } from '@/components/ui/input'
 import { COUNTRIES } from '@/lib/countries-data'
 import { countryFromLanguages } from '@/lib/country-detect'
 import {
@@ -13,7 +13,6 @@ import {
   minNumberDigits,
   sanitizeCountryCode,
   sanitizeNumber,
-  validatePhone,
 } from '@/lib/phone'
 
 /**
@@ -226,8 +225,7 @@ export function PhoneInput({
             placeholder={placeholder ?? t('phone.numberPlaceholder')}
             value={value.number}
             onValueChange={number =>
-              onChange({ ...value, number: sanitizeNumber(number, value.code, value.iso2) })
-            }
+              onChange({ ...value, number: sanitizeNumber(number, value.code, value.iso2) })}
             maxLength={hasRule ? maxLen : undefined}
             minLength={hasRule && minLen > 0 ? minLen : undefined}
             inputMode="numeric"

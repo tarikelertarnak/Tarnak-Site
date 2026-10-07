@@ -4,10 +4,10 @@ import type { SiteContent } from '@/lib/content'
 import { useMemo } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { useT } from '@/components/locale-provider'
-import { buildSiteNavigation } from '@/lib/site-navigation'
 import { cn } from '@/components/ui/cn'
 import { ArrowUpRightIcon } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
+import { buildSiteNavigation } from '@/lib/site-navigation'
 
 /**
  * Alt bilgi (footer).

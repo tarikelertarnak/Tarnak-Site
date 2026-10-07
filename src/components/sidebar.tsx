@@ -17,13 +17,12 @@
 
 import type { SessionUser } from '@/lib/supabase/session'
 import { AnimatePresence, motion } from 'motion/react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
-import { SiteLogo } from '@/components/logo'
 import { useT } from '@/components/locale-provider'
-import { cn } from '@/components/ui/cn'
-import { PANEL_SURFACE, PANEL_SURFACE_BORDER } from '@/lib/panel-surface'
+import { SiteLogo } from '@/components/logo'
 import { ProfileEditDrawer } from '@/components/profile/profile-edit-drawer'
+import { cn } from '@/components/ui/cn'
 import {
   ChatIcon,
   CogIcon,
@@ -36,6 +35,7 @@ import {
   UserIcon,
 } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
+import { PANEL_SURFACE, PANEL_SURFACE_BORDER } from '@/lib/panel-surface'
 
 /* ─── Navigation Items ─────────────────────────────────────── */
 
@@ -102,7 +102,6 @@ const NAV_LINKS: NavItem[] = [
 export function Sidebar() {
   const { t } = useT()
   const pathname = usePathname()
-  const router = useRouter()
 
   const [isOpen, setIsOpen] = useState(false)
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
@@ -381,37 +380,37 @@ export function Sidebar() {
         user={sessionUser}
       />
       <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop — dark + blur */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm"
-            onClick={() => setIsOpen(false)}
-            aria-hidden="true"
-          />
+        {isOpen && (
+          <>
+            {/* Backdrop — dark + blur */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm"
+              onClick={() => setIsOpen(false)}
+              aria-hidden="true"
+            />
 
-          {/* Panel */}
-          <motion.aside
-            initial={{ x: -SIDEBAR_WIDTH }}
-            animate={{ x: 0 }}
-            exit={{ x: -SIDEBAR_WIDTH }}
-            transition={{ type: 'spring', stiffness: 360, damping: 34 }}
-            className={cn(
-              'fixed top-0 left-0 z-50 h-full w-[325px]',
-              'border-r border-white/10 bg-[#0a0a0e] shadow-2xl',
-            )}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Sidebar"
-          >
-            {sidebarInner}
-          </motion.aside>
-        </>
-      )}
+            {/* Panel */}
+            <motion.aside
+              initial={{ x: -SIDEBAR_WIDTH }}
+              animate={{ x: 0 }}
+              exit={{ x: -SIDEBAR_WIDTH }}
+              transition={{ type: 'spring', stiffness: 360, damping: 34 }}
+              className={cn(
+                'fixed top-0 left-0 z-50 h-full w-[325px]',
+                'border-r border-white/10 bg-[#0a0a0e] shadow-2xl',
+              )}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Sidebar"
+            >
+              {sidebarInner}
+            </motion.aside>
+          </>
+        )}
       </AnimatePresence>
     </>
   )

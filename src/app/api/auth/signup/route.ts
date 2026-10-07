@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { E164_MAX_DIGITS, normalizePhone } from '@/lib/phone'
-import { LIMITS, checkLimit, rateLimitResponse } from '@/lib/rate-limit-kv'
+import { checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 
@@ -10,7 +10,7 @@ function slugify(name: string): string {
     .trim()
     .toLowerCase()
     .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '') // aksanları at
+    .replace(/[\u0300-\u036F]/g, '') // aksanları at
     .replace(/[^a-z0-9._-]+/g, '-')
     .replace(/^-+|-+$/g, '')
   return normalized || 'user'
@@ -50,7 +50,7 @@ export async function POST(req: Request) {
   if (!fullName) {
     return NextResponse.json({ success: false, message: 'Ad gerekli.' }, { status: 400 })
   }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!/^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ success: false, message: 'Geçerli bir e-posta adresi girin.' }, { status: 400 })
   }
   if (password.length < 8) {

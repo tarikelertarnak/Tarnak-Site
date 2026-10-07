@@ -8,9 +8,9 @@ import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
-import { HERO_BTN_BODY } from '@/components/ui/hero-button-style'
 import { cn } from '@/components/ui/cn'
 import { CvPicker } from '@/components/ui/cv-picker'
+import { HERO_BTN_BODY } from '@/components/ui/hero-button-style'
 import {
   BriefcaseIcon,
   ChatIcon,
@@ -91,7 +91,7 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           */}
           <motion.a
             href={`${SITE_URL}/`}
-            aria-label={content.profile.firstName + ' ' + content.profile.lastName}
+            aria-label={`${content.profile.firstName} ${content.profile.lastName}`}
             variants={item}
             className="group/logo mb-[clamp(10px,1.8vh,20px)] inline-flex shrink-0 items-center justify-center"
           >
@@ -240,7 +240,8 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           aria-label={t('hero.scrollDown')}
           onClick={() => {
             const target = document.getElementById('about')
-            if (!target) return
+            if (!target)
+              return
             target.scrollIntoView({
               behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
                 ? 'auto'

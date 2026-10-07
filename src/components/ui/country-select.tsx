@@ -166,7 +166,7 @@ export function CountrySelect({
   const rows = useMemo<Row[]>(() => {
     const tr = new Intl.DisplayNames(['tr'], { type: 'region' })
     const en = new Intl.DisplayNames(['en'], { type: 'region' })
-    return COUNTRIES.map(c => {
+    return COUNTRIES.map((c) => {
       const iso = c.iso2.toUpperCase()
       const name = tr.of(iso) ?? en.of(iso) ?? iso
       const enName = en.of(iso) ?? c.name
@@ -226,7 +226,7 @@ export function CountrySelect({
     }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
-      setActive(prev => {
+      setActive((prev) => {
         const next = e.key === 'ArrowDown'
           ? Math.min(prev + 1, filtered.length - 1)
           : Math.max(prev - 1, 0)
@@ -310,7 +310,7 @@ export function CountrySelect({
               <input
                 ref={inputRef}
                 value={q}
-                onChange={e => {
+                onChange={(e) => {
                   setQ(e.target.value)
                   setActive(0)
                 }}

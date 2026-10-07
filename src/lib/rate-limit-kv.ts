@@ -37,9 +37,9 @@ import { clientIp } from '@/lib/client-ip'
  * `env.d.ts` genişletilir. Yakalanmazsa local dev'de (Node) `null` döner ve
  * çağıran `inMemory` fallback'e düşer — böylece `next dev` de çalışır.
  */
-type KVNamespaceLike = {
-  get(key: string, type: 'text'): Promise<string | null>
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>
+interface KVNamespaceLike {
+  get: (key: string, type: 'text') => Promise<string | null>
+  put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>
 }
 
 async function getKv(): Promise<KVNamespaceLike | null> {

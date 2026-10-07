@@ -13,21 +13,43 @@
 /* ------------------------------------------------------------------ */
 
 import enDict from '@/i18n/en.json'
-import trDict from '@/i18n/tr.json'
 import { extraDicts } from '@/i18n/extra'
+import trDict from '@/i18n/tr.json'
 
-export type Locale =
-  | 'tr' | 'en' | 'es' | 'de' | 'ja' | 'fr' | 'pt' | 'ru' | 'it'
-  | 'zh' | 'nl' | 'pl' | 'ko' | 'ar' | 'id' | 'vi' | 'fa' | 'uk'
-  | 'th' | 'cs' | 'hu' | 'ro' | 'sv' | 'el' | 'he'
+export type Locale
+  = | 'tr' | 'en' | 'es' | 'de' | 'ja' | 'fr' | 'pt' | 'ru' | 'it'
+    | 'zh' | 'nl' | 'pl' | 'ko' | 'ar' | 'id' | 'vi' | 'fa' | 'uk'
+    | 'th' | 'cs' | 'hu' | 'ro' | 'sv' | 'el' | 'he'
 
 export type LocalePref = 'auto' | Locale
 export const LOCALE_COOKIE = 'site-locale'
 
 /** All selectable locales (Auto is handled separately as a pref). */
 export const LOCALES: readonly Locale[] = [
-  'tr', 'en', 'es', 'de', 'ja', 'fr', 'pt', 'ru', 'it', 'zh', 'nl', 'pl',
-  'ko', 'ar', 'id', 'vi', 'fa', 'uk', 'th', 'cs', 'hu', 'ro', 'sv', 'el',
+  'tr',
+  'en',
+  'es',
+  'de',
+  'ja',
+  'fr',
+  'pt',
+  'ru',
+  'it',
+  'zh',
+  'nl',
+  'pl',
+  'ko',
+  'ar',
+  'id',
+  'vi',
+  'fa',
+  'uk',
+  'th',
+  'cs',
+  'hu',
+  'ro',
+  'sv',
+  'el',
   'he',
 ]
 
@@ -50,10 +72,31 @@ export const TRANSLATED_LOCALES: readonly Locale[] = ['tr', 'en', 'de', 'es', 'f
 
 /** accept-language base (e.g. `pt-BR` -> `pt`, `zh-Hans` -> `zh`) → Locale. */
 const LANG_TABLE: Record<string, Locale> = {
-  tr: 'tr', en: 'en', es: 'es', de: 'de', ja: 'ja', fr: 'fr', pt: 'pt',
-  ru: 'ru', it: 'it', zh: 'zh', nl: 'nl', pl: 'pl', ko: 'ko', ar: 'ar',
-  id: 'id', vi: 'vi', fa: 'fa', uk: 'uk', th: 'th', cs: 'cs', hu: 'hu',
-  ro: 'ro', sv: 'sv', el: 'el', he: 'he',
+  tr: 'tr',
+  en: 'en',
+  es: 'es',
+  de: 'de',
+  ja: 'ja',
+  fr: 'fr',
+  pt: 'pt',
+  ru: 'ru',
+  it: 'it',
+  zh: 'zh',
+  nl: 'nl',
+  pl: 'pl',
+  ko: 'ko',
+  ar: 'ar',
+  id: 'id',
+  vi: 'vi',
+  fa: 'fa',
+  uk: 'uk',
+  th: 'th',
+  cs: 'cs',
+  hu: 'hu',
+  ro: 'ro',
+  sv: 'sv',
+  el: 'el',
+  he: 'he',
 }
 
 function cleanLocale(s?: string | null): Locale | undefined {
@@ -70,10 +113,38 @@ export function detectLocale(lang?: string): Locale {
 
 /** ISO country code (from CF-IPCountry / timezone) → best locale for that country. */
 const COUNTRY_LOCALE: Record<string, Locale> = {
-  TR: 'tr', DE: 'de', FR: 'fr', ES: 'es', AT: 'de', CH: 'de', BE: 'nl', NL: 'nl',
-  PT: 'pt', BR: 'pt', IT: 'it', RU: 'ru', UA: 'uk', PL: 'pl', CZ: 'cs', HU: 'hu',
-  RO: 'ro', SE: 'sv', GR: 'el', JP: 'ja', KR: 'ko', CN: 'zh', TW: 'zh', HK: 'zh',
-  AR: 'ar', SA: 'ar', AE: 'ar', EG: 'ar', ID: 'id', VN: 'vi', TH: 'th', IL: 'he',
+  TR: 'tr',
+  DE: 'de',
+  FR: 'fr',
+  ES: 'es',
+  AT: 'de',
+  CH: 'de',
+  BE: 'nl',
+  NL: 'nl',
+  PT: 'pt',
+  BR: 'pt',
+  IT: 'it',
+  RU: 'ru',
+  UA: 'uk',
+  PL: 'pl',
+  CZ: 'cs',
+  HU: 'hu',
+  RO: 'ro',
+  SE: 'sv',
+  GR: 'el',
+  JP: 'ja',
+  KR: 'ko',
+  CN: 'zh',
+  TW: 'zh',
+  HK: 'zh',
+  AR: 'ar',
+  SA: 'ar',
+  AE: 'ar',
+  EG: 'ar',
+  ID: 'id',
+  VN: 'vi',
+  TH: 'th',
+  IL: 'he',
   IR: 'fa',
 }
 

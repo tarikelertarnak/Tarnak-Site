@@ -16,10 +16,12 @@ const nextConfig = {
   // OpenNext (Workers/Cloudflare) build'ini etkilemez — export ekstra moddur.
   // Admin bileşenleri API route'larından tip import eder; export'ta API hariç
   // tutulduğundan type-check kırılır → ignoreBuildErrors sadece export'ta aktif.
-  ...(process.env.EXPORT_MODE === '1' ? {
-    output: 'export',
-    typescript: { ignoreBuildErrors: true },
-  } : {}),
+  ...(process.env.EXPORT_MODE === '1'
+    ? {
+        output: 'export',
+        typescript: { ignoreBuildErrors: true },
+      }
+    : {}),
   devIndicators: false,
   trailingSlash: true,
   // 2026-10-03: Search Console HTML dosya dogrulamasi /google<TOKEN>.html adresini
@@ -41,7 +43,7 @@ const nextConfig = {
         // Genel güvenlik başlıkları
         source: '/:path*',
         headers: [
-{ key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
           // Aynı origin frame'lere izin ver — admin editörün Önizleme iframe'i /puck/* embed eder
           { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },

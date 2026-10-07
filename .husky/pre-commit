@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# pre-commit (Faz 1 · kalite kapısı)
+#
+# Sıra önemli:
+#   1) gitleaks      → sır varsa EN BAŞTA dur. Geri bildirim gitmesin.
+#   2) lint-staged   → sadece DEĞİŞEN dosyalara eslint + prettier.
+#   3) tsc --noEmit  → tüm proje tip kontrolü (tsc dosya listesi almaz).
+#
+# Atlamak için: `git commit --no-verify` (CI yine de reddeder).
+# ─────────────────────────────────────────────────────────────────────────────
+
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks (staged)"
+  gitleaks protect --staged --redact --config .gitleaks.toml || exit 1
+else
+  echo "pre-commit: gitleaks yok, sır taramasi CI'da zorunlu"
+fi
+
+echo "pre-commit: lint-staged"
+pnpm exec lint-staged || exit 1
+
+echo "pre-commit: tsc --noEmit"
+pnpm exec tsc --noEmit || exit 1

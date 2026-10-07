@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type React from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 /**
  * Satır bazlı "Daha Fazlasını Göster" sayfalama.
@@ -30,7 +30,8 @@ export function computeVisibleCount(
   columns: number,
   visibleRows: number,
 ): number {
-  if (total <= 0) return 0
+  if (total <= 0)
+    return 0
   // N en az 1 olmalı (grid henüz ölçülmediyse 0 gelir)
   const n = Math.max(1, columns)
   const wanted = Math.max(1, visibleRows) * n
@@ -64,7 +65,8 @@ export function computeNextRows(
   visibleRows: number,
 ): number {
   const visible = computeVisibleCount(total, columns, visibleRows)
-  if (visible >= total) return 0
+  if (visible >= total)
+    return 0
   const n = Math.max(1, columns)
   // Kaç satır daha gerekiyor (boş hücre kuralı uygulanmış görünen sayıyla)
   const rowsNeeded = Math.ceil((total - visible) / n)
@@ -114,18 +116,21 @@ export function useRowPagination<T>(
   */
   useLayoutEffect(() => {
     const grid = gridRef.current
-    if (!grid) return
+    if (!grid)
+      return
 
     const measure = () => {
       const tpl = getComputedStyle(grid).gridTemplateColumns
       const n = tpl && tpl !== 'none'
         ? tpl.trim().split(/\s+/).length
         : 0
-      if (n > 0) setColumns(n)
+      if (n > 0)
+        setColumns(n)
     }
     measure()
 
-    if (typeof ResizeObserver === 'undefined') return
+    if (typeof ResizeObserver === 'undefined')
+      return
     const ro = new ResizeObserver(measure)
     ro.observe(grid)
     return () => ro.disconnect()
@@ -145,7 +150,8 @@ export function useRowPagination<T>(
   const loadMore = useCallback(() => {
     const n = columns > 0 ? columns : 1
     const rowsNeeded = computeNextRows(total, n, visibleRows)
-    if (rowsNeeded <= 0) return
+    if (rowsNeeded <= 0)
+      return
     setVisibleRows(r => r + rowsNeeded)
     setRevealKey(k => k + 1)
   }, [columns, total, visibleRows, stepRows])

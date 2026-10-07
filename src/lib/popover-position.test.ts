@@ -110,7 +110,7 @@ describe('computePopoverPosition', () => {
     expect(panel.right).toBeLessThanOrEqual(kucuk.width + 1)
   })
 
-  it('HICBIR konumda butonla kesismez — 200 rastgele konum denenir', () => {
+  it('hICBIR konumda butonla kesismez — 200 rastgele konum denenir', () => {
     const rastgele = (n: number) => {
       // deterministik sozde-rastgele
       const x = Math.sin(n * 12.9898) * 43758.5453

@@ -197,7 +197,7 @@ const ja: Record<string, string> = {
   'hero.blog': 'ブログ',
   'hero.feedback': 'お問い合わせ',
   'hero.projects': 'プロジェクト',
-'hero.scrollDown': '下にスクロール',
+  'hero.scrollDown': '下にスクロール',
   'hero.techStack': '技術スタック',
   'lang.en': '英語',
   'lang.tr': 'トルコ語',

@@ -364,7 +364,7 @@ export const getContent = cache(async (): Promise<SiteContent> => {
     return contentMergeCache.data as SiteContent
   }
 
-/*
+  /*
     İÇERİK KAYNAĞI (2026-10-06) — öncelik sırası:
       1. Supabase `site_content` (id='main')  ← KALICI, Workers'ta çalışır
       2. `data/content.json` (paketlenmiş)    ← build-time yedek
@@ -613,7 +613,7 @@ async function trySaveToDisk(content: SiteContent): Promise<PersistResult | null
     return {
       ok: false,
       error: `İçerik kalıcı olarak yazılamadı (${detail}). `
-      + 'Sunucu dosya sistemi salt-okunur olabilir — değişiklik yeniden deploy sonrası kaybolur.',
+        + 'Sunucu dosya sistemi salt-okunur olabilir — değişiklik yeniden deploy sonrası kaybolur.',
     }
   }
 }

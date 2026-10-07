@@ -31,7 +31,7 @@ export default async function ProjectsPage() {
       <Navigation content={content} />
       <RememberListPath path="/projects" />
       <main id="main" className="w-full">
-{/*
+        {/*
             BOŞLUK DENGESİ (2026-10-06, kullanıcı: "üstteki yazılarla
             alttaki kısımın boşlukları eşit ve ortalanmış olsun").
 
@@ -74,7 +74,7 @@ export default async function ProjectsPage() {
               zemin üstünde zor okunuyordu. `text-primary-fg` tema ile birlikte
               çözülüyor: açık temada siyah, koyu temada beyaz — buton yazısıyla
               birebir aynı renk. */}
-          <GithubIcon size={14} className="shrink-0 text-primary-fg" />
+              <GithubIcon size={14} className="shrink-0 text-primary-fg" />
               {content.github.title}
             </a>
           </div>

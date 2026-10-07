@@ -21,9 +21,9 @@
  * hata anında her ziyaretçi GitHub'a yeniden gitmesin.
  */
 
-type KVLike = {
-  get(key: string, type: 'text'): Promise<string | null>
-  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>
+interface KVLike {
+  get: (key: string, type: 'text') => Promise<string | null>
+  put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>
 }
 
 async function getKv(): Promise<KVLike | null> {
@@ -96,7 +96,8 @@ export async function cachedJson<T>(
     // Geçici hata `null` döner; kalıcı 404 `CachedNotFoundError` fırlatır.
     const fresh = await runFetcher(fetcher)
     if (fresh !== null) {
-      if (memFallback.size > 200) memFallback.clear()
+      if (memFallback.size > 200)
+        memFallback.clear()
       memFallback.set(cacheKey, { body: JSON.stringify(fresh), ts: now })
     }
     return { data: fresh, cache: 'MISS' }
@@ -106,9 +107,11 @@ export async function cachedJson<T>(
   if (raw) {
     try {
       const parsed = JSON.parse(raw) as { data: T | null, ok: boolean, nf?: string }
-      if (parsed.ok) return { data: parsed.data, cache: 'HIT' }
+      if (parsed.ok)
+        return { data: parsed.data, cache: 'HIT' }
       // `ok:false, nf` = kalıcı "yok" cevabı (404): mesajı geri ver.
-      if (parsed.nf) throw new CachedNotFoundError(parsed.nf)
+      if (parsed.nf)
+        throw new CachedNotFoundError(parsed.nf)
       // Diğer hata kaydı: yeniden dene ama her istek GitHub'a gitmesin.
       const fresh = await runFetcher(fetcher)
       if (fresh !== null) {
@@ -118,7 +121,8 @@ export async function cachedJson<T>(
       return { data: null, cache: 'MISS' }
     }
     catch (error) {
-      if (error instanceof CachedNotFoundError) throw error
+      if (error instanceof CachedNotFoundError)
+        throw error
       /* bozuk JSON -> yeniden çek */
     }
   }
@@ -153,7 +157,8 @@ async function runFetcher<T>(fetcher: () => Promise<T>): Promise<T | null> {
     return await fetcher()
   }
   catch (error) {
-    if (error instanceof CachedNotFoundError) throw error
+    if (error instanceof CachedNotFoundError)
+      throw error
     return null
   }
 }

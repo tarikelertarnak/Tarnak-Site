@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { LIMITS, checkLimit, rateLimitResponse, resetLimits } from '@/lib/rate-limit-kv'
+import { checkLimit, LIMITS, rateLimitResponse, resetLimits } from '@/lib/rate-limit-kv'
 
 /**
  * KV hız sınırlayıcı — test ortamı KV binding'siz çalışır, dolayısıyla
@@ -72,7 +72,7 @@ describe('checkLimit', () => {
     expect((await checkLimit('stars', LIMITS.counter, req('6.6.6.6'), 'proje-b')).ok).toBe(true)
   })
 
-  it('IP yoksa limiti yarıya indirir (unknown anahtarı)', async () => {
+  it('iP yoksa limiti yarıya indirir (unknown anahtarı)', async () => {
     // `req` olmadan: anahtar 'anonymous', daha sıkı sınır.
     const r = await checkLimit('chat', LIMITS.chat)
     expect(r.limit).toBe(Math.floor(LIMITS.chat.limit / 2))
