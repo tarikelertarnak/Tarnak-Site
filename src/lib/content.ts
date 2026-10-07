@@ -292,20 +292,104 @@ const CONTENT_CACHE_TTL_MS = 300_000
  * Merged result is cached for 5 min (module-level TTL); saveContent clears it
  * immediately after an edit from the admin panel.
  */
+/**
+ * Supabase `site_content` okuma/yazma (2026-10-06).
+ *
+ * Workers'ta `fs.writeFile` SALT-OKUNUR; içeriğin kalıcı olması için
+ * Postgres'e yazılması gerekiyor. Tablo kurulumu:
+ *   supabase/site-content.sql → Supabase SQL Editor'de bir kez çalıştır.
+ *
+ * Tablo yoksa/erişilemiyorsa `null` döner ve çağıran taraf diske
+ * düşer — site çalışmaya devam eder.
+ */
+async function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.SUPABASE_SERVICE_ROLE
+  if (!url || !key) {
+    return null
+  }
+  return createSupabaseAdmin(url, key, {
+    global: {
+      fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(15_000) }),
+    },
+  })
+}
+
+async function readSupabaseContent(): Promise<Partial<SiteContent> | null> {
+  const supabase = await getSupabaseAdmin()
+  if (!supabase) {
+    return null
+  }
+  try {
+    const { data, error } = await supabase
+      .from('site_content')
+      .select('content')
+      .eq('id', 'main')
+      .maybeSingle()
+    if (error || !data?.content) {
+      return null
+    }
+    const content = data.content as Record<string, unknown>
+    // Boş satır (tablo yeni oluşturulmuşsa) diskten okunmalı.
+    return Object.keys(content).length > 0 ? (content as Partial<SiteContent>) : null
+  }
+  catch {
+    return null
+  }
+}
+
+export async function saveContentToSupabase(content: SiteContent): Promise<PersistResult | null> {
+  const supabase = await getSupabaseAdmin()
+  if (!supabase) {
+    return null
+  }
+  try {
+    const { error } = await supabase
+      .from('site_content')
+      .upsert({ id: 'main', content, updated_at: new Date().toISOString() }, { onConflict: 'id' })
+    if (error) {
+      throw new Error(error.message)
+    }
+    return { ok: true }
+  }
+  catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    console.error('[content] Supabase yazma basarisiz:', detail)
+    return { ok: false, error: `Supabase yazma başarısız (${detail}).` }
+  }
+}
+
 export const getContent = cache(async (): Promise<SiteContent> => {
   if (contentMergeCache && Date.now() - contentMergeCache.ts < CONTENT_CACHE_TTL_MS) {
     return contentMergeCache.data as SiteContent
   }
 
-  // fs.readFile works on Node (dev/build-time writes are read live);
-  // on Workers the bundled JSON is the source of truth.
+/*
+    İÇERİK KAYNAĞI (2026-10-06) — öncelik sırası:
+      1. Supabase `site_content` (id='main')  ← KALICI, Workers'ta çalışır
+      2. `data/content.json` (paketlenmiş)    ← build-time yedek
+
+    Neden değişti: `saveContent()` yalnızca diske yazıyordu. Workers
+    dosya sistemi salt-okunur → yazma EROFS ile başarısız, içerik her
+    deploy'da geri alınıyordu. Supabase tablosu kurulduğunda
+    (supabase/site-content.sql) okuma da oradan yapılacak.
+
+    Tablo yoksa veya erişilemiyorsa paketlenmiş JSON'a düşüyoruz —
+    site çalışmaya devam eder, sadece admin kayıtları kalıcı olmaz.
+  */
   let parsed: Partial<SiteContent> | null = null
-  try {
-    const raw = await fs.readFile(CONTENT_FILE(), 'utf-8')
-    parsed = JSON.parse(raw) as Partial<SiteContent>
+  const fromSupabase = await readSupabaseContent()
+  if (fromSupabase) {
+    parsed = fromSupabase
   }
-  catch {
-    parsed = null
+  else {
+    try {
+      const raw = await fs.readFile(CONTENT_FILE(), 'utf-8')
+      parsed = JSON.parse(raw) as Partial<SiteContent>
+    }
+    catch {
+      parsed = null
+    }
   }
   const defaults = await getDefaultContent()
   const base: SiteContent = mergeContent(defaults, parsed ?? bundledContent)
@@ -484,24 +568,54 @@ export interface PersistResult {
 
 export async function saveContent(content: SiteContent): Promise<PersistResult> {
   let result: PersistResult
-  try {
-    await ensureDataDir()
-    await fs.writeFile(CONTENT_FILE(), `${JSON.stringify(content, null, 2)}\n`, 'utf-8')
+
+  /*
+    SIRALAMA (2026-10-06):
+      1. Önce SUPABASE — Workers'ta tek kalıcı seçenek bu.
+      2. Supabase yoksa/yazılamadıysa diske dene (Node geliştirme,
+         Docker, VPS gibi yazılabilir FS'lerde çalışır).
+      3. İkisi de olmazsa `ok:false` + açıklayıcı hata.
+
+    ÖNCEKİ DAVRANIŞ: yalnızca diske yazıyordu. Workers'ta EROFS →
+    "Kalıcı değil" uyarısı → her deploy'da içerik geri alınıyordu.
+  */
+  const supabaseResult = await saveContentToSupabase(content)
+  if (supabaseResult?.ok) {
     result = { ok: true }
   }
-  catch (error) {
-    const detail = error instanceof Error ? error.message : String(error)
-    console.error('[content] saveContent yazamadi:', detail)
-    result = {
+  else if (supabaseResult) {
+    // Supabase var ama yazılamadı — diske de dene.
+    result = await trySaveToDisk(content) ?? supabaseResult
+  }
+  else {
+    result = await trySaveToDisk(content) ?? {
       ok: false,
-      error: `İçerik kalıcı olarak yazılamadı (${detail}). `
-        + 'Sunucu dosya sistemi salt-okunur olabilir (Vercel) — değişiklik yeniden deploy sonrası kaybolur.',
+      error: 'Ne Supabase ne dosya sistemi yapılandırılmamış — içerik kaydedilemedi.',
     }
   }
-  // Refresh the Supabase merge cache after an admin edit
+
+  // Refresh the caches after an admin edit
   supabaseMergeCache = null
   contentMergeCache = null
   return result
+}
+
+/** Diske yazmayı dener; diske yazılamıyorsa `null` döner. */
+async function trySaveToDisk(content: SiteContent): Promise<PersistResult | null> {
+  try {
+    await ensureDataDir()
+    await fs.writeFile(CONTENT_FILE(), `${JSON.stringify(content, null, 2)}\n`, 'utf-8')
+    return { ok: true }
+  }
+  catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    console.error('[content] saveContent diske yazamadi:', detail)
+    return {
+      ok: false,
+      error: `İçerik kalıcı olarak yazılamadı (${detail}). `
+      + 'Sunucu dosya sistemi salt-okunur olabilir — değişiklik yeniden deploy sonrası kaybolur.',
+    }
+  }
 }
 
 export interface AdminCredentials {
