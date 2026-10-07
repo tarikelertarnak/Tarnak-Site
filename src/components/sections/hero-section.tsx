@@ -3,7 +3,6 @@
 import type { Variants } from 'motion/react'
 import type { SiteContent } from '@/lib/content'
 import type { CvDoc } from '@/lib/cv'
-import { useEffect, useRef, useState } from 'react'
 import { TypewriterEffect } from '@lobehub/ui/awesome'
 import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
@@ -15,8 +14,6 @@ import { CvPicker } from '@/components/ui/cv-picker'
 import {
   BriefcaseIcon,
   ChatIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
   FileIcon,
   SendIcon,
   UserPlusIcon,
@@ -58,55 +55,17 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
          kullanıcı "çok küçük" dedi). Hâlâ her ekran boyutunda görünür,
          asla `hidden` olmaz.
 
-      3) BUTON ŞERİDİ: altı bölme düğmesi (Projeler / İletişim / CV / Blog /
-         Hakkımda / Sohbet) dar ekranda SARMAYA çalışıyordu; sarmalanan
-         ama taşan düğmeler görünmüyordu ("her şey gözükmüyor düzgün değil").
-         Artık TEK SATIR + yatay kaydırma, ve iki ucunda YUVARAK ok var.
-         Oka basınca bir sonraki/önceki düğmeye ATLANIR (kaydırma adımı = bir
-         düğme genişliği + boşluk), yani oku defalarca basmaya gerek yok.
-         Kaydırılabilir olduğu `overflow-x-auto` + `scroll-smooth` ile belli.
+      3) BÖLÜM DÜĞMELERİ: altı düğme (Projeler / İletişim / CV / Blog /
+         Hakkımda / Sohbet) `flex-wrap` — dar ekranda alt satıra kayar, hiçbiri
+         görünmez olmaz. Sol/sağ ok YOK (oklar admin panelindeki sekme
+         şeridinde; 2026-10-07 kullanıcı düzeltmesi).
 
-      4) FARE (SCROLL) İKONU: bölüm düğmelerinin ŞERİDİNİN ALTINDA (kullanıcı:
+      4) FARE (SCROLL) İKONU: bölüm düğmelerinin ALTINDA (kullanıcı:
          "konumu ... bölümler var ya onun altında olacak"), biraz daha BÜYÜK
          (`h-14 w-8`, eskisi `h-12 w-7`). Tıklanınca `/projects/` yerine
-         `#about` → aynı sayfada aşağı kaydırır (kullanıcı:
-         "basınca projects'e gitmesin, hakkımda kısmına kaydırmaya yarasın").
+         `id="about"` bölümüne kaydırır (kullanıcı: "basınca projects'e
+         gitmesin, hakkımda kısmına kaydırmaya yarasın").
   */
-  const stripRef = useRef<HTMLDivElement>(null)
-  const [edges, setEdges] = useState({ left: false, right: false })
-
-  // Okların "baştayım/sonda mıyım" durumu → kenarda pasif görünmesin.
-  useEffect(() => {
-    const el = stripRef.current
-    if (!el) return
-    const measure = () => {
-      const max = el.scrollWidth - el.clientWidth
-      setEdges({ left: el.scrollLeft > 2, right: el.scrollLeft < max - 2 })
-    }
-    measure()
-    const ro = new ResizeObserver(measure)
-    ro.observe(el)
-    // İçerik/çeviri değişince genişlik değişir → yeniden ölç
-    const mo = new MutationObserver(measure)
-    mo.observe(el, { childList: true, subtree: true, characterData: true })
-    return () => {
-      ro.disconnect()
-      mo.disconnect()
-    }
-  }, [])
-
-  const nudge = (dir: 1 | -1) => {
-    const el = stripRef.current
-    if (!el) return
-    // Adım = bir düğme + aradaki boşluk → oka basınca düğme düğme ilerler.
-    const first = el.querySelector<HTMLElement>('[data-strip-item]')
-    const step = first ? first.offsetWidth + 12 : el.clientWidth * 0.8
-    el.scrollBy({ left: dir * step, behavior: 'smooth' })
-  }
-
-  const arrowCls
-    = 'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-foreground-200/15 bg-background text-foreground/70 transition-colors hover:border-primary/50 hover:text-primary disabled:pointer-events-none disabled:opacity-25'
-
   return (
     <Section className="min-h-[100svh] flex-col overflow-hidden pt-16 pb-10 sm:pt-20">
       {/* Background decorations */}
@@ -207,98 +166,59 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           )}
 
           {/*
-            BÖLÜM ŞERİDİ (2026-10-07, kullanıcı: "gözükmeyen ne varsa o
-            oklar sayesinde diğerlerini de görebileceğiz").
+            BÖLÜM DÜĞMELERİ (2026-10-07 düzeltme, kullanıcı: "yanlış yere
+            sola ve sağa ok eklemişsin, ana sayfaya eklemişsin, onu kaldır.
 
-            ESKİ: `flex-wrap` → dar ekranda düğmeler alt satıra kayıyor,
-            bazıları ekran dışına taşıyordu, "her şey gözükmüyor" oluyordu.
-            YENİ: tek satır `overflow-x-auto` + iki uçta yuvarlak ok.
-            Oka basmak bir düğme ilerletir (parça parça, sayfa sayfa değil).
+            Sol/sağ ok KALDIRILDI. Okların asıl yeri admin panelindeki sekme
+            şeridi (Genel Bakış / Profil / Hakkımda / Sosyal Medya / Projeler…)
+            — orada çok sekme var ve liste taşıyor. Ana sayfada altı düğme var;
+            sarmalansınlar da olur, taşma olmaz. `flex-wrap` geri geldi.
           */}
-          <motion.div variants={item} className="mt-7 flex w-full items-center gap-2 sm:mt-8 sm:gap-3">
-            <button
-              type="button"
-              aria-label={t('hero.scrollPrev')}
-              onClick={() => nudge(-1)}
-              disabled={!edges.left}
-              className={arrowCls}
+          <motion.div
+            variants={item}
+            className="mt-7 flex w-full flex-wrap items-center justify-center gap-3 sm:mt-8"
+          >
+            <Button
+              color="primary"
+              className={HERO_BTN_BODY}
+              startContent={<BriefcaseIcon size={16} />}
+              href="/projects/"
             >
-              <ChevronLeftIcon size={16} />
-            </button>
-
-            <div
-              ref={stripRef}
-              onScroll={e => {
-                const el = e.currentTarget
-                const max = el.scrollWidth - el.clientWidth
-                setEdges({ left: el.scrollLeft > 2, right: el.scrollLeft < max - 2 })
-              }}
-              className="flex flex-1 items-center gap-3 overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              {t('hero.projects')}
+            </Button>
+            <Button
+              color="primary"
+              className={HERO_BTN_BODY}
+              startContent={<SendIcon size={16} />}
+              href="/contact/"
             >
-              <div data-strip-item className="shrink-0">
-                <Button
-                  color="primary"
-                  className={HERO_BTN_BODY}
-                  startContent={<BriefcaseIcon size={16} />}
-                  href="/projects/"
-                >
-                  {t('hero.projects')}
-                </Button>
-              </div>
-              <div data-strip-item className="shrink-0">
-                <Button
-                  color="primary"
-                  className={HERO_BTN_BODY}
-                  startContent={<SendIcon size={16} />}
-                  href="/contact/"
-                >
-                  {t('hero.feedback')}
-                </Button>
-              </div>
-              <div data-strip-item className="shrink-0">
-                <CvPicker cvs={cvs} color="primary" className={HERO_BTN_BODY} />
-              </div>
-              <div data-strip-item className="shrink-0">
-                <Button
-                  color="primary"
-                  className={HERO_BTN_BODY}
-                  startContent={<FileIcon size={16} />}
-                  href="/blog/"
-                >
-                  {t('nav.blog')}
-                </Button>
-              </div>
-              <div data-strip-item className="shrink-0">
-                <Button
-                  color="primary"
-                  className={HERO_BTN_BODY}
-                  startContent={<UserPlusIcon size={16} />}
-                  href="/about/"
-                >
-                  {t('nav.about')}
-                </Button>
-              </div>
-              <div data-strip-item className="shrink-0">
-                <Button
-                  color="primary"
-                  className={HERO_BTN_BODY}
-                  startContent={<ChatIcon size={16} />}
-                  href="/chat/"
-                >
-                  {t('nav.chat')}
-                </Button>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              aria-label={t('hero.scrollNext')}
-              onClick={() => nudge(1)}
-              disabled={!edges.right}
-              className={arrowCls}
+              {t('hero.feedback')}
+            </Button>
+            <CvPicker cvs={cvs} color="primary" className={HERO_BTN_BODY} />
+            <Button
+              color="primary"
+              className={HERO_BTN_BODY}
+              startContent={<FileIcon size={16} />}
+              href="/blog/"
             >
-              <ChevronRightIcon size={16} />
-            </button>
+              {t('nav.blog')}
+            </Button>
+            <Button
+              color="primary"
+              className={HERO_BTN_BODY}
+              startContent={<UserPlusIcon size={16} />}
+              href="/about/"
+            >
+              {t('nav.about')}
+            </Button>
+            <Button
+              color="primary"
+              className={HERO_BTN_BODY}
+              startContent={<ChatIcon size={16} />}
+              href="/chat/"
+            >
+              {t('nav.chat')}
+            </Button>
           </motion.div>
         </motion.div>
 

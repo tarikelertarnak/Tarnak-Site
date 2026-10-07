@@ -198,8 +198,6 @@ const de: Record<string, string> = {
   'hero.blog': 'Blog',
   'hero.feedback': 'Kontakt',
   'hero.projects': 'Projekte',
-    'hero.scrollPrev': 'Vorherige Bereiche',
-  'hero.scrollNext': 'Nächste Bereiche',
 'hero.scrollDown': 'Nach unten scrollen',
   'hero.techStack': 'Tech-Stack',
   'lang.en': 'Englisch',

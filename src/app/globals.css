@@ -804,3 +804,19 @@ html[data-theme="light"] .markdown-body th { background: rgba(0, 0, 0, 0.04); }
     box-shadow: none !important;
     border-color: transparent !important;
 }
+
+/* ── Admin paneli sekme yazilari SECILEBILIR (2026-10-07) ─────────────
+   Kullanicinin istegi: "Genel Bakis / Profil / Hakkimda / Sosyal Medya /
+   Projeler..." basliklarini kopyalayabilmek istiyor; HeroUI/base-ui
+   sekmelere `user-select: none` koydugu icin yaziyi secemiyordu ve
+   "kendim yazmak zorunda kaldim" diyordu.
+   Cozum: tablist/tab icindeki TUM ogelerde secim acik. specificity
+   (attribute + element) HeroUI'nin sinif tabanli kuralini yener.        */
+[role="tablist"],
+[role="tablist"] *,
+[role="tablist"] [role="tab"],
+[role="tablist"] button {
+    -webkit-user-select: text;
+    user-select: text;
+    cursor: pointer;
+}
