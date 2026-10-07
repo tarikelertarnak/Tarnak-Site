@@ -344,6 +344,8 @@ const fr: Record<string, string> = {
   'contact.socials': 'Réseaux sociaux',
   'footer.contactTitle': 'Contact',
   'footer.backToTop': 'Haut de page',
+  'common.showMore': 'Afficher plus ({count})',
+  'common.showMoreAria': 'Afficher {count} cartes de plus',
 }
 
 export default fr

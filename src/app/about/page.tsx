@@ -175,8 +175,14 @@ export default async function AboutPage() {
       <Navigation content={content} />
       <main id="main" className="w-full">
         {/* Hero */}
+        {/*
+          Hero / eylem satırı. `pb-0`: alt boşluk artık içerideki
+          `h-[var(--section-gap)]` div'i ile veriliyor — Section'ın kendi
+          `pb-12`'si ile TOPLANINCA 88px oluyordu (ölçülen değer), yani
+          boşluk ÇİFT KAYNAKLIydı ve hedef 24px'in 3.6 katıydı.
+        */}
         <Section
-          className="flex-col pt-28 sm:pt-32 pb-12 sm:pb-16"
+          className="flex-col pt-28 sm:pt-32 pb-0"
           id="about"
         >
           <div className="mx-auto w-full max-w-3xl text-center">
@@ -191,6 +197,18 @@ export default async function AboutPage() {
             )}
 
             {/*
+              BÖLÜM BOŞLUĞU — ÜST (2026-10-06, kullanıcı kuralı: "başlık ile
+              butonlar arasındaki boşluk, butonlar ile içerik arasındaki
+              boşlukla AYNI olsun").
+
+              Ölçüm (1440px): başlık→buton 32px, buton→kart 88px → dengesiz.
+              Buton satırı ayrıca kendi `mt-8`'ini taşıyordu; o kaldırıldı
+              (aksi halde çift boşluk olurdu). Artık İKİ taraf da tek
+              kaynaktan: `--section-gap`.
+            */}
+            <div aria-hidden className="h-[var(--section-gap)]" />
+
+            {/*
               EYLEM SATIRI (2026-10-06, kullanıcı: "hakkımdaki daha fazla
               ile iletişim bilgileri de olsun").
 
@@ -202,7 +220,7 @@ export default async function AboutPage() {
               içeriğin tamamı okunur), "İletişim Bilgileri" açılır menüyü
               açar.
             */}
-            <div className="mt-8 flex w-full flex-wrap items-center justify-center gap-3">
+            <div className="flex w-full flex-wrap items-center justify-center gap-3">
               <Button
                 color="primary"
                 href="/about/"
@@ -210,14 +228,16 @@ export default async function AboutPage() {
                 endContent={<ChevronRightIcon size={15} className="shrink-0" />}
               >
                 {/*
-                Sunucu bileşeni olduğu için `t()` yok; ana sayfadaki
-                `about.more` etiketinin aynısı elle kullanılıyor
-                (`isEn ? 'Learn more' : 'Daha Fazlası'`).
-              */}
+                  Sunucu bileşeni olduğu için `t()` yok; ana sayfadaki
+                  `about.more` etiketinin aynısı elle kullanılıyor.
+                */}
                 {isEn ? 'Learn more' : 'Daha Fazlası'}
               </Button>
               <ContactQuickMenu content={content} />
             </div>
+
+            {/* BÖLÜM BOŞLUĞU — ALT (buton → sonraki `framed` Section) */}
+            <div aria-hidden className="h-[var(--section-gap)]" />
           </div>
         </Section>
 

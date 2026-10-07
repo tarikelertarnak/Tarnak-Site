@@ -12,6 +12,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { clientFetchUserRepos } from '@/lib/github-client'
+import { LoadMoreButton } from '@/components/ui/load-more-button'
+import { useRowPagination } from '@/lib/use-row-pagination'
 
 /** All sort types — the direction is embedded in the option itself (no separate ASC/DESC buttons needed). */
 type SortKey
@@ -256,8 +258,25 @@ export function ProjectsGrid({
     return sorted
   }, [allProjects, query, activeTags, sort, userStars])
 
-  // Kullanıcı isteği (2026-09-25): "Daha Fazla Göster" yok — tüm projeler baştan görünür.
-  const shown = filtered
+  /*
+    "DAHA FAZLASINI GÖSTER" (2026-10-06, kullanıcı).
+    Önce: `const shown = filtered` — tüm projeler baştan görünüyordu
+    ("Daha Fazla Göster yok" yorumu 2026-09-25'te eklenmişti). Kullanıcı
+    geri çevirdi: 2 satır göster, kalan için düğme.
+
+    Blog ile AYNI mantık, AYNI hook, AYNI düğme — iki bölüm ayrışamaz.
+    Sütun sayısı (N) ölçülür, state "kaç satır" tutar.
+  */
+  const {
+    visible: shown,
+    remaining,
+    hasMore,
+    gridRef,
+    loadMore,
+  } = useRowPagination(filtered, {
+    initialRows: 2,
+    resetKey: `${query}|${sort}|${activeTags.join(',')}`,
+  })
 
   return (
     <div className="flex w-full max-w-6xl flex-col gap-6">
@@ -355,16 +374,22 @@ export function ProjectsGrid({
             </p>
           )
         : (
-            <div
-              className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6"
-            >
-              {shown.map(project => (
-                <ProjectCard key={project.title} project={project} />
-              ))}
-            </div>
-          )}
- 
-      {actions}
+<div
+                ref={gridRef} data-paged-grid
+                className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6"
+              >
+                {shown.map(project => (
+                  <ProjectCard key={project.title} project={project} />
+                ))}
+              </div>
+            )}
+
+        {/* "Daha Fazlasını Göster (X)" — grid ile arasi `--section-gap` */}
+        {hasMore && (
+          <LoadMoreButton remaining={remaining} onClick={loadMore} />
+        )}
+
+        {actions}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import {
   CodeIcon,
@@ -428,7 +428,7 @@ export function CreditsBrowser({
           )}
           title={t('credits.contributors')}
         >
-          {shownContributors.map((e, i) => e.render(i + 1))}
+          {shownContributors.map((e, i) => <Fragment key={e.key ?? `${e.name}-${i}`}>{e.render(i + 1)}</Fragment>)}
         </CreditGroup>
       )}
 
@@ -442,7 +442,7 @@ export function CreditsBrowser({
           title={t('credits.testers')}
           description={t('credits.testersDescription')}
         >
-          {shownTesters.map((e, i) => e.render(i + 1))}
+          {shownTesters.map((e, i) => <Fragment key={e.key ?? `${e.name}-${i}`}>{e.render(i + 1)}</Fragment>)}
         </CreditGroup>
       )}
 
@@ -456,7 +456,7 @@ export function CreditsBrowser({
           title={t('credits.translators')}
           description={t('credits.translatorsDescription')}
         >
-          {shownTranslators.map((e, i) => e.render(i + 1))}
+          {shownTranslators.map((e, i) => <Fragment key={e.key ?? `${e.name}-${i}`}>{e.render(i + 1)}</Fragment>)}
         </CreditGroup>
       )}
 
@@ -471,7 +471,7 @@ export function CreditsBrowser({
           title={t('credits.topDonors')}
           description={t('credits.topDonorsDescription')}
         >
-          {shownDonors.map((e, i) => e.render(i + 1))}
+          {shownDonors.map((e, i) => <Fragment key={e.key ?? `${e.name}-${i}`}>{e.render(i + 1)}</Fragment>)}
         </CreditGroup>
       )}
 

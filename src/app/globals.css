@@ -95,7 +95,7 @@ a.hover\:text-white:hover { color: #fff; }
 /* LIGHT (varsayilan) yuzey hiyerarsisi — sayfa beyaz, dis grup gri, kart beyaz.
  *
  * SELECTOR ONEMI — bu satir olmadan tema degiskenleri UYGULANMIYORDU.
- * `@theme inline` derlemede kendi `:root { --tsurface-2: ... }` ciktisini
+* `@theme inline` derlemede kendi `:root {
  * URETIR ve bu cikti dosyadaki bloklarindan SONRA gelir. Duz `:root`
  * yazarsak derleyicinin degeri kazanir ve koyu tema degerleri hic
  * uygulanmaz. Canli olcumde tam olarak bu olmustu: `html.class="dark"` ve
@@ -385,6 +385,16 @@ html.dark {
     --ant-color-link: #e4e4e7 !important;
     --ant-color-link-hover: #0761d5 !important;
     --ant-color-link-active: #0761d5 !important;
+
+    /*
+      BÖLÜM BOŞLUK SİSTEMİ (2026-10-06, kullanıcı isteği).
+      Kural: Başlık → [eşit boşluk] → Butonlar → [AYNI eşit boşluk] → İçerik.
+      Hakkımda/Projeler/Blog/İletişim'de elle yazılmış `mt-*`/`pb-*`
+      değerleri ayrışmıştı; butonlar altındaki karta yapışıyordu.
+      Tek kaynak: bu değişken — dört bölüm `SectionHeader` / buton
+      bileşenleri üzerinden uygular, tek yerden değiştirilir.
+    */
+    --section-gap: 24px;
 }
 
 html[data-theme="light"] {

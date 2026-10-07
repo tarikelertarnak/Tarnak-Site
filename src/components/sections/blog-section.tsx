@@ -4,6 +4,8 @@ import type { BlogPost } from '@/lib/content'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import { FadeUpSection } from '@/components/fade-up-section'
+import { LoadMoreButton } from '@/components/ui/load-more-button'
+import { useRowPagination } from '@/lib/use-row-pagination'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import {
@@ -127,8 +129,25 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
     return list
   }, [posts, query, activeTags, sort, locale])
 
-  // Kullanıcı isteği (2026-09-25): "Daha Fazla Göster" yok — tüm yazılar baştan görünür.
-  const shown = filtered
+  /*
+    "DAHA FAZLASINI GÖSTER" (2026-10-06, kullanıcı).
+    Önce: `const shown = filtered` — tüm yazılar baştan görünüyordu
+    ("Daha Fazla Göster yok" yorumu 2026-09-25'te eklenmişti). Kullanıcı
+    bunu geri çevirdi: 2 satır göster, kalan için düğme.
+
+    Projeler ile AYNI mantık ve AYNI hook — iki bölüm ayrışamaz.
+    Sütun sayısı (N) ölçülür, state "kaç satır" tutar.
+  */
+  const {
+    visible: shown,
+    remaining,
+    hasMore,
+    gridRef,
+    loadMore,
+  } = useRowPagination(filtered, {
+    initialRows: 2,
+    resetKey: `${query}|${sort}|${activeTags.join(',')}`,
+  })
 
   const dateFmt = (date: string) =>
     new Date(date).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-GB', {
@@ -158,7 +177,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
         />
 
         {!onBlogPage && (
-          <div className="mb-4 flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-3">
+          <div className="flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-3">
             <Button
               href="/blog"
               color="primary"
@@ -169,6 +188,11 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
             </Button>
           </div>
         )}
+
+        {/* BÖLÜM BOŞLUĞU (2026-10-06, kullanıcı) — buton satırı ile arama
+            kutusu arasında `mb-4` (16px) vardı, diğer bölümlerle ayrışıyordu.
+            Artık `--section-gap` (24px), tek kaynak. */}
+        <div aria-hidden className="h-[var(--section-gap)]" />
 
         {/* Tools: search + tag + sort */}
         <div className="mb-6 flex w-full max-w-6xl flex-col gap-3">
@@ -253,6 +277,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
             )
           : (
               <div
+                ref={gridRef} data-paged-grid
                 className="grid w-full max-w-6xl grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
               >
                 {shown.map(post => (
@@ -303,9 +328,14 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
                       </div>
                     </div>
                   </a>
-                ))}
-</div>
+))}
+              </div>
             )}
+
+        {/* "Daha Fazlasını Göster (X)" — grid ile arasi `--section-gap` */}
+        {hasMore && (
+          <LoadMoreButton remaining={remaining} onClick={loadMore} />
+        )}
       </FadeUpSection>
     </Section>
   )

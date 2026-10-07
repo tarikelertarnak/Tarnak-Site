@@ -6,6 +6,7 @@ import type { SiteContent, ToolboxItem as ToolboxItemType } from '@/lib/content'
 import { Popover } from '@lobehub/ui/base-ui'
 import { useState } from 'react'
 import { FadeUpSection } from '@/components/fade-up-section'
+import { techIcon } from '@/components/ui/tech-icons'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { useT } from '@/components/locale-provider'
 import { BentoBox, BentoBoxItem } from '@/components/ui/bento-box'
@@ -60,6 +61,15 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
           big
         />
         {/*
+          BÖLÜM BOŞLUĞU — ÜST (2026-10-06, kullanıcı kuralı: "başlık ile
+          butonlar arasındaki boşluk, butonlar ile içerik arasındaki
+          boşlukla AYNI olsun").
+          Ölçüm (1440px): başlık→buton 32px, buton→kart 64px → 32px
+          DENGEYDI. Altta sabit `--section-gap` (24px) var; üste de aynı
+          değişken eklenince iki taraf birebir eşitlenir.
+        */}
+        <div aria-hidden className="h-[var(--section-gap)]" />
+        {/*
           Başlık altı aksiyon satırı (2026-10-05, kullanıcı):
             1. "Daha Fazlası" -> /about/ (rozet, hafif kenar + ok ikonu)
             2. "İletişim Bilgileri" -> `ContactQuickMenu` (mavi birleşik
@@ -83,6 +93,13 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
           </Button>
           <ContactQuickMenu content={content} />
         </div>
+        {/*
+          BÖLÜM BOŞLUĞU (2026-10-06, kullanıcı: "Butonlar hiçbir yerde
+          alttaki içeriğe YAPIŞIK olmasın").
+          Buton satırı ile Kişisel Bilgiler kartı arasında boşluk YOKTU.
+          `mt-[var(--section-gap)]` tek kaynaktan gelir.
+        */}
+        <div aria-hidden className="h-[var(--section-gap)]" />
       </FadeUpSection>
 
       <div className="flex w-full justify-center">
@@ -102,7 +119,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                   <UserIcon size={20} className="text-primary" />
                   {t('about.infoCardTitle')}
                 </h3>
-                <div className="mt-2 grid w-full grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5">
+                <div className="mt-1 grid w-full grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-0">
                   {/*
                     AD / SOYAD (2026-10-05, kullanıcı).
                     Önce tek satırda `TARIK ELER TARNAK` birleşik
@@ -225,21 +242,29 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
 
           {/* Languages: structured table. Data stays a plain string
               ("İngilizce (A2), Almanca (A1)") — parsed here, no schema churn. */}
-          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-2 gap-4">
+          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4">
             <h3 className="text-base sm:text-lg font-semibold">
               {t('about.languagesTitle')}
             </h3>
             {/* Cerceve: tablo govdesi sayfa zemine yapisip "Diller" basligindan
                   kopuyordu. `border` + `rounded-xl` ile ayri bir yuzey. */}
-            <div className="w-full overflow-x-auto rounded-xl border border-foreground-200/15">
+{/*
+                DİLLER KARTI (2026-10-06, kullanıcı):
+                "ANA DİL" şu an küçük, farklı fontlu, garip bir rozet;
+                A2/A1 ise düz metin. Üç seviye etiketi de AYNI stilde,
+                ince MAVİ çerçeveli pill olacak: yazı mavi, arka plan şeffaf,
+                  yazı boyutu/fontu aynı.
+              */}
+            <div className="w-full overflow-x-auto rounded-xl border border-foreground/200/15">
               <table className="w-full text-left text-xs sm:text-sm">
                 <tbody>
-                  <tr className="border-b border-foreground-200/10">
-                    <td className="py-2 pr-3 font-medium">
+                  <tr className="border-b border-foreground/200/10">
+                    <td className="py-2 pr-3 text-sm font-medium sm:text-base">
                       {content.profile.firstLanguage}
                     </td>
                     <td className="py-2 text-right">
-                      <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[11px] font-semibold uppercase text-primary">
+                      {/* `LEVELED_PILL`: üç seviye için TEK sınıf seti */}
+                      <span className={LEVEL_BADGE_PILL}>
                         {t('about.infoFirstLanguage')}
                       </span>
                     </td>
@@ -247,13 +272,15 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                   {parseLanguages(content.profile.otherLanguages).map(row => (
                     <tr
                       key={row.name}
-                      className="border-b border-foreground-200/10 last:border-b-0"
+                      className="border-b border-foreground/200/10 last:border-b-0"
                     >
-                      <td className="py-2 pr-3 text-foreground-700 dark:text-foreground/80">
+                      <td className="py-2 pr-3 text-sm text-foreground/80 sm:text-base">
                         {row.name}
                       </td>
-                      <td className="py-2 text-right font-semibold text-primary">
-                        {row.level}
+                      <td className="py-2 text-right">
+                        <span className={LEVEL_BADGE_PILL}>
+                          {row.level}
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -296,7 +323,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
             </div>
           </BentoBoxItem>
 
-          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-2">
+          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3">
             <h3 className="text-base sm:text-lg font-semibold">
               {about.toolboxTitle}
             </h3>
@@ -312,7 +339,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
             </div>
           </BentoBoxItem>
 
-          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-2">
+          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3">
             <h3 className="text-base sm:text-lg font-semibold">
               {about.beyondTitle}
             </h3>
@@ -343,6 +370,16 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
  * "İngilizce (A2), Almanca (A1)" → [{ name, level }].
  * Seviye parantezi yoksa boş string döner; ana dil tabloda ayrı satır.
  */
+/**
+ * DİLLER KARTI seviye rozeti (2026-10-06, kullanıcı).
+ *
+ * "Ana Dil" eskiden `bg-primary/15 uppercase text-[11px]` DOLU rozet,
+ * A2/A1 ise sade düz metin — üçü birbirine benzemiyordu.
+ * Artık HEPSİ aynı: ince mavi çerçeve, şeffaf arka plan, mavi yazı,
+ * normal yazı boyutu/fontu.
+ */
+const LEVEL_BADGE_PILL
+  = 'inline-flex items-center rounded-full border border-primary/70 bg-transparent px-2.5 py-0.5 text-xs font-semibold normal-case text-primary'
 function parseLanguages(raw: string): { name: string, level: string }[] {
   return raw
     .split(',')
@@ -365,13 +402,32 @@ function InfoRow({
   value: string
   action?: ReactNode
 }) {
+  /*
+    2026-10-06 (kullanıcı): "Değerleri SOLA yasla ve etiketin hemen
+    yanına/altına get. Etiket sabit genişlikte bir sütunda, değer hemen
+    yanında sola yaslı (grid: etiket sütunu sabit, değer sütunu auto).
+    Kopyala butonları değerin hemen yanında ve BÜTÜN satırlarda aynı
+    dikey hizada. Etiket ve değer yazı boyutları tüm satırlarda aynı."
+
+    ÖNCE: `flex justify-between` → etiket sola, değer SAĞA yapışık
+    ("Soyad ......... ELER" görünümü) ve kopyala düğmeleri değer uzunluğuna
+    göre kayıyordu. Şimdi 3 sütunlu grid:
+      1) etiket  → `w-[6.5rem] shrink-0` (sabit)
+      2) değer   → `min-w-0 flex-1 justify-self-start` (sola)
+      3) aksiyon → `w-6 shrink-0` (sabit → her satırda aynı x)
+  */
   return (
-    <div className="flex flex-row items-center justify-between gap-3 border-b border-foreground-200/10 py-1.5">
-      <span className="text-xs text-foreground-500">{label}</span>
-      <span className="flex min-w-0 items-center justify-end gap-1">
-        <span className="truncate text-right text-xs sm:text-sm font-semibold">
-          {value.trim() || '—'}
-        </span>
+    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)_1.75rem] items-center gap-x-2 border-b border-foreground/200/10 py-2">
+      <span className="truncate text-sm text-foreground/60">{label}</span>
+      <span className="min-w-0 truncate text-left text-sm font-semibold text-foreground">
+        {value.trim() || '—'}
+      </span>
+      {/*
+        Kopyala düğmesi KENDİ SABİT SÜTUNUNDA (3.) — değer ne kadar uzun
+        olursa olsun bütün satırlarda aynı x konumunda durur. Aksiyonu
+        olmayan satırlar boş hücre bırakır, kopyala sütunu kaymaz.
+      */}
+      <span className="flex shrink-0 items-center justify-end">
         {action}
       </span>
     </div>
@@ -446,19 +502,17 @@ function CvEntryItem({
 
 function ToolboxItem({ item }: { item: ToolboxItemType }) {
   const { t } = useT()
-  const isCommand = item.type === 'command'
+const isCommand = item.type === 'command'
   const href = item.href?.trim() ?? ''
+  /*
+    İKON (2026-10-06, kullanıcı): "her teknolojinin KENDİ ikonu olsun
+    (HTML, CSS, JavaScript, C#, Python, SQL…); ikon bulunamazsa genel kod
+    ikonu." Önce burada her şey için aynı `LinkIcon` vardı.
+    `techIcon` etiketten çözer; bulamazsa aşağıdaki genel ikona düşer.
+  */
   const icon = isCommand
-    ? (
-        <TerminalIcon size={14} />
-      )
-    : href
-      ? (
-          <LinkIcon size={14} />
-        )
-      : (
-          <CodeIcon size={14} />
-        )
+    ? <TerminalIcon size={14} />
+    : techIcon(item.label) ?? (href ? <LinkIcon size={14} /> : <CodeIcon size={14} />)
   const body = (
     <>
       <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">

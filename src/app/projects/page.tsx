@@ -63,7 +63,7 @@ export default async function ProjectsPage() {
         <Section className="flex-col pb-16 sm:pb-20 lg:pb-24" framed>
 
           {/* GitHub Projects button */}
-          <div className="mx-auto mb-8 flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-2">
+          <div className="mx-auto flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-3">
             <a
               href="https://github.com/tarikelertarnak?tab=repositories"
               target="_blank"
@@ -78,6 +78,9 @@ export default async function ProjectsPage() {
               {content.github.title}
             </a>
           </div>
+          {/* BOLUM BOSLUGU (2026-10-06): GitHub butonu ile arama kutusu
+              arasinda mb-8 (32px) vardi; --section-gap ile esitlendi. */}
+          <div aria-hidden className="h-[var(--section-gap)]" />
 
           <ProjectsGrid
             projects={content.projects.items}

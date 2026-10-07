@@ -39,6 +39,17 @@ export const Section = React.forwardRef<HTMLDivElement, SectionProps>(
 )
 Section.displayName = 'Section'
 
+/**
+ * Başlığın alt boşluğunu kapatır (2026-10-06).
+ *
+ * Kullanıcı kuralı: "başlık ile butonlar arasındaki boşluk, butonlar
+ * ile içerik arasındaki boşlukla AYNI olsun". `SectionTitle` kendi
+ * `pb-8 sm:pb-10 lg:pb-12` alt boşluğunu getiriyor; bölüm butonu
+ * `--section-gap` ile ayırıyorsa bu ikinci bir boşluk kaynağı olur
+ * (ölçülen: başlık→buton 48px, buton→içerik 24px — 24px dengesizlik).
+ *
+ * `tightGap` verilirse alt boşluk sıfırlanır; boşluk tek kaynaktan gelir.
+ */
 export function SectionTitle({
   title,
   subTitle,
@@ -46,6 +57,7 @@ export function SectionTitle({
   icon,
   big = false,
   headingLevel = 'h2',
+  tightGap = false,
 }: {
   title: string
   subTitle: string
@@ -66,15 +78,24 @@ export function SectionTitle({
    * `headingLevel` verilmeden hicbir yerde davranis degismez.
    */
   headingLevel?: 'h1' | 'h2'
+  /** Alt boşluğu kapat (bölüm `--section-gap` ile ayırıyorsa). */
+  tightGap?: boolean
 }) {
   // Dinamik etiket adi: JSX'te <Heading> yazilamaz, bu yuzden kucuk bir
   // degiskenle cozuluyor. `h2` default oldugu icin mevcut kullanim degismez.
   const Heading = headingLevel
+  const gap = tightGap ? '!pb-0' : ''
 
   if (big) {
     return (
-      <div className="flex flex-col items-center justify-center pb-8 sm:pb-10 lg:pb-12 text-center">
-        <Heading className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
+      <div className={cn('flex flex-col items-center justify-center text-center', 'pb-8 sm:pb-10 lg:pb-12', gap)}>
+        <Heading className={cn(
+          'inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl',
+          // `tightGap`: başlığın kendi alt çizgi dolgusu da boşluğa dahil
+          // edilmesin — ölçülen 48px = sarmalayıcı 0 + başlık `pb-3`(12px)
+          // + Section `pt` payı. Boşluk tek kaynaktan gelmeli.
+          tightGap && '!pb-0',
+        )}>
           {icon}
           {subTitle}
         </Heading>
@@ -86,7 +107,7 @@ export function SectionTitle({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-1.5 sm:space-y-2 pb-8 sm:pb-10 lg:pb-12 text-center">
+    <div className={cn('flex flex-col items-center justify-center space-y-1.5 sm:space-y-2 text-center', 'pb-8 sm:pb-10 lg:pb-12', gap)}>
       <p className="animate-gradient bg-gradient-to-r from-[#FBBF24] to-[#00C950] bg-size-300 bg-clip-text font-bold text-transparent text-xs sm:text-sm">
         {subTitle}
       </p>

@@ -11,6 +11,8 @@ export interface SessionUser {
   fullName: string | null
   avatarUrl: string | null
   role: 'admin' | 'user'
+  /** profiles.is_owner — sitenin sahibi (en üst yetki). */
+  isOwner: boolean
   /** Roles in profile (raw). */
   roles: string[]
   /** Computed EFFECTIVE permissions (roles + individual extra permissions; admin = all). */
@@ -20,6 +22,10 @@ export interface SessionUser {
   occupation?: string | null
   occupationOther?: string | null
   contact?: string | null
+  /** İletişim bilgileri (profil drawer) — hepsi opsiyonel. */
+  contactEmail?: string | null
+  location?: string | null
+  discord?: string | null
 }
 
 /**
@@ -45,6 +51,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
           fullName: admin.username,
           avatarUrl: null,
           role: 'admin',
+          // admin.json hesabının `profiles` satırı yok → sahiplik kanıtı yok.
+          isOwner: false,
           roles: ['admin'],
           permissions: effectivePermissions(['admin']),
         }
@@ -70,7 +78,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   }
   const { data: profile } = await supabase
     .from('profiles')
-    .select('username, full_name, avatar_url, role, roles, permissions')
+    .select('username, full_name, avatar_url, role, roles, permissions, is_owner')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -86,12 +94,16 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     fullName: profile?.full_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
     avatarUrl: profile?.avatar_url ?? user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
     role: profile?.role ?? 'user',
+    isOwner: Boolean(profile?.is_owner),
     roles: rawRoles,
     permissions: effectivePermissions(rawRoles, rawExtra),
     phone: user.user_metadata?.phone ?? null,
     occupation: user.user_metadata?.occupation ?? null,
     occupationOther: user.user_metadata?.occupationOther ?? null,
     contact: user.user_metadata?.contact ?? null,
+    contactEmail: user.user_metadata?.contactEmail ?? null,
+    location: user.user_metadata?.location ?? null,
+    discord: user.user_metadata?.discord ?? null,
   }
 }
 

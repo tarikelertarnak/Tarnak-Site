@@ -9,6 +9,7 @@ import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
 import { Button } from '@/components/ui/button'
 import { HERO_BTN_BODY } from '@/components/ui/hero-button-style'
+import { cn } from '@/components/ui/cn'
 import { CvPicker } from '@/components/ui/cv-picker'
 import { BriefcaseIcon, ChatIcon, FileIcon, SendIcon, UserPlusIcon } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
@@ -35,22 +36,72 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
   const { name, tagline, description } = content.hero
   const { t } = useT()
 
+  /*
+      HERO YERLEŞİMİ (2026-10-06, kullanıcı — tamamen yeniden düzenlendi).
+
+      ÖNCE: md:grid-cols-[1.15fr_0.85fr] — metin solda, kuş logosu SAĞDA
+      ve hidden … md:flex ile MASAÜSTÜ DİŞINDA gizleniyordu. Küçük
+      ekranda logo hiç yoktu. Fare ikonu logonun altında, logo kolonunun
+      içindeydi.
+
+      ARTI: TEK SÜTUN, her ekran boyutunda aynı sıra:
+          1) Kuş logosu (üstte, yatay ortalı, HİÇ gizlenmez)
+          2) Başlık "TARIK ELER - TARNAK"
+          3) Alt yazı (typing animasyonu aynen)
+          4) Butonlar (sığmazsa sarmalanır, ortalanır)
+          5) Fare (scroll) ikonu — içerik grubunun PARÇASI DEĞİL, hero'nun
+             en altında mt-auto ile; alçak ekranda içerik uzayınca fare
+             ikonu aşağı İTİLİR (üst üste binmez).
+
+      Dikey konum: justify-center KALDIRILDI → içerik üste yakın. Navbar
+      ile logo arası clamp(24px, 6vh, 72px).
+  */
   return (
-    <Section className="min-h-[100svh] flex-col justify-center overflow-hidden pt-20 pb-10">
+    <Section className="min-h-[100svh] flex-col overflow-hidden pt-[clamp(24px,6vh,72px)] pb-24">
       {/* Background decorations */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-grid bg-radial-fade" />
         {/* glow removed — no transparency */}
       </div>
 
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 md:grid-cols-[1.15fr_0.85fr] md:gap-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center text-center">
         {/* LEFT — text */}
         <motion.div
           variants={container}
           initial="hidden"
           animate="show"
-          className="flex flex-col items-center text-center md:items-start md:text-left"
+          className="flex w-full flex-col items-center text-center"
         >
+          {/*
+            KUŞ LOGOSU (2026-10-06, kullanıcı: "başlığın hemen üstünde,
+            yatayda ortalı, hiçbir ekran boyutunda gizlenmesin").
+            Önce `md:flex` kolonunda ve `hidden` idi → mobil/tablet tamamen
+            yoktu. Artık akışın İLK çocuğu, her boyutta görünür.
+
+            Boyut yüksekliğe bağlı: `clamp(56px, 11vh, 130px)` — 360x640'te
+            70px, 1920x1080'de 118px. `width:auto` oranı korur, taşmaz.
+
+            HOVER: logoya gelince MAVİ olur (butonlarla AYNI `--tprimary`).
+            Sadece renk — glow/gölge/ölçek YOK. Dokunmatikte takılı kalmasın
+            diye `@media (hover:hover)` içinde.
+          */}
+          <motion.a
+            href={`${SITE_URL}/`}
+            aria-label={content.profile.firstName + ' ' + content.profile.lastName}
+            variants={item}
+            className="group/logo mb-[clamp(12px,2vh,24px)] inline-flex shrink-0 items-center justify-center"
+          >
+            <SiteLogo
+              size={224}
+              className={cn(
+                'h-[clamp(56px,11vh,130px)] w-auto opacity-90 transition-colors duration-300',
+                // Mavi hover — Tailwind `text-primary` butonlarla aynı token.
+                'group-hover/logo:text-primary',
+                'group-focus-visible/logo:text-primary',
+              )}
+            />
+          </motion.a>
+
           {/*
             Name + TARNAK: aynı tipografi (font-black / uppercase /
             tracking-tighter / text-primary), artık iki satır: "TARIK ELER -"
@@ -169,50 +220,37 @@ startContent={<BriefcaseIcon size={16} />}
               {t('nav.chat')}
             </Button>
           </motion.div>
-        </motion.div>
-
-        {/* RIGHT — TARNAK icon */}
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="hidden flex-col items-center justify-center gap-4 md:flex"
-        >
-<motion.div
-              variants={item}
-              className="flex items-center justify-center"
-            >
-              {/* Tek dosya, tema-uyumlu logo. Önce IKI ayrı dış SVG
-               * kullanılıyordu (`tarnak.svg` açık tema + `tarnak-white.svg`
-               * koyu tema) ve `dark:block/dark:hidden` ile değiştiriliyordu.
-               * Yeni `SiteLogo` fill'i `currentColor`, çerçevesi `--tbg`
-               * olduğu için CSS temasını kendisi okur: dış dosya, `dark:`
-               * varyantı ve iki kopya gereksiz. */}
-              <SiteLogo
-                size={224}
-                className="h-44 w-44 opacity-90 sm:h-56 sm:w-56"
-              />
-            </motion.div>
-
-          {/* Scroll-down indicator */}
-          <motion.a
-            href="/projects/"
-            aria-label={t('hero.scrollDown')}
-            variants={item}
-            className="mt-2 inline-flex h-12 w-7 items-start justify-center self-center rounded-full border-2 border-primary/40 p-1.5"
-          >
-            <motion.span
-              animate={{ y: [0, 10, 0], opacity: [1, 0.2, 1] }}
-              transition={{
-                duration: 1.6,
-                repeat: Infinity,
-                ease: 'easeInOut',
-              }}
-              className="h-2 w-1 rounded-full bg-primary"
-            />
-          </motion.a>
-        </motion.div>
+</motion.div>
       </div>
+
+      {/*
+        FARE (SCROLL) İKONU — içerik grubunun DIŞINDA, hero'nun en altında
+        (2026-10-06, kullanıcı: "hero'nun en altında, yatayda ortalı").
+        Önce logonun sağ kolonunun İÇİNDEydi (`self-center`, `mt-2`) ve
+        küçük ekranda `hidden … md:flex` ile birlikte kayboluyordu.
+
+        `mt-auto` → hero `min-h-[100svh]` olduğu için içerik gru
+        bittikten sonra kalan boşluğu alır, ikon en alta yapışır. Alçak
+        ekranda içerik uzayınca `flex` onu aşağı İTER, üst üste binmez.
+      */}
+      <motion.a
+        href="/projects/"
+        aria-label={t('hero.scrollDown')}
+        variants={item}
+        initial="hidden"
+        animate="show"
+        className="relative z-10 mt-auto inline-flex h-12 w-7 shrink-0 items-start justify-center self-center rounded-full border-2 border-primary/40 p-1.5"
+      >
+        <motion.span
+          animate={{ y: [0, 10, 0], opacity: [1, 0.2, 1] }}
+          transition={{
+            duration: 1.6,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+          className="h-2 w-1 rounded-full bg-primary"
+        />
+      </motion.a>
     </Section>
   )
 }

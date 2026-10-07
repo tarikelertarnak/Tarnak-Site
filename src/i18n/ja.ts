@@ -344,6 +344,8 @@ const ja: Record<string, string> = {
   'contact.socials': 'ソーシャル',
   'footer.contactTitle': 'お問い合わせ',
   'footer.backToTop': 'トップへ戻る',
+  'common.showMore': 'さらに表示 ({count})',
+  'common.showMoreAria': 'さらに {count} 件を表示',
 }
 
 export default ja

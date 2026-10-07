@@ -152,8 +152,19 @@ export function ContactSection({ content }: { content: SiteContent }) {
   }
 
   return (
-    <Section className="flex-col pt-16 sm:pt-24 lg:pt-36" id="contact" framed>
-      {/* Title outside the box */}
+    <Section className="flex-col pt-16 sm:pt-24 lg:pt-36 pb-0" id="contact" framed>
+      {/*
+        BÖLÜM BOŞLUĞU — ÜST (2026-10-06, kullanıcı kuralı: "başlık ile
+        butonlar arasındaki boşluk, butonlar ile içerik arasındaki
+        boşlukla AYNI olsun").
+
+        Ölçüm: `SectionTitle` `big` modu kendi `pb-8 sm:pb-10 lg:pb-12`
+        alt boşluğunu getiriyor (48px) → başlık→buton 72px oluyordu,
+        buton→içerik ise 24px. İki tarafı eşitlemek için `SectionTitle`
+        ALT boşluğu sıfırlandı ve boşluk TEK kaynaktan (`--section-gap`)
+        verildi — hem `pb-0` hem de `mb-0` gerekiyor çünkü Section
+        tabanında hem `<div>` hem `<h2>` sarmalayıcısı var.
+      */}
       <FadeUpSection className="w-full">
         <SectionTitle
           title=""
@@ -173,14 +184,24 @@ export function ContactSection({ content }: { content: SiteContent }) {
             </svg>
           )}
           big
+          tightGap
         />
       </FadeUpSection>
+
+      <div aria-hidden className="h-[var(--section-gap)]" />
+
       {/* Iletisim yollari — tek aranabilir acilir menu (e-posta, telefon,
           konum ve tum sosyal kanallar + kopyala butonlari). */}
       <FadeUpSection className="w-full">
         <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <ContactQuickMenu content={content} />
         </div>
+        {/*
+          BÖLÜM BOŞLUĞU (2026-10-06, kullanıcı: "Butonlar hiçbir yerde
+          alttaki içeriğe YAPIŞIK olmasın"). Buton satırı ile form kartı
+          arasında boşluk YOKTU. `mt-[var(--section-gap)]` tek kaynak.
+        */}
+        <div aria-hidden className="h-[var(--section-gap)]" />
       </FadeUpSection>
       <FadeUpSection className="flex w-full justify-center">
         <Card className="p-4 sm:p-6 lg:p-8 w-full max-w-6xl">

@@ -61,15 +61,6 @@ const PAYLOAD = {
     },
   ],
   messages: { total: 5, unread: 2 },
-  ads: {
-    totalViews: 40,
-    completedViews: 31,
-    todayViews: 3,
-    source: 'db',
-    recent: [
-      { id: 1, slot_slug: 'pixelshield', completed: true, watched_seconds: 15, created_at: '2026-09-22T18:00:00.000Z' },
-    ],
-  },
   recent: {
     posts: [
       { id: 1, title: 'İlk Yazı', slug: 'ilk-yazi', published: true, created_at: '2026-09-22T17:00:00.000Z' },
@@ -155,15 +146,25 @@ describe('OverviewPanel', () => {
     expect(card!.textContent).not.toContain('—')
   })
 
-  it('okunmamis mesaj sayisini ve reklam sayacini gosterir', async () => {
+  it('okunmamis mesaj sayisini gosterir', async () => {
     mockFetch(PAYLOAD)
     render(<OverviewPanel />)
 
     await waitFor(() => expect(screen.getByText('Okunmamış mesaj')).toBeTruthy())
     expect(screen.getByText('2')).toBeTruthy()
     expect(screen.getByText('5 toplam mesaj')).toBeTruthy()
-    expect(screen.getByText('3')).toBeTruthy()
-    expect(screen.getByText('40 toplam')).toBeTruthy()
+  })
+
+  // 2026-10-06: reklam sayaci ve "Eksik tablo" karti kaldirildi — kullanici
+  // bu uyarilari GORMEK istemiyor. Testler de gercek davranisi kilitler.
+  it('reklam sayacini ve "Eksik tablo" kartini GOSTERMEZ', async () => {
+    mockFetch(PAYLOAD)
+    render(<OverviewPanel />)
+
+    await waitFor(() => expect(screen.getByText('Genel Bakış')).toBeTruthy())
+    expect(screen.queryByText('Bugün izlenen reklam')).toBeNull()
+    expect(screen.queryByText('Eksik tablo')).toBeNull()
+    expect(screen.queryByText('Son reklam izlenmeleri')).toBeNull()
   })
 
   it('uyarilari listeler', async () => {
@@ -172,17 +173,6 @@ describe('OverviewPanel', () => {
 
     await waitFor(() => expect(screen.getByText(/dikkat gerektiren nokta/)).toBeTruthy())
     expect(screen.getByText(/Reklamlar.*veritabanında yok/)).toBeTruthy()
-  })
-
-  it('reklam tablolari yoksa sayaci "—" gosterir', async () => {
-    mockFetch({
-      ...PAYLOAD,
-      ads: { totalViews: 0, completedViews: 0, todayViews: 0, source: 'fallback', recent: [] },
-    })
-    render(<OverviewPanel />)
-
-    await waitFor(() => expect(screen.getByText('Bugün izlenen reklam')).toBeTruthy())
-    expect(screen.getByText('reklam tabloları yok')).toBeTruthy()
   })
 
   it('tablo kartina tiklaninca onNavigate kaynak anahtariyla cagrilir', async () => {

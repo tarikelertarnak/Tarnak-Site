@@ -1,6 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-import { getStats } from '@/lib/ads'
 import { adminDb, missingColumnFrom } from '@/lib/admin/data'
 import { RESOURCES } from '@/lib/admin/resources'
 import type { PersistenceCheck } from '@/lib/persistence'
@@ -33,25 +32,10 @@ export interface RecentRow {
   [column: string]: unknown
 }
 
-export interface AdViewRow extends RecentRow {
-  id?: number
-  slot_slug?: string
-  completed?: boolean
-  watched_seconds?: number
-  created_at?: string
-}
-
 export interface OverviewData {
   generatedAt: string
   tables: TableStat[]
   messages: { total: number, unread: number }
-  ads: {
-    totalViews: number
-    completedViews: number
-    todayViews: number
-    source: 'db' | 'fallback'
-    recent: AdViewRow[]
-  }
   recent: {
     posts: RecentRow[]
     projects: RecentRow[]
@@ -59,9 +43,20 @@ export interface OverviewData {
   }
   /** Diske yazabiliyor muyuz? (Vercel'de salt-okunur olabilir) */
   persistence: PersistenceCheck
-  /** Kullaniciya gosterilecek "dikkat" notlari (eksik tablo/kolon vb.) */
+  /** Kullaniciya gosterilecek "dikkat" notlari (KRITIK tablo/kolon eksikleri) */
   warnings: string[]
 }
+
+/**
+ * Eksik tablo uyarisi YALNIZCA bu kaynaklar icin uretilir.
+ *
+ * Neden liste degil: `RESOURCES` her tabloyu (languages, cvs, ad_slots...)
+ * iceriyor ve panel onlari "Veri Yonetimi" sekmesinde gosteriyor. Kullanici
+ * bu tablolardan birini sordugunda (ornek `languages`) panelin yukariya
+ * devam eden uyari blogu bagimsiz bir tabloyu da supheli gibi gosteriyordu.
+ * Uygulama KRITIK olan bu ikisi olmadan calisir; digerleri opsiyoneldir.
+ */
+const CRITICAL_TABLE_KEYS = new Set(['messages', 'profiles'])
 
 /** Tek tablonun satir sayisi. Tablo yoksa status='missing' doner (sahte 0 DEGIL). */
 async function countRows(
@@ -140,7 +135,6 @@ export async function getOverview(): Promise<OverviewData> {
     generatedAt: new Date().toISOString(),
     tables: [],
     messages: { total: 0, unread: 0 },
-    ads: { totalViews: 0, completedViews: 0, todayViews: 0, source: 'fallback', recent: [] },
     recent: { posts: [], projects: [], messages: [] },
     persistence,
     warnings: [],
@@ -183,18 +177,7 @@ export async function getOverview(): Promise<OverviewData> {
     unread = count ?? 0
   }
 
-  // --- 3) Reklam istatistigi (mevcut lib/ads getStats'i yeniden kullan) -----
-  const adStats = await getStats()
-  const adRecent = adStats.source === 'db'
-    ? await safeRows(
-        db,
-        'ad_views',
-        ['id', 'slot_slug', 'completed', 'watched_seconds', 'created_at'],
-        { orderBy: 'created_at', ascending: false, limit: 8 },
-      )
-    : { rows: [], dropped: [] }
-
-  // --- 4) Son kayitlar ------------------------------------------------------
+  // --- 3) Son kayitlar ------------------------------------------------------
   // Not: `phone` bilerek yok — kolonu olmayan tabloda sorguyu dusurmesin.
   const [recentPosts, recentProjects, recentMessages] = await Promise.all([
     safeRows(
@@ -217,20 +200,19 @@ export async function getOverview(): Promise<OverviewData> {
     ),
   ])
 
-  // --- 5) Uyarilar ----------------------------------------------------------
+  // --- 4) Uyarilar ----------------------------------------------------------
   // DIKKAT: `base.warnings` (kalicilik uyarisi) KORUNMALI — sifirdan dizi
   // olusturmak onu sessizce atardi.
   const warnings: string[] = [...base.warnings]
   for (const t of tables) {
     if (t.status === 'missing') {
-      warnings.push(`"${t.label}" tablosu (${t.key}) veritabanında yok — ilgili SQL dosyasını Supabase SQL Editor'de çalıştır.`)
+      if (CRITICAL_TABLE_KEYS.has(t.key)) {
+        warnings.push(`"${t.label}" tablosu (${t.key}) veritabanında yok — ilgili SQL dosyasını Supabase SQL Editor'de çalıştır.`)
+      }
     }
     else if (t.status === 'error') {
       warnings.push(`"${t.label}" okunamadi: ${t.message}`)
     }
-  }
-  if (adStats.source === 'fallback') {
-    warnings.push('Reklam tabloları (ad_slots / ad_views) yok — reklamlar yerleşik varsayılanlarla gösteriliyor ve izlenme sayacı kalıcı değil.')
   }
   for (const r of [recentPosts, recentProjects, recentMessages]) {
     if (r.dropped.length > 0) {
@@ -242,13 +224,6 @@ export async function getOverview(): Promise<OverviewData> {
     generatedAt: base.generatedAt,
     tables,
     messages: { total: messageStat?.count ?? 0, unread },
-    ads: {
-      totalViews: adStats.totalViews,
-      completedViews: adStats.completedViews,
-      todayViews: adStats.todayViews,
-      source: adStats.source,
-      recent: adRecent.rows,
-    },
     recent: {
       posts: recentPosts.rows,
       projects: recentProjects.rows,

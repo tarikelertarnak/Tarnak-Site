@@ -179,7 +179,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass} data-theme={initialThemeData}>
-      <body className="min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
+      {/* `suppressHydrationWarning` (2026-10-06):
+          React konsoluna düşen "A tree hydrated but some attributes of the
+          server rendered HTML didn't match" hatasının KESİN kaynağı ölçüldü:
+
+            sunucu <html class="dark">                 (style yok)
+            istemci <html class="dark" style="color-scheme: dark;">
+            sunucu <body class="min-h-screen …">       (style yok)
+            istemci <body class="min-h-screen …" style="visibility: visible;">
+
+          `ThemeInitScript` (aşağıda) tema tercihini `localStorage`'dan
+          okuyup bu iki `style`'ı parse anında — yani React hydration'ından
+          ÖNCE — yazıyor. Amaç FOUC'u (beyaz flaş) önlemek ve doğru çalışıyor.
+
+          React bu kasıtlı farkı "sunucu HTML'i değişmiş" sanıyor. Buradaki
+          `suppressHydrationWarning`, tam olarak bu senaryo için vardır:
+          hydration'dan önce script'in yazdığı nitelikler. `<html>`'de zaten
+          vardı ama `<body>`'de yoktu — bu yüzden uyarı sürüyordu. */}
+      <body suppressHydrationWarning className="min-h-screen bg-white text-black antialiased dark:bg-black dark:text-white">
         {/* SEO — Person + WebSite structured data (Google / Yandex rich snippets) */}
         <script
           type="application/ld+json"

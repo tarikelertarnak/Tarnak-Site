@@ -4,6 +4,7 @@ import { getPosts } from '@/lib/blog'
 import { getMessages } from '@/lib/chat'
 import { getContent } from '@/lib/content'
 import { getLocale } from '@/lib/i18n-server'
+import { roleLabel } from '@/lib/permissions'
 import { getSessionUser } from '@/lib/supabase/session'
 
 export const metadata = {
@@ -18,8 +19,8 @@ export default async function AdminPage() {
   if (!user) {
     redirect('/login?next=/admin')
   }
+  const locale = await getLocale()
   if (user.role !== 'admin') {
-    const locale = await getLocale()
     const isEn = locale === 'en'
     return (
       <main
@@ -57,6 +58,7 @@ export default async function AdminPage() {
         initialMessages={messages}
         initialBlogPosts={blogPosts}
         username={user.email ?? user.username ?? 'admin'}
+        roleLabel={roleLabel(user.role, locale, user.isOwner)}
       />
       {' '}
     </main>

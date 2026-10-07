@@ -14,11 +14,13 @@ import type { SessionUser } from '@/lib/supabase/session'
 
 /**
  * Profil düzenleme — sağdan açılan drawer.
- * Alanlar: profil fotoğrafı (link), ad, telefon, iletişim bilgileri,
- * meslek/rol combobox ("iş veren" gibi seçenekler + en sonda "Diğer" →
- * seçilince serbest textbox açılır). "Hesap değiştir" aynı drawer'da.
+ * Alanlar: profil fotoğrafı (link), ad, telefon, iletişim bilgileri
+ * (e-posta / konum / Discord), meslek/rol combobox ("iş veren" gibi
+ * seçenekler + "Site Sahibi" + en sonda "Diğer" → seçilince serbest textbox).
+ * Altta şifre değiştirme + "Hesap değiştir".
  */
 const OCCUPATION_OPTIONS = [
+  'Site Sahibi',
   'İş veren',
   'İş arayan',
   'Öğrenci',
@@ -47,10 +49,18 @@ export function ProfileEditDrawer({
   const [phoneValue, setPhoneValue] = useState(EMPTY_PHONE)
   const [avatarUrl, setAvatarUrl] = useState('')
   const [contact, setContact] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [location, setLocation] = useState('')
+  const [discord, setDiscord] = useState('')
   const [occupation, setOccupation] = useState('')
   const [occupationOther, setOccupationOther] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: 'ok' | 'err', text: string } | null>(null)
+  const [passwordOpen, setPasswordOpen] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [repeatPassword, setRepeatPassword] = useState('')
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwMessage, setPwMessage] = useState<{ type: 'ok' | 'err', text: string } | null>(null)
 
   // Drawer açılınca mevcut profille doldur
   useEffect(() => {
@@ -61,9 +71,15 @@ export function ProfileEditDrawer({
     setPhoneValue(parsePhone(user?.phone ?? ''))
     setAvatarUrl(user?.avatarUrl ?? '')
     setContact(user?.contact ?? '')
+    setContactEmail(user?.contactEmail ?? user?.email ?? '')
+    setLocation(user?.location ?? '')
+    setDiscord(user?.discord ?? '')
     setOccupation(user?.occupation ?? '')
     setOccupationOther(user?.occupationOther ?? '')
     setMessage(null)
+    setNewPassword('')
+    setRepeatPassword('')
+    setPwMessage(null)
   }, [open, user])
 
   const isOccupationCustom = occupation === 'Diğer'
@@ -75,13 +91,16 @@ export function ProfileEditDrawer({
       const res = await fetch('/api/auth/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+body: JSON.stringify({
           fullName,
           phone: (phoneValue.code || phoneValue.number)
-        ? `+${phoneValue.code}${phoneValue.number}`
-        : '',
+            ? `+${phoneValue.code}${phoneValue.number}`
+            : '',
           avatarUrl,
           contact,
+          contactEmail,
+          location,
+          discord,
           occupation,
           occupationOther: isOccupationCustom ? occupationOther : '',
         }),
@@ -104,7 +123,46 @@ export function ProfileEditDrawer({
     finally {
       setSaving(false)
     }
-  }, [fullName, phoneValue, avatarUrl, contact, occupation, isOccupationCustom, occupationOther, router, t])
+  }, [fullName, phoneValue, avatarUrl, contact, contactEmail, location, discord, occupation, isOccupationCustom, occupationOther, router, t])
+
+  /**
+   * Şifre değiştirme — Supabase auth `updateUser({ password })`.
+   * Sunucu route'u (`/api/auth/password`) çağırır: service-role anahtarı
+   * istemciye sızmaz, doğrulama da tek yerde (route) yapılır.
+   */
+  const changePassword = useCallback(async () => {
+    if (newPassword.length < 8) {
+      setPwMessage({ type: 'err', text: t('profile.passwordShort') })
+      return
+    }
+    if (newPassword !== repeatPassword) {
+      setPwMessage({ type: 'err', text: t('profile.passwordMismatch') })
+      return
+    }
+    setPwSaving(true)
+    setPwMessage(null)
+    try {
+      const res = await fetch('/api/auth/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPassword, confirm: repeatPassword }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        setPwMessage({ type: 'err', text: data?.message || t('auth.genericError') })
+        return
+      }
+      setPwMessage({ type: 'ok', text: t('profile.passwordChanged') })
+      setNewPassword('')
+      setRepeatPassword('')
+    }
+    catch {
+      setPwMessage({ type: 'err', text: t('auth.genericError') })
+    }
+    finally {
+      setPwSaving(false)
+    }
+  }, [newPassword, repeatPassword, t])
 
   const switchAccount = useCallback(async () => {
     // localStorage'daki Supabase oturumunu da temizle; aksi halde sayfa
@@ -189,6 +247,37 @@ export function ProfileEditDrawer({
                   placeholder={t('profile.contactPlaceholder')}
                 />
 
+                {/* İletişim bilgileri — hepsi profil metadata'sına yazılır */}
+                <Input
+                  type="email"
+                  label={t('profile.email')}
+                  variant="faded"
+                  value={contactEmail}
+                  onValueChange={setContactEmail}
+                  maxLength={200}
+                  placeholder="ornek@site.com"
+                />
+
+                <Input
+                  type="text"
+                  label={t('profile.location')}
+                  variant="faded"
+                  value={location}
+                  onValueChange={setLocation}
+                  maxLength={300}
+                  placeholder="Konya, Türkiye"
+                />
+
+                <Input
+                  type="text"
+                  label={t('profile.discord')}
+                  variant="faded"
+                  value={discord}
+                  onValueChange={setDiscord}
+                  maxLength={300}
+                  placeholder="https://discord.gg/…"
+                />
+
                 {/* Meslek / rol combobox + "Diğer" alt seçeneği */}
                 <Field label={t('profile.occupation')}>
                   <div className="flex flex-wrap gap-1.5">
@@ -246,6 +335,78 @@ export function ProfileEditDrawer({
                 </Button>
 
                 <div className="my-1 border-t border-white/5" />
+
+                {/* Şifre değiştir — "Hesap değiştir" satırıyla aynı hizada
+                    ve aynı düzende (aynı padding, aynı ayraç, aynı yazı
+                    boyutu); alanlar açılınca aynı çerçeveyi kullanır. */}
+                {passwordOpen
+                  ? (
+                      <div className="flex flex-col gap-3">
+                        <Input
+                          type="password"
+                          label={t('profile.newPassword')}
+                          variant="faded"
+                          value={newPassword}
+                          onValueChange={setNewPassword}
+                          autoComplete="new-password"
+                        />
+                        <Input
+                          type="password"
+                          label={t('profile.repeatPassword')}
+                          variant="faded"
+                          value={repeatPassword}
+                          onValueChange={setRepeatPassword}
+                          autoComplete="new-password"
+                        />
+                        {pwMessage && (
+                          <div
+                            className={cn(
+                              'rounded-lg border p-3 text-sm font-medium',
+                              pwMessage.type === 'ok'
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                : 'border-danger-200 bg-danger-50 text-danger',
+                            )}
+                          >
+                            {pwMessage.text}
+                          </div>
+                        )}
+                        <div className="flex flex-row gap-2">
+                          <Button
+                            type="button"
+                            color="primary"
+                            className="font-semibold"
+                            isLoading={pwSaving}
+                            isDisabled={pwSaving || !newPassword || !repeatPassword}
+                            onClick={changePassword}
+                          >
+                            {t('profile.changePassword')}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="bordered"
+                            isDisabled={pwSaving}
+                            onClick={() => {
+                              setPasswordOpen(false)
+                              setNewPassword('')
+                              setRepeatPassword('')
+                              setPwMessage(null)
+                            }}
+                          >
+                            {t('common.cancel')}
+                          </Button>
+                        </div>
+                      </div>
+                    )
+                  : (
+                      <button
+                        type="button"
+                        onClick={() => setPasswordOpen(true)}
+                        className="flex items-center justify-center gap-2 rounded-lg border border-foreground/10 px-3 py-2 text-sm text-foreground/70 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-foreground"
+                      >
+                        <Icon icon="mdi:lock-reset" width={16} height={16} />
+                        {t('profile.changePassword')}
+                      </button>
+                    )}
 
                 {/* Hesap değiştir — çıkış + giriş sayfası */}
                 <button

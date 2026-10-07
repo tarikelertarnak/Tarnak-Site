@@ -344,6 +344,8 @@ const ru: Record<string, string> = {
   'contact.socials': 'Соцсети',
   'footer.contactTitle': 'Контакты',
   'footer.backToTop': 'Наверх',
+  'common.showMore': 'Показать ещё ({count})',
+  'common.showMoreAria': 'Показать ещё карточек: {count}',
 }
 
 export default ru

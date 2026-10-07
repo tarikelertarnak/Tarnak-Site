@@ -283,45 +283,6 @@ export function Sidebar() {
         </kbd>
       </button>
 
-      {/* Profil — armanın altında (tek buton grubu: foto + ad + çıkış ikonu) */}
-      {sessionChecked && sessionUser && (
-        <div className="flex items-center gap-1 border-b border-white/5 px-3 py-3">
-          <button
-            type="button"
-            onClick={() => setProfileOpen(true)}
-            title={t('profile.title')}
-            className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-white/5"
-          >
-            <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5">
-              {sessionUser.avatarUrl
-                ? (
-                    <img
-                      src={sessionUser.avatarUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  )
-                : (
-                    <UserIcon size={20} className="text-foreground/50" />
-                  )}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-base font-medium text-foreground/90">
-              {sessionUser.fullName || sessionUser.username || sessionUser.email || 'Profil'}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={logout}
-            aria-label={t('nav.logout') ?? 'Çıkış'}
-            title={t('nav.logout') ?? 'Çıkış'}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-foreground/60 transition-colors hover:bg-white/5 hover:text-danger"
-          >
-            <LogoutIcon size={19} />
-          </button>
-        </div>
-      )}
-
-
       {/* Primary nav */}
       <div className="flex flex-1 flex-col gap-1 px-3.5 py-5">
         {NAV_LINKS.map((item) => {
@@ -379,8 +340,10 @@ export function Sidebar() {
             </button>
           </>
         )}
-        {/* Guest (giriş yapmamış): Giriş Yap | Kayıt Ol — yan panelin EN ALTINDA,
-            Ayarlar butonunun hemen üstünde. */}
+        {/* Oturum yoksa: Giriş Yap | Kayıt Ol.
+            Oturum varsa AYNI yerde profil + çıkış (2026-10-06: profil/çıkış
+            üstteki armanın altından buraya taşındı — konum artık giriş/kayıt
+            satırıyla aynı, kullanıcı onu arıyor bulamıyordu). */}
         {sessionChecked && !sessionUser && (
           <div className="flex flex-row items-center gap-2">
             <Link
@@ -396,6 +359,42 @@ export function Sidebar() {
             >
               <span>{t('nav.signup') ?? 'Kayıt Ol'}</span>
             </Link>
+          </div>
+        )}
+        {sessionChecked && sessionUser && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setProfileOpen(true)}
+              title={t('profile.title')}
+              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2 py-3 text-left transition-colors hover:bg-white/5"
+            >
+              <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5">
+                {sessionUser.avatarUrl
+                  ? (
+                      <img
+                        src={sessionUser.avatarUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    )
+                  : (
+                      <UserIcon size={20} className="text-foreground/50" />
+                    )}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-base font-medium text-foreground/90">
+                {sessionUser.fullName || sessionUser.username || sessionUser.email || 'Profil'}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={logout}
+              aria-label={t('nav.logout') ?? 'Çıkış'}
+              title={t('nav.logout') ?? 'Çıkış'}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-foreground/60 transition-colors hover:bg-white/5 hover:text-danger"
+            >
+              <LogoutIcon size={19} />
+            </button>
           </div>
         )}
 

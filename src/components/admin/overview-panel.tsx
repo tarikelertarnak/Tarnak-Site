@@ -11,10 +11,13 @@ import { cn } from '@/components/ui/cn'
  *
  * Salt okunurdur: hicbir sey yazmaz. Amaci "su an durum ne?" sorusunu
  * tek ekranda yanitlamak — sayilar, son kayitlar ve DIKKAT gerektiren
- * sema eksikleri (eksik tablo/kolon).
+ * sema eksikleri (yalnizca kritik tablolar icin).
  *
  * Onemli: sayilar `null` gelebilir. `null` = "bilinmiyor" (tablo yok),
  * `0` = "gercekten sifir". Ikisini ayni gostermek yanlis bilgi verir.
+ *
+ * NOT: reklam (ads) sayaclari 2026-10-06'da kaldirildi — panel reklam
+ * gostermiyor, dolayisiyla ilgili sorgu/sayac da burada yer almaz.
  */
 
 interface TableStat {
@@ -44,13 +47,6 @@ interface OverviewResponse {
   generatedAt?: string
   tables?: TableStat[]
   messages?: { total: number, unread: number }
-  ads?: {
-    totalViews: number
-    completedViews: number
-    todayViews: number
-    source: 'db' | 'fallback'
-    recent: Row[]
-  }
   recent?: { posts: Row[], projects: Row[], messages: Row[] }
   persistence?: PersistenceInfo
   warnings?: string[]
@@ -187,14 +183,12 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
   }
 
   const tables = data?.tables ?? []
-  const ads = data?.ads
   const recent = data?.recent
   const warnings = data?.warnings ?? []
 
   // Toplam: yalnizca gercekten okunabilen tablolari sayar (null'lar haric).
   const readable = tables.filter(t => t.count !== null)
   const totalRows = readable.reduce((sum, t) => sum + (t.count ?? 0), 0)
-  const missingCount = tables.filter(t => t.status === 'missing').length
 
   return (
     <div className="space-y-4 pt-4">
@@ -281,7 +275,7 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
       )}
 
       {/* KPI kartlari */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3">
         <StatCard
           icon="mdi:database-outline"
           label="Toplam kayıt"
@@ -294,20 +288,6 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
           value={String(data?.messages?.unread ?? 0)}
           hint={`${data?.messages?.total ?? 0} toplam mesaj`}
           tone={(data?.messages?.unread ?? 0) > 0 ? 'warning' : 'default'}
-        />
-        <StatCard
-          icon="mdi:bullhorn-outline"
-          label="Bugün izlenen reklam"
-          value={ads?.source === 'db' ? String(ads.todayViews) : '—'}
-          hint={ads?.source === 'db' ? `${ads.totalViews} toplam` : 'reklam tabloları yok'}
-          tone={ads?.source === 'db' ? 'default' : 'warning'}
-        />
-        <StatCard
-          icon="mdi:alert-circle-outline"
-          label="Eksik tablo"
-          value={String(missingCount)}
-          hint={missingCount === 0 ? 'şema tam' : 'SQL çalıştırılmalı'}
-          tone={missingCount > 0 ? 'warning' : 'default'}
         />
       </div>
 
@@ -358,7 +338,7 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
       </div>
 
       {/* Son kayitlar */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <MiniList
           title="Son blog yazıları"
           icon="mdi:post-outline"
@@ -398,25 +378,6 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
                 </span>
               )}
               <span className="shrink-0 text-foreground/40">{formatDate(row.created_at)}</span>
-            </>
-          )}
-        />
-
-        <MiniList
-          title="Son reklam izlenmeleri"
-          icon="mdi:bullhorn-outline"
-          rows={ads?.source === 'db' ? (ads.recent ?? []) : []}
-          emptyText={ads?.source === 'db' ? 'Henüz izlenme yok' : 'Reklam tabloları yok'}
-          render={row => (
-            <>
-              <span className="min-w-0 flex-1 truncate text-foreground">{String(row.slot_slug ?? '—')}</span>
-              <span className="shrink-0 tabular-nums text-foreground/50">
-                {String(row.watched_seconds ?? 0)}
-                s
-              </span>
-              {row.completed
-                ? <Icon icon="material-symbols:check-circle" width={14} height={14} className="shrink-0 text-success" />
-                : <Icon icon="material-symbols:cancel" width={14} height={14} className="shrink-0 text-foreground/30" />}
             </>
           )}
         />

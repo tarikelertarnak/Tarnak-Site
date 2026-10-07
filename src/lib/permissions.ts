@@ -151,6 +151,42 @@ export const ALL_PERMISSION_IDS: string[] = PERMISSION_GROUPS.flatMap(g =>
 const VALIDS = new Set(ALL_PERMISSION_IDS)
 const ROLES = new Set(ROLE_PRESETS.map(r => r.id))
 
+/**
+ * Rollerin görünen adı — `ROLE_PRESETS` etiketleri tek dilli (TR).
+ * Panel/UI birden çok dilde çalıştığı için gösterim adı ayrı tutulur;
+ * kaynak yine `ROLE_PRESETS` (yeni rol eklenince buraya da girmeli).
+ */
+export const ROLE_LABELS: Record<string, { tr: string, en: string }> = {
+  'admin': { tr: 'Yönetici', en: 'Administrator' },
+  'admin-assistant': { tr: 'Admin Asistanı', en: 'Admin Assistant' },
+  'trustworthy': { tr: 'Güvenilir', en: 'Trustworthy' },
+  'employer': { tr: 'İşveren', en: 'Employer' },
+  'verified': { tr: 'Doğrulanmış', en: 'Verified' },
+  'user': { tr: 'Kullanıcı', en: 'User' },
+}
+
+/** profiles.is_owner === true olan hesap — en üst yetki. */
+const SUPER_ADMIN_LABEL = { tr: 'Süper Yönetici', en: 'Super Admin' }
+
+/**
+ * Rolün, mevcut locale'e göre çevrilmiş görünen adı.
+ * Tanınmayan rol için ham id döner (yeni rol eklenince etiket boş kalmaz).
+ */
+export function roleLabel(
+  role?: string | null,
+  locale?: string,
+  isOwner = false,
+): string {
+  if (isOwner) {
+    return locale?.startsWith('tr') ? SUPER_ADMIN_LABEL.tr : SUPER_ADMIN_LABEL.en
+  }
+  const entry = ROLE_LABELS[role ?? '']
+  if (!entry) {
+    return role || '—'
+  }
+  return locale?.startsWith('tr') ? entry.tr : entry.en
+}
+
 export function isValidPermission(id: string): boolean {
   return VALIDS.has(id)
 }

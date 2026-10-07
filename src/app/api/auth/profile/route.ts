@@ -12,13 +12,23 @@ const MAX_LEN: Record<string, number> = {
   occupation: 60,
   occupationOther: 60,
   contact: 300,
+  contactEmail: 200,
+  location: 300,
+  discord: 300,
   avatarUrl: 500,
 }
 
 /**
  * Profil güncelleme (oturum açık kullanıcı).
  * Body (hepsi opsiyonel): { fullName, username, phone, occupation,
- * occupationOther, contact, avatarUrl } → user_metadata + profiles tablosu.
+ * occupationOther, contact, contactEmail, location, discord, avatarUrl }
+ * → user_metadata + profiles tablosu.
+ *
+ * İletişim alanları (contactEmail / location / discord) `profiles` tablosunda
+ * kolon DEĞİL — bu tablonun şeması yalnızca username/full_name/avatar_url gibi
+ * temel kolonları taşıyor ve telefon/meslek/iletişim de zaten metadata'da
+ * duruyor. Yeni kolon eklemek yerine aynı kalıba (user_metadata) uyulur;
+ * `getSessionUser` metadata'dan okur. Service-role anahtarı sunucuda kalır.
  *
  * profiles tablosu yoksa bile user_metadata güncellenir ve getSessionUser
  * metadata'dan okur — hata yalnızca güncelleme bölümünde sessizce tolere edilir.
@@ -44,7 +54,18 @@ export async function PATCH(req: Request) {
   }
 
   const metadata: Record<string, string> = {}
-  for (const key of ['fullName', 'username', 'phone', 'occupation', 'occupationOther', 'contact', 'avatarUrl'] as const) {
+  for (const key of [
+    'fullName',
+    'username',
+    'phone',
+    'occupation',
+    'occupationOther',
+    'contact',
+    'contactEmail',
+    'location',
+    'discord',
+    'avatarUrl',
+  ] as const) {
     const v = body[key]
     if (typeof v === 'string') {
       metadata[key] = v.trim().slice(0, MAX_LEN[key] ?? 200)
@@ -82,6 +103,9 @@ export async function PATCH(req: Request) {
     occupation: metadata.occupation ?? sbUser.user_metadata?.occupation ?? '',
     occupationOther: metadata.occupationOther ?? sbUser.user_metadata?.occupationOther ?? '',
     contact: metadata.contact ?? sbUser.user_metadata?.contact ?? '',
+    contactEmail: metadata.contactEmail ?? sbUser.user_metadata?.contactEmail ?? '',
+    location: metadata.location ?? sbUser.user_metadata?.location ?? '',
+    discord: metadata.discord ?? sbUser.user_metadata?.discord ?? '',
     avatar_url: metadata.avatarUrl ?? sbUser.user_metadata?.avatar_url ?? '',
   }
 

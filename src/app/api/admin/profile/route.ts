@@ -3,9 +3,12 @@ import { Buffer } from 'node:buffer'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { getContent, saveContent } from '@/lib/content'
-import { isAdminUser } from '@/lib/supabase/session'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
+import { getSessionUser } from '@/lib/supabase/session'
 
 const ALLOWED_EXT = ['.png', '.jpg', '.jpeg', '.gif', '.webp']
 
@@ -35,8 +38,8 @@ export async function POST(req: Request) {
   const denied = await guardWrite(req, 'admin-profile')
   if (denied)
     return denied
-  const admin = await isAdminUser()
-  if (!admin) {
+  const sessionUser = await getSessionUser()
+  if (!sessionUser || sessionUser.role !== 'admin') {
     return NextResponse.json({ success: false, message: 'Yetkisiz.' }, { status: 401 })
   }
 
@@ -76,23 +79,69 @@ export async function POST(req: Request) {
 
     const uploadDir = path.join(process.cwd(), 'public', 'uploads')
     await fs.mkdir(uploadDir, { recursive: true })
-    const filename = `profile${ext}`
+    // ⚠️ KOK NEDEN (2026-10-06): dosya adi sabitti (`profile.png`). Ayni
+    // uzantiyi tekrar yukleyince URL degismiyordu ve tarayici onbelleginden
+    // ESKI gorseli getiriyordu → "kaydettim ama degismiyor" gorunumu.
+    // Zaman damgali ad her yuklemede yeni URL verir.
+    const filename = `profile-${Date.now()}${ext}`
+    const profileImage = `/uploads/${filename}`
     await fs.writeFile(path.join(uploadDir, filename), buffer)
 
     const content = await getContent()
-    content.profile.profileImage = `/uploads/${filename}`
+    content.profile.profileImage = profileImage
     const saved = await saveContent(content)
     if (!saved.ok) {
       return NextResponse.json({ success: false, message: saved.error || 'İçerik kaydedilemedi.' }, { status: 500 })
     }
 
+    // Supabase auth metadata + `profiles.avatar_url` senkronu.
+    // Profil panelden degisiyordu ama panel bunu GORMUYORDU: sidebar/chat
+    // avatarini `profiles.avatar_url` uzerinden okuyor → kopukluk.
+    // admin.json (admin:*) oturumunda Supabase kimligi yok, atlanir.
+    if (sessionUser && !sessionUser.id.startsWith('admin:')) {
+      await syncSupabaseAvatar(sessionUser.id, profileImage)
+    }
+
+    // ISR/Full Route cache: icerik degisti, sayfa aninda yenilenmeli
+    // (/api/admin/content ile ayni davranis).
+    try {
+      revalidatePath('/', 'layout')
+    }
+    catch { /* Workers: no-op */ }
+
     return NextResponse.json({
       success: true,
       message: 'Profil fotoğrafı güncellendi.',
-      profileImage: content.profile.profileImage,
+      profileImage,
     })
   }
   catch {
     return NextResponse.json({ success: false, message: 'Dosya kaydedilemedi.' }, { status: 500 })
   }
+}
+
+/** Yeni avatarı Supabase'e yazar (user_metadata + profiles.avatar_url).
+ *
+ *  Service role anahtari SUNUCUDA kalir; route disina sizmaz. Panel zaten
+ *  content.json'a yaziyor, bu yalnizca oturum/profil tarafini senkronlar.
+ *  Hata olursa sessizce gecilir: content.json kaydi gecerli.
+ */
+async function syncSupabaseAvatar(userId: string, avatarUrl: string) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user && user.id === userId) {
+      await supabase.auth.updateUser({
+        data: { avatar_url: avatarUrl, avatarUrl },
+      })
+    }
+  }
+  catch { /* metadata yeterli degilse profiles yazilir */ }
+  try {
+    await createAdminClient()
+      .from('profiles')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', userId)
+  }
+  catch { /* tablo yoksa paneldeki content kaydi yeterli */ }
 }
