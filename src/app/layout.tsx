@@ -21,6 +21,9 @@ import {
 } from '@/lib/search-verification'
 import { SITE_URL } from '@/lib/site-url'
 import nextDynamic from 'next/dynamic'
+import { ScrollSpy } from '@/components/scroll-spy'
+import { ShortcutHelp } from '@/components/shortcut-help'
+import { AnnouncementBanner } from '@/components/announcement-banner'
 /*
  * AĞIR BİLEŞENLERİN GEÇ YÜKLENMESİ (Faz 3 · 1)
  *
@@ -40,6 +43,7 @@ const MusicPlayer = nextDynamic(() => import('@/components/music-player').then(m
 const SearchDialog = nextDynamic(() => import('@/components/search-dialog').then(m => m.SearchDialog))
 import { montserrat } from '@/lib/fonts'
 import './globals.css'
+import './tokens.css'
 
 // 2026-10-03: `revalidate = 300` BURADAN KALDIRILDI — KOK NEDEN.
 // Layout segment'i tum child rotalara gecerlidir; buradaki revalidate yuzünden
@@ -321,6 +325,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   tetiklenmez.
                 */}
                 <Shortcuts shortcuts={GLOBAL_SHORTCUTS} />
+                {/* Kısayol yardım penceresi — `?` (Faz 5 · 3) */}
+                <ShortcutHelp shortcuts={GLOBAL_SHORTCUTS} />
+                {/* Aktif bölüm göstergesi (Faz 5 · 3) */}
+                <ScrollSpy />
                 <TopBar />
                 <Sidebar />
                 <SearchDialog />

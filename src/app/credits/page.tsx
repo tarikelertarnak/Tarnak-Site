@@ -1,4 +1,4 @@
-import type { ContributorItem, DonorItem, TeamItem, TesterItem, TranslatorItem } from '@/components/credits/credits-browser'
+import type { ContributorItem, DonorItem, TeamItem, TranslatorItem } from '@/components/credits/credits-browser'
 import {
 
   CreditsBrowser,
@@ -54,9 +54,6 @@ const TOP_DONORS: DonorItem[] = [
   { nameTr: 'Henüz yok', nameEn: 'None yet', noteTr: 'İlk destekçi sen ol!', noteEn: 'Be the first supporter!' },
 ]
 
-const TESTERS: TesterItem[] = [
-  { name: 'TARIK ELER', noteTr: 'Tüm test senaryoları', noteEn: 'All test scenarios' },
-]
 
 const TRANSLATORS: TranslatorItem[] = [
   /*
@@ -111,8 +108,7 @@ export default async function CreditsPage() {
         <Section className="flex-col pb-24 sm:pb-32" framed>
           <CreditsBrowser
             contributors={CONTRIBUTORS}
-            team={TEAM}
-            testers={TESTERS}
+            team={TEAM}
             translators={TRANSLATORS}
             topDonors={TOP_DONORS}
           />

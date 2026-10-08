@@ -73,7 +73,7 @@ export default async function ChatPage() {
             />
           </div>
           <div className="flex w-full flex-1 items-center justify-center">
-            <ChatWindow content={content} userName={userName} />
+            <ChatWindow content={content} userName={userName} isAuthenticated={!!user} />
           </div>
         </Section>
       </main>

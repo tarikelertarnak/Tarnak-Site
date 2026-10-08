@@ -1869,13 +1869,10 @@ export function AdminPanel({
           )}
         </div>
         <div className="flex flex-row gap-2">
-          <Button
-            onPress={() => router.push('/admin/puck')}
-            variant="bordered"
-            startContent={<Icon icon="mdi:vector-square" width={18} height={18} />}
-          >
-            Sayfa Düzenleyici
-          </Button>
+          {/* 2026-10-07 (kullanıcı): "Sayfa Düzenleyici" ve `/admin/puck`
+              TAMAMEN kaldırıldı. Görsel sayfa düzenleyici (Puck) kullanılmıyor;
+              içerik artık içerik dosyası + admin formları üzerinden yönetiliyor.
+              Bu düğme kaldırılınca `router` de bu blokta kullanılmaz oldu. */}
           <Button
             as="a"
             href="/"

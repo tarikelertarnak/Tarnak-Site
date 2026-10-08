@@ -75,6 +75,8 @@ export interface ShortcutSpec {
   key: string
   /** Basıldığında çalışacak. */
   run: () => void
+  /** Kısayol yardım penceresinde (`?`) gösterilen açıklama. */
+  label?: string
 }
 
 export function Shortcuts({ shortcuts }: { shortcuts: ShortcutSpec[] }) {
@@ -156,26 +158,31 @@ export const GLOBAL_SHORTCUTS: ShortcutSpec[] = [
   {
     ctrl: true,
     key: 'b',
+    label: 'Yan paneli aç/kapat',
     run: () => window.dispatchEvent(new CustomEvent('sidebar:request-toggle')),
   },
   {
     ctrl: true,
     key: 'k',
+    label: 'Arama / komut paleti',
     run: () => window.dispatchEvent(new CustomEvent('search:request-open')),
   },
   {
     ctrl: true,
     key: '/',
+    label: 'Ayarları aç',
     run: () => window.dispatchEvent(new CustomEvent('settings:open')),
   },
   {
     ctrl: true,
     key: 'ArrowUp',
+    label: 'Yukarı kaydır',
     run: () => window.scrollBy({ top: -400, behavior: 'smooth' }),
   },
   {
     ctrl: true,
     key: 'ArrowDown',
+    label: 'Aşağı kaydır',
     run: () => window.scrollBy({ top: 400, behavior: 'smooth' }),
   },
 ]

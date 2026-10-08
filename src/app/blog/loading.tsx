@@ -1,25 +1,22 @@
+import { Skeleton, SkeletonGrid } from '@/components/ui/skeleton'
+
+/**
+ * /blog yükleme durumu (Faz 5 · 2)
+ *
+ * ÖNCE: elle yazılmış `shimmer` blokları. `.shimmer` sınıfı hareketli bir
+ * parlama (gradient + animasyon) — kullanıcı şartı "glow/parlama efekti
+ * yasak" olduğu için KALDIRILDI. Yerine CSS-only `Skeleton` geldi:
+ * sabit gri blok + hafif opaklık geçişi (parlama değil).
+ */
 export default function BlogLoading() {
   return (
-    <div className="flex w-full max-w-6xl flex-col items-center gap-6 px-4 sm:px-6 pt-28 sm:pt-32">
-      <div className="flex w-full flex-col items-center gap-3 text-center pb-6">
-        <span className="h-4 w-16 rounded-full shimmer" />
-        <span className="h-8 w-32 rounded-lg shimmer" />
-        <span className="h-3 w-72 max-w-full rounded-md shimmer" />
+    <div className="mx-auto w-full max-w-6xl flex-col px-4 pt-28 sm:px-6 sm:pt-32">
+      <div className="flex w-full flex-col items-center gap-3 pb-6 text-center">
+        <Skeleton className="h-4 w-16 rounded-full" />
+        <Skeleton className="h-8 w-32 rounded-lg" />
+        <Skeleton className="h-3 w-72 max-w-full" />
       </div>
-      <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-        {[0, 1, 2].map(i => (
-          <div
-            key={i}
-            className="flex flex-col gap-3 rounded-large bg-background p-5"
-          >
-            <span className="h-3 w-24 rounded-md shimmer" />
-            <span className="h-5 w-4/5 rounded-md shimmer" />
-            <span className="h-3 w-full rounded-md shimmer" />
-            <span className="h-3 w-3/4 rounded-md shimmer" />
-            <span className="mt-2 h-3 w-20 rounded-md shimmer" />
-          </div>
-        ))}
-      </div>
+      <SkeletonGrid count={3} variant="blog" />
     </div>
   )
 }

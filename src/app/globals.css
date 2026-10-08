@@ -217,15 +217,6 @@ html[data-theme='dark'] {
         }
     };
 
---keyframes-shimmer: {
-        0% {
-            background-position: -200% 0;
-        }
-        100% {
-            background-position: 200% 0;
-        }
-    };
-
     --keyframes-spin-slow: {
         from {
             transform: rotate(0deg);
@@ -323,8 +314,7 @@ body {
     .animate-spin-slow,
     .animate-spin-reverse,
     .animate-twinkle,
-    .animate-dash-flow,
-    .shimmer {
+    .animate-dash-flow {
         animation: none !important;
     }
 
@@ -581,28 +571,6 @@ html[data-theme="light"] ::-webkit-scrollbar-thumb {
     animation: var(--animation-float);
 }
 
-/* ---------- Shimmer (kart parlaması) ---------- */
-.shimmer {
-    background: linear-gradient(
-        110deg,
-        transparent 40%,
-        rgba(255, 255, 255, 0.12) 50%,
-        transparent 60%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 3s linear infinite;
-}
-
-html[data-theme="light"] .shimmer {
-    background: linear-gradient(
-        110deg,
-        transparent 40%,
-        rgba(0, 0, 0, 0.05) 50%,
-        transparent 60%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 3s linear infinite;
-}
 
 /* ---------- Grid arka plan deseni ---------- */
 .bg-grid {

@@ -29,11 +29,7 @@ export interface TeamItem {
   roleEn: string
 }
 
-export interface TesterItem {
-  name: string
-  noteTr: string
-  noteEn: string
-}
+
 
 export interface TranslatorItem {
   lang: string
@@ -169,13 +165,11 @@ function EmptyRow({ text }: { text: string }) {
 export function CreditsBrowser({
   contributors,
   team,
-  testers,
   translators,
   topDonors,
 }: {
   contributors: ContributorItem[]
   team: TeamItem[]
-  testers: TesterItem[]
   translators: TranslatorItem[]
   topDonors: DonorItem[]
 }) {
@@ -252,19 +246,6 @@ export function CreditsBrowser({
               )
             : undefined
         }
-      />
-    ),
-  }))
-
-  const testerEntries: Entry[] = testers.map(x => ({
-    key: x.name,
-    name: x.name,
-    searchText: `${x.name} ${x.noteTr} ${x.noteEn}`.toLowerCase(),
-    render: () => (
-      <CreditRow
-        left={<PersonIcon />}
-        title={x.name}
-        subtitle={isEn ? x.noteEn : x.noteTr}
       />
     ),
   }))
@@ -352,8 +333,7 @@ export function CreditsBrowser({
     ),
   }))
 
-  const shownContributors = arrange(contributorEntries)
-  const shownTesters = arrange(testerEntries)
+  const shownContributors = arrange(contributorEntries)
   const shownTranslators = arrange(translatorEntries)
   const shownDonors = arrange(donorEntries)
   const shownTeam = arrange(teamEntries)
@@ -364,8 +344,7 @@ export function CreditsBrowser({
   const sponsorsLoadingCard = catAllows('sponsors') && leaderboard === null
   const sponsorsEmptyCard
     = catAllows('sponsors') && leaderboard !== null && leaderboard.length === 0 && !q
-  const total = shownContributors.length
-    + shownTesters.length
+  const total = shownContributors.length
     + shownTranslators.length
     + shownDonors.length
     + shownTeam.length
@@ -432,19 +411,6 @@ export function CreditsBrowser({
         </CreditGroup>
       )}
 
-      {catAllows('contributors') && shownTesters.length > 0 && (
-        <CreditGroup
-          icon={(
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="text-primary">
-              <path d="M9 1v7L2 20v3h20v-3L15 8V1m0 17a1 1 0 1 0 0-2a1 1 0 0 0 0 2Zm-6 2a1 1 0 1 0 0-2a1 1 0 0 0 0 2Zm9-7c-7-3-6 4-12 1M6 1h12" />
-            </svg>
-          )}
-          title={t('credits.testers')}
-          description={t('credits.testersDescription')}
-        >
-          {shownTesters.map((e, i) => <Fragment key={e.key ?? `${e.name}-${i}`}>{e.render(i + 1)}</Fragment>)}
-        </CreditGroup>
-      )}
 
       {catAllows('contributors') && shownTranslators.length > 0 && (
         <CreditGroup

@@ -134,11 +134,11 @@ function SkeletonCard() {
     <Card className="bg-background ">
       <CardBody className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="h-4 w-16 rounded-full shimmer" />
+          <span className="h-4 w-16 rounded-full animate-pulse bg-foreground/8" />
         </div>
-        <span className="h-5 w-3/4 rounded-md shimmer" />
-        <span className="h-3 w-full rounded-md shimmer" />
-        <span className="h-3 w-2/3 rounded-md shimmer" />
+        <span className="h-5 w-3/4 rounded-md animate-pulse bg-foreground/8" />
+        <span className="h-3 w-full rounded-md animate-pulse bg-foreground/8" />
+        <span className="h-3 w-2/3 rounded-md animate-pulse bg-foreground/8" />
       </CardBody>
     </Card>
   )
@@ -290,11 +290,11 @@ export function GithubExplorer({ username }: { username: string }) {
         <div className="flex w-full flex-col gap-4">
           <Card className="bg-background ">
             <CardBody className="flex flex-row items-center gap-4 p-4 sm:p-6">
-              <span className="h-[72px] w-[72px] shrink-0 rounded-2xl shimmer" />
+              <span className="h-[72px] w-[72px] shrink-0 rounded-2xl animate-pulse bg-foreground/8" />
               <div className="flex w-full flex-col gap-2">
-                <span className="h-6 w-1/3 rounded-md shimmer" />
-                <span className="h-3 w-1/4 rounded-md shimmer" />
-                <span className="h-3 w-1/2 rounded-md shimmer" />
+                <span className="h-6 w-1/3 rounded-md animate-pulse bg-foreground/8" />
+                <span className="h-3 w-1/4 rounded-md animate-pulse bg-foreground/8" />
+                <span className="h-3 w-1/2 rounded-md animate-pulse bg-foreground/8" />
               </div>
             </CardBody>
           </Card>
