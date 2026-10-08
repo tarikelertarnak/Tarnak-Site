@@ -217,5 +217,11 @@
   },
   "footer": {
     "copyright": "TARIKELER"
+  },
+  "resources": {
+    "title": "Kaynaklar",
+    "subtitle": "",
+    "description": "Kullandığım ve faydalı bulduğum araçlar, kütüphaneler ve öğrenme kaynakları.",
+    "groups": []
   }
 }

@@ -57,8 +57,8 @@ describe('buildSiteNavigation', () => {
     // 2026-10-07: Sayfa Duzenleyici kaldirildi → /puck menude DEGIL.
   })
 
-  it('9 sayfa + 4 bolum + 3 hesap = 15 baglanti (Sayfa Duzenleyici cikarildi)', () => {
-    expect(all.length).toBe(15)
+  it('9 sayfa + 5 bolum + 2 hesap = 16 baglanti (/kaynaklar eklendi, Sayfa Duzenleyici cikarildi)', () => {
+    expect(all.length).toBe(16)
   })
 
   it('tekrar eden href YOK', () => {
@@ -98,6 +98,6 @@ describe('buildSiteNavigation', () => {
 
   it('nav.items verilmezse sabit liste bozulmaz', () => {
     const g = buildSiteNavigation(t, undefined)
-    expect(g.flatMap(x => x.entries).length).toBe(15)
+    expect(g.flatMap(x => x.entries).length).toBe(16)
   })
 })

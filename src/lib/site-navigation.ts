@@ -38,6 +38,7 @@ interface Labels {
   search: string
   donate: string
   credits: string
+  resources: string
   login: string
   panel: string
   contact: string
@@ -76,6 +77,8 @@ function buildStaticGroups(l: Labels): NavGroup[] {
         { id: 'sec-about', label: l.about, href: '/about/' },
         { id: 'sec-projects', label: l.projects, href: '/projects/' },
         { id: 'sec-blog', label: l.blog, href: '/blog/' },
+        // Faz 4 · 4 — kaynaklar (araç/link listesi)
+        { id: 'sec-resources', label: l.resources, href: '/kaynaklar/' },
         { id: 'sec-contact', label: l.contact, href: '/contact/' },
       ],
     },
@@ -141,6 +144,7 @@ export function buildSiteNavigation(
     search: t('nav.search'),
     donate: t('nav.donate'),
     credits: t('nav.credits'),
+    resources: t('nav.resources'),
     login: t('nav.login'),
     panel: t('nav.adminPanel'),
     contact: t('footer.contactTitle'),

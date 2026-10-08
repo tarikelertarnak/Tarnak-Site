@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { TrackBlogView } from '@/app/blog/[slug]/track-view'
 import { BackToListButton } from '@/components/back-to-list-button'
+import { CodeCopyEnhancer } from '@/components/code-copy-enhancer'
+import { ReadingProgress } from '@/components/reading-progress'
+import { postKind, readingMinutes, relatedPosts } from '@/lib/post-utils'
 import { Navigation } from '@/components/navigation'
 import { getPostBySlug, getPosts } from '@/lib/blog'
 import { t } from '@/lib/i18n'
@@ -124,7 +127,11 @@ export default async function PostPage({ params }: PostPageProps) {
     // (post build ile istek arasinda silinmis olabilir).
     notFound()
   }
-  const content = await getStaticLocalizedContent()
+const content = await getStaticLocalizedContent()
+  // İlgili yazılar: aynı etiketler + aynı tür (TIL/normal) + yakın tarih
+  const tumYazilar = await getPosts(locale)
+  const ilgiliYazilar = relatedPosts(post, tumYazilar, 3)
+
   return (
     <div className="min-h-screen w-full relative">
       {' '}
@@ -140,6 +147,8 @@ export default async function PostPage({ params }: PostPageProps) {
         <div className="mb-6 flex items-center gap-3">
           {' '}
           <BackToListButton fallback="/blog" />
+  {/* Okuma ilerleme çubuğu (Faz 4 · 3) */}
+  <ReadingProgress targetId="yazi-icerik" />
           {' '}
           <Link
             href="/blog"
@@ -152,7 +161,7 @@ export default async function PostPage({ params }: PostPageProps) {
           {' '}
         </div>
         {' '}
-        <article className="rounded-large bg-background p-4 sm:p-8 lg:p-10 ">
+        <article id="yazi-icerik" className="rounded-large bg-background p-4 sm:p-8 lg:p-10 ">
           {' '}
           {/* BlogPosting structured data — Google/Bing "Article" sonucu ve
               zengin snippet (yazar, tarih, okuma suresi) icin. Sayfa basligi
@@ -226,9 +235,49 @@ export default async function PostPage({ params }: PostPageProps) {
             dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
           />
           {' '}
+
+          {/*
+            İLGİLİ YAZILAR (Faz 4 · 3)
+            Aynı etiketleri paylaşan, aynı türde (TIL/normal), tarih olarak
+            yakın yazılar. Puanlama `src/lib/post-utils.ts` → `relatedPosts`.
+          */}
+          {ilgiliYazilar.length > 0 && (
+            <section aria-labelledby="ilgili-yazilar" className="mt-10 border-t border-foreground/10 pt-8">
+              <h2 id="ilgili-yazilar" className="mb-4 text-lg font-bold">
+                {t(locale, 'blog.related')}
+              </h2>
+              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {ilgiliYazilar.map(ilgili => (
+                  <li key={ilgili.id}>
+                    <Link
+                      href={`/blog/${ilgili.slug}`}
+                      className="block h-full rounded-xl border border-foreground/10 p-4 transition-colors duration-200 hover:border-primary/50"
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {postKind(ilgili) === 'til' && (
+                          <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+                            TIL
+                          </span>
+                        )}
+                        <time dateTime={ilgili.date} className="text-xs text-foreground/50">
+                          {ilgili.date}
+                        </time>
+                      </div>
+                      <p className="mt-1.5 text-sm font-medium leading-snug">
+                        {ilgili.title}
+                      </p>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </article>
         {' '}
       </main>
+      {' '}
+      {/* Kod bloklarına "Kopyala" düğmesi + dil etiketi (Faz 4 · 3) */}
+      <CodeCopyEnhancer />
       {' '}
     </div>
   )

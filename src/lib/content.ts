@@ -118,6 +118,16 @@ export interface ProjectItem {
   }
   /** Tags (for filtering/searching) */
   tags?: string[]
+  /**
+   * Yazı türü (Faz 4 · 3).
+   *
+   * · `'article'` → normal blog yazısı (varsayılan)
+   * · `'til'`     → "Today I Learned": kısa, tek konulu öğrenme notu
+   *
+   * Ayrı `badge`'den FARKLI: badge görsel rozet metni, bu tip davranışı
+   * ve listeleme mantığını belirler. İkisi birlikte kullanılabilir.
+   */
+  kind?: 'article' | 'til'
 }
 
 export interface NavItem {
@@ -134,6 +144,16 @@ export interface BlogPost {
   content: string
   badge?: string
   tags?: string[]
+  /**
+   * Yazı türü (Faz 4 · 3).
+   *
+   * · `'article'` → normal blog yazısı (varsayılan)
+   * · `'til'`     → "Today I Learned": kısa, tek konulu öğrenme notu
+   *
+   * `badge`'den FARKLI: badge yalnızca görsel rozet metnidir, bu alan
+   * davranışı ve listeleme mantığını belirler. İkisi birlikte de kullanılabilir.
+   */
+  kind?: 'article' | 'til'
   /** English variants — shown if present and locale is 'en'. */
   title_en?: string
   excerpt_en?: string
