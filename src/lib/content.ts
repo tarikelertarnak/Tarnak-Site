@@ -96,6 +96,29 @@ export interface ProjectItem {
   stars?: number
   /** Fork count if GitHub repo */
   forks?: number
+  /**
+   * Öne çıkan proje (Faz 4 · 2). `true` olanlar listenin EN ÜSTÜNDE,
+   * seçili sıralamadan BAĞIMSIZ olarak sabitlenir. En fazla 3 tanesi
+   * uygulanır (listenin en üstündeki 3 işaretli proje).
+   *
+   * GitHub projeleri otomatik olarak bu alanı taşımaz — onlar API'den
+   * gelir; yalnızca admin panelinden eklenen projeler işaretlenebilir.
+   */
+  pinned?: boolean
+  /**
+   * Vaka çalışması (Faz 4 · 2). Alanlar boş bırakılırsa proje detay
+   * sayfasında "TODO" placeholder'ı gösterilir — içerik UYDURULMAZ.
+   */
+  caseStudy?: {
+    /** Kısa özet: projenin ne yaptığı (tek paragraf) */
+    summary?: string
+    /** Problem: hangi sorunu çözdü */
+    problem?: string
+    /** Çözüm: nasıl çözdü */
+    solution?: string
+    /** Sonuç: ölçülebilir çıktı varsa */
+    outcome?: string
+  }
   /** Watch (subscriber) count if GitHub repo */
   watchers?: number
   /** Last update date (ISO). For repos it comes from GitHub updated_at. */

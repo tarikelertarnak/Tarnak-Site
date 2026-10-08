@@ -113,6 +113,15 @@ const projectItem = z.object({
   /** Multiple media (image/gif/video URLs). Falls back to `image` when empty. */
   media: z.array(z.string().max(500)).max(12).optional(),
   stars: z.number().int().nonnegative().optional(),
+  /** Faz 4 · 2 — öne çıkan proje, listenin en üstünde sabitlenir */
+  pinned: z.boolean().optional(),
+  /** Faz 4 · 2 — vaka çalışması alanları (boş bırakılabilir, uydurulmaz) */
+  caseStudy: z.object({
+    summary: z.string().max(2000).optional(),
+    problem: z.string().max(4000).optional(),
+    solution: z.string().max(4000).optional(),
+    outcome: z.string().max(2000).optional(),
+  }).optional(),
   forks: z.number().int().nonnegative().optional(),
   watchers: z.number().int().nonnegative().optional(),
   updatedAt: z.string().max(30).optional(),

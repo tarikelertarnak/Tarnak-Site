@@ -255,7 +255,23 @@ export function ProjectsGrid({
       default:
         sorted.sort((a, b) => score(b) - score(a))
     }
-    return sorted
+
+    /*
+      ÖNE ÇIKAN (PINNED) PROJELER — Faz 4 · 2
+      "öne çıkan (pinned) projeler her zaman en üstte (en fazla 3)".
+
+      Neden AYRI bir sıralama değil: kullanıcı "yıldıza göre" seçtiyse
+      öne çıkanlar yine üstte kalmalı — çünkü öne çıkanlık sıralamanın
+      değil, seçimin bir parçası. Sıralama seçimine dokunmadan BAŞTA
+      sabitlenirler, kalanlar seçilen ölçüte göre sıralanır.
+
+      En fazla 3: ilk 3 pinned alınır (kullanıcı yanlışlıkla 8 işaretlerse
+      de sayfa taşmaz). Arama/etiket filtresi devredeyken pinned'lar
+      da filtreye uyar — aksi halde "sonuç yok" ekranı yanlış olurdu.
+    */
+    const sabit = sorted.filter(p => p.pinned).slice(0, 3)
+    const digerleri = sorted.filter(p => !sabit.includes(p))
+    return [...sabit, ...digerleri]
   }, [allProjects, query, activeTags, sort, userStars])
 
   /*
