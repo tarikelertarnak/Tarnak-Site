@@ -462,7 +462,10 @@ html[data-theme="light"] {
 html,
 body {
     cursor: auto;
-    font-family: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+/* next/font/local `--font-montserrat` değişkenini üretir ve <html>'e basar.
+       Fontsource CSS'i yerine geçti (Faz 3 · 3): yalnızca latin + latin-ext
+       alt kümeleri, preload'lı, `display: swap`. */
+    font-family: var(--font-montserrat), system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 a,

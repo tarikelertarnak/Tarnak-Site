@@ -1,0 +1,64 @@
+name: Performance Budget (Faz 3 · 5)
+
+# Lighthouse CI'yi GitHub Actions'a ekler. Bütçe ihlali CI'yı KIRMIZI yapar:
+#   LCP ≤ 2500 ms · INP ≤ 200 ms · CLS ≤ 0.1
+#
+# Neden ayrı workflow: Lighthouse her koşuda ~1 dk sürer ve Chrome gerektirir;
+# kalite işinden (ci.yml) ayrı tutmak hem hata ayırmayı kolaylaştırır hem de
+# hızlı kontrolleri geçen PR'lar Lighthouse'u atlamaz (needs: quality).
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    name: Lighthouse bütçesi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Üretim derle
+        run: pnpm exec next build
+        env:
+          NEXT_PUBLIC_SITE_URL: http://127.0.0.1:3000
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+
+      - name: Sunucuyu başlat
+        run: |
+          pnpm exec next start --port 3000 &
+          echo $! > server.pid
+          # Hazır olana kadar bekle
+          npx wait-on http://127.0.0.1:3000 -t 60000
+
+      # ── Bütçe tanımı ────────────────────────────────────────────────
+      - uses: treosh/lighthouse-ci-action@v12
+        with:
+          configPath: './lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Raporu okunur tut
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: ./.lighthouseci
+          retention-days: 7

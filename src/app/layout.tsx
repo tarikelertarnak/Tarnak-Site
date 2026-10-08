@@ -3,10 +3,8 @@ import { AntdRegistry } from '@ant-design/nextjs-registry'
 import { headers } from 'next/headers'
 import { EmotionStyleRegistry } from '@/components/emotion-style-registry'
 import { LocaleProvider } from '@/components/locale-provider'
-import { MusicPlayer } from '@/components/music-player'
 import { Providers } from '@/components/providers'
 import { ScrollToTop } from '@/components/scroll-to-top'
-import { SearchDialog } from '@/components/search-dialog'
 import { GLOBAL_SHORTCUTS, Shortcuts } from '@/components/shortcuts'
 import { Sidebar } from '@/components/sidebar'
 import { SkipLink } from '@/components/skip-link'
@@ -22,11 +20,25 @@ import {
   YANDEX_VERIFICATION,
 } from '@/lib/search-verification'
 import { SITE_URL } from '@/lib/site-url'
-import '@fontsource/montserrat/400.css'
-import '@fontsource/montserrat/500.css'
-import '@fontsource/montserrat/600.css'
-import '@fontsource/montserrat/700.css'
-import '@fontsource/montserrat/800.css'
+import nextDynamic from 'next/dynamic'
+/*
+ * AĞIR BİLEŞENLERİN GEÇ YÜKLENMESİ (Faz 3 · 1)
+ *
+ * `MusicPlayer`  : 5 useState + audio element + event dinleyicileri. İlk
+ *   ekranda GÖRÜNTÜSÜ YOK (oynatmadıkça hiç görünmüyor) ama her sayfanın
+ *   JS'ine giriyordu. `ssr: false` ile ayrı chunk'a düşüyor.
+ * `SearchDialog`  : cmdk komut paleti. Açılmadıkça hiçbir şey görünmüyor;
+ *   `cmdk` + arama indeksi ilk ekranda boşuna indiriliyordu.
+ *
+ * İkisi de gerçekten kullanılmadığı için indirilmemesi doğru davranış;
+ * kullanıcı ilk etkileşimde (tıklama) yüklenirler.
+ *
+ * ⚠️ `ssr: false` Server Component'ta YASAK (build hatası veriyor), o yüzden
+ * yalnızca `dynamic()` kullanıldı: kod yine ayrı chunk'a düşer.
+ */
+const MusicPlayer = nextDynamic(() => import('@/components/music-player').then(m => m.MusicPlayer))
+const SearchDialog = nextDynamic(() => import('@/components/search-dialog').then(m => m.SearchDialog))
+import { montserrat } from '@/lib/fonts'
 import './globals.css'
 
 // 2026-10-03: `revalidate = 300` BURADAN KALDIRILDI — KOK NEDEN.
@@ -200,7 +212,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     // `data-scroll-behavior="smooth"` Next'in uyarisini keser: global
   // `scroll-behavior: smooth` (globals.css) aktifken rota gecislerinde
   // kaydirma animasyonunu Next'in devralabilmesini saglar.
-    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={initialThemeClass} data-theme={initialThemeData} data-scroll-behavior="smooth">
+    <html lang={locale} dir={getLocaleDirection(locale)} suppressHydrationWarning className={`${initialThemeClass} ${montserrat.variable}`} data-theme={initialThemeData} data-scroll-behavior="smooth">
       {/* `suppressHydrationWarning` (2026-10-06):
           React konsoluna düşen "A tree hydrated but some attributes of the
           server rendered HTML didn't match" hatasının KESİN kaynağı ölçüldü:
