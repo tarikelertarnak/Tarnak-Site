@@ -40,10 +40,7 @@ export default async function NotFound() {
               <path d="m12 5 7 7-7 7" />
             </svg>
           </Link>
-        </div>
-        <Link href="/github" className="text-sm text-foreground-500 hover:text-primary transition-colors">
-          {t(locale, 'notFound.explorer')}
-        </Link>
+        </div>
       </div>
     </div>
   )

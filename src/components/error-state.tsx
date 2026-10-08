@@ -139,7 +139,7 @@ export function ErrorState({
         </Link>
 
         <Link
-          href="/github"
+          href="/projects/"
           className="inline-flex items-center gap-1.5 rounded-lg border border-foreground-200/20 px-4 py-2 text-sm font-medium text-foreground/85 no-underline transition-colors hover:border-primary/40 hover:text-primary"
         >
           {t('notFound.explorer')}

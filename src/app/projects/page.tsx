@@ -89,10 +89,14 @@ export default async function ProjectsPage() {
               arasinda mb-8 (32px) vardi; --section-gap ile esitlendi. */}
           <div aria-hidden className="h-[var(--section-gap)]" />
 
-          <ProjectsGrid
-            projects={content.projects.items}
-            githubUsername={content.settings.githubUsername}
-          />
+<ProjectsGrid
+              projects={content.projects.items}
+              githubUsername={content.settings.githubUsername}
+              /* 2026-10-07 (kullanıcı): "Projeler sayfasında daha fazlasını
+                 göster olmasın, direkt hepsi gözüksün; o olay ana sayfada
+                 olsun." → Bu sayfada sayfalama KAPALI, tüm kartlar baştan. */
+              paginate={false}
+            />
         </Section>
       </main>
     </div>

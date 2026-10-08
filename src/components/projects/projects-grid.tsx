@@ -119,11 +119,22 @@ export function ProjectsGrid({
   showSearch = true,
   githubUsername,
   actions,
+  paginate = true,
 }: {
   projects: ProjectItem[]
   showSearch?: boolean
   githubUsername?: string
   actions?: React.ReactNode
+  /**
+   * `false` → "Daha Fazlasını Göster" YOK, tüm kartlar baştan görünür.
+   *
+   * 2026-10-07 (kullanıcı): "Projeler sayfasında daha fazlasını göster
+   * olmasın, direkt hepsi görünsün; o olay ana sayfada olsun." Yani
+   * sayfalamak sadece ANA SAYFA bölümüne ait, `/projects/` altında değil.
+   *
+   * Varsayılan `true` → ana sayfa (`ProjectsSection`) değişmeden kalır.
+   */
+  paginate?: boolean
 }) {
   const [query, setQuery] = useState('')
   const [activeTags, setActiveTags] = useState<string[]>([])
@@ -276,12 +287,15 @@ export function ProjectsGrid({
 
   /*
     "DAHA FAZLASINI GÖSTER" (2026-10-06, kullanıcı).
-    Önce: `const shown = filtered` — tüm projeler baştan görünüyordu
-    ("Daha Fazla Göster yok" yorumu 2026-09-25'te eklenmişti). Kullanıcı
-    geri çevirdi: 2 satır göster, kalan için düğme.
 
     Blog ile AYNI mantık, AYNI hook, AYNI düğme — iki bölüm ayrışamaz.
     Sütun sayısı (N) ölçülür, state "kaç satır" tutar.
+
+    2026-10-07 (kullanıcı düzeltmesi): bu davranış artık sadece ANA SAYFA
+    bölümünde. `/projects/` sayfasında `paginate={false}` geçiyor → tüm
+    kartlar baştan listelenir, düğme hiç render edilmez. `gridRef` hâlâ
+    bağlanıyor (ölçüm için), ama `useRowPagination` devre dışıyken
+    `visible = filtered`, `remaining = 0` döner.
   */
   const {
     visible: shown,
@@ -290,6 +304,7 @@ export function ProjectsGrid({
     gridRef,
     loadMore,
   } = useRowPagination(filtered, {
+    enabled: paginate,
     initialRows: 2,
     resetKey: `${query}|${sort}|${activeTags.join(',')}`,
   })

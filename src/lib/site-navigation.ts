@@ -33,12 +33,9 @@ interface Labels {
   about: string
   projects: string
   blog: string
-  chat: string
-  github: string
-  search: string
+  chat: string
   donate: string
   credits: string
-  resources: string
   login: string
   panel: string
   contact: string
@@ -61,9 +58,7 @@ function buildStaticGroups(l: Labels): NavGroup[] {
         { id: 'about', label: l.about, href: '/about' },
         { id: 'projects', label: l.projects, href: '/projects' },
         { id: 'blog', label: l.blog, href: '/blog' },
-        { id: 'chat', label: l.chat, href: '/chat' },
-        { id: 'github', label: l.github, href: '/github' },
-        { id: 'search', label: l.search, href: '/search' },
+        { id: 'chat', label: l.chat, href: '/chat' },
         { id: 'donate', label: l.donate, href: '/donate' },
         { id: 'credits', label: l.credits, href: '/credits' },
       ],
@@ -77,8 +72,7 @@ function buildStaticGroups(l: Labels): NavGroup[] {
         { id: 'sec-about', label: l.about, href: '/about/' },
         { id: 'sec-projects', label: l.projects, href: '/projects/' },
         { id: 'sec-blog', label: l.blog, href: '/blog/' },
-        // Faz 4 · 4 — kaynaklar (araç/link listesi)
-        { id: 'sec-resources', label: l.resources, href: '/kaynaklar/' },
+        // Faz 4 · 4 — kaynaklar (araç/link listesi)
         { id: 'sec-contact', label: l.contact, href: '/contact/' },
       ],
     },
@@ -139,12 +133,9 @@ export function buildSiteNavigation(
     about: t('nav.about'),
     projects: t('nav.projects'),
     blog: t('nav.blog'),
-    chat: t('nav.chat'),
-    github: t('nav.github'),
-    search: t('nav.search'),
+    chat: t('nav.chat'),
     donate: t('nav.donate'),
     credits: t('nav.credits'),
-    resources: t('nav.resources'),
     login: t('nav.login'),
     panel: t('nav.adminPanel'),
     contact: t('footer.contactTitle'),

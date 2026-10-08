@@ -27,12 +27,10 @@ const STATIC_ROUTES: Array<{ path: string, priority: number, freq: 'daily' | 'we
   { path: '/', priority: 1, freq: 'daily' },
   { path: '/projects', priority: 0.8, freq: 'weekly' },
   { path: '/blog', priority: 0.8, freq: 'daily' },
-  { path: '/github', priority: 0.7, freq: 'weekly' },
   { path: '/about', priority: 0.7, freq: 'monthly' },
   { path: '/donate', priority: 0.5, freq: 'monthly' },
   { path: '/credits', priority: 0.4, freq: 'monthly' },
   // Faz 4 · 4 — kullanıcı kaynakları (araç/link listesi)
-  { path: '/kaynaklar', priority: 0.4, freq: 'monthly' },
 ]
 
 /**

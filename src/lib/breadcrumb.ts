@@ -32,10 +32,6 @@ export const CRUMBS: Record<string, BreadcrumbItem[]> = {
     { label: 'Ana sayfa', href: '/' },
     { label: 'Hakkımda', href: '/about' },
   ],
-  '/github': [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'GitHub', href: '/github' },
-  ],
   '/contact': [
     { label: 'Ana sayfa', href: '/' },
     { label: 'İletişim', href: '/contact' },

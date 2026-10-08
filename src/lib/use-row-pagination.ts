@@ -99,10 +99,17 @@ export function useRowPagination<T>(
     stepRows = 2,
     /** Arama/sıralama değiştiğinde sıfırlanır */
     resetKey,
+    /**
+     * `false` → sayfalama KAPALI: tüm öğeler döner, `hasMore` her zaman
+     * `false`. `/projects/` sayfası tüm projeleri baştan göstermek istiyor
+     * (2026-10-07, kullanıcı) — ana sayfa bölümünde sayfalama kalıyor.
+     */
+    enabled = true,
   }: {
     initialRows?: number
     stepRows?: number
     resetKey?: string | number
+    enabled?: boolean
   } = {},
 ): UseRowPaginationResult<T> {
   const gridRef = useRef<HTMLDivElement | null>(null)
@@ -143,9 +150,10 @@ export function useRowPagination<T>(
   }, [resetKey, initialRows])
 
   const total = items.length
-  const visibleCount = computeVisibleCount(total, columns, visibleRows)
+  // Sayfalama kapalıysa: sütun ölçümüne de gerek yok, doğrudan hepsi.
+  const visibleCount = enabled ? computeVisibleCount(total, columns, visibleRows) : total
   const visible = items.slice(0, visibleCount)
-  const remaining = total - visibleCount
+  const remaining = enabled ? total - visibleCount : 0
 
   const loadMore = useCallback(() => {
     const n = columns > 0 ? columns : 1
@@ -159,7 +167,7 @@ export function useRowPagination<T>(
   return {
     visible,
     remaining,
-    hasMore: remaining > 0,
+    hasMore: enabled && remaining > 0,
     columns,
     visibleRows,
     gridRef,

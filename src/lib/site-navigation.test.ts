@@ -21,8 +21,6 @@ describe('buildSiteNavigation', () => {
     '/projects',
     '/blog',
     '/chat',
-    '/github',
-    '/search',
     '/donate',
     '/credits',
   ]
@@ -34,6 +32,10 @@ describe('buildSiteNavigation', () => {
   // ---- Kaldirilan reklam akisi: /reklam sayfasi silindi, link de olmamali.
   it('silinen reklam sayfasi listede YOK', () => {
     expect(hrefs).not.toContain('/reklam')
+  })
+  // 2026-10-07 (kullanıcı): /github, /search ve /kaynaklar sayfaları silindi.
+  it.each(['/github', '/search', '/kaynaklar'])('silinen sayfa listede YOK: %s', (href) => {
+    expect(hrefs).not.toContain(href)
   })
 
   // 2026-10-04: `/#bolum` capalari gercek sayfalara cevrildi (kullanici:
@@ -57,8 +59,8 @@ describe('buildSiteNavigation', () => {
     // 2026-10-07: Sayfa Duzenleyici kaldirildi → /puck menude DEGIL.
   })
 
-  it('9 sayfa + 5 bolum + 2 hesap = 16 baglanti (/kaynaklar eklendi, Sayfa Duzenleyici cikarildi)', () => {
-    expect(all.length).toBe(16)
+  it('9 sayfa + 3 bolum + 2 hesap = 13 baglanti (/github, /search, /kaynaklar kaldirildi)', () => {
+    expect(all.length).toBe(13)
   })
 
   it('tekrar eden href YOK', () => {
@@ -98,6 +100,6 @@ describe('buildSiteNavigation', () => {
 
   it('nav.items verilmezse sabit liste bozulmaz', () => {
     const g = buildSiteNavigation(t, undefined)
-    expect(g.flatMap(x => x.entries).length).toBe(16)
+    expect(g.flatMap(x => x.entries).length).toBe(13)
   })
 })
