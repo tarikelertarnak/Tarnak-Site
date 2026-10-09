@@ -23,13 +23,23 @@ import { siteUrl } from '@/lib/site-url'
  */
 
 /** Indexable public routes, most important first. */
-const STATIC_ROUTES: Array<{ path: string, priority: number, freq: 'daily' | 'weekly' | 'monthly' }> = [
+const STATIC_ROUTES: Array<{
+  path: string
+  priority: number
+  freq: 'daily' | 'weekly' | 'monthly'
+}> = [
   { path: '/', priority: 1, freq: 'daily' },
   { path: '/projects', priority: 0.8, freq: 'weekly' },
   { path: '/blog', priority: 0.8, freq: 'daily' },
   { path: '/about', priority: 0.7, freq: 'monthly' },
   { path: '/donate', priority: 0.5, freq: 'monthly' },
   { path: '/credits', priority: 0.4, freq: 'monthly' },
+  // Faz 6 — kişisel sayfalar (düşük öncelik, içerik girilene kadar boş)
+  { path: '/uses', priority: 0.4, freq: 'monthly' },
+  { path: '/now', priority: 0.4, freq: 'weekly' },
+  { path: '/changelog', priority: 0.3, freq: 'weekly' },
+  { path: '/gizlilik', priority: 0.3, freq: 'monthly' },
+  { path: '/kvkk', priority: 0.3, freq: 'monthly' },
   // Faz 4 · 4 — kullanıcı kaynakları (araç/link listesi)
 ]
 
@@ -54,8 +64,7 @@ function contentLastmod(): Date {
   for (const f of files) {
     try {
       dates.push(statSync(/* turbopackIgnore: true */ f).mtimeMs)
-    }
-    catch {
+    } catch {
       // dosya yoksa o katkiyi at — digerinden devam et
     }
   }
@@ -72,7 +81,8 @@ const CONTENT_LASTMOD = contentLastmod()
  * Once sitemap slash'siz, canonical slash'liydi — tutarsiz sitemap'ler
  * Google'in guvenini zedeliyor. Burada tek form kullanıyoruz: canonical.
  */
-const canonicalUrl = (p: string) => (p === '/' ? siteUrl('/') : siteUrl(`${p}/`))
+const canonicalUrl = (p: string) =>
+  p === '/' ? siteUrl('/') : siteUrl(`${p}/`)
 
 /**
  * hreflang alternatifi (2026-10-05) — 2026-10-06 KALDIRILDI.
@@ -87,28 +97,29 @@ const canonicalUrl = (p: string) => (p === '/' ? siteUrl('/') : siteUrl(`${p}/`)
  * is; o kadar kazanmak icin bozuk link bildirmektense hic bildirmemek.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const entries: MetadataRoute.Sitemap = STATIC_ROUTES.map(({ path: routePath, priority, freq }) => ({
-    url: canonicalUrl(routePath),
-    lastModified: CONTENT_LASTMOD,
-    changeFrequency: freq,
-    priority,
-  }))
+  const entries: MetadataRoute.Sitemap = STATIC_ROUTES.map(
+    ({ path: routePath, priority, freq }) => ({
+      url: canonicalUrl(routePath),
+      lastModified: CONTENT_LASTMOD,
+      changeFrequency: freq,
+      priority,
+    }),
+  )
 
   // Blog posts: best-effort. Bir hata sitemap'i BOZMAMALI — Google'a yarim ve
   // 500'lu bir sitemap vermek, hic vermemekten kotudur.
   try {
     const posts = await getPosts()
     for (const post of posts) {
-      if (!post?.slug)
-        continue
+      if (!post?.slug) continue
       // 2026-10-04: her yazi icin CONTENT_LASTMOD (dosya mtime) kullaniliyordu.
       // Bu, "bu yazi 2020'de yazildi" sinyali yerine "su an degisti" sinyali
       // veriyordu; Google lastModified'a guvenir. Yazinin kendi tarihi elimizde
       // (`post.date`, yyyy-mm-dd) -> onu kullan. Bozuk tarih varsa guvenli
       // tarafa dus (CONTENT_LASTMOD).
       const published = post.date ? new Date(`${post.date}T12:00:00Z`) : null
-      const lastModified
-        = published && !Number.isNaN(published.getTime())
+      const lastModified =
+        published && !Number.isNaN(published.getTime())
           ? published
           : CONTENT_LASTMOD
       entries.push({
@@ -118,9 +129,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       })
     }
-  }
-  catch (err) {
-    console.error('[sitemap] blog yazilari alinamadi, statik rotalar gonderiliyor', err)
+  } catch (err) {
+    console.error(
+      '[sitemap] blog yazilari alinamadi, statik rotalar gonderiliyor',
+      err,
+    )
   }
 
   return entries
