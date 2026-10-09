@@ -31,22 +31,25 @@ export const contactFormSchema = z
     contactValue: z
       .string()
       .min(3, 'Please enter your email or phone number')
-      .max(CONTACT_VALUE_MAX, `Value must not exceed ${CONTACT_VALUE_MAX} characters`),
+      .max(
+        CONTACT_VALUE_MAX,
+        `Value must not exceed ${CONTACT_VALUE_MAX} characters`,
+      ),
     message: z
       .string()
       .min(10, 'Message must be at least 10 characters')
       .max(1000, 'Message must not exceed 1000 characters'),
   })
   .refine(
-    data =>
-      data.contactMethod !== 'email'
-      || z.string().email().safeParse(data.contactValue).success,
+    (data) =>
+      data.contactMethod !== 'email' ||
+      z.string().email().safeParse(data.contactValue).success,
     { message: 'Please enter a valid email address', path: ['contactValue'] },
   )
   .refine(
-    data =>
-      data.contactMethod !== 'phone'
-      || /^[+\d][\d\s().-]{5,}$/.test(data.contactValue.trim()),
+    (data) =>
+      data.contactMethod !== 'phone' ||
+      /^[+\d][\d\s().-]{5,}$/.test(data.contactValue.trim()),
     { message: 'Please enter a valid phone number', path: ['contactValue'] },
   )
   // ITU-T E.164: uluslararasi numara en fazla 15 hane ("+" hariç).
@@ -116,12 +119,14 @@ const projectItem = z.object({
   /** Faz 4 · 2 — öne çıkan proje, listenin en üstünde sabitlenir */
   pinned: z.boolean().optional(),
   /** Faz 4 · 2 — vaka çalışması alanları (boş bırakılabilir, uydurulmaz) */
-  caseStudy: z.object({
-    summary: z.string().max(2000).optional(),
-    problem: z.string().max(4000).optional(),
-    solution: z.string().max(4000).optional(),
-    outcome: z.string().max(2000).optional(),
-  }).optional(),
+  caseStudy: z
+    .object({
+      summary: z.string().max(2000).optional(),
+      problem: z.string().max(4000).optional(),
+      solution: z.string().max(4000).optional(),
+      outcome: z.string().max(2000).optional(),
+    })
+    .optional(),
   forks: z.number().int().nonnegative().optional(),
   watchers: z.number().int().nonnegative().optional(),
   updatedAt: z.string().max(30).optional(),
@@ -229,6 +234,8 @@ export const contentSchema = z.object({
     nickname: textField,
     title: textField,
     profileImage: z.string().max(500),
+    /** Kırpma öncesi orijinal görsel — yeni alan, eski kayıtlarda yok. */
+    originalImage: z.string().max(500).optional(),
     experience: z.string().max(100).optional(),
     firstLanguage: z.string().max(100).optional(),
     otherLanguages: z.string().max(200).optional(),

@@ -1,27 +1,44 @@
+import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { Navigation } from '@/components/navigation'
-import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
-import { CRUMBS } from '@/lib/breadcrumb'
+import {
+  CertificatesSection,
+  TimelineSection,
+} from '@/components/phase6-sections'
 import { Button } from '@/components/ui/button'
-import { BriefcaseIcon, ChevronRightIcon, CodeIcon, GithubIcon, HeartIcon, ShieldIcon, StarIcon, UserIcon } from '@/components/ui/icons'
+import {
+  BriefcaseIcon,
+  ChevronRightIcon,
+  CodeIcon,
+  GithubIcon,
+  HeartIcon,
+  ShieldIcon,
+  StarIcon,
+  UserIcon,
+} from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
+import { CRUMBS } from '@/lib/breadcrumb'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
+import { parsePhase6 } from '@/lib/phase6'
 
 // 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
 export const dynamic = 'force-static'
-
 
 export async function generateMetadata() {
   const locale = await getStaticLocale()
   const isEn = locale === 'en'
   return {
-    title: isEn ? 'About — TARIK ELER - TARNAK' : 'Hakkımda — TARIK ELER - TARNAK',
+    title: isEn
+      ? 'About — TARIK ELER - TARNAK'
+      : 'Hakkımda — TARIK ELER - TARNAK',
     description: isEn
       ? 'TARIK ELER (Tarnak) — Web developer & creator. I build projects with Next.js, TypeScript and AI. My history, skills and motivation.'
       : 'TARIK ELER (Tarnak) — Web developer & creator. Next.js, TypeScript ve yapay zeka üzerine projeler geliştiriyorum. Geçmişim, yeteneklerim ve motivasyonum.',
     alternates: { canonical: '/about' },
     openGraph: {
-      title: isEn ? 'About — TARIK ELER - TARNAK' : 'Hakkımda — TARIK ELER - TARNAK',
+      title: isEn
+        ? 'About — TARIK ELER - TARNAK'
+        : 'Hakkımda — TARIK ELER - TARNAK',
       description: isEn
         ? 'TARIK ELER (Tarnak) — Web developer & creator building projects with Next.js, TypeScript and AI.'
         : 'TARIK ELER (Tarnak) — Next.js, TypeScript ve yapay zeka üzerine projeler geliştiren web geliştirici.',
@@ -53,13 +70,13 @@ const TIMELINE = [
   {
     year: '2022',
     title: 'Açık kaynak & ilk yayınlar',
-    body: 'GitHub\'da açık kaynak projeler yayınladım. Topluluk katkıları ve issue tracker üzerinden geri bildirim alarak büyüdüm.',
+    body: "GitHub'da açık kaynak projeler yayınladım. Topluluk katkıları ve issue tracker üzerinden geri bildirim alarak büyüdüm.",
     icon: GithubIcon,
   },
   {
     year: '2023',
     title: 'Yapay zeka & modern stack',
-    body: 'OpenAI API, LLM entegrasyonları ve AI destekli uygulamalar geliştirdim. Supabase, Tailwind v4, HeroUI ile modern stack\'e geçtim.',
+    body: "OpenAI API, LLM entegrasyonları ve AI destekli uygulamalar geliştirdim. Supabase, Tailwind v4, HeroUI ile modern stack'e geçtim.",
     icon: HeartIcon,
   },
   {
@@ -150,21 +167,48 @@ const FOCUS_EN: typeof FOCUS = [
 const VALUES = [
   { label: 'Sürekli öğrenme', desc: 'Teknoloji durmadan değişiyor, ben de.' },
   { label: 'Sade çözümler', desc: 'Laziness as a feature — az kod, çok iş.' },
-  { label: 'Açık kaynak', desc: 'Bildiklerimi paylaşır, başkalarından öğrenirim.' },
-  { label: 'Güvenlik odaklı', desc: 'Yazdığım her şeyin güvenli olduğundan emin olurum.' },
-  { label: 'Hız', desc: 'Düşünce → ürün arasındaki süreyi minimuma indiririm.' },
-  { label: 'Tutarlılık', desc: 'Detaylara önem veririm; UI/UX bütünü bir hikaye anlatır.' },
+  {
+    label: 'Açık kaynak',
+    desc: 'Bildiklerimi paylaşır, başkalarından öğrenirim.',
+  },
+  {
+    label: 'Güvenlik odaklı',
+    desc: 'Yazdığım her şeyin güvenli olduğundan emin olurum.',
+  },
+  {
+    label: 'Hız',
+    desc: 'Düşünce → ürün arasındaki süreyi minimuma indiririm.',
+  },
+  {
+    label: 'Tutarlılık',
+    desc: 'Detaylara önem veririm; UI/UX bütünü bir hikaye anlatır.',
+  },
 ]
 
 const VALUES_EN: typeof VALUES = [
-  { label: 'Continuous learning', desc: 'Technology keeps changing, and so do I.' },
-  { label: 'Simple solutions', desc: 'Laziness as a feature — less code, more work done.' },
+  {
+    label: 'Continuous learning',
+    desc: 'Technology keeps changing, and so do I.',
+  },
+  {
+    label: 'Simple solutions',
+    desc: 'Laziness as a feature — less code, more work done.',
+  },
   { label: 'Open source', desc: 'I share what I know and learn from others.' },
-  { label: 'Security first', desc: 'I make sure everything I write is secure.' },
+  {
+    label: 'Security first',
+    desc: 'I make sure everything I write is secure.',
+  },
 ]
 
 export default async function AboutPage() {
   const content = await getStaticLocalizedContent()
+  // Faz 6 · 1 — içerik şemasından okunur, boşsa hiçbir şey render edilmez
+  const phase6 = parsePhase6(
+    (content as unknown as Record<string, unknown>).phase6,
+  )
+  const faz6Timeline = phase6?.timeline?.items.filter((i) => i.title) ?? []
+  const faz6Sertifika = phase6?.certificates?.items.filter((i) => i.name) ?? []
   const locale = await getStaticLocale()
   const isEn = locale === 'en'
   const { about } = content
@@ -189,10 +233,7 @@ export default async function AboutPage() {
           `pb-12`'si ile TOPLANINCA 88px oluyordu (ölçülen değer), yani
           boşluk ÇİFT KAYNAKLIydı ve hedef 24px'in 3.6 katıydı.
         */}
-        <Section
-          className="flex-col pt-28 sm:pt-32 pb-0"
-          id="about"
-        >
+        <Section className="flex-col pt-28 sm:pt-32 pb-0" id="about">
           <div className="mx-auto w-full max-w-3xl text-center">
             <h1 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
               <UserIcon size={36} className="inline-block" />
@@ -254,58 +295,46 @@ export default async function AboutPage() {
           <div className="mx-auto w-full max-w-3xl">
             <div className="rounded-2xl border border-surface-border bg-background p-6 sm:p-8">
               <h2 className="mb-4 text-2xl font-bold text-foreground sm:text-3xl">
-                {isEn ? 'Hello, I\'m Tarık.' : 'Merhaba, ben Tarık.'}
+                {isEn ? "Hello, I'm Tarık." : 'Merhaba, ben Tarık.'}
               </h2>
               <div className="space-y-4 text-sm leading-relaxed text-foreground/75 sm:text-base">
                 <p>
-                  {isEn
-                    ? (
-                        <>
-                          {profile.title}
-                          . I build projects with Next.js, TypeScript
-                          and AI — end to end, from design to deploy. Writing code
-                          isn't just a job to me; it's the most enjoyable way to
-                          solve problems.
-                        </>
-                      )
-                    : (
-                        <>
-                          {profile.title}
-                          . Next.js, TypeScript ve yapay zeka üzerine
-                          projeler geliştiriyorum — tasarımdan deploy'a kadar uçtan
-                          uca. Kod yazmak benim için sadece bir iş değil, problem
-                          çözmenin en keyifli hali.
-                        </>
-                      )}
+                  {isEn ? (
+                    <>
+                      {profile.title}. I build projects with Next.js, TypeScript
+                      and AI — end to end, from design to deploy. Writing code
+                      isn't just a job to me; it's the most enjoyable way to
+                      solve problems.
+                    </>
+                  ) : (
+                    <>
+                      {profile.title}. Next.js, TypeScript ve yapay zeka üzerine
+                      projeler geliştiriyorum — tasarımdan deploy'a kadar uçtan
+                      uca. Kod yazmak benim için sadece bir iş değil, problem
+                      çözmenin en keyifli hali.
+                    </>
+                  )}
                 </p>
+                <p>{about.whoText}</p>
                 <p>
-                  {about.whoText}
-                </p>
-                <p>
-                  {isEn
-                    ? (
-                        <>
-                          I publish open source projects, take part in
-                          {' '}
-                          <span className="text-primary">cybersecurity</span>
-                          {' '}
-                          communities and keep learning new things. I use TARNAK (my
-                          own brand) to produce content and contribute to the
-                          developer community.
-                        </>
-                      )
-                    : (
-                        <>
-                          Açık kaynak projeler yayınlıyor,
-                          {' '}
-                          <span className="text-primary">siber güvenlik</span>
-                          {' '}
-                          topluluklarında yer alıyor ve sürekli yeni şeyler
-                          öğreniyorum. TARNAK'ı (kendi markamı) özellikle Türkçe
-                          içerik üretmek ve Türk geliştirici topluluğuna katkıda
-                          bulunmak için kullanıyorum.
-                        </>
-                      )}
+                  {isEn ? (
+                    <>
+                      I publish open source projects, take part in{' '}
+                      <span className="text-primary">cybersecurity</span>{' '}
+                      communities and keep learning new things. I use TARNAK (my
+                      own brand) to produce content and contribute to the
+                      developer community.
+                    </>
+                  ) : (
+                    <>
+                      Açık kaynak projeler yayınlıyor,{' '}
+                      <span className="text-primary">siber güvenlik</span>{' '}
+                      topluluklarında yer alıyor ve sürekli yeni şeyler
+                      öğreniyorum. TARNAK'ı (kendi markamı) özellikle Türkçe
+                      içerik üretmek ve Türk geliştirici topluluğuna katkıda
+                      bulunmak için kullanıyorum.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
@@ -319,7 +348,7 @@ export default async function AboutPage() {
               {isEn ? 'Areas I Focus On' : 'Üzerinde Çalıştığım Alanlar'}
             </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {focus.map(f => (
+              {focus.map((f) => (
                 <div
                   key={f.title}
                   className="rounded-2xl border border-surface-border bg-background p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
@@ -371,7 +400,7 @@ export default async function AboutPage() {
               {isEn ? 'My Values' : 'Değerlerim'}
             </h2>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {values.map(v => (
+              {values.map((v) => (
                 <div
                   key={v.label}
                   className="rounded-2xl border border-surface-border bg-background px-5 py-4"
@@ -390,7 +419,7 @@ export default async function AboutPage() {
         <Section className="flex-col pb-24 sm:pb-32" framed>
           <div className="mx-auto w-full max-w-2xl text-center">
             <h2 className="text-2xl font-black text-foreground sm:text-3xl">
-              {isEn ? 'Let\'s work together.' : 'Birlikte çalışalım.'}
+              {isEn ? "Let's work together." : 'Birlikte çalışalım.'}
             </h2>
             <p className="mt-3 text-sm text-foreground/60 sm:text-base">
               {isEn
@@ -405,7 +434,7 @@ export default async function AboutPage() {
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
               >
                 <GithubIcon size={16} />
-                {isEn ? 'Follow on GitHub' : 'GitHub\'da Takip Et'}
+                {isEn ? 'Follow on GitHub' : "GitHub'da Takip Et"}
               </a>
               <a
                 href="/contact/"
@@ -416,6 +445,34 @@ export default async function AboutPage() {
             </div>
           </div>
         </Section>
+
+        {/* ── Faz 6 · 1 — zaman çizelgesi + sertifikalar ────────────────
+            İçerik UYDURULMADI: `content.phase6.timeline.items` ve
+            `certificates.items` boşken bu blok render EDİLMEZ. Kullanıcı
+            admin panelinden doldurunca bölümler kendiliğinden belirir. */}
+        {faz6Timeline.length > 0 && (
+          <>
+            <div aria-hidden className="h-[var(--section-gap)]" />
+            <Section className="flex-col pb-0">
+              <TimelineSection
+                title={phase6?.timeline?.title}
+                items={faz6Timeline}
+              />
+            </Section>
+          </>
+        )}
+
+        {faz6Sertifika.length > 0 && (
+          <>
+            <div aria-hidden className="h-[var(--section-gap)]" />
+            <Section className="flex-col pb-0">
+              <CertificatesSection
+                title={phase6?.certificates?.title}
+                items={faz6Sertifika}
+              />
+            </Section>
+          </>
+        )}
       </main>
     </div>
   )

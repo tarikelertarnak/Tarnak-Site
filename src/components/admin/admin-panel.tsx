@@ -15,10 +15,12 @@ import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
 import { Divider } from 'antd'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChatPanel } from '@/components/admin/chat-panel'
 import { DataManager } from '@/components/admin/data-manager'
 import { OverviewPanel } from '@/components/admin/overview-panel'
+import { ProfilePhotoUploader } from '@/components/admin/profile-photo-uploader'
+import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
 import { UsersPanel } from '@/components/admin/users-panel'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -26,7 +28,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { clientFetchUserRepos } from '@/lib/github-client'
 
-type SaveStatus = { type: 'success' | 'error', text: string } | null
+type SaveStatus = { type: 'success' | 'error'; text: string } | null
 
 export function AdminPanel({
   initialContent,
@@ -53,78 +55,23 @@ export function AdminPanel({
   // Sekme kontrollu: "Genel Bakis"taki tablo kartlari "Veri Yonetimi"
   // sekmesine ve ilgili tabloya atlayabilsin diye activeKey'i biz tutuyoruz.
   const [tab, setTab] = useState('overview')
-  const [dataResource, setDataResource] = useState<string | undefined>(undefined)
-  // Sekme seridi yatay kaydirilabilir; oklar yalnizca gerektiginde gorunur.
-  const tabsWrapRef = useRef<HTMLDivElement>(null)
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(false)
-
-  const tabList = useCallback(
-    () => tabsWrapRef.current?.querySelector<HTMLElement>('[role="tablist"]') ?? null,
-    [],
+  const [dataResource, setDataResource] = useState<string | undefined>(
+    undefined,
   )
 
-  const syncTabScroll = useCallback(() => {
-    const el = tabList()
-    if (!el) {
-      return
-    }
-    const max = el.scrollWidth - el.clientWidth
-    setCanScrollLeft(el.scrollLeft > 4)
-    setCanScrollRight(max > 4 && el.scrollLeft < max - 4)
-  }, [tabList])
-
-  // Sekme listesi Lobehub/base-ui'nin icinde; onu disaridan degistiremiyoruz.
-  // Kaydirma + gizli cubuk siniflari burasi bir kez ekleniyor (Tailwind bu
-  // dizeleri kaynak dosyasinda tarar, utility'ler build'e girer).
-  useEffect(() => {
-    const el = tabList()
-    if (!el) {
-      return
-    }
-    el.classList.add(
-      'overflow-x-auto',
-      'w-max',
-      '[&::-webkit-scrollbar]:hidden',
-      '[scrollbar-width:none]',
-    )
-    el.addEventListener('scroll', syncTabScroll, { passive: true })
-    const ro = new ResizeObserver(syncTabScroll)
-    ro.observe(el)
-    syncTabScroll()
-    return () => {
-      el.removeEventListener('scroll', syncTabScroll)
-      ro.disconnect()
-    }
-  }, [tabList, syncTabScroll])
-
-  const scrollTabs = (edge: 'start' | 'end') => {
-    const el = tabList()
-    if (!el) {
-      return
-    }
-    el.scrollTo({
-      left: edge === 'start' ? 0 : el.scrollWidth,
-      behavior: 'smooth',
-    })
-  }
-
-  /** Sekme degisimi: hem baslik cubugunu hem secili sekmeyi gorunur kilar. */
-  const selectTab = (key: string) => {
-    setTab(key)
-    const selected = tabList()?.querySelector<HTMLElement>('[aria-selected="true"]')
-    selected?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-  }
+  // 2026-10-08: Sekme seridinin kaydirma/gosterge isleri `ScrollableTabs`
+  // icine tasindi (oklar + kenar solmasi + bölüm noktalari). Buradaki takma kod
+  // (`scrollTabs`/`syncTabScroll`/`scrollIntoView`) kaldirildi: `scrollIntoView`
+  // tum atasi — ve sayfayi — yatay kaydirdigi icin "son sekmelerde yana kayma"
+  // belirtisinin kaynagiydi. Artik yalnizca sekme listesinin kendi kutusu kayar.
 
   useEffect(() => {
     const username = content.settings.githubUsername
-    if (!username)
-      return
+    if (!username) return
     clientFetchUserRepos(username)
       .then(setGithubRepos)
       .catch(() => setGithubRepos([]))
     // Load only on mount (repo count rarely changes)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const uploadBackground = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,23 +91,20 @@ export function AdminPanel({
       })
       const data = await res.json()
       if (res.ok && data.success) {
-        setContent(prev => ({
+        setContent((prev) => ({
           ...prev,
           settings: { ...prev.settings, backgroundImage: data.backgroundImage },
         }))
         setStatus({ type: 'success', text: data.message })
-      }
-      else {
+      } else {
         setStatus({
           type: 'error',
           text: data.message || 'Görsel yüklenemedi.',
         })
       }
-    }
-    catch {
+    } catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    }
-    finally {
+    } finally {
       setBackgroundUploading(false)
     }
   }
@@ -172,32 +116,35 @@ export function AdminPanel({
       const res = await fetch('/api/admin/background', { method: 'DELETE' })
       const data = await res.json()
       if (res.ok) {
-        setContent(prev => ({
+        setContent((prev) => ({
           ...prev,
           settings: { ...prev.settings, backgroundImage: '' },
         }))
         setStatus({ type: 'success', text: data.message })
-      }
-      else {
+      } else {
         setStatus({ type: 'error', text: data.message || 'Kaldırılamadı.' })
       }
-    }
-    catch {
+    } catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    }
-    finally {
+    } finally {
       setBackgroundUploading(false)
     }
   }
 
-  const save = async () => {
+  /**
+   * @param override Kaydedilecek içerik. Verilmezse paneldeki `content`
+   *   state'i kullanılır. Fotoğraf yüklemesi gibi state güncellemesinden
+   *   HEMEN SONRA kaydetmek gereken akışlar bunu verir: `setContent` asenkron
+   *   olduğu için state'i okuyup göndermek eski içeriği yollardı.
+   */
+  const save = async (override?: SiteContent) => {
     setSaving(true)
     setStatus(null)
     try {
       const res = await fetch('/api/admin/content', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(content),
+        body: JSON.stringify(override ?? content),
       })
       const data = await res.json()
       if (res.ok) {
@@ -205,15 +152,12 @@ export function AdminPanel({
           type: 'success',
           text: 'Kaydedildi! Siteyi yenileyerek değişiklikleri görebilirsin.',
         })
-      }
-      else {
+      } else {
         setStatus({ type: 'error', text: data.message || 'Kaydedilemedi.' })
       }
-    }
-    catch {
+    } catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    }
-    finally {
+    } finally {
       setSaving(false)
     }
   }
@@ -224,13 +168,13 @@ export function AdminPanel({
   }
 
   const setHero = (field: keyof SiteContent['hero'], value: string) => {
-    setContent(prev => ({ ...prev, hero: { ...prev.hero, [field]: value } }))
+    setContent((prev) => ({ ...prev, hero: { ...prev.hero, [field]: value } }))
   }
   const setNav = (field: keyof SiteContent['nav'], value: string) => {
-    setContent(prev => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
+    setContent((prev) => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
   }
   const setAbout = (field: keyof SiteContent['about'], value: string) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       about: { ...prev.about, [field]: value },
     }))
@@ -239,40 +183,40 @@ export function AdminPanel({
     field: 'subtitle' | 'title' | 'description',
     value: string,
   ) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       projects: { ...prev.projects, [field]: value },
     }))
   }
   const setContact = (field: keyof SiteContent['contact'], value: string) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       contact: { ...prev.contact, [field]: value },
     }))
   }
   const setFooter = (field: keyof SiteContent['footer'], value: string) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       footer: { ...prev.footer, [field]: value },
     }))
   }
   const setSettings = (field: keyof SiteContent['settings'], value: string) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       settings: { ...prev.settings, [field]: value },
     }))
   }
   const setGithub = (field: keyof SiteContent['github'], value: string) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       github: { ...prev.github, [field]: value },
     }))
   }
   const setChat = (field: keyof SiteContent['chat'], value: string) => {
-    setContent(prev => ({ ...prev, chat: { ...prev.chat, [field]: value } }))
+    setContent((prev) => ({ ...prev, chat: { ...prev.chat, [field]: value } }))
   }
   const setProfile = (field: keyof SiteContent['profile'], value: string) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       profile: { ...prev.profile, [field]: value },
     }))
@@ -288,11 +232,9 @@ export function AdminPanel({
       }
       setMessages([])
       setStatus({ type: 'success', text: 'Tüm mesajlar silindi.' })
-    }
-    catch {
+    } catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    }
-    finally {
+    } finally {
       setSaving(false)
     }
   }
@@ -311,14 +253,14 @@ export function AdminPanel({
   }
 
   const addNavItem = () => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       nav: { ...prev.nav, items: [...prev.nav.items, { title: '', href: '' }] },
     }))
   }
 
   const removeNavItem = (index: number) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       nav: { ...prev.nav, items: prev.nav.items.filter((_, i) => i !== index) },
     }))
@@ -338,7 +280,7 @@ export function AdminPanel({
   }
 
   const addToolbox = () => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       about: {
         ...prev.about,
@@ -348,7 +290,7 @@ export function AdminPanel({
   }
 
   const removeToolbox = (index: number) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       about: {
         ...prev.about,
@@ -371,7 +313,7 @@ export function AdminPanel({
   }
 
   const addInterest = () => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       about: {
         ...prev.about,
@@ -384,7 +326,7 @@ export function AdminPanel({
   }
 
   const removeInterest = (index: number) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       about: {
         ...prev.about,
@@ -407,7 +349,7 @@ export function AdminPanel({
   }
 
   const addSecurityTool = () => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       about: {
         ...prev.about,
@@ -420,7 +362,7 @@ export function AdminPanel({
   }
 
   const removeSecurityTool = (index: number) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       about: {
         ...prev.about,
@@ -445,8 +387,7 @@ export function AdminPanel({
   const setProjectDownloadMode = (index: number, mode: 'global' | 'per-os') => {
     setContent((prev) => {
       const items = prev.projects.items.map((item, i) => {
-        if (i !== index)
-          return item
+        if (i !== index) return item
         if (mode === 'global') {
           const { downloads: _drop, ...rest } = item
           return { ...rest, downloadMode: 'global' as const }
@@ -468,8 +409,7 @@ export function AdminPanel({
   ) => {
     setContent((prev) => {
       const items = prev.projects.items.map((item, i) => {
-        if (i !== index)
-          return item
+        if (i !== index) return item
         const downloads = { ...(item.downloads ?? {}), [os]: value }
         return { ...item, downloads }
       })
@@ -478,7 +418,7 @@ export function AdminPanel({
   }
 
   const addProject = () => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       projects: {
         ...prev.projects,
@@ -498,7 +438,7 @@ export function AdminPanel({
   }
 
   const removeProject = (index: number) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       projects: {
         ...prev.projects,
@@ -509,8 +449,7 @@ export function AdminPanel({
 
   const addGithubRepo = (repo: GitHubRepo) => {
     setContent((prev) => {
-      if (prev.projects.items.some(p => p.title === repo.name))
-        return prev
+      if (prev.projects.items.some((p) => p.title === repo.name)) return prev
       const [owner, repoName] = repo.fullName.split('/')
       const item: ProjectItem = {
         title: repo.name,
@@ -541,14 +480,14 @@ export function AdminPanel({
   }
 
   const addSocial = () => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       social: [...prev.social, { name: '', href: '', icon: 'mdi:github' }],
     }))
   }
 
   const removeSocial = (index: number) => {
-    setContent(prev => ({
+    setContent((prev) => ({
       ...prev,
       social: prev.social.filter((_, i) => i !== index),
     }))
@@ -582,10 +521,22 @@ export function AdminPanel({
       ),
       children: (
         <div className="space-y-4 pt-4">
-          <ProfilePhotoCard
+          <ProfilePhotoUploader
             profileImage={content.profile.profileImage}
+            originalImage={content.profile.originalImage ?? ''}
             displayName={content.profile.displayName}
-            onUploaded={image => setProfile('profileImage', image)}
+            onUploaded={(image, original) => {
+              const next = {
+                ...content,
+                profile: {
+                  ...content.profile,
+                  profileImage: image,
+                  originalImage: original,
+                },
+              }
+              setContent(next)
+              void save(next)
+            }}
             onStatus={setStatus}
           />
           <PanelCard title="Profil Bilgileri">
@@ -594,37 +545,35 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.profile.firstName}
-                  onValueChange={value =>
-                    setProfile('firstName', value)}
+                  onValueChange={(value) => setProfile('firstName', value)}
                 />
               </Field>
               <Field label="Soyad (Last Name)">
                 <Input
                   variant="faded"
                   value={content.profile.lastName}
-                  onValueChange={value => setProfile('lastName', value)}
+                  onValueChange={(value) => setProfile('lastName', value)}
                 />
               </Field>
               <Field label="Görünen Ad (örn. TARIKELER)">
                 <Input
                   variant="faded"
                   value={content.profile.displayName}
-                  onValueChange={value =>
-                    setProfile('displayName', value)}
+                  onValueChange={(value) => setProfile('displayName', value)}
                 />
               </Field>
               <Field label="Lakap / Takma Ad (örn. Tarnak)">
                 <Input
                   variant="faded"
                   value={content.profile.nickname}
-                  onValueChange={value => setProfile('nickname', value)}
+                  onValueChange={(value) => setProfile('nickname', value)}
                 />
               </Field>
               <Field label="Ünvan">
                 <Input
                   variant="faded"
                   value={content.profile.title}
-                  onValueChange={value => setProfile('title', value)}
+                  onValueChange={(value) => setProfile('title', value)}
                 />
               </Field>
             </Grid>
@@ -651,37 +600,35 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.hero.name}
-                  onValueChange={value => setHero('name', value)}
+                  onValueChange={(value) => setHero('name', value)}
                 />
               </Field>
               <Field label="Emoji / Logo">
                 <Input
                   variant="faded"
                   value={content.hero.emoji}
-                  onValueChange={value => setHero('emoji', value)}
+                  onValueChange={(value) => setHero('emoji', value)}
                 />
               </Field>
               <Field label="Alt Başlık (Tagline)">
                 <Input
                   variant="faded"
                   value={content.hero.tagline}
-                  onValueChange={value => setHero('tagline', value)}
+                  onValueChange={(value) => setHero('tagline', value)}
                 />
               </Field>
               <Field label="Proje Butonu Yazısı">
                 <Input
                   variant="faded"
                   value={content.hero.exploreLabel}
-                  onValueChange={value =>
-                    setHero('exploreLabel', value)}
+                  onValueChange={(value) => setHero('exploreLabel', value)}
                 />
               </Field>
               <Field label="İletişim Butonu Yazısı">
                 <Input
                   variant="faded"
                   value={content.hero.connectLabel}
-                  onValueChange={value =>
-                    setHero('connectLabel', value)}
+                  onValueChange={(value) => setHero('connectLabel', value)}
                 />
               </Field>
             </Grid>
@@ -692,14 +639,14 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.nav.ctaLabel}
-                  onValueChange={value => setNav('ctaLabel', value)}
+                  onValueChange={(value) => setNav('ctaLabel', value)}
                 />
               </Field>
               <Field label="CTA Link (örn. GitHub)">
                 <Input
                   variant="faded"
                   value={content.nav.githubRepo}
-                  onValueChange={value => setNav('githubRepo', value)}
+                  onValueChange={(value) => setNav('githubRepo', value)}
                 />
               </Field>
             </Grid>
@@ -715,16 +662,18 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.title}
-                        onValueChange={value =>
-                          setNavItem(index, 'title', value)}
+                        onValueChange={(value) =>
+                          setNavItem(index, 'title', value)
+                        }
                       />
                     </Field>
                     <Field label="Link (örn. /projects/)">
                       <Input
                         variant="faded"
                         value={item.href}
-                        onValueChange={value =>
-                          setNavItem(index, 'href', value)}
+                        onValueChange={(value) =>
+                          setNavItem(index, 'href', value)
+                        }
                       />
                     </Field>
                   </Grid>
@@ -739,46 +688,42 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.contact.title}
-                  onValueChange={value => setContact('title', value)}
+                  onValueChange={(value) => setContact('title', value)}
                 />
               </Field>
               <Field label="Alt Başlık">
                 <Input
                   variant="faded"
                   value={content.contact.subtitle}
-                  onValueChange={value => setContact('subtitle', value)}
+                  onValueChange={(value) => setContact('subtitle', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.contact.description}
-                  onValueChange={value =>
-                    setContact('description', value)}
+                  onValueChange={(value) => setContact('description', value)}
                 />
               </Field>
               <Field label="Buton Altı Yazısı">
                 <Input
                   variant="faded"
                   value={content.contact.footerText}
-                  onValueChange={value =>
-                    setContact('footerText', value)}
+                  onValueChange={(value) => setContact('footerText', value)}
                 />
               </Field>
               <Field label="Başarı Başlığı">
                 <Input
                   variant="faded"
                   value={content.contact.successTitle}
-                  onValueChange={value =>
-                    setContact('successTitle', value)}
+                  onValueChange={(value) => setContact('successTitle', value)}
                 />
               </Field>
               <Field label="Başarı Metni">
                 <Input
                   variant="faded"
                   value={content.contact.successText}
-                  onValueChange={value =>
-                    setContact('successText', value)}
+                  onValueChange={(value) => setContact('successText', value)}
                 />
               </Field>
             </Grid>
@@ -788,7 +733,7 @@ export function AdminPanel({
               <Input
                 variant="faded"
                 value={content.footer.copyright}
-                onValueChange={value => setFooter('copyright', value)}
+                onValueChange={(value) => setFooter('copyright', value)}
               />
             </Field>
           </PanelCard>
@@ -798,39 +743,36 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.github.subtitle}
-                  onValueChange={value => setGithub('subtitle', value)}
+                  onValueChange={(value) => setGithub('subtitle', value)}
                 />
               </Field>
               <Field label="Başlık">
                 <Input
                   variant="faded"
                   value={content.github.title}
-                  onValueChange={value => setGithub('title', value)}
+                  onValueChange={(value) => setGithub('title', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.github.description}
-                  onValueChange={value =>
-                    setGithub('description', value)}
+                  onValueChange={(value) => setGithub('description', value)}
                 />
               </Field>
               <Field label="GitHub Kullanıcı Adı (projeler otomatik çekilir)">
                 <Input
                   variant="faded"
                   value={content.settings.githubUsername}
-                  onValueChange={value =>
-                    setSettings('githubUsername', value)}
+                  onValueChange={(value) =>
+                    setSettings('githubUsername', value)
+                  }
                 />
               </Field>
             </Grid>
             <p className="mt-3 text-xs text-foreground-500">
-              Kullanıcı adı (örn.
-              {' '}
-              <span className="font-mono">TARIKTR1099</span>
-              ) yazarsan
-              sitendeki "GitHub Projects" bölümü bu hesabın public
+              Kullanıcı adı (örn. <span className="font-mono">TARIKTR1099</span>
+              ) yazarsan sitendeki "GitHub Projects" bölümü bu hesabın public
               repolarını gösterir. Boş bırakırsan bölüm gizlenir.
             </p>
           </PanelCard>
@@ -840,21 +782,21 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.chat.subtitle}
-                  onValueChange={value => setChat('subtitle', value)}
+                  onValueChange={(value) => setChat('subtitle', value)}
                 />
               </Field>
               <Field label="Başlık">
                 <Input
                   variant="faded"
                   value={content.chat.title}
-                  onValueChange={value => setChat('title', value)}
+                  onValueChange={(value) => setChat('title', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.chat.description}
-                  onValueChange={value => setChat('description', value)}
+                  onValueChange={(value) => setChat('description', value)}
                 />
               </Field>
             </Grid>
@@ -894,13 +836,9 @@ export function AdminPanel({
                       color="primary"
                       onPress={() => backgroundFileRef.current?.click()}
                       isLoading={backgroundUploading}
-                      startContent={(
-                        <Icon
-                          icon="mdi:image-plus"
-                          width={18}
-                          height={18}
-                        />
-                      )}
+                      startContent={
+                        <Icon icon="mdi:image-plus" width={18} height={18} />
+                      }
                     >
                       Görsel Yükle
                     </Button>
@@ -910,13 +848,13 @@ export function AdminPanel({
                         color="danger"
                         onPress={removeBackground}
                         isLoading={backgroundUploading}
-                        startContent={(
+                        startContent={
                           <Icon
                             icon="mdi:trash-can-outline"
                             width={18}
                             height={18}
                           />
-                        )}
+                        }
                       >
                         Kaldır
                       </Button>
@@ -925,8 +863,7 @@ export function AdminPanel({
                   <p className="text-xs text-foreground-500">
                     Sitenin arka planına tam ekran görsel koyar (kaplama).
                     Görsel yoksa düz siyah (koyu tema) / beyaz (açık tema)
-                    kullanılır. PNG, JPG, WEBP, GIF veya SVG — en fazla 8
-                    MB.
+                    kullanılır. PNG, JPG, WEBP, GIF veya SVG — en fazla 8 MB.
                   </p>
                 </div>
               </div>
@@ -953,9 +890,9 @@ export function AdminPanel({
                   Açık (beyaz)
                 </label>
                 <span className="w-full text-foreground-500">
-                  Ziyaretçi üst menüden istediği an koyu/açık arasında
-                  geçiş yapabilir; bu ayar ilk açılışta hangisinin
-                  gösterileceğini belirler.
+                  Ziyaretçi üst menüden istediği an koyu/açık arasında geçiş
+                  yapabilir; bu ayar ilk açılışta hangisinin gösterileceğini
+                  belirler.
                 </span>
               </div>
             </div>
@@ -979,36 +916,35 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.about.subtitle}
-                  onValueChange={value => setAbout('subtitle', value)}
+                  onValueChange={(value) => setAbout('subtitle', value)}
                 />
               </Field>
               <Field label="Başlık">
                 <Input
                   variant="faded"
                   value={content.about.title}
-                  onValueChange={value => setAbout('title', value)}
+                  onValueChange={(value) => setAbout('title', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.about.description}
-                  onValueChange={value =>
-                    setAbout('description', value)}
+                  onValueChange={(value) => setAbout('description', value)}
                 />
               </Field>
               <Field label="'Kimim Ben?' Başlığı">
                 <Input
                   variant="faded"
                   value={content.about.whoTitle}
-                  onValueChange={value => setAbout('whoTitle', value)}
+                  onValueChange={(value) => setAbout('whoTitle', value)}
                 />
               </Field>
               <Field label="'Kimim Ben?' Metni">
                 <Textarea
                   variant="faded"
                   value={content.about.whoText}
-                  onValueChange={value => setAbout('whoText', value)}
+                  onValueChange={(value) => setAbout('whoText', value)}
                   minRows={3}
                 />
               </Field>
@@ -1020,16 +956,16 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.about.toolboxTitle}
-                  onValueChange={value =>
-                    setAbout('toolboxTitle', value)}
+                  onValueChange={(value) => setAbout('toolboxTitle', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.about.toolboxDescription}
-                  onValueChange={value =>
-                    setAbout('toolboxDescription', value)}
+                  onValueChange={(value) =>
+                    setAbout('toolboxDescription', value)
+                  }
                 />
               </Field>
             </Grid>
@@ -1045,15 +981,17 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.label}
-                        onValueChange={value =>
-                          setToolbox(index, 'label', value)}
+                        onValueChange={(value) =>
+                          setToolbox(index, 'label', value)
+                        }
                       />
                     </Field>
                     <Field label="Tip">
                       <select
                         value={item.type ?? 'link'}
-                        onChange={e =>
-                          setToolbox(index, 'type', e.target.value)}
+                        onChange={(e) =>
+                          setToolbox(index, 'type', e.target.value)
+                        }
                         className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
                       >
                         <option value="link">Link</option>
@@ -1077,8 +1015,9 @@ export function AdminPanel({
                             : 'https://...'
                         }
                         value={item.href ?? ''}
-                        onValueChange={value =>
-                          setToolbox(index, 'href', value)}
+                        onValueChange={(value) =>
+                          setToolbox(index, 'href', value)
+                        }
                       />
                     </Field>
                   </Grid>
@@ -1093,16 +1032,16 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.about.beyondTitle}
-                  onValueChange={value =>
-                    setAbout('beyondTitle', value)}
+                  onValueChange={(value) => setAbout('beyondTitle', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.about.beyondDescription}
-                  onValueChange={value =>
-                    setAbout('beyondDescription', value)}
+                  onValueChange={(value) =>
+                    setAbout('beyondDescription', value)
+                  }
                 />
               </Field>
             </Grid>
@@ -1118,24 +1057,27 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.label}
-                        onValueChange={value =>
-                          setInterest(index, 'label', value)}
+                        onValueChange={(value) =>
+                          setInterest(index, 'label', value)
+                        }
                       />
                     </Field>
                     <Field label="İkon (iconify)">
                       <Input
                         variant="faded"
                         value={item.icon}
-                        onValueChange={value =>
-                          setInterest(index, 'icon', value)}
+                        onValueChange={(value) =>
+                          setInterest(index, 'icon', value)
+                        }
                       />
                     </Field>
                     <Field label="Açıklama">
                       <Input
                         variant="faded"
                         value={item.content}
-                        onValueChange={value =>
-                          setInterest(index, 'content', value)}
+                        onValueChange={(value) =>
+                          setInterest(index, 'content', value)
+                        }
                       />
                     </Field>
                   </Grid>
@@ -1150,16 +1092,14 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.about.securityTitle}
-                  onValueChange={value =>
-                    setAbout('securityTitle', value)}
+                  onValueChange={(value) => setAbout('securityTitle', value)}
                 />
               </Field>
               <Field label="Metin">
                 <Input
                   variant="faded"
                   value={content.about.securityText}
-                  onValueChange={value =>
-                    setAbout('securityText', value)}
+                  onValueChange={(value) => setAbout('securityText', value)}
                 />
               </Field>
             </Grid>
@@ -1175,15 +1115,17 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.label}
-                        onValueChange={value =>
-                          setSecurityTool(index, 'label', value)}
+                        onValueChange={(value) =>
+                          setSecurityTool(index, 'label', value)
+                        }
                       />
                     </Field>
                     <Field label="Tip">
                       <select
                         value={item.type ?? 'link'}
-                        onChange={e =>
-                          setSecurityTool(index, 'type', e.target.value)}
+                        onChange={(e) =>
+                          setSecurityTool(index, 'type', e.target.value)
+                        }
                         className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
                       >
                         <option value="link">Link</option>
@@ -1207,8 +1149,9 @@ export function AdminPanel({
                             : 'https://...'
                         }
                         value={item.href ?? ''}
-                        onValueChange={value =>
-                          setSecurityTool(index, 'href', value)}
+                        onValueChange={(value) =>
+                          setSecurityTool(index, 'href', value)
+                        }
                       />
                     </Field>
                   </Grid>
@@ -1223,11 +1166,12 @@ export function AdminPanel({
                 variant="faded"
                 placeholder="/cv/tarikeler-cv.pdf"
                 value={content.about.cv?.href ?? '/cv/tarikeler-cv.pdf'}
-                onValueChange={value =>
+                onValueChange={(value) =>
                   setAbout('cv', {
                     ...(content.about.cv ?? {}),
                     href: value,
-                  } as any)}
+                  } as any)
+                }
               />
             </Field>
             <Field label="CV Özeti (Summary)">
@@ -1235,19 +1179,18 @@ export function AdminPanel({
                 variant="faded"
                 minRows={3}
                 value={content.about.cv?.summary ?? ''}
-                onValueChange={value =>
+                onValueChange={(value) =>
                   setAbout('cv', {
                     ...(content.about.cv ?? {}),
                     summary: value,
-                  } as any)}
+                  } as any)
+                }
               />
             </Field>
             <p className="mt-3 text-xs text-foreground-500">
-              CV PDF dosyasını
-              {' '}
-              <code>public/cv/tarikeler-cv.pdf</code>
-              konumuna koy; yukarıdaki yolu bu dosyaya göre ayarla.
-              Özgeçmiş verisi aşağıdan güncellenir.
+              CV PDF dosyasını <code>public/cv/tarikeler-cv.pdf</code>
+              konumuna koy; yukarıdaki yolu bu dosyaya göre ayarla. Özgeçmiş
+              verisi aşağıdan güncellenir.
             </p>
             <div className="mt-3 space-y-2">
               <h4 className="text-sm font-semibold">Deneyim</h4>
@@ -1261,59 +1204,72 @@ export function AdminPanel({
                       experience: (content.about.cv?.experience ?? []).filter(
                         (_, i) => i !== index,
                       ),
-                    } as any)}
+                    } as any)
+                  }
                 >
                   <Grid>
                     <Field label="Rol / Görev">
                       <Input
                         variant="faded"
                         value={entry.role}
-                        onValueChange={value =>
+                        onValueChange={(value) =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
-                            experience: (content.about.cv?.experience ?? []).map(
-                              (e, i) => (i === index ? { ...e, role: value } : e),
+                            experience: (
+                              content.about.cv?.experience ?? []
+                            ).map((e, i) =>
+                              i === index ? { ...e, role: value } : e,
                             ),
-                          } as any)}
+                          } as any)
+                        }
                       />
                     </Field>
                     <Field label="Şirket">
                       <Input
                         variant="faded"
                         value={entry.company}
-                        onValueChange={value =>
+                        onValueChange={(value) =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
-                            experience: (content.about.cv?.experience ?? []).map(
-                              (e, i) => (i === index ? { ...e, company: value } : e),
+                            experience: (
+                              content.about.cv?.experience ?? []
+                            ).map((e, i) =>
+                              i === index ? { ...e, company: value } : e,
                             ),
-                          } as any)}
+                          } as any)
+                        }
                       />
                     </Field>
                     <Field label="Dönem">
                       <Input
                         variant="faded"
                         value={entry.period}
-                        onValueChange={value =>
+                        onValueChange={(value) =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
-                            experience: (content.about.cv?.experience ?? []).map(
-                              (e, i) => (i === index ? { ...e, period: value } : e),
+                            experience: (
+                              content.about.cv?.experience ?? []
+                            ).map((e, i) =>
+                              i === index ? { ...e, period: value } : e,
                             ),
-                          } as any)}
+                          } as any)
+                        }
                       />
                     </Field>
                     <Field label="Açıklama">
                       <Input
                         variant="faded"
                         value={entry.description}
-                        onValueChange={value =>
+                        onValueChange={(value) =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
-                            experience: (content.about.cv?.experience ?? []).map(
-                              (e, i) => (i === index ? { ...e, description: value } : e),
+                            experience: (
+                              content.about.cv?.experience ?? []
+                            ).map((e, i) =>
+                              i === index ? { ...e, description: value } : e,
                             ),
-                          } as any)}
+                          } as any)
+                        }
                       />
                     </Field>
                   </Grid>
@@ -1327,7 +1283,8 @@ export function AdminPanel({
                       ...(content.about.cv?.experience ?? []),
                       { role: '', company: '', period: '', description: '' },
                     ],
-                  } as any)}
+                  } as any)
+                }
                 label="Deneyim Ekle"
               />
             </div>
@@ -1343,59 +1300,68 @@ export function AdminPanel({
                       education: (content.about.cv?.education ?? []).filter(
                         (_, i) => i !== index,
                       ),
-                    } as any)}
+                    } as any)
+                  }
                 >
                   <Grid>
                     <Field label="Rol / Bölüm">
                       <Input
                         variant="faded"
                         value={entry.role}
-                        onValueChange={value =>
+                        onValueChange={(value) =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             education: (content.about.cv?.education ?? []).map(
-                              (e, i) => (i === index ? { ...e, role: value } : e),
+                              (e, i) =>
+                                i === index ? { ...e, role: value } : e,
                             ),
-                          } as any)}
+                          } as any)
+                        }
                       />
                     </Field>
                     <Field label="Kurum">
                       <Input
                         variant="faded"
                         value={entry.company}
-                        onValueChange={value =>
+                        onValueChange={(value) =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             education: (content.about.cv?.education ?? []).map(
-                              (e, i) => (i === index ? { ...e, company: value } : e),
+                              (e, i) =>
+                                i === index ? { ...e, company: value } : e,
                             ),
-                          } as any)}
+                          } as any)
+                        }
                       />
                     </Field>
                     <Field label="Dönem">
                       <Input
                         variant="faded"
                         value={entry.period}
-                        onValueChange={value =>
+                        onValueChange={(value) =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             education: (content.about.cv?.education ?? []).map(
-                              (e, i) => (i === index ? { ...e, period: value } : e),
+                              (e, i) =>
+                                i === index ? { ...e, period: value } : e,
                             ),
-                          } as any)}
+                          } as any)
+                        }
                       />
                     </Field>
                     <Field label="Açıklama">
                       <Input
                         variant="faded"
                         value={entry.description}
-                        onValueChange={value =>
+                        onValueChange={(value) =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             education: (content.about.cv?.education ?? []).map(
-                              (e, i) => (i === index ? { ...e, description: value } : e),
+                              (e, i) =>
+                                i === index ? { ...e, description: value } : e,
                             ),
-                          } as any)}
+                          } as any)
+                        }
                       />
                     </Field>
                   </Grid>
@@ -1409,7 +1375,8 @@ export function AdminPanel({
                       ...(content.about.cv?.education ?? []),
                       { role: '', company: '', period: '', description: '' },
                     ],
-                  } as any)}
+                  } as any)
+                }
                 label="Eğitim Ekle"
               />
             </div>
@@ -1440,23 +1407,26 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.name}
-                        onValueChange={value =>
-                          setSocial(index, 'name', value)}
+                        onValueChange={(value) =>
+                          setSocial(index, 'name', value)
+                        }
                       />
                     </Field>
                     <Field label="Link">
                       <Input
                         variant="faded"
                         value={item.href}
-                        onValueChange={value =>
-                          setSocial(index, 'href', value)}
+                        onValueChange={(value) =>
+                          setSocial(index, 'href', value)
+                        }
                       />
                     </Field>
                     <Field label="Platform (SVG)">
                       <select
                         value={item.icon}
-                        onChange={e =>
-                          setSocial(index, 'icon', e.target.value)}
+                        onChange={(e) =>
+                          setSocial(index, 'icon', e.target.value)
+                        }
                         className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
                       >
                         <option value="mdi:github">GitHub</option>
@@ -1495,24 +1465,23 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.projects.subtitle}
-                  onValueChange={value =>
-                    setProjectsMeta('subtitle', value)}
+                  onValueChange={(value) => setProjectsMeta('subtitle', value)}
                 />
               </Field>
               <Field label="Başlık">
                 <Input
                   variant="faded"
                   value={content.projects.title}
-                  onValueChange={value =>
-                    setProjectsMeta('title', value)}
+                  onValueChange={(value) => setProjectsMeta('title', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.projects.description}
-                  onValueChange={value =>
-                    setProjectsMeta('description', value)}
+                  onValueChange={(value) =>
+                    setProjectsMeta('description', value)
+                  }
                 />
               </Field>
             </Grid>
@@ -1530,24 +1499,27 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.title}
-                        onValueChange={value =>
-                          setProject(index, 'title', value)}
+                        onValueChange={(value) =>
+                          setProject(index, 'title', value)
+                        }
                       />
                     </Field>
                     <Field label="Rozet (örn. [Under Development])">
                       <Input
                         variant="faded"
                         value={item.notice || ''}
-                        onValueChange={value =>
-                          setProject(index, 'notice', value)}
+                        onValueChange={(value) =>
+                          setProject(index, 'notice', value)
+                        }
                       />
                     </Field>
                     <Field label="Açıklama">
                       <Textarea
                         variant="faded"
                         value={item.description}
-                        onValueChange={value =>
-                          setProject(index, 'description', value)}
+                        onValueChange={(value) =>
+                          setProject(index, 'description', value)
+                        }
                         minRows={2}
                       />
                     </Field>
@@ -1555,24 +1527,27 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.projectLink}
-                        onValueChange={value =>
-                          setProject(index, 'projectLink', value)}
+                        onValueChange={(value) =>
+                          setProject(index, 'projectLink', value)
+                        }
                       />
                     </Field>
                     <Field label="Kaynak Kod Linki (opsiyonel)">
                       <Input
                         variant="faded"
                         value={item.srcLink || ''}
-                        onValueChange={value =>
-                          setProject(index, 'srcLink', value)}
+                        onValueChange={(value) =>
+                          setProject(index, 'srcLink', value)
+                        }
                       />
                     </Field>
                     <Field label="Görsel Yolu (örn. /projects/portfolyo.png)">
                       <Input
                         variant="faded"
                         value={item.image}
-                        onValueChange={value =>
-                          setProject(index, 'image', value)}
+                        onValueChange={(value) =>
+                          setProject(index, 'image', value)
+                        }
                       />
                     </Field>
                   </Grid>
@@ -1585,11 +1560,10 @@ export function AdminPanel({
                         <input
                           type="radio"
                           name={`downloadMode-${index}`}
-                          checked={
-                            (item.downloadMode ?? 'global') === 'global'
-                          }
+                          checked={(item.downloadMode ?? 'global') === 'global'}
                           onChange={() =>
-                            setProjectDownloadMode(index, 'global')}
+                            setProjectDownloadMode(index, 'global')
+                          }
                         />
                         Global (tek link)
                       </label>
@@ -1599,88 +1573,82 @@ export function AdminPanel({
                           name={`downloadMode-${index}`}
                           checked={item.downloadMode === 'per-os'}
                           onChange={() =>
-                            setProjectDownloadMode(index, 'per-os')}
+                            setProjectDownloadMode(index, 'per-os')
+                          }
                         />
-                        İşletim sistemine özel (Windows / macOS / Linux / iOS / Android)
+                        İşletim sistemine özel (Windows / macOS / Linux / iOS /
+                        Android)
                       </label>
                     </div>
-                    {(item.downloadMode ?? 'global') === 'global'
-                      ? (
-                          <Field label="İndirme Linki / Dosya Yolu">
-                            <Input
-                              variant="faded"
-                              placeholder="/downloads/app.zip veya https://..."
-                              value={item.downloadUrl || ''}
-                              onValueChange={value =>
-                                setProject(index, 'downloadUrl', value)}
-                            />
-                          </Field>
-                        )
-                      : (
-                          <Grid>
-                            <Field label="Windows">
-                              <Input
-                                variant="faded"
-                                placeholder="/downloads/setup.exe"
-                                value={item.downloads?.windows || ''}
-                                onValueChange={value =>
-                                  setProjectDownloadOs(
-                                    index,
-                                    'windows',
-                                    value,
-                                  )}
-                              />
-                            </Field>
-                            <Field label="macOS">
-                              <Input
-                                variant="faded"
-                                placeholder="/downloads/app.dmg"
-                                value={item.downloads?.macos || ''}
-                                onValueChange={value =>
-                                  setProjectDownloadOs(
-                                    index,
-                                    'macos',
-                                    value,
-                                  )}
-                              />
-                            </Field>
-                            <Field label="Linux">
-                              <Input
-                                variant="faded"
-                                placeholder="/downloads/app.AppImage"
-                                value={item.downloads?.linux || ''}
-                                onValueChange={value =>
-                                  setProjectDownloadOs(index, 'linux', value)}
-                              />
-                            </Field>
-                            <Field label="iOS">
-                              <Input
-                                variant="faded"
-                                placeholder="https://apps.apple.com/..."
-                                value={item.downloads?.ios || ''}
-                                onValueChange={value =>
-                                  setProjectDownloadOs(index, 'ios', value)}
-                              />
-                            </Field>
-                            <Field label="Android">
-                              <Input
-                                variant="faded"
-                                placeholder="/downloads/app.apk"
-                                value={item.downloads?.android || ''}
-                                onValueChange={value =>
-                                  setProjectDownloadOs(
-                                    index,
-                                    'android',
-                                    value,
-                                  )}
-                              />
-                            </Field>
-                          </Grid>
-                        )}
+                    {(item.downloadMode ?? 'global') === 'global' ? (
+                      <Field label="İndirme Linki / Dosya Yolu">
+                        <Input
+                          variant="faded"
+                          placeholder="/downloads/app.zip veya https://..."
+                          value={item.downloadUrl || ''}
+                          onValueChange={(value) =>
+                            setProject(index, 'downloadUrl', value)
+                          }
+                        />
+                      </Field>
+                    ) : (
+                      <Grid>
+                        <Field label="Windows">
+                          <Input
+                            variant="faded"
+                            placeholder="/downloads/setup.exe"
+                            value={item.downloads?.windows || ''}
+                            onValueChange={(value) =>
+                              setProjectDownloadOs(index, 'windows', value)
+                            }
+                          />
+                        </Field>
+                        <Field label="macOS">
+                          <Input
+                            variant="faded"
+                            placeholder="/downloads/app.dmg"
+                            value={item.downloads?.macos || ''}
+                            onValueChange={(value) =>
+                              setProjectDownloadOs(index, 'macos', value)
+                            }
+                          />
+                        </Field>
+                        <Field label="Linux">
+                          <Input
+                            variant="faded"
+                            placeholder="/downloads/app.AppImage"
+                            value={item.downloads?.linux || ''}
+                            onValueChange={(value) =>
+                              setProjectDownloadOs(index, 'linux', value)
+                            }
+                          />
+                        </Field>
+                        <Field label="iOS">
+                          <Input
+                            variant="faded"
+                            placeholder="https://apps.apple.com/..."
+                            value={item.downloads?.ios || ''}
+                            onValueChange={(value) =>
+                              setProjectDownloadOs(index, 'ios', value)
+                            }
+                          />
+                        </Field>
+                        <Field label="Android">
+                          <Input
+                            variant="faded"
+                            placeholder="/downloads/app.apk"
+                            value={item.downloads?.android || ''}
+                            onValueChange={(value) =>
+                              setProjectDownloadOs(index, 'android', value)
+                            }
+                          />
+                        </Field>
+                      </Grid>
+                    )}
                     <p className="text-xs text-foreground-500">
-                      Boş bırakırsan Download butonu görünmez.
-                      Kullanıcının işletim sistemi otomatik algılanır ve
-                      uygun link/dosya açılır.
+                      Boş bırakırsan Download butonu görünmez. Kullanıcının
+                      işletim sistemi otomatik algılanır ve uygun link/dosya
+                      açılır.
                     </p>
                   </div>
                 </ItemCard>
@@ -1689,83 +1657,68 @@ export function AdminPanel({
             </div>
           </PanelCard>
 
-          <PanelCard
-            title={`GitHub Repoları (${githubRepos.length})`}
-          >
+          <PanelCard title={`GitHub Repoları (${githubRepos.length})`}>
             <p className="mb-3 text-xs text-foreground-500">
               GitHub hesabındaki public repo'lar. 'Eksik' olanlar sitede
-              görünmüyor — tek tıkla ekleyebilirsin. Ekledikten sonra
-              Kaydet'e bas.
+              görünmüyor — tek tıkla ekleyebilirsin. Ekledikten sonra Kaydet'e
+              bas.
             </p>
-            {githubRepos.length === 0
-              ? (
-                  <p className="text-xs text-foreground-500">
-                    Repo listesi yükleniyor veya alınamıyor (GitHub
-                    kullanıcı adı ayarla: Site › GitHub Kullanıcı Adı).
-                  </p>
-                )
-              : (
-                  <div className="flex flex-col gap-2">
-                    {githubRepos.map((repo) => {
-                      const inSite = content.projects.items.some(
-                        p => p.title === repo.name,
-                      )
-                      return (
-                        <div
-                          key={repo.name}
-                          className="flex flex-row items-center gap-3 rounded-lg border border-foreground-200/10 p-2.5"
+            {githubRepos.length === 0 ? (
+              <p className="text-xs text-foreground-500">
+                Repo listesi yükleniyor veya alınamıyor (GitHub kullanıcı adı
+                ayarla: Site › GitHub Kullanıcı Adı).
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {githubRepos.map((repo) => {
+                  const inSite = content.projects.items.some(
+                    (p) => p.title === repo.name,
+                  )
+                  return (
+                    <div
+                      key={repo.name}
+                      className="flex flex-row items-center gap-3 rounded-lg border border-foreground-200/10 p-2.5"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {repo.name}
+                        </p>
+                        {repo.description && (
+                          <p className="truncate text-xs text-foreground-500">
+                            {repo.description}
+                          </p>
+                        )}
+                        <p className="mt-0.5 text-[10px] text-foreground-600">
+                          ★ {repo.stars} · {repo.forks} fork ·{' '}
+                          {repo.language ?? '—'}
+                        </p>
+                      </div>
+                      {inSite ? (
+                        <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                          Sitede var
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => addGithubRepo(repo)}
+                          className="shrink-0 h-8 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-fg hover:bg-primary/90"
                         >
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-foreground">
-                              {repo.name}
-                            </p>
-                            {repo.description && (
-                              <p className="truncate text-xs text-foreground-500">
-                                {repo.description}
-                              </p>
-                            )}
-                            <p className="mt-0.5 text-[10px] text-foreground-600">
-                              ★
-                              {' '}
-                              {repo.stars}
-                              {' '}
-                              ·
-                              {' '}
-                              {repo.forks}
-                              {' '}
-                              fork ·
-                              {' '}
-                              {repo.language ?? '—'}
-                            </p>
-                          </div>
-                          {inSite
-                            ? (
-                                <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                                  Sitede var
-                                </span>
-                              )
-                            : (
-                                <button
-                                  type="button"
-                                  onClick={() => addGithubRepo(repo)}
-                                  className="shrink-0 h-8 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-fg hover:bg-primary/90"
-                                >
-                                  Ekle
-                                </button>
-                              )}
-                          <a
-                            href={repo.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="shrink-0 text-xs text-foreground-500 hover:text-primary"
-                          >
-                            GitHub ↗
-                          </a>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
+                          Ekle
+                        </button>
+                      )}
+                      <a
+                        href={repo.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 text-xs text-foreground-500 hover:text-primary"
+                      >
+                        GitHub ↗
+                      </a>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </PanelCard>
         </div>
       ),
@@ -1779,7 +1732,11 @@ export function AdminPanel({
         </span>
       ),
       children: (
-        <BlogManager onStatus={setStatus} saving={saving} initialPosts={initialBlogPosts ?? []} />
+        <BlogManager
+          onStatus={setStatus}
+          saving={saving}
+          initialPosts={initialBlogPosts ?? []}
+        />
       ),
     },
     {
@@ -1794,9 +1751,7 @@ export function AdminPanel({
         <div className="space-y-4 pt-4">
           <div className="flex flex-row items-center justify-between">
             <p className="text-sm text-foreground-500">
-              {messages.length}
-              {' '}
-              mesaj
+              {messages.length} mesaj
             </p>
             {messages.length > 0 && (
               <Button
@@ -1826,7 +1781,9 @@ export function AdminPanel({
           Veri Yönetimi
         </span>
       ),
-      children: <DataManager key={dataResource} initialResource={dataResource} />,
+      children: (
+        <DataManager key={dataResource} initialResource={dataResource} />
+      ),
     },
     {
       key: 'settings',
@@ -1840,9 +1797,7 @@ export function AdminPanel({
         <div className="space-y-4 pt-4">
           <PasswordCard />
           <div>
-            <h2 className="mb-2 text-base font-semibold">
-              Kullanıcı Yönetimi
-            </h2>
+            <h2 className="mb-2 text-base font-semibold">Kullanıcı Yönetimi</h2>
             <UsersPanel />
           </div>
         </div>
@@ -1851,24 +1806,22 @@ export function AdminPanel({
   ]
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
-      <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div>
+    <div className="mx-auto w-full min-w-0 max-w-4xl">
+      <div className="mb-6 flex min-w-0 flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold">Admin Paneli</h1>
           <p className="text-sm text-foreground-500">
-            Giriş yapan:
-            {' '}
+            Giriş yapan:{' '}
             <span className="font-semibold text-foreground">{username}</span>
           </p>
           {roleLabel && (
             <p className="text-sm text-foreground-500">
-              Yetki:
-              {' '}
+              Yetki:{' '}
               <span className="font-semibold text-foreground">{roleLabel}</span>
             </p>
           )}
         </div>
-        <div className="flex flex-row gap-2">
+        <div className="flex min-w-0 flex-row flex-wrap gap-2">
           {/* 2026-10-07 (kullanıcı): "Sayfa Düzenleyici" ve `/admin/puck`
               TAMAMEN kaldırıldı. Görsel sayfa düzenleyici (Puck) kullanılmıyor;
               içerik artık içerik dosyası + admin formları üzerinden yönetiliyor.
@@ -1891,50 +1844,31 @@ export function AdminPanel({
           </Button>
         </div>
       </div>
-      {/* İçerik kabı: SADECE dikey kaydırma. Yatay kaydırma hiçbir yerde
-          olmaz — taşan tablolar kendi `overflow-x-auto` kutusunda kayar. */}
-      <div className="w-full overflow-y-auto overflow-x-hidden">
+      {/* İçerik kabı: SADECE dikey kaydırma. Yatayda `clip` kullanılıyor —
+          `overflow-x-hidden` bir kaydırma KONTEYNERİ yaratıyor ve `scrollIntoView`
+          sayfayı yatay kaydırabiliyordu; `clip` kırpmayı korur, kaydırma yaratmaz.
+          Taşan tablolar kendi `overflow-x-auto` kutusunda kaymaya devam eder. */}
+      <div className="w-full min-w-0 overflow-y-auto overflow-x-clip">
         {/* Sekme şeridi: yatay kaydırma yalnızca SEKME LİSTESİNİN kendi
-            içinde olur; oklar başa/sona götürür, kaydırma çubuğu gizli. */}
-        <div className="relative">
-          <TabArrow
-            side="left"
-            visible={canScrollLeft}
-            onClick={() => scrollTabs('start')}
+            içinde olur; oklar/noktalar gerektiğinde görünür. */}
+        <ScrollableTabs activeTabKey={tab}>
+          <Tabs
+            size="large"
+            className="w-full min-w-0"
+            classNames={{
+              // `max-w-full` şart: Lobehub listeye `align-self: flex-start`
+              // veriyor, o yüzden kutu içeriğinin genişliğine (max-content)
+              // büyüyor ve TAŞIP sayfayı yatay kaydırıyordu. Tavan + kendi
+              // `overflow-x-auto`'su ile taşma dışarı değil, kutunun içinde kalır.
+              list: 'max-w-full overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
+              panel: 'min-w-0',
+            }}
+            activeKey={tab}
+            onChange={(k) => setTab(String(k))}
+            items={tabItems}
           />
-          <TabArrow
-            side="right"
-            visible={canScrollRight}
-            onClick={() => scrollTabs('end')}
-          />
-          <div ref={tabsWrapRef}>
-            <Tabs
-              size="large"
-              className="w-full"
-              activeKey={tab}
-              onChange={k => selectTab(String(k))}
-              items={tabItems}
-            />
-          </div>
-        </div>
-        {/* Nokta gostergesi: her nokta bir sekme, tiklayınca o sekmeye gider. */}
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-          {tabItems.map(item => (
-            <button
-              key={String(item.key)}
-              type="button"
-              aria-label={typeof item.label === 'string' ? item.label : String(item.key)}
-              aria-current={tab === item.key ? 'page' : undefined}
-              onClick={() => selectTab(String(item.key))}
-              className={`h-2.5 w-2.5 rounded-full border transition-colors ${
-                tab === item.key
-                  ? 'border-primary bg-primary'
-                  : 'border-primary/70 bg-transparent hover:bg-primary/30'
-              }`}
-            />
-          ))}
-        </div>
-        <div className="mt-6 flex flex-col items-center gap-3">
+        </ScrollableTabs>
+        <div className="mt-6 flex min-w-0 flex-col items-center gap-3">
           {status && (
             <div
               className={`w-full text-sm font-medium rounded-lg p-3 flex items-center gap-2 ${
@@ -1975,36 +1909,9 @@ export function AdminPanel({
 /**
  * Sekme seridi oku — mavi, kucuk; mevcut "Ekle" butonuyla ayni gorsel.
  * Kaydirma durumu yoksa hic cizilmez.
+ * 2026-10-08: `ScrollableTabs` + `TabScrollDots` ayrı dosyalara tasindi; buradaki
+ * kopya ve tab başına bir nokta olan gösterge kaldırıldı.
  */
-function TabArrow({
-  side,
-  visible,
-  onClick,
-}: {
-  side: 'left' | 'right'
-  visible: boolean
-  onClick: () => void
-}) {
-  if (!visible) {
-    return null
-  }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={side === 'left' ? 'Önceki sekmeler' : 'Sonraki sekmeler'}
-      className={`absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg bg-primary text-primary-fg shadow-none transition-colors hover:bg-primary/90 ${
-        side === 'left' ? 'left-1' : 'right-1'
-      }`}
-    >
-      <Icon
-        icon={side === 'left' ? 'mdi:chevron-left' : 'mdi:chevron-right'}
-        width={18}
-        height={18}
-      />
-    </button>
-  )
-}
 
 function PanelCard({
   title,
@@ -2032,7 +1939,7 @@ function Grid({ children }: { children: ReactNode }) {
   )
 }
 
-function Field({ label, children }: { label: string, children: ReactNode }) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs sm:text-sm text-foreground-500">{label}</label>
@@ -2070,7 +1977,7 @@ function ItemCard({
   )
 }
 
-function AddButton({ onPress, label }: { onPress: () => void, label: string }) {
+function AddButton({ onPress, label }: { onPress: () => void; label: string }) {
   return (
     <Button
       variant="bordered"
@@ -2080,105 +1987,6 @@ function AddButton({ onPress, label }: { onPress: () => void, label: string }) {
     >
       {label}
     </Button>
-  )
-}
-
-function ProfilePhotoCard({
-  profileImage,
-  displayName,
-  onUploaded,
-  onStatus,
-}: {
-  profileImage: string
-  displayName: string
-  onUploaded: (image: string) => void
-  onStatus: (status: SaveStatus) => void
-}) {
-  const [uploading, setUploading] = useState(false)
-  const fileRef = useRef<HTMLInputElement>(null)
-
-  const upload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) {
-      return
-    }
-    setUploading(true)
-    onStatus(null)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/admin/profile', {
-        method: 'POST',
-        body: fd,
-      })
-      const data = await res.json()
-      if (res.ok && data.success) {
-        onUploaded(data.profileImage)
-        onStatus({ type: 'success', text: 'Profil fotoğrafı güncellendi.' })
-      }
-      else {
-        onStatus({
-          type: 'error',
-          text: data.message || 'Fotoğraf yüklenemedi.',
-        })
-      }
-    }
-    catch {
-      onStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    }
-    finally {
-      setUploading(false)
-    }
-  }
-
-  return (
-    <PanelCard title="Profil Fotoğrafı">
-      <div className="flex flex-col sm:flex-row items-center gap-4">
-        <div className="relative shrink-0">
-          {profileImage
-            ? (
-                <img
-                  src={profileImage}
-                  alt={displayName}
-                  width={96}
-                  height={96}
-                  className="h-24 w-24 rounded-2xl object-cover ring-1 ring-white/10"
-                />
-              )
-            : (
-                <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 text-4xl font-black text-white">
-                  {displayName.charAt(0) || 'T'}
-                </div>
-              )}
-        </div>
-        <div className="flex flex-col items-center sm:items-start gap-3">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/gif"
-            className="hidden"
-            onChange={upload}
-          />
-          <Button
-            color="primary"
-            onPress={() => fileRef.current?.click()}
-            isLoading={uploading}
-            startContent={<Icon icon="mdi:camera" width={18} height={18} />}
-          >
-            Fotoğraf Yükle
-          </Button>
-          <p className="text-xs text-foreground-500">
-            PNG, JPG, WEBP veya GIF — en fazla 5 MB. Yüklenince
-            {' '}
-            <span className="font-mono">/uploads/profile.png</span>
-            {' '}
-            olarak
-            kaydedilir ve sitede profil olarak gösterilir.
-          </p>
-        </div>
-      </div>
-    </PanelCard>
   )
 }
 
@@ -2202,18 +2010,15 @@ function PasswordCard() {
         setStatus({ type: 'success', text: 'Şifre güncellendi.' })
         setCurrentPassword('')
         setNewPassword('')
-      }
-      else {
+      } else {
         setStatus({
           type: 'error',
           text: data.message || 'Şifre güncellenemedi.',
         })
       }
-    }
-    catch {
+    } catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    }
-    finally {
+    } finally {
       setLoading(false)
     }
   }
@@ -2280,13 +2085,15 @@ interface BlogManagerProps {
  * Blog yazıları CRUD — /api/admin/blog (upsert + delete) üzerinden çalışır.
  * Yazılar data/blog/posts.json'a yazılır; statik export'ta build zamanında dahil olur.
  */
-function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPosts: BlogPost[] }) {
+function BlogManager({
+  initialPosts,
+  onStatus,
+}: BlogManagerProps & { initialPosts: BlogPost[] }) {
   const [posts, setPosts] = useState<any[]>(initialPosts)
   const [editing, setEditing] = useState<any | null>(null)
 
   const savePost = async () => {
-    if (!editing?.title?.trim() || !editing?.slug?.trim())
-      return
+    if (!editing?.title?.trim() || !editing?.slug?.trim()) return
     onStatus(null)
     const res = await fetch('/api/admin/blog', {
       method: 'POST',
@@ -2299,14 +2106,15 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
       return
     }
     onStatus({ type: 'success', text: 'Yazı kaydedildi' })
-    setPosts(prev =>
-      [...prev.filter((p: any) => p.id !== editing.id), { ...editing }])
+    setPosts((prev) => [
+      ...prev.filter((p: any) => p.id !== editing.id),
+      { ...editing },
+    ])
     setEditing(null)
   }
 
   const removePost = async (post: any) => {
-    if (!window.confirm(`"${post.title}" silinsin mi?`))
-      return
+    if (!window.confirm(`"${post.title}" silinsin mi?`)) return
     const res = await fetch('/api/admin/blog', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2317,13 +2125,16 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
       return
     }
     onStatus({ type: 'success', text: 'Yazı silindi' })
-    setPosts(prev => prev.filter((p: any) => p.id !== post.id))
-    if (editing?.id === post.id)
-      setEditing(null)
+    setPosts((prev) => prev.filter((p: any) => p.id !== post.id))
+    if (editing?.id === post.id) setEditing(null)
   }
 
   const toSlug = (s: string) =>
-    s.toLocaleLowerCase('tr').replace(/[^a-z0-9ığüşöç\s-]/g, '').trim().replace(/\s+/g, '-')
+    s
+      .toLocaleLowerCase('tr')
+      .replace(/[^a-z0-9ığüşöç\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
 
   const emptyPost = () => ({
     id: `post-${Date.now()}`,
@@ -2339,11 +2150,7 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
   return (
     <div className="space-y-4 pt-4">
       <div className="flex flex-row items-center justify-between">
-        <p className="text-sm text-foreground-500">
-          {posts.length}
-          {' '}
-          yazı
-        </p>
+        <p className="text-sm text-foreground-500">{posts.length} yazı</p>
         {!editing && (
           <Button
             size="sm"
@@ -2357,7 +2164,13 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
       </div>
 
       {editing && (
-        <PanelCard title={posts.some((p: any) => p.id === editing.id) ? 'Yazıyı Düzenle' : 'Yeni Yazı'}>
+        <PanelCard
+          title={
+            posts.some((p: any) => p.id === editing.id)
+              ? 'Yazıyı Düzenle'
+              : 'Yeni Yazı'
+          }
+        >
           <div className="space-y-3">
             <Grid>
               <Field label="Başlık *">
@@ -2367,8 +2180,7 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
                   value={editing.title || ''}
                   onValueChange={(v) => {
                     const next = { ...editing, title: v }
-                    if (!editing.slug)
-                      next.slug = toSlug(v)
+                    if (!editing.slug) next.slug = toSlug(v)
                     setEditing(next)
                   }}
                 />
@@ -2378,7 +2190,9 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
                   variant="faded"
                   placeholder="yazi-url"
                   value={editing.slug || ''}
-                  onValueChange={v => setEditing({ ...editing, slug: toSlug(v) || v })}
+                  onValueChange={(v) =>
+                    setEditing({ ...editing, slug: toSlug(v) || v })
+                  }
                 />
               </Field>
               <Field label="Tarih">
@@ -2386,7 +2200,7 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
                   variant="faded"
                   type="date"
                   value={editing.date || ''}
-                  onValueChange={v => setEditing({ ...editing, date: v })}
+                  onValueChange={(v) => setEditing({ ...editing, date: v })}
                 />
               </Field>
               <Field label="Rozet (opsiyonel)">
@@ -2394,7 +2208,7 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
                   variant="faded"
                   placeholder="Yeni"
                   value={editing.badge || ''}
-                  onValueChange={v => setEditing({ ...editing, badge: v })}
+                  onValueChange={(v) => setEditing({ ...editing, badge: v })}
                 />
               </Field>
             </Grid>
@@ -2404,7 +2218,7 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
                 minRows={2}
                 placeholder="Listede görünen kısa özet"
                 value={editing.excerpt || ''}
-                onValueChange={v => setEditing({ ...editing, excerpt: v })}
+                onValueChange={(v) => setEditing({ ...editing, excerpt: v })}
               />
             </Field>
             <Field label="İçerik (markdown destekli)">
@@ -2413,7 +2227,7 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
                 minRows={10}
                 placeholder="Yazı içeriği…"
                 value={editing.content || ''}
-                onValueChange={v => setEditing({ ...editing, content: v })}
+                onValueChange={(v) => setEditing({ ...editing, content: v })}
               />
             </Field>
             <div className="flex flex-row gap-2">
@@ -2454,18 +2268,23 @@ function BlogManager({ initialPosts, onStatus }: BlogManagerProps & { initialPos
                   {post.title}
                 </p>
                 <p className="truncate text-xs text-foreground-500">
-                  {post.date}
-                  {' '}
-                  ·
-                  {' '}
-                  /blog/
+                  {post.date} · /blog/
                   {post.slug}
                 </p>
               </div>
-              <Button size="sm" variant="light" onPress={() => setEditing({ ...post })}>
+              <Button
+                size="sm"
+                variant="light"
+                onPress={() => setEditing({ ...post })}
+              >
                 Düzenle
               </Button>
-              <Button size="sm" color="danger" variant="light" onPress={() => removePost(post)}>
+              <Button
+                size="sm"
+                color="danger"
+                variant="light"
+                onPress={() => removePost(post)}
+              >
                 Sil
               </Button>
             </div>

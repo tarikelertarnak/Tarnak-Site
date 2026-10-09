@@ -7,6 +7,7 @@ import { TypewriterEffect } from '@lobehub/ui/awesome'
 import { motion } from 'motion/react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
+import { AvailabilityBadge } from '@/components/phase6-sections'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
 import { CvPicker } from '@/components/ui/cv-picker'
@@ -19,6 +20,7 @@ import {
   UserPlusIcon,
 } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
+import { parsePhase6 } from '@/lib/phase6'
 import { SITE_URL } from '@/lib/site-url'
 
 const container: Variants = {
@@ -38,8 +40,18 @@ const item: Variants = {
   },
 }
 
-export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc[] }) {
+export function HeroSection({
+  content,
+  cvs,
+}: {
+  content: SiteContent
+  cvs: CvDoc[]
+}) {
   const { name, tagline, description } = content.hero
+  // Faz 6 · 1 — müsaitlik rozeti (içerik boşsa render edilmez)
+  const phase6 = parsePhase6(
+    (content as unknown as Record<string, unknown>).phase6,
+  )
   const { t } = useT()
 
   /*
@@ -89,6 +101,16 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
             HOVER: logoya gelince MAVİ olur (butonlarla AYNI `--tprimary`).
             Sadece renk — glow/gölge/ölçek YOK.
           */}
+          {/*
+          Müsaitlik rozeti (Faz 6 · 1) — logonun ÜSTÜNDE, ayrı bir öğe.
+          İçerik boşsa (`enabled: false` veya etiket yoksa) render edilmez.
+          Logo `<a>`'sının İÇİNE konulmadı: rozet kendi bağlantısını
+          taşımalı (iletişime gidiyor), logo bağlantısının parçası olursa
+          tıklayınca ana sayfaya gider ve ekran okuyucu adı da bozulur.
+        */}
+          <motion.div variants={item} className="mb-4 flex justify-center">
+            <AvailabilityBadge data={phase6?.availability} />
+          </motion.div>
           <motion.a
             href={`${SITE_URL}/`}
             aria-label={`${content.profile.firstName} ${content.profile.lastName}`}
@@ -140,7 +162,10 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           </motion.div>
 
           {/* Typewriter */}
-          <motion.div variants={item} className="mt-6 text-foreground-600 sm:mt-7">
+          <motion.div
+            variants={item}
+            className="mt-6 text-foreground-600 sm:mt-7"
+          >
             <TypewriterEffect
               sentences={[tagline]}
               className="text-lg font-semibold sm:text-xl md:text-2xl"
@@ -240,10 +265,10 @@ export function HeroSection({ content, cvs }: { content: SiteContent, cvs: CvDoc
           aria-label={t('hero.scrollDown')}
           onClick={() => {
             const target = document.getElementById('about')
-            if (!target)
-              return
+            if (!target) return
             target.scrollIntoView({
-              behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+              behavior: window.matchMedia('(prefers-reduced-motion: reduce)')
+                .matches
                 ? 'auto'
                 : 'smooth',
               block: 'start',

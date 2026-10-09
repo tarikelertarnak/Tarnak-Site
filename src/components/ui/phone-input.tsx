@@ -39,28 +39,27 @@ export const EMPTY_PHONE: PhoneValue = { iso2: '', code: '', number: '' }
 
 /** "+905321234567" → { iso2, code, number } */
 export function parsePhone(raw: string): PhoneValue {
-  const digits = raw
-    .replace(/\D/g, '')
-    .slice(0, 15)
-    .replace(/^0+/, '')
+  const digits = raw.replace(/\D/g, '').slice(0, 15).replace(/^0+/, '')
   if (!digits) {
     return EMPTY_PHONE
   }
   // En uzun eşleşen ülke kodunu seç (1, 3 ve 4 haneli kodlar var).
-  const match = COUNTRIES
-    .filter(c => digits.startsWith(c.code))
-    .sort((a, b) => b.code.length - a.code.length)[0]
+  const match = COUNTRIES.filter((c) => digits.startsWith(c.code)).sort(
+    (a, b) => b.code.length - a.code.length,
+  )[0]
   if (!match) {
     return { iso2: '', code: '', number: digits }
   }
   return {
     iso2: match.iso2,
     code: match.code,
-    number: digits.slice(match.code.length).slice(0, maxNumberDigits(match.code, match.iso2)),
+    number: digits
+      .slice(match.code.length)
+      .slice(0, maxNumberDigits(match.code, match.iso2)),
   }
 }
 
-const ISO_TO_CODE = new Map(COUNTRIES.map(c => [c.iso2, c.code]))
+const ISO_TO_CODE = new Map(COUNTRIES.map((c) => [c.iso2, c.code]))
 
 /** Ülke değişti: numarayı koru, eski ülke kodunu numaradan soy. */
 function rebaseNumber(prev: PhoneValue, nextIso2: string): PhoneValue {
@@ -109,7 +108,7 @@ export function PhoneInput({
   const minLen = minNumberDigits(value.code, value.iso2)
 
   const CODE_TO_ISO = useMemo(
-    () => new Map(COUNTRIES.map(c => [c.code, c.iso2])),
+    () => new Map(COUNTRIES.map((c) => [c.code, c.iso2])),
     [],
   )
 
@@ -143,18 +142,15 @@ export function PhoneInput({
    */
   const [autoGuessed, setAutoGuessed] = useState(false)
   useEffect(() => {
-    if (autoGuessed)
-      return
+    if (autoGuessed) return
     // Alan zaten doluysa (kayıt geldi / kullanıcı seçti) karışma.
     if (value.iso2 || value.number || value.code) {
       setAutoGuessed(true)
       return
     }
     const detected = countryFromLanguages()
-    if (detected)
-      onChange(rebaseNumber(EMPTY_PHONE, detected))
+    if (detected) onChange(rebaseNumber(EMPTY_PHONE, detected))
     setAutoGuessed(true)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoGuessed])
 
   useEffect(() => {
@@ -163,7 +159,11 @@ export function PhoneInput({
     }
     const digits = sanitizeCountryCode(codeDraft)
     if (!digits) {
-      onChange({ ...value, code: '', number: sanitizeNumber(value.number, '', value.iso2) })
+      onChange({
+        ...value,
+        code: '',
+        number: sanitizeNumber(value.number, '', value.iso2),
+      })
       return
     }
     const iso2 = CODE_TO_ISO.get(digits)
@@ -173,7 +173,6 @@ export function PhoneInput({
       code: digits,
       number: sanitizeNumber(value.number, digits, nextIso),
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeDraft, value])
 
   return (
@@ -210,7 +209,7 @@ export function PhoneInput({
             inputMode="numeric"
             placeholder={t('phone.codePlaceholder')}
             value={shownCode}
-            onValueChange={v => setCodeDraft(sanitizeCountryCode(v))}
+            onValueChange={(v) => setCodeDraft(sanitizeCountryCode(v))}
             maxLength={COUNTRY_CODE_MAX}
             className="[&_input]:w-full [&_input]:min-w-0 [&_input]:px-1 [&_input]:text-center [&_input]:text-sm"
             isInvalid={isInvalid}
@@ -224,8 +223,12 @@ export function PhoneInput({
             aria-label={label}
             placeholder={placeholder ?? t('phone.numberPlaceholder')}
             value={value.number}
-            onValueChange={number =>
-              onChange({ ...value, number: sanitizeNumber(number, value.code, value.iso2) })}
+            onValueChange={(number) =>
+              onChange({
+                ...value,
+                number: sanitizeNumber(number, value.code, value.iso2),
+              })
+            }
             maxLength={hasRule ? maxLen : undefined}
             minLength={hasRule && minLen > 0 ? minLen : undefined}
             inputMode="numeric"

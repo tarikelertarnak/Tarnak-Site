@@ -1,13 +1,19 @@
 import { Footer } from '@/components/footer'
 import { Navigation } from '@/components/navigation'
+import {
+  ServicesSection,
+  TestimonialsSection,
+} from '@/components/phase6-sections'
 import { AboutSection } from '@/components/sections/about-section'
 import { BlogSection } from '@/components/sections/blog-section'
 import { ContactSection } from '@/components/sections/contact-section'
 import { HeroSection } from '@/components/sections/hero-section'
 import { ProjectsSection } from '@/components/sections/projects-section'
+import { Section } from '@/components/ui/section'
 import { getPosts } from '@/lib/blog'
 import { getCvs } from '@/lib/cv'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
+import { parsePhase6 } from '@/lib/phase6'
 
 /**
  * 2026-10-02 Cloudflare 1102 fix: prerender at build time and serve from the
@@ -22,6 +28,12 @@ export default async function Page() {
   const content = await getStaticLocalizedContent()
   const posts = await getPosts(locale)
   const cvs = await getCvs()
+  // Faz 6 · 1 — hizmetler + referanslar (içerik boşsa render edilmez)
+  const phase6 = parsePhase6(
+    (content as unknown as Record<string, unknown>).phase6,
+  )
+  const hizmetler = phase6?.services?.items.filter((i) => i.title) ?? []
+  const referanslar = phase6?.testimonials?.items.filter((i) => i.quote) ?? []
 
   return (
     <div className="min-h-screen w-full relative">
@@ -34,6 +46,34 @@ export default async function Page() {
           githubUsername={content.settings.githubUsername}
         />
         <BlogSection posts={posts} />
+
+        {/* Faz 6 · 1 — hizmetler + referanslar. Boşsa HİÇ render edilmez. */}
+        {hizmetler.length > 0 && (
+          <>
+            <div aria-hidden className="h-[var(--section-gap)]" />
+            <Section className="flex-col pb-0">
+              <ServicesSection
+                title={phase6?.services?.title}
+                description={phase6?.services?.description}
+                items={hizmetler}
+                ctaLabel="Teklif al"
+                ctaHref="/contact/"
+              />
+            </Section>
+          </>
+        )}
+
+        {referanslar.length > 0 && (
+          <>
+            <div aria-hidden className="h-[var(--section-gap)]" />
+            <Section className="flex-col pb-0">
+              <TestimonialsSection
+                title={phase6?.testimonials?.title}
+                items={referanslar}
+              />
+            </Section>
+          </>
+        )}
         <ContactSection content={content} />
       </main>
       <Footer content={content} />
