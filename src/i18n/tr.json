@@ -88,9 +88,9 @@
   "blog.noResults": "Sonuç bulunamadı.",
   "blog.noTags": "Etiket yok.",
   "resources.empty": "Henüz kaynak eklenmedi.",
-    "blog.related": "İlgili yazılar",
+  "blog.related": "İlgili yazılar",
   "blog.minRead": "dk okuma",
-"blog.openPost": "Sayfayı Aç",
+  "blog.openPost": "Sayfayı Aç",
   "blog.removeTag": "Filtreyi kaldır",
   "blog.search": "Yazılarda ara...",
   "blog.searchSort": "Sıralama ara...",
@@ -460,5 +460,10 @@
   "common.showMore": "Daha Fazlasını Göster ({count})",
   "common.showMoreAria": "Devamını gör, {count} kart kaldı",
   "form.errRateLimited": "Çok hızlı gidiyorsun. {seconds} saniye sonra tekrar dene.",
-  "form.infoRateLimited": "Bir süre çok fazla mesaj gönderdin. {seconds} saniye sonra tekrar dene."
+  "form.infoRateLimited": "Bir süre çok fazla mesaj gönderdin. {seconds} saniye sonra tekrar dene.",
+  "nav.uses": "Kullandıklarım",
+  "nav.now": "Şu an",
+  "nav.changelog": "Değişiklikler",
+  "nav.privacy": "Gizlilik Politikası",
+  "nav.kvkk": "KVKK Aydınlatma Metni"
 }

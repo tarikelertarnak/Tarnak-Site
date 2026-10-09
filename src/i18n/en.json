@@ -88,9 +88,9 @@
   "blog.noResults": "No results found.",
   "blog.noTags": "No tags.",
   "resources.empty": "No resources yet.",
-    "blog.related": "Related posts",
+  "blog.related": "Related posts",
   "blog.minRead": "min read",
-"blog.openPost": "Open Post",
+  "blog.openPost": "Open Post",
   "blog.removeTag": "Remove filter",
   "blog.search": "Search posts...",
   "blog.searchSort": "Search sort...",
@@ -460,5 +460,10 @@
   "common.showMore": "Show More ({count})",
   "common.showMoreAria": "Show {count} more cards",
   "form.errRateLimited": "You are going too fast. Try again in {seconds} seconds.",
-  "form.infoRateLimited": "You sent too many messages. Try again in {seconds} seconds."
+  "form.infoRateLimited": "You sent too many messages. Try again in {seconds} seconds.",
+  "nav.uses": "What I Use",
+  "nav.now": "Now",
+  "nav.changelog": "Changelog",
+  "nav.privacy": "Privacy Policy",
+  "nav.kvkk": "KVKK Notice"
 }

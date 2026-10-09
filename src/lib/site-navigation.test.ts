@@ -7,11 +7,16 @@ const t = (key: string) => key
 
 describe('buildSiteNavigation', () => {
   const groups = buildSiteNavigation(t)
-  const all = groups.flatMap(g => g.entries)
-  const hrefs = all.map(e => e.href)
+  const all = groups.flatMap((g) => g.entries)
+  const hrefs = all.map((e) => e.href)
 
-  it('uc grup uretir: Sayfalar / Bolumler / Hesap', () => {
-    expect(groups.map(g => g.id)).toEqual(['pages', 'sections', 'account'])
+  it('dort grup uretir: Sayfalar / Hukuki / Bolumler / Hesap', () => {
+    expect(groups.map((g) => g.id)).toEqual([
+      'pages',
+      'legal',
+      'sections',
+      'account',
+    ])
   })
 
   // ---- KULLANICI ISTEGI: "butun sayfalar, bolumler, ozel sayfa ve alt sayfa"
@@ -23,6 +28,9 @@ describe('buildSiteNavigation', () => {
     '/chat',
     '/donate',
     '/credits',
+    '/uses',
+    '/now',
+    '/changelog',
   ]
 
   it.each(REQUIRED_PAGES)('sayfa listede: %s', (href) => {
@@ -34,9 +42,12 @@ describe('buildSiteNavigation', () => {
     expect(hrefs).not.toContain('/reklam')
   })
   // 2026-10-07 (kullanıcı): /github, /search ve /kaynaklar sayfaları silindi.
-  it.each(['/github', '/search', '/kaynaklar'])('silinen sayfa listede YOK: %s', (href) => {
-    expect(hrefs).not.toContain(href)
-  })
+  it.each(['/github', '/search', '/kaynaklar'])(
+    'silinen sayfa listede YOK: %s',
+    (href) => {
+      expect(hrefs).not.toContain(href)
+    },
+  )
 
   // 2026-10-04: `/#bolum` capalari gercek sayfalara cevrildi (kullanici:
   // "butun # leri sil, normal olsun hep").
@@ -49,7 +60,7 @@ describe('buildSiteNavigation', () => {
   // REGRESYON: capali href geri gelirse yakala. Ayri sayfaIci `#main` (atlama
   // linki) bu listede degil — gezinme girdileri dis sayfa olmali.
   it('hicbir gezinme linki capa (#) icermez', () => {
-    const hashed = hrefs.filter(h => h.includes('#'))
+    const hashed = hrefs.filter((h) => h.includes('#'))
     expect(hashed).toEqual([])
   })
 
@@ -59,9 +70,19 @@ describe('buildSiteNavigation', () => {
     // 2026-10-07: Sayfa Duzenleyici kaldirildi → /puck menude DEGIL.
   })
 
-  it('9 sayfa + 3 bolum + 2 hesap = 13 baglanti (/github, /search, /kaynaklar kaldirildi)', () => {
-    expect(all.length).toBe(13)
+  // 2026-10-09 (Faz 6): /uses, /now, /changelog sayfaları ve /gizlilik,
+  // /kvkk hukuki metinleri eklendi → 13 + 5 = 18 bağlantı.
+  it('13 sayfa + 3 bolum + 2 hesap = 18 baglanti (Faz 6 sayfalari eklendi)', () => {
+    expect(all.length).toBe(18)
   })
+
+  // Faz 6 sayfaları gezinmede gerçekten var mı? (regresyon)
+  it.each(['/uses', '/now', '/changelog', '/gizlilik', '/kvkk'])(
+    'faz 6 sayfasi listede: %s',
+    (href) => {
+      expect(hrefs).toContain(href)
+    },
+  )
 
   it('tekrar eden href YOK', () => {
     expect(new Set(hrefs).size).toBe(hrefs.length)
@@ -77,14 +98,14 @@ describe('buildSiteNavigation', () => {
   // ---- Panelden eklenen ozel sayfalar
   it('content.nav.items icindeki YENI baglanti eklenir', () => {
     const g = buildSiteNavigation(t, [{ title: 'Ozel Sayfa', href: '/ozel' }])
-    const list = g.flatMap(x => x.entries).map(e => e.href)
+    const list = g.flatMap((x) => x.entries).map((e) => e.href)
     expect(list).toContain('/ozel')
   })
 
   it('content.nav.items ZATEN VAR olan baglantiyı TEKRAR eklemez', () => {
     const g = buildSiteNavigation(t, [{ title: 'Projeler', href: '/projects' }])
-    const list = g.flatMap(x => x.entries).map(e => e.href)
-    expect(list.filter(h => h === '/projects').length).toBe(1)
+    const list = g.flatMap((x) => x.entries).map((e) => e.href)
+    expect(list.filter((h) => h === '/projects').length).toBe(1)
   })
 
   it('eksik/bozuk kayitlar atlanir (kirilgan olmasin)', () => {
@@ -93,13 +114,13 @@ describe('buildSiteNavigation', () => {
       { title: 'Adsiz', href: '' },
       {},
     ])
-    const list = g.flatMap(x => x.entries).map(e => e.href)
+    const list = g.flatMap((x) => x.entries).map((e) => e.href)
     expect(list).not.toContain('/bos')
     expect(list).not.toContain('')
   })
 
   it('nav.items verilmezse sabit liste bozulmaz', () => {
     const g = buildSiteNavigation(t, undefined)
-    expect(g.flatMap(x => x.entries).length).toBe(13)
+    expect(g.flatMap((x) => x.entries).length).toBe(18)
   })
 })

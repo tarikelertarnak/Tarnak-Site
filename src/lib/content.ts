@@ -308,6 +308,16 @@ export interface SiteContent {
   footer: {
     copyright: string
   }
+  /**
+   * Faz 6 bölümleri (availability, services, testimonials, timeline,
+   * certificates, uses, now, changelog, newsletter, videos, vcard,
+   * privacy, kvkk).
+   *
+   * Opsiyonel: kullanıcı bu alanı hiç doldurmazsa sayfalar boş durum
+   * gösterir. Doğrulama `phase6Schema` ile yapılır — bozuk veri build'i
+   * düşürmez, ilgili bölüm boş sayılır.
+   */
+  phase6?: unknown
 }
 
 const bundledContent = bundledContentJson as Partial<SiteContent>

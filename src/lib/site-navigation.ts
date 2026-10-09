@@ -33,9 +33,15 @@ interface Labels {
   about: string
   projects: string
   blog: string
-  chat: string
+  chat: string
+
   donate: string
   credits: string
+  uses: string
+  now: string
+  changelog: string
+  privacy: string
+  kvkk: string
   login: string
   panel: string
   contact: string
@@ -58,9 +64,25 @@ function buildStaticGroups(l: Labels): NavGroup[] {
         { id: 'about', label: l.about, href: '/about' },
         { id: 'projects', label: l.projects, href: '/projects' },
         { id: 'blog', label: l.blog, href: '/blog' },
-        { id: 'chat', label: l.chat, href: '/chat' },
+        { id: 'chat', label: l.chat, href: '/chat' },
+
         { id: 'donate', label: l.donate, href: '/donate' },
         { id: 'credits', label: l.credits, href: '/credits' },
+        // Faz 6 — kişisel sayfalar
+        { id: 'uses', label: l.uses, href: '/uses' },
+        { id: 'now', label: l.now, href: '/now' },
+        { id: 'changelog', label: l.changelog, href: '/changelog' },
+      ],
+    },
+    {
+      // Faz 6 — hukuki metinler gezinmeden ayrı tutuldu; footer'ın alt
+      // satırındaki ikincil alana bağlanır (her sayfa "herkese açık"
+      // gezinme listesinde şişiklik yapmasın).
+      id: 'legal',
+      title: l.pages,
+      entries: [
+        { id: 'privacy', label: l.privacy, href: '/gizlilik' },
+        { id: 'kvkk', label: l.kvkk, href: '/kvkk' },
       ],
     },
     {
@@ -72,7 +94,8 @@ function buildStaticGroups(l: Labels): NavGroup[] {
         { id: 'sec-about', label: l.about, href: '/about/' },
         { id: 'sec-projects', label: l.projects, href: '/projects/' },
         { id: 'sec-blog', label: l.blog, href: '/blog/' },
-        // Faz 4 · 4 — kaynaklar (araç/link listesi)
+        // Faz 4 · 4 — kaynaklar (araç/link listesi)
+
         { id: 'sec-contact', label: l.contact, href: '/contact/' },
       ],
     },
@@ -94,13 +117,13 @@ function buildStaticGroups(l: Labels): NavGroup[] {
  */
 function appendContentLinks(
   groups: NavGroup[],
-  items: { title?: string, href?: string }[] | undefined,
+  items: { title?: string; href?: string }[] | undefined,
 ): NavGroup[] {
   if (!items?.length) {
     return groups
   }
 
-  const known = new Set(groups.flatMap(g => g.entries.map(e => e.href)))
+  const known = new Set(groups.flatMap((g) => g.entries.map((e) => e.href)))
   const extra: NavEntry[] = []
 
   items.forEach((item, i) => {
@@ -117,7 +140,9 @@ function appendContentLinks(
     return groups
   }
 
-  return groups.map(g => (g.id === 'pages' ? { ...g, entries: [...g.entries, ...extra] } : g))
+  return groups.map((g) =>
+    g.id === 'pages' ? { ...g, entries: [...g.entries, ...extra] } : g,
+  )
 }
 
 /**
@@ -126,16 +151,22 @@ function appendContentLinks(
  */
 export function buildSiteNavigation(
   t: (key: string) => string,
-  navItems?: { title?: string, href?: string }[],
+  navItems?: { title?: string; href?: string }[],
 ): NavGroup[] {
   const labels: Labels = {
     home: t('nav.home'),
     about: t('nav.about'),
     projects: t('nav.projects'),
     blog: t('nav.blog'),
-    chat: t('nav.chat'),
+    chat: t('nav.chat'),
+
     donate: t('nav.donate'),
     credits: t('nav.credits'),
+    uses: t('nav.uses'),
+    now: t('nav.now'),
+    changelog: t('nav.changelog'),
+    privacy: t('nav.privacy'),
+    kvkk: t('nav.kvkk'),
     login: t('nav.login'),
     panel: t('nav.adminPanel'),
     contact: t('footer.contactTitle'),
