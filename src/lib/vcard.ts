@@ -45,8 +45,16 @@ export function buildVCard(data: VCardData): string {
   const satirlar: string[] = ['BEGIN:VCARD', 'VERSION:3.0']
 
   const ad = [data.firstName, data.lastName].filter(Boolean).join(' ').trim()
-  if (ad) satirlar.push(`FN:${esc(ad)}`)
-  if (data.displayName) {
+  // FN = görüntülenen ad. Ad/soyad yoksa `displayName`'e düşer; ikisi de
+  // yoksa alan hiç üretilmez (boş FN, kart görüntüleyicide satır adı yapar).
+  const goruntulenen = ad || data.displayName || ''
+  if (goruntulenen) {
+    satirlar.push(`FN:${esc(goruntulenen)}`)
+  }
+  // N = yapılandırılmış ad (soyad;ad). Yalnızca gerçek bir ad/soyad
+  // varsa üretilir: boş `N:;;;;` geçersizdir. (Önceden `displayName`'e
+  // bağlıydı — ad/soyad dolu ama displayName boşken N kayboluyordu.)
+  if (data.firstName || data.lastName) {
     satirlar.push(
       `N:${esc(data.lastName ?? '')};${esc(data.firstName ?? '')};;;`,
     )
