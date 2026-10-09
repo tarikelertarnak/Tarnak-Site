@@ -468,5 +468,6 @@
   "nav.kvkk": "KVKK Notice",
   "about.vcardTitle": "Digital business card",
   "about.vcardDownload": "Download contact card",
-  "about.vcardDescription": "Scan the QR code with your phone or save the contact card."
+  "about.vcardDescription": "Scan the QR code with your phone or save the contact card.",
+  "nav.legal": "Legal"
 }

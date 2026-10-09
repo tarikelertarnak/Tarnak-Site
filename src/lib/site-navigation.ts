@@ -42,6 +42,7 @@ interface Labels {
   changelog: string
   privacy: string
   kvkk: string
+  legal: string
   login: string
   panel: string
   contact: string
@@ -79,7 +80,7 @@ function buildStaticGroups(l: Labels): NavGroup[] {
       // satırındaki ikincil alana bağlanır (her sayfa "herkese açık"
       // gezinme listesinde şişiklik yapmasın).
       id: 'legal',
-      title: l.pages,
+      title: l.legal,
       entries: [
         { id: 'privacy', label: l.privacy, href: '/gizlilik' },
         { id: 'kvkk', label: l.kvkk, href: '/kvkk' },
@@ -165,6 +166,7 @@ export function buildSiteNavigation(
     uses: t('nav.uses'),
     now: t('nav.now'),
     changelog: t('nav.changelog'),
+    legal: t('nav.legal'),
     privacy: t('nav.privacy'),
     kvkk: t('nav.kvkk'),
     login: t('nav.login'),

@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { ChatPanel } from '@/components/admin/chat-panel'
 import { DataManager } from '@/components/admin/data-manager'
+import { Faz6Editor } from '@/components/admin/faz6-editor'
 import { OverviewPanel } from '@/components/admin/overview-panel'
 import { ProfilePhotoUploader } from '@/components/admin/profile-photo-uploader'
 import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
@@ -26,6 +27,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { FAZ6_BOLUMLERI } from '@/lib/faz6-fields'
 import { clientFetchUserRepos } from '@/lib/github-client'
 
 type SaveStatus = { type: 'success' | 'error'; text: string } | null
@@ -1771,6 +1773,22 @@ export function AdminPanel({
             onStatus={setStatus}
           />
         </div>
+      ),
+    },
+    {
+      key: 'phase6',
+      label: (
+        <span className="inline-flex items-center gap-1.5">
+          <Icon icon="mdi:view-timeline-outline" width={15} height={15} />
+          Faz 6
+        </span>
+      ),
+      children: (
+        <Faz6Editor
+          specs={FAZ6_BOLUMLERI}
+          value={(content.phase6 ?? {}) as Record<string, unknown>}
+          onChange={(phase6) => setContent((prev) => ({ ...prev, phase6 }))}
+        />
       ),
     },
     {
