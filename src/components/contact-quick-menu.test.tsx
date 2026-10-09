@@ -1,5 +1,12 @@
 import type { SiteContent } from '@/lib/content'
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
@@ -43,20 +50,35 @@ const CONTENT = {
     locationYandex: 'https://yandex.com.tr/maps/konya',
   },
   social: [
-    { name: 'GitHub', href: 'https://github.com/TARIKELER-TARNAK', icon: 'mdi:github' },
-    { name: 'Instagram', href: 'https://www.instagram.com/tarikeler_tarnak/', icon: 'mdi:instagram' },
+    {
+      name: 'GitHub',
+      href: 'https://github.com/tarikelertarnak',
+      icon: 'mdi:github',
+    },
+    {
+      name: 'Instagram',
+      href: 'https://www.instagram.com/tarikeler_tarnak/',
+      icon: 'mdi:instagram',
+    },
   ],
 } as unknown as SiteContent
 
 const EMPTY_CONTENT = { contact: {}, social: [] } as unknown as SiteContent
 
 function setClipboard(value: unknown) {
-  Object.defineProperty(navigator, 'clipboard', { value, configurable: true, writable: true })
+  Object.defineProperty(navigator, 'clipboard', {
+    value,
+    configurable: true,
+    writable: true,
+  })
 }
 
 afterEach(() => {
   cleanup()
-  Reflect.deleteProperty(navigator as unknown as Record<string, unknown>, 'clipboard')
+  Reflect.deleteProperty(
+    navigator as unknown as Record<string, unknown>,
+    'clipboard',
+  )
   vi.restoreAllMocks()
 })
 
@@ -67,7 +89,9 @@ function open() {
 describe('contactQuickMenu', () => {
   it('kapaliyken yalnizca tetikleyici butonu gosterir', () => {
     render(<ContactQuickMenu content={CONTENT} />)
-    expect(screen.getByRole('button', { name: /İletişim Bilgileri/ })).toBeTruthy()
+    expect(
+      screen.getByRole('button', { name: /İletişim Bilgileri/ }),
+    ).toBeTruthy()
     expect(screen.queryByRole('menu')).toBeNull()
   })
 
@@ -87,7 +111,9 @@ describe('contactQuickMenu', () => {
   it('sosyal bolum basligini gosterir', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
-    expect(within(screen.getByRole('menu')).getByText('Sosyal Medya')).toBeTruthy()
+    expect(
+      within(screen.getByRole('menu')).getByText('Sosyal Medya'),
+    ).toBeTruthy()
   })
 
   it('e-posta satiri mailto baglantisi, telefon tel baglantisi olur', () => {
@@ -95,16 +121,20 @@ describe('contactQuickMenu', () => {
     open()
     const menu = within(screen.getByRole('menu'))
 
-    expect(menu.getByText('tarik@ornek.com').closest('a')?.getAttribute('href'))
-      .toBe('mailto:tarik@ornek.com')
-    expect(menu.getByText('+90 551 895 72 15').closest('a')?.getAttribute('href'))
-      .toBe('tel:+905518957215')
+    expect(
+      menu.getByText('tarik@ornek.com').closest('a')?.getAttribute('href'),
+    ).toBe('mailto:tarik@ornek.com')
+    expect(
+      menu.getByText('+90 551 895 72 15').closest('a')?.getAttribute('href'),
+    ).toBe('tel:+905518957215')
   })
 
   it('harita baglantilari yeni sekmede acilir ve noopener icerir', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
-    const link = within(screen.getByRole('menu')).getByText('Google Haritalar').closest('a')!
+    const link = within(screen.getByRole('menu'))
+      .getByText('Google Haritalar')
+      .closest('a')!
     expect(link.getAttribute('target')).toBe('_blank')
     expect(link.getAttribute('rel')).toContain('noopener')
   })
@@ -115,7 +145,9 @@ describe('contactQuickMenu', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
 
-    fireEvent.change(screen.getByPlaceholderText('Ara...'), { target: { value: 'instagram' } })
+    fireEvent.change(screen.getByPlaceholderText('Ara...'), {
+      target: { value: 'instagram' },
+    })
 
     const menu = within(screen.getByRole('menu'))
     expect(menu.getByText('Instagram')).toBeTruthy()
@@ -126,15 +158,21 @@ describe('contactQuickMenu', () => {
   it('arama buyuk harfle de calisir', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
-    fireEvent.change(screen.getByPlaceholderText('Ara...'), { target: { value: 'INSTAGRAM' } })
+    fireEvent.change(screen.getByPlaceholderText('Ara...'), {
+      target: { value: 'INSTAGRAM' },
+    })
     expect(within(screen.getByRole('menu')).getByText('Instagram')).toBeTruthy()
   })
 
   it('sonuc yoksa "Sonuç bulunamadı" gosterir', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
-    fireEvent.change(screen.getByPlaceholderText('Ara...'), { target: { value: 'zzzz' } })
-    expect(within(screen.getByRole('menu')).getByText('Sonuç bulunamadı')).toBeTruthy()
+    fireEvent.change(screen.getByPlaceholderText('Ara...'), {
+      target: { value: 'zzzz' },
+    })
+    expect(
+      within(screen.getByRole('menu')).getByText('Sonuç bulunamadı'),
+    ).toBeTruthy()
   })
 
   it('arama temizle butonu aramayi sifirlar', () => {
@@ -166,7 +204,9 @@ describe('contactQuickMenu', () => {
 
     fireEvent.click(button)
 
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith('tarik@ornek.com'))
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith('tarik@ornek.com'),
+    )
     // Basari geri bildirimi: ipucu metni + yesil stil (ikon tik isaretine doner)
     await waitFor(() => expect(button.getAttribute('title')).toBe('Kopyalandı'))
     expect(button.className).toContain('text-success')
@@ -181,7 +221,9 @@ describe('contactQuickMenu', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Telefon — Kopyala' }))
 
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith('+90 551 895 72 15'))
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith('+90 551 895 72 15'),
+    )
   })
 
   it('sosyal kanalda TAM adres kopyalanir', async () => {
@@ -193,13 +235,22 @@ describe('contactQuickMenu', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Instagram — Kopyala' }))
 
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith('https://www.instagram.com/tarikeler_tarnak/'))
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(
+        'https://www.instagram.com/tarikeler_tarnak/',
+      ),
+    )
   })
 
   it('kopyalama basarisizsa kullaniciyi UYARIR (sessiz basari yok)', async () => {
-    setClipboard({ writeText: vi.fn().mockRejectedValue(new Error('izin yok')) })
+    setClipboard({
+      writeText: vi.fn().mockRejectedValue(new Error('izin yok')),
+    })
     // fallback de basarisiz olsun
-    Object.defineProperty(document, 'execCommand', { value: undefined, configurable: true })
+    Object.defineProperty(document, 'execCommand', {
+      value: undefined,
+      configurable: true,
+    })
 
     render(<ContactQuickMenu content={CONTENT} />)
     open()
@@ -207,12 +258,17 @@ describe('contactQuickMenu', () => {
     const button = screen.getByRole('button', { name: 'E-posta — Kopyala' })
     fireEvent.click(button)
 
-    await waitFor(() => expect(screen.getByText(/Panoya kopyalanamadı/)).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByText(/Panoya kopyalanamadı/)).toBeTruthy(),
+    )
     // Basari geri bildirimi GOSTERILMEMELI
     expect(button.getAttribute('title')).toBe('Kopyala')
     expect(button.className).not.toContain('text-success')
 
-    Reflect.deleteProperty(document as unknown as Record<string, unknown>, 'execCommand')
+    Reflect.deleteProperty(
+      document as unknown as Record<string, unknown>,
+      'execCommand',
+    )
   })
 
   // ------------------------------------------------------------- BOS / KAPATMA
@@ -220,7 +276,11 @@ describe('contactQuickMenu', () => {
   it('iletisim bilgisi yoksa bilgilendirir', () => {
     render(<ContactQuickMenu content={EMPTY_CONTENT} />)
     open()
-    expect(within(screen.getByRole('menu')).getByText('Kayıtlı iletişim bilgisi yok.')).toBeTruthy()
+    expect(
+      within(screen.getByRole('menu')).getByText(
+        'Kayıtlı iletişim bilgisi yok.',
+      ),
+    ).toBeTruthy()
   })
 
   it('escape ile kapanir', () => {
@@ -289,20 +349,22 @@ describe('contactQuickMenu', () => {
     Şimdi BUTTON = tetikleyici, diğerleri = 256x415 panel.
   */
   function stubRect(top: number, bottom: number) {
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
-      const isTrigger = this.tagName === 'BUTTON'
-      return {
-        top: isTrigger ? top : 0,
-        bottom: isTrigger ? bottom : 415,
-        left: isTrigger ? 100 : 0,
-        right: isTrigger ? 260 : 256,
-        width: isTrigger ? 160 : 256,
-        height: isTrigger ? bottom - top : 415,
-        x: isTrigger ? 100 : 0,
-        y: isTrigger ? top : 0,
-        toJSON: () => ({}),
-      } as DOMRect
-    })
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(
+      function (this: Element) {
+        const isTrigger = this.tagName === 'BUTTON'
+        return {
+          top: isTrigger ? top : 0,
+          bottom: isTrigger ? bottom : 415,
+          left: isTrigger ? 100 : 0,
+          right: isTrigger ? 260 : 256,
+          width: isTrigger ? 160 : 256,
+          height: isTrigger ? bottom - top : 415,
+          x: isTrigger ? 100 : 0,
+          y: isTrigger ? top : 0,
+          toJSON: () => ({}),
+        } as DOMRect
+      },
+    )
   }
 
   it('altta yer YOKSA ustune gecer (yeni kural: alt -> ust -> sag -> sol)', () => {
@@ -382,9 +444,13 @@ describe('contactQuickMenu', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
 
-    const rows = () => [...screen.getByRole('menu').querySelectorAll<HTMLElement>('li[data-index]')]
+    const rows = () => [
+      ...screen
+        .getByRole('menu')
+        .querySelectorAll<HTMLElement>('li[data-index]'),
+    ]
     const activeIdx = () =>
-      rows().findIndex(r => r.className.includes('bg-foreground-200/15'))
+      rows().findIndex((r) => r.className.includes('bg-foreground-200/15'))
 
     expect(activeIdx()).toBe(0)
 
@@ -396,9 +462,13 @@ describe('contactQuickMenu', () => {
     render(<ContactQuickMenu content={CONTENT} />)
     open()
 
-    const rows = () => [...screen.getByRole('menu').querySelectorAll<HTMLElement>('li[data-index]')]
+    const rows = () => [
+      ...screen
+        .getByRole('menu')
+        .querySelectorAll<HTMLElement>('li[data-index]'),
+    ]
     const activeIdx = () =>
-      rows().findIndex(r => r.className.includes('bg-foreground-200/15'))
+      rows().findIndex((r) => r.className.includes('bg-foreground-200/15'))
 
     const input = screen.getByLabelText('Ara...')
     fireEvent.keyDown(input, { key: 'End' })

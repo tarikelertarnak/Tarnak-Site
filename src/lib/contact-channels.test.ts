@@ -23,8 +23,16 @@ const FULL: ContactSource = {
     locationYandex: 'https://yandex.com.tr/maps/konya',
   },
   social: [
-    { name: 'GitHub', href: 'https://github.com/TARIKELER-TARNAK', icon: 'mdi:github' },
-    { name: 'Instagram', href: 'https://www.instagram.com/tarikeler_tarnak/', icon: 'mdi:instagram' },
+    {
+      name: 'GitHub',
+      href: 'https://github.com/tarikelertarnak',
+      icon: 'mdi:github',
+    },
+    {
+      name: 'Instagram',
+      href: 'https://www.instagram.com/tarikeler_tarnak/',
+      icon: 'mdi:instagram',
+    },
   ],
 }
 
@@ -47,7 +55,7 @@ describe('foldForSearch', () => {
 
 describe('buildContactChannels', () => {
   it('e-posta, telefon, iki konum ve sosyalleri sirayla uretir', () => {
-    const ids = buildContactChannels(FULL, t).map(c => c.id)
+    const ids = buildContactChannels(FULL, t).map((c) => c.id)
     expect(ids).toEqual([
       'email',
       'phone',
@@ -59,14 +67,14 @@ describe('buildContactChannels', () => {
   })
 
   it('e-posta kanali mailto: ve kopyalanabilir deger tasir', () => {
-    const email = buildContactChannels(FULL, t).find(c => c.kind === 'email')!
+    const email = buildContactChannels(FULL, t).find((c) => c.kind === 'email')!
     expect(email.href).toBe('mailto:tarik@ornek.com')
     expect(email.copyValue).toBe('tarik@ornek.com')
     expect(email.value).toBe('tarik@ornek.com')
   })
 
   it('telefon href`inde bosluk/tire/parantez birakmaz', () => {
-    const phone = buildContactChannels(FULL, t).find(c => c.kind === 'phone')!
+    const phone = buildContactChannels(FULL, t).find((c) => c.kind === 'phone')!
     expect(phone.href).toBe('tel:+905518957215')
     // Kopyalanan deger OKUNAKLI kalmali (kullanici yapistirinca bozulmasin)
     expect(phone.copyValue).toBe('+90 551 895 72 15')
@@ -87,7 +95,10 @@ describe('buildContactChannels', () => {
   })
 
   it('yalnizca bosluk olan alani dolu saymaz', () => {
-    const out = buildContactChannels({ contact: { email: '   ', phone: '' } }, t)
+    const out = buildContactChannels(
+      { contact: { email: '   ', phone: '' } },
+      t,
+    )
     expect(out).toHaveLength(0)
   })
 
@@ -96,10 +107,12 @@ describe('buildContactChannels', () => {
   })
 
   it('sosyal kanallarda gorunen degerden protokol/www sokulur', () => {
-    const gh = buildContactChannels(FULL, t).find(c => c.id === 'social-github')!
-    expect(gh.value).toBe('github.com/TARIKELER-TARNAK')
+    const gh = buildContactChannels(FULL, t).find(
+      (c) => c.id === 'social-github',
+    )!
+    expect(gh.value).toBe('github.com/tarikelertarnak')
     // Kopyalanan deger ise TAM adres olmali (yapistirinca calissin)
-    expect(gh.copyValue).toBe('https://github.com/TARIKELER-TARNAK')
+    expect(gh.copyValue).toBe('https://github.com/tarikelertarnak')
   })
 
   it('href`i olmayan sosyal kaydi atlar', () => {
@@ -112,7 +125,10 @@ describe('buildContactChannels', () => {
 
   it('ikonu olmayan sosyal kayda varsayilan ikon verir', () => {
     const out = buildContactChannels(
-      { contact: {}, social: [{ name: 'X', href: 'https://x.com/a', icon: '' }] },
+      {
+        contact: {},
+        social: [{ name: 'X', href: 'https://x.com/a', icon: '' }],
+      },
       t,
     )
     expect(out[0].icon).toBe('mdi:link')
@@ -144,22 +160,22 @@ describe('filterChannels', () => {
     // oldugu icin burada e-posta etiketi uzerinden davranisi dogruluyoruz:
     // arama hem etiket hem deger hem anahtar kelimede calisir.
     const out = filterChannels(channels, 'e-posta')
-    expect(out.some(c => c.kind === 'email')).toBe(true)
+    expect(out.some((c) => c.kind === 'email')).toBe(true)
   })
 
   it('anahtar kelimeyle eslesir (telefon -> phone)', () => {
     const out = filterChannels(channels, 'telefon')
-    expect(out.some(c => c.kind === 'phone')).toBe(true)
+    expect(out.some((c) => c.kind === 'phone')).toBe(true)
   })
 
   it('deger icinde arar (github)', () => {
     const out = filterChannels(channels, 'github')
-    expect(out.some(c => c.id === 'social-github')).toBe(true)
+    expect(out.some((c) => c.id === 'social-github')).toBe(true)
   })
 
   it('harita aramasinda iki konum kanalini da bulur', () => {
     const out = filterChannels(channels, 'harita')
-    expect(out.filter(c => c.kind === 'location')).toHaveLength(2)
+    expect(out.filter((c) => c.kind === 'location')).toHaveLength(2)
   })
 
   it('eslesme yoksa bos dizi doner', () => {
@@ -174,7 +190,12 @@ describe('filterChannels', () => {
 describe('groupChannels', () => {
   it('yerlesik ve sosyal kanallari ayirir', () => {
     const { builtin, social } = groupChannels(buildContactChannels(FULL, t))
-    expect(builtin.map(c => c.kind)).toEqual(['email', 'phone', 'location', 'location'])
-    expect(social.map(c => c.label)).toEqual(['GitHub', 'Instagram'])
+    expect(builtin.map((c) => c.kind)).toEqual([
+      'email',
+      'phone',
+      'location',
+      'location',
+    ])
+    expect(social.map((c) => c.label)).toEqual(['GitHub', 'Instagram'])
   })
 })

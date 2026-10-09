@@ -24,7 +24,7 @@
   },
   "nav": {
     "ctaLabel": "GitHub",
-    "githubRepo": "https://github.com/TARIKELER-TARNAK",
+    "githubRepo": "https://github.com/tarikelertarnak/TARIKELER-TARNAK",
     "items": [
       {
         "title": "Projeler",
@@ -47,7 +47,7 @@
   "social": [
     {
       "name": "GitHub",
-      "href": "https://github.com/TARIKELER-TARNAK",
+      "href": "https://github.com/tarikelertarnak",
       "icon": "mdi:github"
     },
     {
