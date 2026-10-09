@@ -10,10 +10,12 @@ import { ContactSection } from '@/components/sections/contact-section'
 import { HeroSection } from '@/components/sections/hero-section'
 import { ProjectsSection } from '@/components/sections/projects-section'
 import { Section } from '@/components/ui/section'
+import { VideosSection } from '@/components/videos-section'
 import { getPosts } from '@/lib/blog'
 import { getCvs } from '@/lib/cv'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 import { parsePhase6 } from '@/lib/phase6'
+import { kanalVideolari } from '@/lib/youtube'
 
 /**
  * 2026-10-02 Cloudflare 1102 fix: prerender at build time and serve from the
@@ -34,6 +36,12 @@ export default async function Page() {
   )
   const hizmetler = phase6?.services?.items.filter((i) => i.title) ?? []
   const referanslar = phase6?.testimonials?.items.filter((i) => i.quote) ?? []
+  // Faz 6 · 3 — YouTube videoları. Kanal ID boşsa veya besleme hata
+  // verirse boş dizi döner ve bölüm render edilmez (kullanıcı kuralı).
+  const videolar = await kanalVideolari(
+    phase6?.videos?.channelId,
+    phase6?.videos?.maxItems ?? 4,
+  )
 
   return (
     <div className="min-h-screen w-full relative">
@@ -70,6 +78,17 @@ export default async function Page() {
               <TestimonialsSection
                 title={phase6?.testimonials?.title}
                 items={referanslar}
+              />
+            </Section>
+          </>
+        )}
+        {videolar.length > 0 && (
+          <>
+            <div aria-hidden className="h-[var(--section-gap)]" />
+            <Section className="flex-col pb-0">
+              <VideosSection
+                videolar={videolar}
+                baslik={phase6?.videos?.title}
               />
             </Section>
           </>
