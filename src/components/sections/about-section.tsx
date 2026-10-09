@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import type { SiteContent, ToolboxItem as ToolboxItemType } from '@/lib/content'
 import type { CvDoc } from '@/lib/cv'
+import type { VCard } from '@/lib/phase6'
 import { Popover } from '@lobehub/ui/base-ui'
 import { useState } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
@@ -27,6 +28,8 @@ import {
 } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { techIcon } from '@/components/ui/tech-icons'
+import { VCardQr } from '@/components/vcard-qr'
+import { siteUrl } from '@/lib/site-url'
 
 /** Interest icons — iconify id → SVG (no iconify dependency). */
 const INTEREST_ICONS: Record<string, ReactNode> = {
@@ -35,16 +38,36 @@ const INTEREST_ICONS: Record<string, ReactNode> = {
   'mdi:creation': <BrainIcon size={14} />,
 }
 
-export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDoc[] }) {
+export function AboutSection({
+  content,
+  cvs,
+  vcard,
+}: {
+  content: SiteContent
+  cvs: CvDoc[]
+  /** Faz 6 · dijital kartvisit ayarları. Verilmezse blok render edilmez. */
+  vcard?: VCard
+}) {
+  /**
+   * DİLLER KARTI seviye rozeti (2026-10-06, kullanıcı).
+   *
+   * "Ana Dil" eskiden `bg-primary/15 uppercase text-[11px]` DOLU rozet,
+   * A2/A1 ise sade düz metin — üçü birbirine benzemiyordu.
+   * Artık HEPSİ aynı: ince mavi çerçeve, şeffaf arka plan, mavi yazı,
+   * normal yazı boyutu/fontu.
+   */
+  const LEVEL_BADGE_PILL =
+    'inline-flex items-center rounded-full border border-primary/70 bg-transparent px-2.5 py-0.5 text-xs font-normal normal-case text-primary'
   const about = content.about
   const { t } = useT()
+  const vcardUrl = siteUrl('/api/vcard')
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
   const copyValue = (key: string, value: string) => {
     void navigator.clipboard?.writeText(value)
     setCopiedKey(key)
     window.setTimeout(
-      () => setCopiedKey(prev => (prev === key ? null : prev)),
+      () => setCopiedKey((prev) => (prev === key ? null : prev)),
       2000,
     )
   }
@@ -109,7 +132,6 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
           {/* Personal info */}
           <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4">
             <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-start">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={content.profile.profileImage || undefined}
                 alt={`${content.profile.firstName} ${content.profile.lastName} — profil fotoğrafı`}
@@ -139,14 +161,16 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                   <InfoRow
                     label={t('about.infoName')}
                     value={content.profile.firstName}
-                    action={(
+                    action={
                       <CopyValueButton
                         copied={copiedKey === 'name'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
-                        onClick={() => copyValue('name', content.profile.firstName)}
+                        onClick={() =>
+                          copyValue('name', content.profile.firstName)
+                        }
                       />
-                    )}
+                    }
                   />
                   {/*
                     SOYAD — kopyala düğmesi 2026-10-06'da eklendi.
@@ -159,14 +183,16 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                   <InfoRow
                     label={t('about.infoLastName')}
                     value={content.profile.lastName}
-                    action={(
+                    action={
                       <CopyValueButton
                         copied={copiedKey === 'lastName'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
-                        onClick={() => copyValue('lastName', content.profile.lastName)}
+                        onClick={() =>
+                          copyValue('lastName', content.profile.lastName)
+                        }
                       />
-                    )}
+                    }
                   />
                   {/*
                     TAKMA AD SATIRI (2026-10-06, kullanıcı "bozuk" dedi).
@@ -187,50 +213,58 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                   <InfoRow
                     label={t('about.infoNickname')}
                     value={content.profile.nickname}
-                    action={(
+                    action={
                       <CopyValueButton
                         copied={copiedKey === 'nickname'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
-                        onClick={() => copyValue('nickname', content.profile.nickname)}
+                        onClick={() =>
+                          copyValue('nickname', content.profile.nickname)
+                        }
                       />
-                    )}
+                    }
                   />
                   <InfoRow
                     label={t('about.infoPhone')}
                     value={content.contact.phone}
-                    action={(
+                    action={
                       <CopyValueButton
                         copied={copiedKey === 'phone'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
-                        onClick={() => copyValue('phone', content.contact.phone)}
+                        onClick={() =>
+                          copyValue('phone', content.contact.phone)
+                        }
                       />
-                    )}
+                    }
                   />
                   <InfoRow
                     label={t('about.infoEmail')}
                     value={content.contact.email}
-                    action={(
+                    action={
                       <CopyValueButton
                         copied={copiedKey === 'email'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
-                        onClick={() => copyValue('email', content.contact.email)}
+                        onClick={() =>
+                          copyValue('email', content.contact.email)
+                        }
                       />
-                    )}
+                    }
                   />
                   <InfoRow
                     label={t('about.infoDiscord')}
                     value={t('footer.discordHandle')}
-                    action={(
+                    action={
                       <CopyValueButton
                         copied={copiedKey === 'discord'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
-                        onClick={() => copyValue('discord', t('footer.discordHandle'))}
+                        onClick={() =>
+                          copyValue('discord', t('footer.discordHandle'))
+                        }
                       />
-                    )}
+                    }
                   />
                   {/*
                     "Ana Dil" satiri kaldirildi (kullanici istegi): ayni bilgi
@@ -240,6 +274,17 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                 </div>
               </div>
             </div>
+            {/* Dijital kartvisit (Faz 6 · 2) — `/api/vcard` buradan
+                erişilebilir oluyor; içerik girilene kadar gizli. */}
+            {vcard && vcard.enabled !== false && vcardUrl ? (
+              <VCardQr
+                hedef={vcardUrl}
+                qrTarget={vcard.qrTarget}
+                baslik={t('about.vcardTitle')}
+                indirLabel={t('about.vcardDownload')}
+                aciklama={t('about.vcardDescription')}
+              />
+            ) : null}
           </BentoBoxItem>
 
           {/* Languages: structured table. Data stays a plain string
@@ -271,7 +316,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                       </span>
                     </td>
                   </tr>
-                  {parseLanguages(content.profile.otherLanguages).map(row => (
+                  {parseLanguages(content.profile.otherLanguages).map((row) => (
                     <tr
                       key={row.name}
                       className="border-b border-foreground/200/10 last:border-b-0"
@@ -280,9 +325,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                         {row.name}
                       </td>
                       <td className="py-2.5 text-right">
-                        <span className={LEVEL_BADGE_PILL}>
-                          {row.level}
-                        </span>
+                        <span className={LEVEL_BADGE_PILL}>{row.level}</span>
                       </td>
                     </tr>
                   ))}
@@ -314,7 +357,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
                   {t('about.cvEducation')}
                 </p>
                 <ul className="flex flex-col gap-2.5">
-                  {about.cv.education.map(entry => (
+                  {about.cv.education.map((entry) => (
                     <CvEntryItem
                       key={`${entry.company}-${entry.role}`}
                       entry={entry}
@@ -334,7 +377,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
             </p>
             <div className="flex w-full">
               <ul className="mt-3 sm:mt-4 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 w-full">
-                {about.toolbox.map(item => (
+                {about.toolbox.map((item) => (
                   <ToolboxItem key={item.label} item={item} />
                 ))}
               </ul>
@@ -350,7 +393,7 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
             </p>
             <div className="flex w-full">
               <ul className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 w-full">
-                {about.interests.map(item => (
+                {about.interests.map((item) => (
                   <InterestsItem
                     key={item.label}
                     icon={INTEREST_ICONS[item.icon] ?? <CodeIcon size={14} />}
@@ -372,20 +415,10 @@ export function AboutSection({ content, cvs }: { content: SiteContent, cvs: CvDo
  * "İngilizce (A2), Almanca (A1)" → [{ name, level }].
  * Seviye parantezi yoksa boş string döner; ana dil tabloda ayrı satır.
  */
-/**
- * DİLLER KARTI seviye rozeti (2026-10-06, kullanıcı).
- *
- * "Ana Dil" eskiden `bg-primary/15 uppercase text-[11px]` DOLU rozet,
- * A2/A1 ise sade düz metin — üçü birbirine benzemiyordu.
- * Artık HEPSİ aynı: ince mavi çerçeve, şeffaf arka plan, mavi yazı,
- * normal yazı boyutu/fontu.
- */
-const LEVEL_BADGE_PILL
-  = 'inline-flex items-center rounded-full border border-primary/70 bg-transparent px-2.5 py-0.5 text-xs font-normal normal-case text-primary'
-function parseLanguages(raw: string): { name: string, level: string }[] {
+function parseLanguages(raw: string): { name: string; level: string }[] {
   return raw
     .split(',')
-    .map(s => s.trim())
+    .map((s) => s.trim())
     .filter(Boolean)
     .map((entry) => {
       const m = entry.match(/^(.*?)\s*\(([^)]+)\)$/)
@@ -429,9 +462,7 @@ function InfoRow({
         olursa olsun bütün satırlarda aynı x konumunda durur. Aksiyonu
         olmayan satırlar boş hücre bırakır, kopyala sütunu kaymaz.
       */}
-      <span className="flex shrink-0 items-center justify-end">
-        {action}
-      </span>
+      <span className="flex shrink-0 items-center justify-end">{action}</span>
     </div>
   )
 }
@@ -459,13 +490,7 @@ function CopyValueButton({
           : 'border-foreground-200/20 bg-background text-foreground-500 hover:border-primary/50 hover:text-primary'
       }`}
     >
-      {copied
-        ? (
-            <CheckIcon size={13} />
-          )
-        : (
-            <CopyIcon size={13} />
-          )}
+      {copied ? <CheckIcon size={13} /> : <CopyIcon size={13} />}
     </button>
   )
 }
@@ -488,10 +513,7 @@ function CvEntryItem({
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-sm font-semibold leading-tight">{entry.role}</p>
         <p className="text-xs text-foreground-500">
-          {entry.company}
-          {' '}
-          <span className="mx-1.5 opacity-50">•</span>
-          {' '}
+          {entry.company} <span className="mx-1.5 opacity-50">•</span>{' '}
           <span className="text-primary/80">{entry.period}</span>
         </p>
         <p className="mt-1 text-xs text-foreground-500 leading-relaxed">
@@ -512,9 +534,12 @@ function ToolboxItem({ item }: { item: ToolboxItemType }) {
     ikonu." Önce burada her şey için aynı `LinkIcon` vardı.
     `techIcon` etiketten çözer; bulamazsa aşağıdaki genel ikona düşer.
   */
-  const icon = isCommand
-    ? <TerminalIcon size={14} />
-    : techIcon(item.label) ?? (href ? <LinkIcon size={14} /> : <CodeIcon size={14} />)
+  const icon = isCommand ? (
+    <TerminalIcon size={14} />
+  ) : (
+    (techIcon(item.label) ??
+    (href ? <LinkIcon size={14} /> : <CodeIcon size={14} />))
+  )
   const body = (
     <>
       <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">
@@ -529,8 +554,8 @@ function ToolboxItem({ item }: { item: ToolboxItemType }) {
       )}
     </>
   )
-  const chipCls
-    = 'group flex flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-lg hover:shadow-primary/5 min-h-[38px]'
+  const chipCls =
+    'group flex flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-lg hover:shadow-primary/5 min-h-[38px]'
 
   // Command type: clicking copies the command text to the clipboard.
   if (isCommand) {
@@ -539,8 +564,7 @@ function ToolboxItem({ item }: { item: ToolboxItemType }) {
         className={`${chipCls} cursor-pointer`}
         title={href ? t('about.toolboxCopy') : undefined}
         onClick={() => {
-          if (href)
-            void navigator.clipboard?.writeText(href)
+          if (href) void navigator.clipboard?.writeText(href)
         }}
       >
         {body}
@@ -579,11 +603,11 @@ function InterestsItem({
   return (
     <Popover
       placement="bottom"
-      content={(
+      content={
         <div className="max-w-[200px] sm:max-w-[225px] break-words px-1 py-2 text-xs sm:text-sm">
           {content}
         </div>
-      )}
+      }
     >
       <li className="group flex animate-gradient cursor-pointer flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 min-h-[38px]">
         <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">

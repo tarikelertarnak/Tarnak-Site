@@ -40,7 +40,7 @@ export default async function Page() {
       <Navigation content={content} />
       <main id="main" className="w-full">
         <HeroSection content={content} cvs={cvs} />
-        <AboutSection content={content} cvs={cvs} />
+        <AboutSection content={content} cvs={cvs} vcard={phase6?.vcard} />
         <ProjectsSection
           content={content}
           githubUsername={content.settings.githubUsername}
