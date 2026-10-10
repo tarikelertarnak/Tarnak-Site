@@ -31,12 +31,11 @@ branch: faz-1-guvenlik last_commit: 582ef38
 
 ## Current
 
-phase: UX-013 / QR-ONLY DIGITAL KARTVIZIT step: committed (582ef38) — deploy bekliyor
+phase: UX-013 / QR-ONLY DIGITAL KARTVIZIT step: committed (582ef38, 2822a3f) — deploy bekliyor
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 582ef38 (yerel commit; push/deploy ASLA otomatik)
+branch: faz-1-guvenlik last_commit: 2822a3f (yerel commit; push/deploy ASLA otomatik)
 running_processes: (none)
-not: /api/vcard route + "Kartvisiti indir" kaldirildi; QR tek yol. Discord
-"Iletisim Bilgileri"ne tasindi. tsc 0 · eslint temiz · vitest 473/473 (36 dosya).
+not: /api/vcard route + "Kartvisiti indir" kaldirildi; QR tek yol. Discord "Iletisim Bilgileri"ne tasindi. tsc 0 · eslint temiz · vitest 475/475 (36 dosya).
 
 ## KAPANANLAR (2026-10-04)
 

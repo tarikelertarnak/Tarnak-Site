@@ -615,8 +615,11 @@ kullanilmayan `qrTarget` alani kaldirildi.
 `contact-channels.test.ts` (label/value override), `contact-quick-menu.test.tsx`
 (Discord Grubu / Tarnak satiri).
 
-**Dogrulama:** tsc 0 hata · eslint temiz (degisen dosyalar) · vitest 473/473
-(36 dosya) · commit `582ef38` (yerel, branch `faz-1-guvenlik`).
+**Dogrulama:** tsc 0 hata · eslint temiz (degisen dosyalar) · vitest 475/475
+(36 dosya) · commit `582ef38` + `2822a3f` (yerel, branch `faz-1-guvenlik`).
+**Negatif kontrol:** `vcard-qr-only.test.ts` icindeki InfoRow duzeni `text-left`
+-> `text-center` + `justify-between` yapilinca test KIRILDI (kanit), sonra geri
+alindi (`about-section.tsx` HEAD'e birebir dondu, fark yok).
 **Ortam notu:** WSL `pnpm build` eksik `lightningcss.linux-x64-gnu.node`
 native binary yuzunden kirik — temiz agacta da ayni hata (degisiklikle ilgisiz).
 `public/github-data.json` prebuild regen farki commit disi birakildi.
