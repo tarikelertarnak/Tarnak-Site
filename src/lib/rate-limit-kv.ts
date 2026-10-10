@@ -39,7 +39,11 @@ import { clientIp } from '@/lib/client-ip'
  */
 interface KVNamespaceLike {
   get: (key: string, type: 'text') => Promise<string | null>
-  put: (key: string, value: string, options?: { expirationTtl?: number }) => Promise<void>
+  put: (
+    key: string,
+    value: string,
+    options?: { expirationTtl?: number },
+  ) => Promise<void>
 }
 
 async function getKv(): Promise<KVNamespaceLike | null> {
@@ -53,8 +57,7 @@ async function getKv(): Promise<KVNamespaceLike | null> {
     // namespace'leri bu kadar ucuz (1000 yazma/gün).
     const kv = env?.NEXT_INC_CACHE_KV as KVNamespaceLike | undefined
     return kv ?? null
-  }
-  catch {
+  } catch {
     return null
   }
 }
@@ -148,10 +151,16 @@ async function kvFixedWindow(
     }
   }
 
-  // Sayaç dolmadıysa yazma YAPMIYORUZ: KV yazma günlük kotası 1000.
-  // Sınırı aşan ilk istekte yazıyoruz — yani bir kullanıcı günde en çok
-  // "kaç kez sınıra çarptı" sayısı kadar yazma üretir.
-  await kv.put(slotKey, String(n + 1), { expirationTtl: Math.ceil(windowMs / 1000) + 60 })
+  // KV yazma kotası 1000/gün. Fixed-window sayacı artırmak için her GEÇERLİ
+  // istekte (n < limit) put ediyoruz — aksi halde sayaç hiç ilerlemez ve sınır
+  // asla dolamaz (sadece `n === 0`da put yapmak sayarı takip etmeye yeter değil).
+  // Asıl maliyeti düşük sınırlı sayaçlarda (counter: 1h, contact: 5h) hissedemezsiniz:
+  // o kotalar 24*60dk / pencere sıklığından katı küçüktür. Chat (10 dk) gibi
+  // yüksek kotayı, KV put kotasını değil, CPU'yı kısıtlayan faktördür;
+  // `failClosed` zaten orada uygulandı.
+  await kv.put(slotKey, String(n + 1), {
+    expirationTtl: Math.ceil(windowMs / 1000) + 60,
+  })
 
   return {
     ok: true,
@@ -165,7 +174,7 @@ async function kvFixedWindow(
 
 /* ── In-memory fallback (local dev / KV yok) ───────────────────────────── */
 
-const memStore = new Map<string, { n: number, resetAt: number }>()
+const memStore = new Map<string, { n: number; resetAt: number }>()
 
 function memFixedWindow(
   key: string,
@@ -178,8 +187,7 @@ function memFixedWindow(
   const resetAt = (slot + 1) * windowMs
   const cur = memStore.get(slotKey)
 
-  if (memStore.size > 5000)
-    memStore.clear()
+  if (memStore.size > 5000) memStore.clear()
 
   if (cur && cur.n >= limit) {
     return {
@@ -210,12 +218,15 @@ function memFixedWindow(
  *
  * @param scope   Anahtar ön eki (`chat`, `contact`, …). IP otomatik eklenir.
  * @param opts    `{ limit, windowMs, failClosed }`
+ * @param opts.limit     Pencerede izin verilen istek sayısı.
+ * @param opts.windowMs  Pencere uzunluğu (ms).
+ * @param opts.failClosed KV hatasında 429/503 mü, yoksa isteğe devam mı?
  * @param req     İstek — IP için. Verilmezse `anonymous` kullanılır.
  * @param extra   Anahtarın ek parçası (ör. sayaçta proje adı).
  */
 export async function checkLimit(
   scope: string,
-  opts: { limit: number, windowMs: number, failClosed?: boolean },
+  opts: { limit: number; windowMs: number; failClosed?: boolean },
   req?: Request,
   extra?: string,
 ): Promise<LimitResult> {
@@ -228,16 +239,25 @@ export async function checkLimit(
   const ip = req ? clientIp(req) : 'unknown'
   const key = extra ? `${scope}:${ip}:${extra}` : `${scope}:${ip}`
 
-  const effective = ip === 'unknown'
-    ? { limit: Math.max(1, Math.floor(opts.limit / 2)), windowMs: opts.windowMs }
-    : { limit: opts.limit, windowMs: opts.windowMs }
+  const effective =
+    ip === 'unknown'
+      ? {
+          limit: Math.max(1, Math.floor(opts.limit / 2)),
+          windowMs: opts.windowMs,
+        }
+      : { limit: opts.limit, windowMs: opts.windowMs }
 
   const kv = await getKv()
   if (kv) {
     try {
-      return await kvFixedWindow(kv, key, effective.limit, effective.windowMs, now)
-    }
-    catch {
+      return await kvFixedWindow(
+        kv,
+        key,
+        effective.limit,
+        effective.windowMs,
+        now,
+      )
+    } catch {
       // KV HATA VERDİ. Pahalıysa fail-closed, ucuzsa fail-open.
       if (failClosed) {
         return {
@@ -288,7 +308,10 @@ export function rateLimitResponse(result: LimitResult): Response {
  * Başarılı yanıta kalan kota başlıklarını ekler (429 değil, 200'ler).
  * İstemci kalan hakkını arayüzde gösterebilsin diye.
  */
-export function withRateLimitHeaders(res: Response, result: LimitResult): Response {
+export function withRateLimitHeaders(
+  res: Response,
+  result: LimitResult,
+): Response {
   res.headers.set('X-RateLimit-Limit', String(result.limit))
   res.headers.set('X-RateLimit-Remaining', String(result.remaining))
   res.headers.set('X-RateLimit-Reset', String(Math.ceil(result.resetAt / 1000)))

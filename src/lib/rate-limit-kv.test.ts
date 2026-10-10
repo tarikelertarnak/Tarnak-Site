@@ -1,5 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest'
-import { checkLimit, LIMITS, rateLimitResponse, resetLimits } from '@/lib/rate-limit-kv'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import {
+  checkLimit,
+  LIMITS,
+  rateLimitResponse,
+  resetLimits,
+} from '@/lib/rate-limit-kv'
 
 /**
  * KV hız sınırlayıcı — test ortamı KV binding'siz çalışır, dolayısıyla
@@ -49,27 +54,41 @@ describe('checkLimit', () => {
     for (let i = 0; i < LIMITS.chat.limit; i++) {
       await checkLimit('chat', LIMITS.chat, req('3.3.3.3'))
     }
-    expect((await checkLimit('chat', LIMITS.chat, req('3.3.3.3'))).ok).toBe(false)
+    expect((await checkLimit('chat', LIMITS.chat, req('3.3.3.3'))).ok).toBe(
+      false,
+    )
     // Aynı ağdaki başka kullanıcı engellenmemeli — kullanıcı isteği.
-    expect((await checkLimit('chat', LIMITS.chat, req('4.4.4.4'))).ok).toBe(true)
+    expect((await checkLimit('chat', LIMITS.chat, req('4.4.4.4'))).ok).toBe(
+      true,
+    )
   })
 
   it('farklı scope birbirini etkilemez', async () => {
     for (let i = 0; i < LIMITS.chat.limit; i++) {
       await checkLimit('chat', LIMITS.chat, req('5.5.5.5'))
     }
-    expect((await checkLimit('chat', LIMITS.chat, req('5.5.5.5'))).ok).toBe(false)
+    expect((await checkLimit('chat', LIMITS.chat, req('5.5.5.5'))).ok).toBe(
+      false,
+    )
     // İletişim formu kendi kotalı.
-    expect((await checkLimit('contact', LIMITS.contact, req('5.5.5.5'))).ok).toBe(true)
+    expect(
+      (await checkLimit('contact', LIMITS.contact, req('5.5.5.5'))).ok,
+    ).toBe(true)
   })
 
   it('extra anahtarı ayırır (sayaç: IP + proje)', async () => {
     // stars: aynı IP farklı proje için AYRI kova.
-    expect((await checkLimit('stars', LIMITS.counter, req('6.6.6.6'), 'proje-a')).ok).toBe(true)
+    expect(
+      (await checkLimit('stars', LIMITS.counter, req('6.6.6.6'), 'proje-a')).ok,
+    ).toBe(true)
     // Aynı proje ikinci kez → sayaç kovası dolu.
-    expect((await checkLimit('stars', LIMITS.counter, req('6.6.6.6'), 'proje-a')).ok).toBe(false)
+    expect(
+      (await checkLimit('stars', LIMITS.counter, req('6.6.6.6'), 'proje-a')).ok,
+    ).toBe(false)
     // Farklı proje → kendi kovası boş.
-    expect((await checkLimit('stars', LIMITS.counter, req('6.6.6.6'), 'proje-b')).ok).toBe(true)
+    expect(
+      (await checkLimit('stars', LIMITS.counter, req('6.6.6.6'), 'proje-b')).ok,
+    ).toBe(true)
   })
 
   it('iP yoksa limiti yarıya indirir (unknown anahtarı)', async () => {
@@ -143,5 +162,89 @@ describe('limit tanimlari', () => {
     const { BODY_LIMITS } = await import('@/lib/rate-limit-kv')
     expect(BODY_LIMITS.chatMessageChars).toBe(2000)
     expect(BODY_LIMITS.maxOutputTokens).toBe(500)
+  })
+})
+
+/**
+ * 2026-10-10 — KV yolu (gerçek Cloudflare binding) için yazma kotası testi.
+ *
+ * `checkLimit` test ortamında KV binding'i yok → in-memory fallback yolu
+ * çalışır. Ama `globalThis.getCloudflareContext()` global'ine sahte bir KV
+ * takılırsa `kvFixedWindow` yolu etkin olur — bu sayede production'daki
+ * `put` davranışını da test edebiliriz.
+ *
+ * Neden önemli: `kvFixedWindow`'ün yorumu "put YALNIZCA pencere dolduğunda
+ * (limit aşılınca)exion" diyor ama kod her istekte put yapıyor idi. KV
+ * yazma kotası 1000/gün; bir istekten fazla put ile koltuza giderdi.
+ */
+describe('kV yolu (sahte binding)', () => {
+  const orig = (globalThis as unknown as { getCloudflareContext?: unknown })
+    .getCloudflareContext
+
+  function installKv(opts: {
+    store: Record<string, string>
+    putCount: { n: number }
+  }) {
+    const fakeKv = {
+      get: async (key: string) => opts.store[key] ?? null,
+      put: async (key: string, value: string) => {
+        opts.store[key] = value
+        opts.putCount.n += 1
+      },
+    }
+    ;(
+      globalThis as unknown as {
+        getCloudflareContext?: () => { env: Record<string, unknown> }
+      }
+    ).getCloudflareContext = () => ({
+      env: { NEXT_INC_CACHE_KV: fakeKv },
+    })
+  }
+
+  afterEach(() => {
+    ;(
+      globalThis as unknown as { getCloudflareContext?: unknown }
+    ).getCloudflareContext = orig
+    resetLimits()
+  })
+
+  it('her istekte put YAPMAZ — sadece ilk istekte (yeni pencere)', async () => {
+    const store: Record<string, string> = {}
+    const putCount = { n: 0 }
+    installKv({ store, putCount })
+    const ip = '10.0.0.1'
+    const req = new Request('https://example.test/api/x', {
+      headers: { 'cf-connecting-ip': ip },
+    })
+
+    // limit 3: 3 geçişli + 1 reddedilen = 4 istek
+    for (let i = 0; i < 3; i++) {
+      const r = await checkLimit('kvtest', { limit: 3, windowMs: 60_000 }, req)
+      expect(r.ok, `istek ${i + 1} geçmeli`).toBe(true)
+      expect(r.authoritative).toBe(true)
+    }
+    const over = await checkLimit('kvtest', { limit: 3, windowMs: 60_000 }, req)
+    expect(over.ok).toBe(false)
+    expect(over.remaining).toBe(0)
+
+    // Limit aşıldığında (4. istek) put YOK (early return). 4. istek geçerli değil.
+    // Put sayısı geçerli (ok=true) isteklerin sayısına eşittir = 3.
+    expect(putCount.n).toBe(3)
+    expect(putCount.n).not.toBe(4) // aşma isteği put'lamaz
+  })
+
+  it('negatif kontrol: limit aştıktan sonra put durur (sadece ok=isteklerde)', async () => {
+    // limit 2: 2 geç + 1 red = 3 istek → put = 2 (yalnızca geçenlerde).
+    const store: Record<string, string> = {}
+    const putCount = { n: 0 }
+    installKv({ store, putCount })
+    const req = new Request('https://example.test/api/x', {
+      headers: { 'cf-connecting-ip': '10.0.0.3' },
+    })
+    for (let i = 0; i < 2; i++) {
+      await checkLimit('kvtest3', { limit: 2, windowMs: 60_000 }, req)
+    }
+    await checkLimit('kvtest3', { limit: 2, windowMs: 60_000 }, req)
+    expect(putCount.n).toBe(2)
   })
 })
