@@ -30,6 +30,7 @@ import { Section, SectionTitle } from '@/components/ui/section'
 import { techIcon } from '@/components/ui/tech-icons'
 import { VCardQr } from '@/components/vcard-qr'
 import { siteUrl } from '@/lib/site-url'
+import { buildVCard } from '@/lib/vcard'
 
 /** Interest icons — iconify id → SVG (no iconify dependency). */
 const INTEREST_ICONS: Record<string, ReactNode> = {
@@ -60,8 +61,28 @@ export function AboutSection({
     'inline-flex items-center rounded-full border border-primary/70 bg-transparent px-2.5 py-0.5 text-xs font-normal normal-case text-primary'
   const about = content.about
   const { t } = useT()
-  const vcardUrl = siteUrl('/api/vcard')
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
+
+  /*
+   * Dijital kartvizit QR içeriği (Faz 6 · 2; düzenleme).
+   *
+   * vCard indirme route'u ve "Kartvisiti indir" düğmesi KALDIRILDI. Artık tek
+   * yol QR kod: vCard doğrudan `content` (Supabase merge sonrası) üzerinden
+   * `buildVCard(...)` ile üretilir ve QR'ın içine gömülür — telefon tarayınca
+   * kişiyi otomatik tanır. Tüm alanlar content/Supabase kaynaklıdır; uydurma
+   * değer yazılmaz.
+   */
+  const vcardQrMetin = buildVCard({
+    firstName: content.profile.firstName,
+    lastName: content.profile.lastName,
+    displayName: content.profile.displayName,
+    nickname: content.profile.nickname,
+    phone: content.contact.phone,
+    email: content.contact.email,
+    url: siteUrl('/'),
+    social: content.social?.find((s) => s?.href)?.href,
+    note: vcard?.note,
+  })
 
   const copyValue = (key: string, value: string) => {
     void navigator.clipboard?.writeText(value)
@@ -252,20 +273,12 @@ export function AboutSection({
                       />
                     }
                   />
-                  <InfoRow
-                    label={t('about.infoDiscord')}
-                    value={t('footer.discordHandle')}
-                    action={
-                      <CopyValueButton
-                        copied={copiedKey === 'discord'}
-                        label={t('about.copy')}
-                        copiedLabel={t('about.copied')}
-                        onClick={() =>
-                          copyValue('discord', t('footer.discordHandle'))
-                        }
-                      />
-                    }
-                  />
+                  {/*
+                    DİSCORD SATIRI TAŞINDI (2026-10-10, kullanıcı): "Kişisel
+                    Bilgiler"deki Discord satırı kaldırıldı; Discord artık
+                    "İletişim Bilgileri" menüsünde (`contact-channels.ts`,
+                    "Discord Grubu") görünüyor — iletişim yolu oraya ait.
+                  */}
                   {/*
                     "Ana Dil" satiri kaldirildi (kullanici istegi): ayni bilgi
                     "Diller" tablosunda zaten `about.infoFirstLanguage` rozetiyle
@@ -274,14 +287,14 @@ export function AboutSection({
                 </div>
               </div>
             </div>
-            {/* Dijital kartvisit (Faz 6 · 2) — `/api/vcard` buradan
-                erişilebilir oluyor; içerik girilene kadar gizli. */}
-            {vcard && vcard.enabled !== false && vcardUrl ? (
+            {/* Dijital kartvizit (Faz 6 · 2) — QR kod, vCard içeriğini
+                doğrudan taşır (tarayıcı taratınca kişiyi tanır). İndirme
+                düğmesi kaldırıldı; yalnızca QR kaldı ve Faz 6
+                vcard bölümü kapalıysa hiç gösterilmez. */}
+            {vcard && vcard.enabled !== false && vcardQrMetin ? (
               <VCardQr
-                hedef={vcardUrl}
-                qrTarget={vcard.qrTarget}
+                vcardText={vcardQrMetin}
                 baslik={t('about.vcardTitle')}
-                indirLabel={t('about.vcardDownload')}
                 aciklama={t('about.vcardDescription')}
               />
             ) : null}
@@ -438,31 +451,31 @@ function InfoRow({
   action?: ReactNode
 }) {
   /*
-    2026-10-06 (kullanıcı): "Değerleri SOLA yasla ve etiketin hemen
-    yanına/altına get. Etiket sabit genişlikte bir sütunda, değer hemen
-    yanında sola yaslı (grid: etiket sütunu sabit, değer sütunu auto).
-    Kopyala butonları değerin hemen yanında ve BÜTÜN satırlarda aynı
-    dikey hizada. Etiket ve değer yazı boyutları tüm satırlarda aynı."
+    2026-10-10 (kullanıcı): "Değerleri SOLA yasla ve etiketin HEMEN yanına
+    get; 'Ad: Tarık' yakın dursun."
 
-    ÖNCE: `flex justify-between` → etiket sola, değer SAĞA yapışık
-    ("Soyad ......... ELER" görünümü) ve kopyala düğmeleri değer uzunluğuna
-    göre kayıyordu. Şimdi 3 sütunlu grid:
-      1) etiket  → `w-[6.5rem] shrink-0` (sabit)
-      2) değer   → `min-w-0 flex-1 justify-self-start` (sola)
-      3) aksiyon → `w-6 shrink-0` (sabit → her satırda aynı x)
+    ÖNCE: 3 sütunlu grid (`[6.5rem_minmax(0,1fr)_1.75rem]`) — etiket 104px'lik
+    sabit sütuna hapsoluyordu, bu yüzden KISA etiketlerde ("Ad") değer
+    etiketten ~110px uzakta başlıyordu ("Ad .......... TARIK").
+
+    ŞİMDİ: flex satır. Etiket `shrink-0` + ":" ile biter, değer `flex-1` ile
+    etiketin HEMEN yanında başlar (gap = 8px) → "Ad: TARIK". Değer sola
+    yaslıdır; kopyala düğmesi satırın SAĞ ucunda sabit durur (tüm satırlarda
+    aynı hizada).
   */
   return (
-    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)_1.75rem] items-center gap-x-2 border-b border-foreground/200/10 py-2">
-      <span className="truncate text-sm text-foreground/60">{label}</span>
-      <span className="min-w-0 truncate text-left text-sm font-semibold text-foreground">
+    <div className="flex items-center gap-2 border-b border-foreground/200/10 py-2">
+      <span className="shrink-0 text-sm text-foreground/60">{label}:</span>
+      <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-foreground">
         {value.trim() || '—'}
       </span>
       {/*
-        Kopyala düğmesi KENDİ SABİT SÜTUNUNDA (3.) — değer ne kadar uzun
-        olursa olsun bütün satırlarda aynı x konumunda durur. Aksiyonu
-        olmayan satırlar boş hücre bırakır, kopyala sütunu kaymaz.
+        Kopyala düğmesi satırın SAĞ UCUNDA sabit — değer uzunluğundan
+        bağımsız olarak bütün satırlarda aynı x konumunda durur.
       */}
-      <span className="flex shrink-0 items-center justify-end">{action}</span>
+      {action ? (
+        <span className="flex shrink-0 items-center">{action}</span>
+      ) : null}
     </div>
   )
 }

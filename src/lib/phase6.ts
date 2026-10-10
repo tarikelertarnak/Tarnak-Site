@@ -133,8 +133,6 @@ export const vcardSchema = z.object({
   enabled: z.boolean().default(true),
   /** vCard içindeki not */
   note: z.string().max(200).optional(),
-  /** QR kodunda gösterilecek adres (boşsa site adresi) */
-  qrTarget: z.string().max(300).optional(),
 })
 
 /* ── Hukuki sayfalar ─────────────────────────────────────────────────── */

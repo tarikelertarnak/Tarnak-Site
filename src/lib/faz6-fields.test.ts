@@ -34,7 +34,7 @@ describe('fAZ6_BOLUMLERI', () => {
         provider: '',
       },
       videos: { channelId: '', title: 't', maxItems: 4 },
-      vcard: { enabled: true, note: '', qrTarget: '' },
+      vcard: { enabled: true, note: '' },
       privacy: { title: 't', updated: '', body: '', needsLegalReview: true },
       kvkk: { title: 't', updated: '', body: '', needsLegalReview: true },
     }

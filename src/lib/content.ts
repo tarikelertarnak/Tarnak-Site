@@ -80,6 +80,14 @@ export interface SocialItem {
   name: string
   href: string
   icon: string
+  /**
+   * Görünen ad override'ı (ör. `name: 'Tarnak'` → `label: 'Discord Grubu'`).
+   * Boşsa `name` kullanılır. İletişim menüsünde (`contact-channels.ts`)
+   * satır başlığı olur.
+   */
+  label?: string
+  /** Görünen değer override'ı. Boşsa `href`'ten protokol/www sökülür. */
+  value?: string
 }
 
 export interface ProjectItem {

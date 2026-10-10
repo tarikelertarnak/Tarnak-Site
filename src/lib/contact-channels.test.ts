@@ -141,6 +141,56 @@ describe('buildContactChannels', () => {
   })
 })
 
+/**
+ * 2026-10-10 — Discord "Kişisel Bilgiler"den "İletişim Bilgileri"ne taşındı ve
+ * görünen ad/değer `label`/`value` ile override edilebilir oldu
+ * ("Discord Grubu: Tarnak"). Bu blok o yeteneği kilitler.
+ */
+describe('buildContactChannels — sosyal label/value override', () => {
+  const discord: ContactSource = {
+    contact: {},
+    social: [
+      {
+        name: 'Tarnak',
+        href: 'https://discord.gg/s5B53SgMM',
+        icon: 'mdi:discord',
+        label: 'Discord Grubu',
+        value: 'Tarnak',
+      },
+    ],
+  }
+
+  it('label/value verilirse gorunen ad ve deger onlar olur', () => {
+    const c = buildContactChannels(discord, t)[0]
+    expect(c.label).toBe('Discord Grubu')
+    expect(c.value).toBe('Tarnak')
+  })
+
+  it('baglanti ve kopyalanan deger YINE gercek adres kalir', () => {
+    const c = buildContactChannels(discord, t)[0]
+    expect(c.href).toBe('https://discord.gg/s5B53SgMM')
+    expect(c.copyValue).toBe('https://discord.gg/s5B53SgMM')
+  })
+
+  it('id kararli: `name`den turetilir (label`dan degil)', () => {
+    expect(buildContactChannels(discord, t)[0].id).toBe('social-tarnak')
+  })
+
+  it('label ve value yoksa varsayilan (name + adres) kullanilir', () => {
+    const c = buildContactChannels(FULL, t).find(
+      (x) => x.id === 'social-github',
+    )!
+    expect(c.label).toBe('GitHub')
+    expect(c.value).toBe('github.com/tarikelertarnak')
+  })
+
+  it('label ile de arama eslesir (discord grubu)', () => {
+    expect(
+      filterChannels(buildContactChannels(discord, t), 'discord grubu'),
+    ).toHaveLength(1)
+  })
+})
+
 describe('filterChannels', () => {
   const channels = buildContactChannels(FULL, t)
 

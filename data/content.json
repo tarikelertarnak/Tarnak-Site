@@ -63,7 +63,9 @@
     {
       "name": "Tarnak",
       "href": "https://discord.gg/s5B53SgMM",
-      "icon": "mdi:discord"
+      "icon": "mdi:discord",
+      "label": "Discord Grubu",
+      "value": "Tarnak"
     }
   ],
   "about": {
@@ -277,8 +279,7 @@
     },
     "vcard": {
       "enabled": true,
-      "note": "",
-      "qrTarget": ""
+      "note": ""
     },
     "privacy": {
       "title": "Gizlilik Politikası",

@@ -37,7 +37,19 @@ export interface ContactSource {
     location?: string
     locationYandex?: string
   }
-  social?: { name: string, href: string, icon: string }[]
+  /**
+   * Sosyal kanallar. `label`/`value` istege baglidir ve `name`/`href`'i
+   * GORUNUM icin geri plana iter (orn. Discord girdisi: `name: 'Tarnak'`
+   * ama ekranda `label: 'Discord Grubu'`, `value: 'Tarnak'` gorunur).
+   * `href` yine gercek baglantidir (tiklayinca acilir).
+   */
+  social?: {
+    name: string
+    href: string
+    icon: string
+    label?: string
+    value?: string
+  }[]
 }
 
 /**
@@ -105,7 +117,15 @@ export function buildContactChannels(
       href: content.contact.location.trim(),
       copyValue: content.contact.location.trim(),
       icon: 'location',
-      keywords: ['konum', 'harita', 'adres', 'location', 'map', 'google', 'nerede'],
+      keywords: [
+        'konum',
+        'harita',
+        'adres',
+        'location',
+        'map',
+        'google',
+        'nerede',
+      ],
     })
   }
 
@@ -118,7 +138,15 @@ export function buildContactChannels(
       href: content.contact.locationYandex.trim(),
       copyValue: content.contact.locationYandex.trim(),
       icon: 'location',
-      keywords: ['konum', 'harita', 'adres', 'location', 'map', 'yandex', 'nerede'],
+      keywords: [
+        'konum',
+        'harita',
+        'adres',
+        'location',
+        'map',
+        'yandex',
+        'nerede',
+      ],
     })
   }
 
@@ -126,15 +154,29 @@ export function buildContactChannels(
     if (!item?.href) {
       continue
     }
+    // Gorunen ad/deger: `label`/`value` varsa onlar, yoksa name + adres.
+    const gorunenAd = item.label?.trim() || item.name
+    const gorunenDeger =
+      item.value?.trim() || item.href.replace(/^https?:\/\/(www\.)?/, '')
+    const aramaKelimeleri = [
+      'sosyal',
+      'social',
+      'profil',
+      'profile',
+      item.name.toLowerCase(),
+    ]
+    if (item.label?.trim()) {
+      aramaKelimeleri.push(item.label.trim().toLowerCase())
+    }
     channels.push({
       id: `social-${item.name.toLowerCase()}`,
       kind: 'social',
-      label: item.name,
-      value: item.href.replace(/^https?:\/\/(www\.)?/, ''),
+      label: gorunenAd,
+      value: gorunenDeger,
       href: item.href,
       copyValue: item.href,
       icon: item.icon || 'mdi:link',
-      keywords: ['sosyal', 'social', 'profil', 'profile', item.name.toLowerCase()],
+      keywords: aramaKelimeleri,
     })
   }
 
@@ -151,7 +193,9 @@ export function filterChannels(
     return [...channels]
   }
   return channels.filter((c) => {
-    const haystack = [c.label, c.value, ...c.keywords].map(foldForSearch).join(' ')
+    const haystack = [c.label, c.value, ...c.keywords]
+      .map(foldForSearch)
+      .join(' ')
     return haystack.includes(needle)
   })
 }
@@ -162,7 +206,7 @@ export function groupChannels(channels: readonly ContactChannel[]): {
   social: ContactChannel[]
 } {
   return {
-    builtin: channels.filter(c => c.kind !== 'social'),
-    social: channels.filter(c => c.kind === 'social'),
+    builtin: channels.filter((c) => c.kind !== 'social'),
+    social: channels.filter((c) => c.kind === 'social'),
   }
 }

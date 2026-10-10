@@ -193,16 +193,10 @@ export const FAZ6_BOLUMLERI: BolumSpec[] = [
   {
     anahtar: 'vcard',
     baslik: 'Dijital kartvizit',
-    aciklama: 'Hakkımda bilgi kartındaki QR + indirme düğmesi.',
+    aciklama: 'Hakkımda kartındaki QR kod — telefon taratınca kişiyi tanır.',
     alanlar: [
       { anahtar: 'enabled', etiket: 'Göster', tip: 'bool' },
       { anahtar: 'note', etiket: 'vCard notu', tip: 'text' },
-      {
-        anahtar: 'qrTarget',
-        etiket: 'QR hedefi',
-        tip: 'text',
-        ipucu: 'Boşsa /api/vcard adresi',
-      },
     ],
   },
   {

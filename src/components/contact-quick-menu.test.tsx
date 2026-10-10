@@ -479,3 +479,49 @@ describe('contactQuickMenu', () => {
     expect(activeIdx()).toBe(0)
   })
 })
+
+/* ----------------------------------------------------------------- Discord
+ * 2026-10-10 — Discord "Kişisel Bilgiler"den "İletişim Bilgileri"ne taşındı
+ * ve `label`/`value` override'ıyla "Discord Grubu: Tarnak" gösteriliyor.
+ */
+const DISCORD_CONTENT = {
+  contact: {},
+  social: [
+    {
+      name: 'Tarnak',
+      href: 'https://discord.gg/s5B53SgMM',
+      icon: 'mdi:discord',
+      label: 'Discord Grubu',
+      value: 'Tarnak',
+    },
+  ],
+} as unknown as SiteContent
+
+describe('contactQuickMenu — discord kanalı', () => {
+  const open = () => {
+    render(<ContactQuickMenu content={DISCORD_CONTENT} />)
+    fireEvent.click(screen.getByRole('button', { name: /İletişim Bilgileri/ }))
+  }
+
+  it('etiket "Discord Grubu", değer "Tarnak" olarak gösterilir', () => {
+    open()
+    const menu = within(screen.getByRole('menu'))
+    expect(menu.getByText('Discord Grubu')).toBeTruthy()
+    expect(menu.getByText('Tarnak')).toBeTruthy()
+  })
+
+  it('satır sosyal grup altında, tiklandığında davet bağlantısına gider', () => {
+    const spy = vi.spyOn(window, 'open').mockImplementation(() => null)
+    open()
+    const link = within(screen.getByRole('menu'))
+      .getByText('Tarnak')
+      .closest('a')!
+    expect(link.getAttribute('href')).toBe('https://discord.gg/s5B53SgMM')
+    fireEvent.click(link)
+    expect(spy).toHaveBeenCalledWith(
+      'https://discord.gg/s5B53SgMM',
+      '_blank',
+      'noopener,noreferrer',
+    )
+  })
+})
