@@ -885,3 +885,16 @@ yetki kapısı 2) · `tsc` 0 · `eslint . --max-warnings 0` **0** · e2e **62/62
 
 - `supabase/chat.sql` (blocked kolonu) **ve** `profiles.nickname` ALTER'i
   Supabase SQL Editor'da çalıştırılmalı. O ana kadar API 503 döner.
+
+---
+
+## [2026-10-11] SMOKE TEST (kullanici: "test 5")
+
+- `pnpm test` -> **540/540 PASS** (45 dosya, 28.2s, cikis kodu 0), run-safe logu:
+  `%TEMP%\opencode\runs\20261011-234052-470.out.log`
+- stderr dolu ama beklenen: `content.test.ts` EROFS mesajlari + `api/github/route.test.ts`
+  status 500 negatif-yol ciktilari.
+- **Tekrar (ayni istek yeniden verildi, 23:49)** `pnpm test` -> **540/540 PASS**
+  (45 dosya, 25.8s, cikis kodu 0): `%TEMP%\opencode\runs\20261011-234950-840.out.log`
+  HEAD c1ecb83 · branch faz-1-guvenlik. Ilk kosunun LOG kaydi commit'lenmedigi icin
+  bu turda `chore(tarmas): smoke test kaydi` ile yerel commit'lendi (push YOK).
