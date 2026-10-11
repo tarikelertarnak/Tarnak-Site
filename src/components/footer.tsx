@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
-import { ArrowUpRightIcon } from '@/components/ui/icons'
+import { ArrowUpRightIcon, ChevronUpIcon } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
 import { buildSiteNavigation } from '@/lib/site-navigation'
 
@@ -50,7 +50,10 @@ export function Footer({ content }: { content: SiteContent }) {
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 md:px-8">
         <div className="relative rounded-3xl border border-surface-border bg-background">
           {/* Notr ust cerceve — RENKLI gradient yok (kart tam siyah kalir) */}
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 overflow-hidden rounded-3xl"
+          >
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-foreground-200/25 to-transparent" />
           </div>
 
@@ -91,13 +94,13 @@ export function Footer({ content }: { content: SiteContent }) {
                 </p>
 
                 <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
-                  {groups.map(group => (
+                  {groups.map((group) => (
                     <div key={group.id} className="flex flex-col gap-2">
                       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground-500/70">
                         {group.title}
                       </p>
                       <ul className="flex flex-col gap-1">
-                        {group.entries.map(entry => (
+                        {group.entries.map((entry) => (
                           <li key={entry.id}>
                             <Link
                               href={entry.href}
@@ -122,23 +125,33 @@ export function Footer({ content }: { content: SiteContent }) {
                 aksi halde kart dolgusunun icinde kisa bir cizgi gibi duruyordu. */}
             <div className="-mx-6 mt-8 flex flex-col items-center gap-3 border-t border-foreground-200/10 px-6 pt-5 sm:-mx-10 sm:flex-row sm:justify-between sm:px-10">
               <p className="text-center text-xs text-foreground-500 sm:text-left sm:text-sm">
-                &copy;
-                {' '}
-                {year}
-                {' '}
-                {content.footer.copyright}
-                {' '}
-                &middot;
-                {' '}
+                &copy; {year} {content.footer.copyright} &middot;{' '}
                 {t('footer.rights')}
               </p>
 
+              {/*
+                "Başa dön" düğmesi (2026-10-10, UX-007).
+
+                Sorun: düğme `text-xs` ve çıplak `<button>` idi — dolgısız, ikonu
+                yok. Tıklama hedefi ~16×60px: WCAG 2.5.8 (AA) 24×24px minimum
+                istiyor, mobilde "Başa dön" için pratikte dokunulamaz.
+
+                Düzeltme: `min-h-11` (44px) + `inline-flex` ile hedefi 44px'e
+                çıkarıyoruz (buton yüksekliği standardı ile aynı — bkz.
+                ui/button.tsx `!h-11`). İkon `group` hover'unda hafifçe yukarı
+                kayar (tıklama geri bildirimi), metin rengi primary'e döner.
+                `focus-visible` halkası jetondan gelir (globals.css).
+              */}
               <button
                 type="button"
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="cursor-pointer text-xs text-foreground-500 transition-colors hover:text-primary"
+                className="group inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm text-foreground-500 transition-colors hover:text-primary focus-visible:outline-none"
               >
-                {t('footer.backToTop')}
+                <ChevronUpIcon
+                  size={14}
+                  className="shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5"
+                />
+                <span>{t('footer.backToTop')}</span>
               </button>
             </div>
           </div>
