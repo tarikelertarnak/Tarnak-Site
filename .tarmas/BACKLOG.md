@@ -52,6 +52,8 @@
 - [ ] UX-003 "Login"/"Sign" etiketleri ✓ yapıldı
 - [ ] UX-004 Akıllı form uyarıları ✓ yapıldı
 - [ ] UX-005 Mavi seçim vurgusu düzeltildi ✓ yapıldı
+- [x] UX-007 Footer: "Başa dön" düğmesi WCAG 2.5.8 uyumlu dokunma hedefi (min-h-11/44px) + ikon ✓ 2026-10-11 (`footer.test.tsx`, negatif kontrol)
+- [x] UX-010 Boş durumlar (`projects.empty`) 8 dilde doğrulandı, eksik yok ✓ 2026-10-11
 
 ## Master phases (role-based sweeps)
 
@@ -73,6 +75,7 @@
 - [ ] UX-007 Footer iyilestirmesi
 - [ ] UX-008 Light theme buglari (reproduce + fix)
 - [ ] UX-009 Hero description admin/Puck formunda duzenlenebilir mi — dogrula
+- [ ] UX-007b admin-panel.tsx pre-existing lint hatalari — **cozuldu 2026-10-11** (lint:strict 0)
 - [ ] UX-010 Player/projects localized bos durum ("Henuz proje yok") dogrula
 - [ ] DOC-001 Cok dilli CV (17 locale PDF/HTML) — **kullanici karari**
 - [ ] SEO-011 Gercek blog yazisi (posts=0, uydurma icerik uretilmez)

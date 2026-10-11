@@ -1,7 +1,7 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-10T16:20:00+03:00
+updated: 2026-10-11T06:10:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
 branch: faz-1-guvenlik last_commit: 582ef38
@@ -31,11 +31,13 @@ branch: faz-1-guvenlik last_commit: 582ef38
 
 ## Current
 
-phase: UX-013 / QR-ONLY DIGITAL KARTVIZIT step: committed (582ef38, 2822a3f) — deploy bekliyor
+phase: TARMAS / SERBEST FAZI — lint borcu sifirlandi step: committed (bae5b59) — deploy bekliyor
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 2822a3f (yerel commit; push/deploy ASLA otomatik)
+branch: faz-1-guvenlik last_commit: bae5b59 (yerel commit; push/deploy ASLA otomatik)
 running_processes: (none)
-not: /api/vcard route + "Kartvisiti indir" kaldirildi; QR tek yol. Discord "Iletisim Bilgileri"ne tasindi. tsc 0 · eslint temiz · vitest 475/475 (36 dosya).
+not: UX-013 (QR-only kartvisit + Discord tasima) KAPANDI. Serbest fazda lint:strict 726 -> 0,
+"yildiza gore"/"forka gore" siralamasi duzeltildi (HIC calismiyordu), olu kod temizlendi,
+lint-staged Prettier/ESLint cakismasi cozuldu. **lint:strict 0 · tsc 0 · vitest 484/484 (38 dosya)**.
 
 ## KAPANANLAR (2026-10-04)
 

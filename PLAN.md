@@ -1,25 +1,32 @@
-# TARMAS PLAN — serbest otonom (2026-10-10)
+# TARMAS PLAN — serbest otonom (2026-10-10 → 11)
 
-## Bağlam
+## Durum (2026-10-11 kapanışı)
 
-- site/ Next.js 16.4.0 / React 19.1 / TS 5.9 strict / pnpm — branch `faz-1-guvenlik`.
-- Canlı: tarikelertarnak.pages.dev (build db76e23c). Yerel `pnpm build` kırık
-  (WSL lightningcss native binary; `public/github-data.json` her build'de regen).
-- Geçen tur: UX-013 kartvizit (582ef38) + doküman logları (8986337, 536a2ab).
+**Hepsi bitti:** `lint:strict` 726→0 · `tsc` 0 · `vitest` 484/484 (38 dosya) · ağaç temiz.
+Branch `faz-1-guvenlik`, HEAD `bae5b59` (sonrasında docs commit).
 
-## Fırsat envanteri
+## Yapılanlar (kanıtlı)
 
-| #   | Kat.     | Etki×Efor | Madde                                                                                                           | Kanıt                                         |
-| --- | -------- | --------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| 1   | Güv      | H×L       | Backlogdaki SEC-001..006 çoğu kodda yapılmış. Backlog'u güncelle, `rate-limit-kv.ts` kırık put-yorumunu düzelt. | kod kontrolü + negatif kontrol test (✓ 13/13) |
-| 2   | Perf     | H×L       | `getCvs`/`getContent` her istekte Supabase'ye gidiyor (PERF-005). Module-level cache TTL yok mu?                | grep cacheTTL                                 |
-| 3   | Test     | M×L       | `src/app/api/github/route.test.ts` ertsi hatasız mı? (stderr 500/trace)                                         | grep                                          |
-| 4   | Güv      | H×M       | `/api/contact` honeypot/turnstile yok mu? (AGENTS §5: Form_BOT_PROTECTION var mı?)                              | grep                                          |
-| 5   | UI       | M×L       | `lint:strict` 687 hata → `--max-warnings 0` sadece changed-file. Full cleanup var mı?                           | eslint                                        |
-| 6   | Frontend | L×L       | `public/` 247 dosya — asla silme kuralı (✓, gitignore yok)                                                      | n/a                                           |
-| 7   | Backend  | M×M       | 1102/1103/1104 — yeni fırsat: `pages-copy-worker.cjs` / wrangler config güncel mi?                              | grep                                          |
-| 8   | Rakip    | L×L       | last30days: kimler "QR-only vCard" trendi? (harmless, fırsat)                                                   | agent-reach                                   |
+- **UX-013** (önceki tur): `/api/vcard` + "Kartvisiti indir" kaldırıldı; QR-only vCard;
+  Discord "İletişim Bilgileri"ne taşındı; InfoRow sola yaslandı.
+- **CANLI BUG**: "Yıldıza göre"/"Fork'a göre" sıralama hiç çalışmıyordu (`default-case-last`).
+- **Kök düzeltme**: lint-staged Prettier/ESLint çakışması → commit bozuk kod kaydediyordu.
+- **UX-007** footer a11y, **UX-010** boş durum doğrulama, ölü kod temizliği (Navigation.content,
+  SettingsModal.githubUsername, ContentPlaceholder, bozuk `sign()`, AvatarDot.name, vb.).
+- Backlog'daki SEC-001..005, PERF-005/006 **zaten kodda yapılmışmış** — doğrulanıp işaretlendi.
 
-## Seçim (ilk açık madde)
+## Kalan (kullanıcı/karar gerektiren — otomatik yapılamaz)
 
-[1] isaretli backlog güncelle + put-yorum düzeltmesi (hâlâ yapımıyor — yorum sadece).
+- Deploy + Google OAuth `GOCSPX-` secret rotate (kullanıcı onayı).
+- Doc-001 çok dilli CV (17 locale), SEO-011 gerçek blog yazısı, SEO-012 Bing/IndexNow.
+- **Build doğrulaması**: WSL'de eksik `lightningcss.linux-x64-gnu.node` → yerelde
+  `pnpm build` çalışmıyor (ortam, temiz ağaçta da). Deploy CI'da doğrulanacak.
+- `public/github-data.json` her build'de regen olur (artifact).
+
+## Yeni fırsat envanteri (gelecek turlar)
+
+- [ ] `open-next.config.ts` / `wrangler` ayarları güncel mi (1102 sonrası).
+- [ ] Lighthouse/perf: `perf:ci` CI'da çalışıyor mu, eşikler sağlıklı mı.
+- [ ] Chat `/api/chat` fail-closed KV + günlük limit canlı doğrulaması.
+- [ ] Admin paneli güvenlik: `/api/admin/data/[resource]` yetki kontrolü her resource için.
+- [ ] Kalan ölü `infoDiscord` i18n anahtarı (8 dilde zararsız, isteğe bağlı temizlik).

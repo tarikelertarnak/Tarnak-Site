@@ -624,3 +624,57 @@ alindi (`about-section.tsx` HEAD'e birebir dondu, fark yok).
 native binary yuzunden kirik — temiz agacta da ayni hata (degisiklikle ilgisiz).
 `public/github-data.json` prebuild regen farki commit disi birakildi.
 **Kalan:** canli deploy + Google OAuth secret rotate kullanici onayinda.
+
+### SERBEST FAZ — lint borcu sifirlandi + SIRALAMA BUG'I (2026-10-11)
+
+**`lint:strict` 726 -> 0.** CI kapisi `eslint --max-warnings 0` oldugu halde 726 hata
+birikiydi; kapı islevsizdi. 702 hata `eslint --fix` ile, 24 tanesi elle cozuldu.
+
+**CANLI BUG (bulundu, duzeltildi):** `projects-grid.tsx` → `score()` icindeki
+`switch (sort)` blogunda `default:` case'i `case 'stars'` ve `case 'forks'`
+satirlarindan ONCE geliyordu. JS'te `default` nerede olursa olsun ilk eslesmede
+calisir → `score()` her kosulda `0` donuyordu. **"Yildiza gore" ve "Forka gore"
+siralamalari HIC calismiyordu** — kullanici hata mesaji gormeden liste yerinde
+duruyordu (sessiz bozuk ozellik). `eslint default-case-last` yakaladi.
+Regresyon: `projects-grid.sort-contract.test.ts` (kaynak sozlesmesi; repo'nun
+`no-hash-links` / `vcard-qr-only` deseni). Negatif kontrol 3 adimli dogrulandi:
+duzeltilmis→yesil, bozuk→kirik, byte-exact geri yukleme→yesil.
+
+**KOK DUZELTME (tooling):** `.lintstagedrc.json` hem `eslint --fix` hem
+`prettier --write` calistiriyordu. `@antfu/eslint-config` stilleri
+(`operator-linebreak`, `if-newline`, `arrow-parens`) Prettier ile CELISIYOR:
+prettier satirlari geri sariyor, eslint duzeltiyor → her commit flip-flop.
+Ilk denemede hook sonrasi **1092 lint hatasi** ile BOZUK kod commit'lendi.
+CI yalnizca eslint calistirdigi icin ESLint tek bicim sahibidir → Prettier
+TS/TSX/JS icin lint-staged'dan KALDIRILDI (json/css/md/yml'de kaldi).
+
+**Olu kod temizligi:** Navigation'in kullanilmayan `content` prop'u (25 cagiran
+guncellendi; ardindan 6 sayfada yalnizca bu yuzla cagrilan `getContent()` /
+`getStaticLocalizedContent()` cagrilari kaldirildi) · SettingsModal'in olu
+`githubUsername` prop'u · `country-select`/`searchable-combobox`/
+contact-quick-menu/back-to-list-button'de olu degerler · hic kullanilmayan
+`ContentPlaceholder` (kullaniciya gosterilen "TODO" metni) · `auth.ts` icindeki
+olu ve BOZUK `sign()` (Promise'u `as unknown as string` ile cast ediyordu) +
+`require()` · top-bar `<a href="/">` → `next/link` · olu `AvatarDot.name` ·
+kullanilmayan regex capture gruplari non-capturing · testlerde `vi.hoisted`.
+
+**UX-007 (footer):** "Basasa don" dugmesi `text-xs` + dolgusuzdu → tiklama hedefi
+~16px (WCAG 2.5.8 AA min 24px). `min-h-11` (44px) + ikon eklendi. Test:
+`footer.test.tsx` 4 test, negatif kontrol dogrulandi (sinif kaldirilinca kirildi).
+
+**UX-010 dogrulandi:** `projects.empty` anahtari 8 dilde mevcut ve dogru cevrilmis.
+
+**Backlog dogrulamasi:** SEC-001..005 kodda ZATEN yapilmis (backlog bayatti):
+`SAFE_SEGMENT` path-traversal korumasi, login `guardWrite`+IP kilidi, KV rate limit,
+stars `LIMITS.counter`. SEC-002 (Puck) ve SEC-006 (RLS) kod YOK — Puck tamamen
+kaldirilmis, RLS SQL Editor'de calistirilmamis (kullanici karari). PERF-005/006
+zaten yazili (cvCache 5 dk TTL; SearchDialog `nextDynamic`). SEO-007 sarih: sitemap
+zaten dogru (dinamik + noindex rotalar disarida).
+
+**DOGRULAMA:** `lint:strict` **0** · `tsc --noEmit` **0** · `vitest` **484/484** (38 dosya).
+
+**Commitler (yerel, `faz-1-guvenlik`):** `db83900` (tooling) · `847d340` (bilesenler) ·
+`bae5b59` (sayfalar). `68bdc92` siralama bug fix'i · `d327f29`/ara commitler geri alindi.
+
+**Not:** `public/github-data.json` `prebuild` regen artifactidir ve `d327f29` ile
+commit'lendi; her build'de degisir.
