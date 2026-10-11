@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeNextRows, computeVisibleCount } from '@/lib/use-row-pagination'
+import { computeNextRows, computeNextVisibleCount, computeVisibleCount } from '@/lib/use-row-pagination'
 
 /*
   2026-10-06 — kullanıcının istediği senaryolar.
@@ -104,5 +104,28 @@ describe('computeNextRows', () => {
     expect(computeNextRows(20, 3, 6)).toBe(1)
     // 7 satır = 21 ≥ 20 → hepsi bitti
     expect(computeNextRows(20, 3, 7)).toBe(0)
+  })
+})
+
+describe('computeNextVisibleCount ("+N · −M" rozeti, 2026-10-11 kullanıcı isteği)', () => {
+  it('288 kart, N=3, 2 satır: şimdi 6 görünür → +6 açılır, 282 gizli kalır', () => {
+    // next = visibleRows+2 = 4 satır = 12 kart → willOpen = 12 − 6 = 6
+    expect(computeNextVisibleCount(288, 3, 2)).toBe(12)
+  })
+
+  it('açılacak sayı hiçbir zaman kalandan büyük olmaz (kalan kadar)', () => {
+    // 8 kart: 6 görünür, 2 kaldı → 1 satır (3) değil, sadece 8 (1 fazla satır açılmaz)
+    expect(computeNextVisibleCount(8, 3, 2)).toBe(8)
+    // 7 kart: 6 görünür, 1 kaldı
+    expect(computeNextVisibleCount(7, 3, 2)).toBe(7)
+  })
+
+  it('kalan boş hücrelere sığıyorsa buton yok → toplam DEĞİŞMEZ', () => {
+    expect(computeNextVisibleCount(5, 3, 2)).toBe(5)
+    expect(computeNextVisibleCount(6, 3, 2)).toBe(6)
+  })
+
+  it('total 0 → 0', () => {
+    expect(computeNextVisibleCount(0, 3, 2)).toBe(0)
   })
 })

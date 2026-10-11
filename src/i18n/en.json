@@ -457,8 +457,8 @@
   "chat.rateLimitedCooldown": "You're going too fast. You can send again in {seconds} seconds.",
   "about.infoLastName": "Last name",
   "about.infoNickname": "Nickname",
-  "common.showMore": "Show More ({count})",
-  "common.showMoreAria": "Show {count} more cards",
+  "common.showMore": "Show More (+{opening} · −{count})",
+  "common.showMoreAria": "Show {opening} more cards, {count} stay hidden",
   "form.errRateLimited": "You are going too fast. Try again in {seconds} seconds.",
   "form.infoRateLimited": "You sent too many messages. Try again in {seconds} seconds.",
   "nav.uses": "What I Use",
@@ -490,7 +490,6 @@
   "chat.notRead": "Not read",
   "chat.notDelivered": "Not delivered",
   "chat.backToList": "Back to conversations",
-  "chat.noRecipients": "No other users yet.",
   "chat.pickRecipient": "Who do you want to write to?",
   "chat.block": "Block",
   "chat.clearConversation": "Clear conversation",
@@ -515,5 +514,11 @@
   "chat.unfavorite": "Remove from favorites",
   "chat.unpinConversation": "Unpin conversation",
   "chat.viewProfile": "View profile",
-  "chat.website": "Website"
+  "chat.website": "Website",
+  "chat.presenceOnline": "Online",
+  "chat.presenceOffline": "Offline",
+  "chat.presenceActive": "About to send something",
+  "chat.presenceTyping": "typing…",
+  "chat.presenceUploading": "uploading a file…",
+  "chat.presenceRecording": "sending a voice message…"
 }

@@ -24,7 +24,7 @@ export default async function NotFound() {
         <div className="flex flex-col xs:flex-row gap-3">
           <Link
             href="/"
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#e5e7eb] px-5 py-2.5 text-sm font-semibold text-[#000] transition-colors hover:bg-[#d1d5db]"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-foreground/10 px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/20"
           >
             <svg
               viewBox="0 0 24 24"

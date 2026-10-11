@@ -48,7 +48,7 @@ export default async function GithubOwnerPage({
             href={githubUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#e5e7eb] px-3 text-sm font-medium text-black no-underline transition-colors hover:bg-[#d1d5db]"
+            className="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-foreground/10 px-3 text-sm font-medium text-foreground no-underline transition-colors hover:bg-foreground/20"
           >
             <GithubIcon size={15} />
             {isEn ? 'Open GitHub' : 'GitHub\'da aç'}

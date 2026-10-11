@@ -303,7 +303,7 @@ setIsOpen(false)
         <SiteLogo size={30} className="shrink-0" />
         <span className="truncate text-base font-bold tracking-tight text-foreground">
           TARIK ELER
-          <span className="text-white/30"> — </span>
+          <span className="text-foreground/30"> — </span>
           {/* Ayni duzeltme top-bar.tsx'te de var: cyan diger mavilerle
               uyusmuyordu → artik `primary`. */}
           <span className="font-black text-primary">TARNAK</span>

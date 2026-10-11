@@ -898,3 +898,94 @@ yetki kapısı 2) · `tsc` 0 · `eslint . --max-warnings 0` **0** · e2e **62/62
   (45 dosya, 25.8s, cikis kodu 0): `%TEMP%\opencode\runs\20261011-234950-840.out.log`
   HEAD c1ecb83 · branch faz-1-guvenlik. Ilk kosunun LOG kaydi commit'lenmedigi icin
   bu turda `chore(tarmas): smoke test kaydi` ile yerel commit'lendi (push YOK).
+
+---
+
+## [2026-10-12] KULLANICI PAKETI 2 — "+N/−M" rozeti · tema yazı rengi kuralı · kişi listesi + durum noktaları
+
+Kullanıcının üç ayrı isteği tek turda kapandı. Taban: `d9f355e` (vitest 540/540).
+
+### A. "Daha Fazlasını Göster (+açılacak · −gizli)"
+
+- `use-row-pagination.ts` → yeni **saf** `computeNextVisibleCount(total, columns,
+visibleRows)` + hook dönüşüne `willOpen`. Sayılar `computeVisibleCount` ve
+  `computeNextRows`ten türetilir; ikinci bir "kaç açılacak" mantığı YAZILMADI.
+- `load-more-button.tsx` → yeni `opening` prop'u; etiket `+{opening} · −{remaining}`.
+- Çağrı yerleri: `projects-grid.tsx`, `blog-section.tsx`.
+- 8 dilde `common.showMore` / `common.showMoreAria` güncellendi (tr/en .json,
+  de/es/fr/ja/pt/ru .ts).
+
+### B. Tema yazı rengi kuralı (kullanıcı: "koyu temada asla siyah, açık temada asla beyaz")
+
+12 düzenleme. **Gerçek bulunan hatalar:**
+
+1. `projects/project-card.tsx` indirme menüsü öğeleri `text-white` — panel
+   `bg-background/95` (AÇIK temada beyaz) → **beyaz üstüne beyaz, yazı görünmüyordu**.
+   → `text-foreground`.
+2. `sidebar.tsx` `text-white/30` — panel `bg-[#0a0a0e]` ama `globals.css:643`
+   açık temada onu `#f8f8fa`ya çeviriyor → **görünmez tire**. → `text-foreground/30`.
+3. `chat-window.tsx` + `admin/chat-panel.tsx` sohbet balonu/butonu `bg-primary text-black`
+   → koyu temada siyah kalıyordu. → `text-primary-fg`.
+4. `app/not-found.tsx`, `app/github/[owner]/page.tsx` sabit `bg-[#e5e7eb] text-black`
+   → `bg-foreground/10 text-foreground`.
+
+**Meşru istisnalar (korundu, gerekçeli):** `layout.tsx` tema-çifti (`dark:` varyantlı),
+amber→orange gradyan avatarlar (sabit çip), lightbox `bg-black/90` (`text-white`),
+`bg-danger text-white` kırmızı buton, `bg-white/10` medya üstü katman, `bg-white/10` overlay.
+
+**Kural kalıcı teste bağlandı** (`src/lib/theme-contrast.test.ts`, +2 test):
+
+- `bg-primary` üzerinde sert `text-black` de yasak (eskiden yalnız `text-white` denetleniyordu).
+- Sabit `text-white`/`text-black` yalnız **temadan bağımsız zeminlerde** kullanılabilir;
+  "güvenli zemin" işaretleri: `dark:`/`light:` varyantı, sabit gradyan çip, `bg-black/N`,
+  `bg-white/(5|10|15|20)`, `bg-danger`. Yeni bir sabit renk → test kırılır.
+
+### C. Kişi listesi + çevrimiçi/sarı nokta + hiyerarşi
+
+Kullanıcı: "kendim bile her kim kayıtlıysa herkez orada gözüksün", "yeşil kırmızı sarı
+yuvarlak", sarı = "karşı taraf bana bir şey göndermek üzere".
+
+- **Yeni saf modül `src/lib/chat-peers.ts`** (Supabase importu YOK → istemci-güvenli):
+  `presenceOf(lastSeenAt, state, now)` · `peerRank` · `sortPeers` ·
+  `PRESENCE_UI` · `PRESENCE_STATE_LABEL_KEY` · `PRESENCE_ONLINE_MS=60_000` ·
+  `PRESENCE_ACTIVE_MS=20_000`.
+- **Şema:** `profiles.last_seen_at`, `profiles.presence_state`; `chat_conversations
+.last_preview`, `.last_sender_name` (+ hepsi için idempotent ALTER).
+- **Veri:** `chat-v2.ts` → `touchPresence()` + `messagePreview()`; `sendMessage` artık
+  özeti denormalize ediyor.
+- **API:** `/api/chat/v2` POST → yeni `presence` eylemi (yalnız kendi nabzı,
+  `ADMIN_ACTIONS` dışında). `/api/chat/users` → **admin-only (403)** yapıldı; çevrimiçi
+  durum döndüğü için kayıtlı herkesin adı/durumu her girişliye açık olurdu.
+  `username is not null` filtresi kaldırıldı (kendisi dahil herkes listelenir).
+- **Arayüz:** liste artık kişi + sohbet birleşimi; avatarın köşesinde `PresenceDot`
+  (yeşil/kırmızı/sarı, ipucu metni tam durumu söyler); 20 sn'de bir nabız + liste
+  tazeleme; 10 sn'de bir `now` tazelemesi (nokta, yeni veri gelmeden eskisin).
+- **Hiyerarşi:** sabitlenen → sarı (aktif) → konuşulanlar (en yeni önce) → favoriler →
+  çevrimiçiler → diğerleri → engellenenler. Bilinçli sapma: sarı, kullanıcının saydığı
+  sırada konuşulanların ALTINDAYDI; "şu an bana yazıyor" tek aksiyon bekleyen durum
+  olduğu için üste alındı.
+- `chat.noRecipients` ("Henüz başka kullanıcı yok.") **kullanımdan ve 8 dilden kaldırıldı**.
+- 6 yeni anahtar 8 dile eklendi: `chat.presenceOnline/Offline/Active/Typing/Uploading/Recording`.
+
+**Doğrulama:** `tsc` 0 · `eslint --max-warnings 0` (28 dosya) 0 · vitest **563/563**
+(46 dosya; +23) · **playwright e2e 62/62** · dev sunucu `/` `/projects` `/blog` `/chat`
+→ 200, `/admin` → 307.
+**NEGATİF KONTROL (9 mutasyon, hepsi byte-exact geri yüklendi + sha doğrulandı):**
+`presenceOf` aktif dalı · `sortPeers` sarı kovası · `computeNextVisibleCount` kalan
+güvencesi · admin listesinde kendini filtreleme · `PresenceDot` render · project-card
+menüsü `text-white` · sohbet balonu `text-black` · sidebar `text-white/30` ·
+`LoadMoreButton` ikinci sayı. → 9/9 beklendiği gibi kırıldı.
+
+### Bekleyen (kullanıcı eylemi)
+
+- `supabase/chat.sql` **ve** `supabase/schema.sql` içindeki ALTER'ler Supabase SQL
+  Editor'da çalıştırılmalı. O ana kadar `/api/chat/v2` **503 CHAT_SCHEMA_MISSING**
+  döner (uygulama çökmez); takma ad ve çevrimiçi nabız canlıda çalışmaz.
+
+### Ertelenen (bilinçli)
+
+Admin panelinde arama/filtre UI'ı · grup oluşturma + kişi ekleme · toplu seçim→sil ·
+ses kaydı düğmesi (`audio_duration` hazır) · GIF link önizleme + virüs koruması ·
+bildirim sesi · kullanıcı 5 MB limiti ve admin tür engelleme UI'ı · admin retention
+ayar UI'ı · `components/chat/chat-window.tsx` **ölü kod** (hiçbir yerden import
+edilmiyor) → silme adayı.

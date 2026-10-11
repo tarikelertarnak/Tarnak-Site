@@ -25,6 +25,11 @@ create table if not exists public.chat_conversations (
   -- ENGELLİ (2026-10-11): admin bir kullanıcıyı engelleyince bu sohbet
   -- listeden düşer ve yeni mesaj gönderilemez.
   blocked        boolean not null default false,
+  -- LİSTE ÖĞESİ için son mesaj özeti (2026-10-11). Denormalize: gönderim
+  -- sırasında bir kez yazılır, liste okunurken N+1 sorgu olmaz.
+  -- Grup sohbetinde "Osman: Tamam" diye gösterilir → `last_sender_name` ayrı.
+  last_preview      text,
+  last_sender_name  text,
   -- silinen mesajların admin'e GÖRÜNMESİ için yumuşak silme (retention):
   --   'off'    → silinen mesaj herkesten gider, admin de göremez
   --   'forever'→ admin süresiz görebilir
@@ -124,3 +129,17 @@ alter table public.chat_messages      enable row level security;
 -- delete from public.chat_messages where conversation_id = '...';
 -- delete from public.chat_participants where conversation_id = '...';
 -- delete from public.chat_conversations where id = '...';
+
+-- ============================================================================
+-- SONRADAN EKLENEN SÜTUNLAR (idempotent — dosyayı tekrar çalıştırmak güvenli)
+--
+-- `create table if not exists` ZATEN KURULU bir tabloya yeni sütun EKLEMEZ.
+-- 2026-10-11'de bu dosyanın ilk sürümünü çalıştıran biri için aşağıdaki
+-- satırlar şart; yeni kurulumda ise hiçbir şey yapmaz.
+-- ============================================================================
+alter table public.chat_conversations add column if not exists blocked boolean not null default false;
+alter table public.chat_conversations add column if not exists favorite boolean not null default false;
+alter table public.chat_conversations add column if not exists important boolean not null default false;
+alter table public.chat_conversations add column if not exists last_preview text;
+alter table public.chat_conversations add column if not exists last_sender_name text;
+alter table public.chat_conversations add column if not exists deleted_retention text not null default '30 days';

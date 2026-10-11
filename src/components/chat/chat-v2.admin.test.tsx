@@ -211,4 +211,114 @@ describe('admin kullanıcı menüsü', () => {
     expect(html, 'telefon numarası sızdı').not.toMatch(/(?:\+90|\b0\d{2,3})[\s-]?\d{3}[\s-]?\d{2}[\s-]?\d{2}\b/)
     expect(html, 'parola özeti sızdı').not.toMatch(/\$2[aby]?\$\d{2}\$|password_hash/i)
   })
+
+  /*
+    2026-10-11 (kullanıcı): "Henüz başka kullanıcı yok bu yazı olmasın kendim
+    bile her kim kayıtlıysa herkez orada gözüksün". Yani admin'in KENDİ profili
+    de listede olmalı ve o yazı hiçbir yerde görünmemeli.
+  */
+  it('kendim dahil her kayıtlı kişi listelenir — "Henüz başka kullanıcı yok" YOK', async () => {
+    mockFetch((url) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({
+          success: true,
+          users: [{ id: 'admin:OWNER', username: 'tarnak', fullName: 'TARIKELER', avatarUrl: null }],
+        })
+      }
+      return jsonResponse({ success: true })
+    })
+    render(
+      <LocaleProvider detectedLocale="tr">
+        <ChatV2 />
+      </LocaleProvider>,
+    )
+    await waitFor(() => expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull())
+
+    expect(screen.getByText('TARIKELER')).not.toBeNull()
+    expect(screen.queryByText(/henüz başka kullanıcı yok/i)).toBeNull()
+  })
+
+  /*
+    Nokta renkleri: yeşil = çevrimiçi, kırmızı = çevrimdışı, sarı = "bana bir
+    şey gönderecek" (yazıyor / dosya yüklüyor / ses gönderiyor). İpucu metni
+    (`aria-label`) tam durumu söyler.
+  */
+  it('avatarsız da olsa her kişide durum noktası var: yeşil / kırmızı / sarı', async () => {
+    const iso = (ms: number) => new Date(Date.now() - ms).toISOString()
+    mockFetch((url) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({
+          success: true,
+          users: [
+            { id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', avatarUrl: null, lastSeenAt: iso(3_000), presenceState: null },
+            { id: 'u-2', username: 'mehmet', fullName: 'Mehmet Demir', avatarUrl: null, lastSeenAt: iso(5 * 60_000), presenceState: null },
+            { id: 'u-3', username: 'zeynep', fullName: 'Zeynep Ak', avatarUrl: null, lastSeenAt: iso(2_000), presenceState: 'typing' },
+          ],
+        })
+      }
+      return jsonResponse({ success: true })
+    })
+    render(
+      <LocaleProvider detectedLocale="tr">
+        <ChatV2 />
+      </LocaleProvider>,
+    )
+    await waitFor(() => expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull())
+
+    expect(screen.getByLabelText('Çevrimiçi')).not.toBeNull()
+    expect(screen.getByLabelText('Çevrimdışı')).not.toBeNull()
+    expect(screen.getByLabelText(/yazıyor/)).not.toBeNull()
+  })
+
+  /*
+    Hiyerarşi: sabitlenen en üstte, sarı (şu an gönderiyor) konuşmaların
+    üstünde, konuşulanlar kendi içinde en yeni önce. Sıralamanın saf mantığı
+    `lib/chat-peers.test.ts`te; burada LİSTEDE göründüğü kanıtlanır.
+  */
+  it('liste hiyerarşisi: sabitlenen → sarı → en son konuşulan', async () => {
+    mockFetch((url, init) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({
+          success: true,
+          users: [
+            { id: 'u-1', username: 'busra', fullName: 'Büşra', avatarUrl: null },
+            { id: 'u-2', username: 'cem', fullName: 'Cem', avatarUrl: null, lastSeenAt: new Date().toISOString(), presenceState: 'uploading' },
+            { id: 'u-3', username: 'deniz', fullName: 'Deniz', avatarUrl: null },
+          ],
+        })
+      }
+      if (url.includes('/api/chat/v2') && !init?.method) {
+        return jsonResponse({
+          success: true,
+          conversations: [
+            { id: 'c-1', direct_key: 'admin:OWNER|u-1', important: true, favorite: false, blocked: false, updated_at: null, last_preview: null, last_sender_name: null },
+          ],
+        })
+      }
+      return jsonResponse({ success: true })
+    })
+    render(
+      <LocaleProvider detectedLocale="tr">
+        <ChatV2 />
+      </LocaleProvider>,
+    )
+    await waitFor(() => expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull())
+
+    // Sabitlenen (Büşra) ve sarı (Cem) listenin ilk iki satırı olmalı.
+    const rows = screen.getAllByRole('button')
+      .map(b => b.textContent ?? '')
+      .filter(text => /Büşra|Cem|Deniz/.test(text))
+    expect(rows[0]).toContain('Büşra')
+    expect(rows[1]).toContain('Cem')
+    expect(rows[2]).toContain('Deniz')
+  })
 })

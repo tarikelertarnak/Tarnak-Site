@@ -21,11 +21,14 @@ import { ArrowDownIcon } from '@/components/ui/icons'
 
 export function LoadMoreButton({
   remaining,
+  opening,
   onClick,
   className,
 }: {
-  /** Hâlâ gizli kart sayısı */
+  /** Hâlâ gizli kart sayısı (düğmede `−N`) */
   remaining: number
+  /** Bu basışta açılacak kart sayısı (düğmede `+N`) — `useRowPagination().willOpen` */
+  opening: number
   onClick: () => void
   className?: string
 }) {
@@ -39,12 +42,12 @@ export function LoadMoreButton({
         color="primary"
         onClick={onClick}
         className={`${HERO_BTN_TRIGGER} font-semibold`}
-        aria-label={t('common.showMoreAria', { count: remaining })}
+        aria-label={t('common.showMoreAria', { opening, count: remaining })}
         // 2026-10-07 (kullanıcı): butonun SAĞINDA aşağı bakan ok + ikon
         // olsun — "daha fazlası var aşağıda" yönünü tek bakışta anlatır.
         endContent={<ArrowDownIcon size={16} className="shrink-0" />}
       >
-        {t('common.showMore', { count: remaining })}
+        {t('common.showMore', { opening, count: remaining })}
       </Button>
     </div>
   )

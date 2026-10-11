@@ -457,8 +457,8 @@
   "chat.rateLimitedCooldown": "Çok hızlı gidiyorsun. {seconds} saniye sonra tekrar gönderebilirsin.",
   "about.infoLastName": "Soyad",
   "about.infoNickname": "Takma ad",
-  "common.showMore": "Daha Fazlasını Göster ({count})",
-  "common.showMoreAria": "Devamını gör, {count} kart kaldı",
+  "common.showMore": "Daha Fazlasını Göster (+{opening} · −{count})",
+  "common.showMoreAria": "Devamını gör, {opening} kart açılır, {count} kart gizli kalır",
   "form.errRateLimited": "Çok hızlı gidiyorsun. {seconds} saniye sonra tekrar dene.",
   "form.infoRateLimited": "Bir süre çok fazla mesaj gönderdin. {seconds} saniye sonra tekrar dene.",
   "nav.uses": "Kullandıklarım",
@@ -490,7 +490,6 @@
   "chat.notRead": "Okunmadı",
   "chat.notDelivered": "Teslim edilmedi",
   "chat.backToList": "Sohbet listesine dön",
-  "chat.noRecipients": "Henüz başka kullanıcı yok.",
   "chat.pickRecipient": "Kime yazmak istiyorsun?",
   "chat.block": "Engelle",
   "chat.clearConversation": "Sohbeti temizle",
@@ -515,5 +514,11 @@
   "chat.unfavorite": "Favorilerden çıkar",
   "chat.unpinConversation": "Sabitlemeyi kaldır",
   "chat.viewProfile": "Profilini incele",
-  "chat.website": "Web sitesi"
+  "chat.website": "Web sitesi",
+  "chat.presenceOnline": "Çevrimiçi",
+  "chat.presenceOffline": "Çevrimdışı",
+  "chat.presenceActive": "Şu an bir şey gönderiyor",
+  "chat.presenceTyping": "yazıyor…",
+  "chat.presenceUploading": "dosya yüklüyor…",
+  "chat.presenceRecording": "ses gönderiyor…"
 }

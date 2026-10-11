@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isPresenceState } from '@/lib/chat-peers'
 import {
   ChatSchemaMissing,
   clearConversation,
@@ -16,6 +17,7 @@ import {
   setImportant,
   setNickname,
   setPinned,
+  touchPresence,
 } from '@/lib/chat-v2'
 import { BODY_LIMITS, checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { getSessionUser, hasSessionPermission, sessionUserName } from '@/lib/supabase/session'
@@ -131,7 +133,17 @@ export async function POST(req: Request) {
       })
     }
 
-if (!hasSessionPermission(user, 'chat.send')) {
+    /*
+      ÇEVRİMİÇİ NABZI (2026-10-11). Her giriş yapmış kullanıcı KENDİ nabzını
+      atar (başkasının durumunu yazamaz) — bu yüzden admin kapısı dışındadır.
+    */
+    if (action === 'presence') {
+      const raw = body?.state
+      await touchPresence(user.id, isPresenceState(raw) ? raw : null)
+      return NextResponse.json({ success: true })
+    }
+
+    if (!hasSessionPermission(user, 'chat.send')) {
       return NextResponse.json({ success: false, message: 'Yetki yok.' }, { status: 403 })
     }
 

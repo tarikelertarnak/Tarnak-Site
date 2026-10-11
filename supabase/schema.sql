@@ -20,6 +20,12 @@ create table if not exists public.profiles (
   -- 2026-10-11: admin'in verdiği TAKMA AD. Aramada `username`/`full_name`
   -- ile BİRLİKTE aranır — takma ad konulduğunda gerçek ad kaybolmaz.
   nickname    text,
+  -- 2026-10-11: ÇEVRİMİÇİ NABZI. İstemci sohbet sayfası açıkken 20 sn'de bir
+  -- `last_seen_at`i tazeler. Yeşil/kırmızı nokta bundan hesaplanır.
+  last_seen_at    timestamptz,
+  -- SARİ NOKTA: 'typing' | 'uploading' | 'recording'. "Bana bir şey
+  -- gönderecek" demek. Nabız eskiyse yok sayılır (bkz. lib/chat-peers.ts).
+  presence_state  text,
   role        text not null default 'user',
   is_owner    boolean not null default false,
   roles       jsonb not null default '[]'::jsonb,
@@ -37,6 +43,11 @@ alter table public.profiles enable row level security;
 -- 2026-10-11: `profiles` ZATEN kurulu olanlara da `nickname` eklenir
 -- (idempotent). `create table if not exists` mevcut tabloyu DEĞİŞTİRMEZ.
 alter table public.profiles add column if not exists nickname text;
+
+-- 2026-10-11: çevrimiçi nabzı + sarı nokta durumu (idempotent; `profiles`
+-- zaten kurulu olanlarda `create table if not exists` sütun EKLEMEZ).
+alter table public.profiles add column if not exists last_seen_at timestamptz;
+alter table public.profiles add column if not exists presence_state text;
 
 -- Herkes profilleri okuyabilir (site herkese açık)
 drop policy if exists "public profiles are viewable" on public.profiles;

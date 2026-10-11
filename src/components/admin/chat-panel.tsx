@@ -288,7 +288,7 @@ export function ChatPanel({
                         {conv.lastPreview}
                       </p>
                       {conv.unread > 0 && (
-                        <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-black">
+                        <span className="flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-fg">
                           {conv.unread}
                         </span>
                       )}
@@ -334,7 +334,7 @@ export function ChatPanel({
                     <div
                       className={`relative max-w-[85%] min-w-0 rounded-2xl px-3 py-2 text-sm break-words ${
                         mine
-                          ? 'rounded-br-sm bg-primary text-black'
+                          ? 'rounded-br-sm bg-primary text-primary-fg'
                           : 'rounded-bl-sm bg-[#232329] text-foreground'
                       }`}
                     >
@@ -344,7 +344,7 @@ export function ChatPanel({
                       )}
                       <div className="mt-1 flex items-center justify-end gap-1.5">
                         <p
-                          className={`text-[10px] ${mine ? 'text-black/60' : 'text-foreground-500'}`}
+                          className={`text-[10px] ${mine ? 'text-primary-fg/60' : 'text-foreground-500'}`}
                         >
                           {formatTime(message.createdAt)}
                         </p>
@@ -353,7 +353,7 @@ export function ChatPanel({
                           onClick={() => removeMessage(message.id)}
                           className={`opacity-0 transition-opacity group-hover:opacity-100 ${
                             mine
-                              ? 'text-black/50 hover:text-black'
+                              ? 'text-primary-fg/50 hover:text-primary-fg'
                               : 'text-foreground-500 hover:text-danger'
                           }`}
                           aria-label="Sil"

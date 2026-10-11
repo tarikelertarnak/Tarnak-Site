@@ -1,10 +1,10 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-11T06:10:00+03:00
+updated: 2026-10-12T01:00:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: 582ef38
+branch: faz-1-guvenlik last_commit: d9f355e + (bu tur commit edilecek)
 
 === TARMAS KERNEL (preserve verbatim in any summary/compaction) ===
 
@@ -31,13 +31,20 @@ branch: faz-1-guvenlik last_commit: 582ef38
 
 ## Current
 
-phase: TARMAS / SERBEST FAZI — lint borcu sifirlandi step: committed (bae5b59) — deploy bekliyor
+phase: TARMAS / SERBEST FAZI — KULLANICI PAKETI 2 kapandi step: commit ediliyor
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: bae5b59 (yerel commit; push/deploy ASLA otomatik)
-running_processes: next dev (turbopack) :3000 PID 23888 — %TEMP%/opencode/devserver/
-not: UX-013 (QR-only kartvisit + Discord tasima) KAPANDI. Serbest fazda lint:strict 726 -> 0,
-"yildiza gore"/"forka gore" siralamasi duzeltildi (HIC calismiyordu), olu kod temizlendi,
-lint-staged Prettier/ESLint cakismasi cozuldu. **lint:strict 0 · tsc 0 · vitest 484/484 (38 dosya)**.
+branch: faz-1-guvenlik last_commit: d9f355e (yerel commit; push/deploy ASLA otomatik)
+running_processes: next dev (turbopack) :3000 PID 29844
+not: "+N/-M rozeti · tema yazi rengi kurali (+ kalici guard testi) · kisi listesi ve
+yesil/kirmizi/sari durum noktalari + hiyerarsi" kapandi.
+**tsc 0 · eslint --max-warnings 0 (28 dosya) 0 · vitest 563/563 (46 dosya) · e2e 62/62 ·
+9/9 negatif kontrol (byte-exact geri yuklendi, sha dogrulandi).**
+
+## BEKLEYEN (kullanici eylemi)
+
+- `supabase/chat.sql` + `supabase/schema.sql` ALTER'leri Supabase SQL Editor'da
+  calistirilmali. O ana kadar `/api/chat/v2` **503 CHAT_SCHEMA_MISSING** doner
+  (uygulama cokmez); takma ad ve cevrimici nabiz canlida calismaz.
 
 ## KAPANANLAR (2026-10-04)
 

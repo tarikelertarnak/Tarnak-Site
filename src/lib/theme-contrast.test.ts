@@ -255,6 +255,89 @@ describe('globals.css tema kontrasti', () => {
     expect(offenders, `primary zeminde sert text-white:\n${offenders.join('\n')}`).toEqual([])
   })
 
+  /**
+   * AYNI HATA SINIFININ TERSİ (2026-10-11, kullanıcı isteği):
+   * "koyu temada asla siyah yazı rengini kullanma, açık temada asla beyaz
+   * yazı rengi kullanma" → `bg-primary` üzerinde sert `text-black` de
+   * yasaktır; primary zeminde metin HER İKİ temada `--tprimary-fg`den gelir
+   * (açık temada siyah, koyu temada beyaz — bkz. yukarıdaki AA testi).
+   *
+   * KOK NEDEN: sohbet balonları `bg-primary text-black` idi → koyu temada da
+   * siyah kalıyor, jetonun istediği beyaz uygulanmıyordu.
+   */
+  it('bg-primary tasiyan butonlarda sert text-black de kalmaz', () => {
+    const offenders: string[] = []
+
+    for (const file of walk(join(process.cwd(), 'src'))) {
+      if (file.endsWith('theme-contrast.test.ts'))
+        continue
+      for (const line of readFileSync(file, 'utf8').split('\n')) {
+        if (!/\bbg-primary(?![\w/-])/.test(line))
+          continue
+        if (/text-primary-fg/.test(line))
+          continue
+        if (/\btext-black\b/.test(line))
+          offenders.push(`${file.replace(`${process.cwd()}\\`, '')}: ${line.trim().slice(0, 90)}`)
+      }
+    }
+
+    expect(offenders, `primary zeminde sert text-black:\n${offenders.join('\n')}`).toEqual([])
+  })
+
+  /**
+   * KULLANICI KURALI (2026-10-11). Sabit `text-white` / `text-black` ancak
+   * ZEMİNİ TEMADAN BAĞIMSIZ olduğunda doğrudur. Aşağıdaki "güvenli zemin"
+   * işaretlerinden biri yoksa satır ihlaldir:
+   *
+   *   · `dark:` / `light:` varyantı → renk tema ile birlikte değişiyor
+   *   · sabit renkli gradyan çip (amber/orange/…) → metin hep siyah kalmalı
+   *   · `bg-black/N` → hep-koyu lightbox zemini
+   *   · `bg-white/N` (5–20) → koyu medyanın üstünde yarı saydam beyaz katman
+   *   · `bg-danger` → kendi rengini taşıyan kırmızı buton (beyaz çifti sabit)
+   *
+   * GERÇEK BULUNAN İHLALLER (bu test yazılmadan önce düzeltildi):
+   *   · `projects/project-card.tsx` indirme menüsü `text-white` —
+   *     panel `bg-background/95` (AÇIK temada BEYAZ) → beyaz üstüne beyaz.
+   *   · `sidebar.tsx` `text-white/30` — panel açık temada `#f8f8fa`
+   *     (globals.css:643 override) → görünmez tire.
+   *   · sohbet balonları `bg-primary text-black` (üstteki test kapsıyor).
+   *
+   * Bu bir BUG avcısı değil, AĞ (guard): yeni bir sabit renk koyu/açık
+   * zeminde belirirse test kırılır, gözden kaçmaz.
+   */
+  it('sabit text-white/text-black yalniz temadan bagimsiz zeminlerde kullanilir', () => {
+    const SAFE_SURFACES: Array<{ rx: RegExp, why: string }> = [
+      { rx: /(?:\bdark:|\blight:)[^"']*text-(?:white|black)/, why: 'tema varyantli (dark:/light:)' },
+      { rx: /from-(?:amber|orange|yellow|rose|sky|violet|emerald)-\d+/, why: 'sabit renkli gradyan cip' },
+      { rx: /\bbg-black\/\d+/, why: 'hep-koyu lightbox zemini' },
+      { rx: /\bbg-white\/(?:5|10|15|20)\b/, why: 'koyu medya ustunde yari saydam beyaz katman' },
+      { rx: /\bbg-danger\b/, why: 'kendi rengini tasiyan kirmizi buton' },
+    ]
+    const offenders: string[] = []
+    const HARD = /\btext-(?:white|black)(?:\/\d+)?\b/
+
+    for (const file of walk(join(process.cwd(), 'src'))) {
+      if (file.endsWith('theme-contrast.test.ts'))
+        continue
+      for (const [i, line] of readFileSync(file, 'utf8').split('\n').entries()) {
+        const trimmed = line.trim()
+        // Yorum satirlari sayilmaz (metin olarak geciyor olabilir).
+        if (/^(?:\/\/|\*|\/\*|\{\/\*)/.test(trimmed))
+          continue
+        if (!HARD.test(line))
+          continue
+        if (SAFE_SURFACES.some(s => s.rx.test(line)))
+          continue
+        offenders.push(`${file.replace(`${process.cwd()}\\`, '')}:${i + 1}: ${trimmed.slice(0, 100)}`)
+      }
+    }
+
+    expect(
+      offenders,
+      `sabit metin rengi temadan bagimsiz OLMAYAN zeminde:\n${offenders.join('\n')}`,
+    ).toEqual([])
+  })
+
   // Ayni hata sinifinin agi: light temada beyaz uzerine beyaz = gorunmez.
   // `border-white/N` her kullanimda ya globals override'i ya da `dark:` prefix'i
   // olmali. Bu bir BUG avcisi degil, ag (guard) — sinif temiz tutuluyor.

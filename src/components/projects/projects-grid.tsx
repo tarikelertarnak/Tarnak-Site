@@ -297,6 +297,7 @@ return
   const {
     visible: shown,
     remaining,
+    willOpen,
     hasMore,
     gridRef,
     loadMore,
@@ -410,8 +411,14 @@ return
         </div>
       )}
 
-      {/* "Daha Fazlasını Göster (X)" — grid ile arasi `--section-gap` */}
-      {hasMore && <LoadMoreButton remaining={remaining} onClick={loadMore} />}
+      {/* "Daha Fazlasını Göster (+N · −M)" — grid ile arasi `--section-gap` */}
+      {hasMore && (
+        <LoadMoreButton
+          remaining={remaining}
+          opening={willOpen}
+          onClick={loadMore}
+        />
+      )}
 
       {actions}
     </div>

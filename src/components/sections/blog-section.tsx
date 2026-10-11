@@ -141,6 +141,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
   const {
     visible: shown,
     remaining,
+    willOpen,
     hasMore,
     gridRef,
     loadMore,
@@ -344,9 +345,13 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
               </div>
             )}
 
-        {/* "Daha Fazlasını Göster (X)" — grid ile arasi `--section-gap` */}
+        {/* "Daha Fazlasını Göster (+N · −M)" — grid ile arasi `--section-gap` */}
         {hasMore && (
-          <LoadMoreButton remaining={remaining} onClick={loadMore} />
+          <LoadMoreButton
+            remaining={remaining}
+            opening={willOpen}
+            onClick={loadMore}
+          />
         )}
       </FadeUpSection>
     </Section>

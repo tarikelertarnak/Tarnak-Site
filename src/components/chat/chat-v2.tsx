@@ -1,11 +1,20 @@
 'use client'
 
+import type { Presence, PresenceState } from '@/lib/chat-peers'
 import type { ChatMessageRow } from '@/lib/chat-v2'
 import Link from 'next/link'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
+import {
+  isPresenceState,
+  PRESENCE_ACTIVE_MS,
+  PRESENCE_STATE_LABEL_KEY,
+  PRESENCE_UI,
+  presenceOf,
+  sortPeers,
+} from '@/lib/chat-peers'
 
 /**
  * Sohbet v2 arayüzü (kullanıcı tarafı) — 2026-10-11.
@@ -36,10 +45,36 @@ interface Peer {
   fullName: string | null
   nickname: string | null
   avatarUrl: string | null
+  /** ÇEVRİMİÇİ NABZI (2026-10-11) — `/api/chat/users` döner. */
+  lastSeenAt?: string | null
+  presenceState?: string | null
   /** Admin işaretleri (sağ tık menüsü bunları aç/kapatır). */
   favorite?: boolean
   important?: boolean
   blocked?: boolean
+  /** Son mesaj zamanı (sohbetin `updated_at`i) — "konuştumuz zamana göre". */
+  lastMessageAt?: string | null
+  /** Liste öğesindeki son mesaj özeti. */
+  preview?: string | null
+  previewSender?: string | null
+}
+
+/** `GET /api/chat/v2`nin sohbet satırından ihtiyaç duyduğumuz alanlar. */
+interface ConversationLite {
+  id: string
+  direct_key: string | null
+  important: boolean | null
+  favorite: boolean | null
+  blocked: boolean | null
+  updated_at: string | null
+  last_preview: string | null
+  last_sender_name: string | null
+}
+
+/** Liste için türetilmiş satır: ad + nokta rengi (saf `lib/chat-peers` ile). */
+interface PeerRow extends Peer {
+  name: string
+  presence: Presence
 }
 
 /**
@@ -50,7 +85,7 @@ interface Peer {
  * doğru okuyor. Güvenlik aynı: her API çağrısı yine yetkiyi sunucuda doğrular.
  */
 export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
-  const { t } = useT()
+  const { t, locale } = useT()
   const [messages, setMessages] = useState<ChatMessageRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -72,10 +107,90 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const [profilePeer, setProfilePeer] = useState<Peer | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
+  /** Liste saatini tazele — nokta rengi yeni veri gelmeden de eskisin (yeşil → kırmızı). */
+  const [now, setNow] = useState(() => Date.now())
 
   const isAuthenticated = !!session
   const currentUserId = session?.id ?? ''
   const isAdmin = session?.role === 'admin'
+
+  /**
+   * YÖNETİCİ KİŞİ LİSTESİ (2026-10-11 kullanıcı isteği).
+   *
+   *  · "Henüz başka kullanıcı yok" yazısı YOK — kayıtlı herkes, admin'in
+   *    KENDİSİ DAHİL listelenir (kendini filtreleme kaldırıldı).
+   *  · Her satıra sohbet işaretleri (sabitlenen/favori/engelli + son mesaj)
+   *    ve çevrimiçi nabzı işlenir; nokta rengi `lib/chat-peers`te hesaplanır.
+   *
+   * Sohbetler `direct_key = "<id>|<id>"` ile kişiye bağlanır: admin'in id'si
+   * OLMAYAN parça karşı tarafın id'sidir.
+   */
+  const loadPeers = useCallback(async (): Promise<Peer[] | null> => {
+    const [usersRes, convsRes] = await Promise.all([
+      fetch('/api/chat/users'),
+      fetch('/api/chat/v2'),
+    ])
+    const usersJson = await usersRes.json().catch(() => null)
+    const convsJson = await convsRes.json().catch(() => null)
+    if (!usersJson?.success) {
+      return null
+    }
+    const convs: ConversationLite[] = convsJson?.success ? convsJson.conversations ?? [] : []
+    const byPeer = new Map<string, ConversationLite>()
+    for (const c of convs) {
+      const other = c.direct_key?.split('|').find(part => part !== currentUserId)
+      if (other) {
+        byPeer.set(other, c)
+      }
+    }
+    return (usersJson.users as Peer[]).map((u): Peer => {
+      const conv = byPeer.get(u.id)
+      return {
+        ...u,
+        important: !!conv?.important,
+        favorite: !!conv?.favorite,
+        blocked: !!conv?.blocked,
+        lastMessageAt: conv?.updated_at ?? null,
+        preview: conv?.last_preview ?? null,
+        previewSender: conv?.last_sender_name ?? null,
+      }
+    })
+  }, [currentUserId])
+
+  /*
+    ÇEVRİMİÇİ NABZI. Sohbet sayfası açıkken 20 sn'de bir `presence` gider →
+    karşı taraf YEŞİL nokta görür. Yazarken/dosya seçerken durum bildirilir →
+    karşı tarafta SARI nokta ("bana bir şey gönderecek"). Durum `null`a
+    dönünce veya tazelenmeyince sarı kendiliğinden söner.
+  */
+  const presenceRef = useRef<PresenceState | null>(null)
+  const presenceClear = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const beat = useCallback(() => {
+    void fetch('/api/chat/v2', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'presence', state: presenceRef.current }),
+    }).catch(() => {})
+  }, [])
+
+  const signalPresence = useCallback((state: PresenceState | null) => {
+    const changed = presenceRef.current !== state
+    presenceRef.current = state
+    if (changed) {
+      beat()
+    }
+    if (presenceClear.current) {
+      clearTimeout(presenceClear.current)
+      presenceClear.current = null
+    }
+    if (state) {
+      presenceClear.current = setTimeout(() => {
+        presenceRef.current = null
+        beat()
+      }, PRESENCE_ACTIVE_MS)
+    }
+  }, [beat])
 
   /*
     1) Oturumu oku. 2) Rolüne göre yol:
@@ -100,12 +215,8 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
         setSession({ id: json.user.id, role: json.user.role })
 
         if (json.user.role === 'admin') {
-          // Admin'in tek bir "sohbeti" yoktur — kime yazacağını seçer.
-          const users = await fetch('/api/chat/users')
-          const usersJson = await users.json()
-          if (!cancelled) {
-            setPeers(usersJson?.success ? (usersJson.users as Peer[]) : [])
-          }
+          // Admin'in tek bir "sohbeti" yoktur — kime yazacağını seçer. Kişi
+          // listesi ayrı effect'te yüklenir (nabızla birlikte tazelenir).
           return
         }
 
@@ -143,6 +254,65 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       cancelled = true
     }
   }, [t])
+
+  /** Nokta rengi yeni veri gelmeden de eskisin diye listenin saatini tazele. */
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 10_000)
+    return () => clearInterval(id)
+  }, [])
+
+  /*
+    Yönetici kişi listesi: ilk yükleme + 20 sn'de bir tazeleme. Tazeleme yeni
+    sohbeti, son mesaj özetini ve karşı tarafın çevrimiçi nabzını getirir.
+  */
+  useEffect(() => {
+    if (!isAdmin) {
+      return
+    }
+    let cancelled = false
+    const run = async () => {
+      const list = await loadPeers()
+      if (!cancelled && list) {
+        setPeers(list)
+      }
+    }
+    void run()
+    const id = setInterval(run, 20_000)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [isAdmin, loadPeers])
+
+  /* Nabız: sohbet sayfası açıkken 20 sn'de bir "buradayım" (yeşil nokta). */
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return
+    }
+    beat()
+    const id = setInterval(beat, 20_000)
+    return () => clearInterval(id)
+  }, [isAuthenticated, beat])
+
+  /**
+   * Kişi listesi HİYERARŞİSİ: sabitlenen → sarı (şu an bana gönderiyor) →
+   * konuşulanlar (en yeni önce) → favoriler → çevrimiçiler → diğerleri →
+   * engellenenler. Sıralama mantığı `lib/chat-peers.ts`te (saf + testli).
+   */
+  const orderedPeers = useMemo(() => {
+    return sortPeers(
+      (peers ?? []).map((p): PeerRow => ({
+        ...p,
+        name: p.nickname || p.fullName || p.username,
+        presence: presenceOf(
+          p.lastSeenAt,
+          isPresenceState(p.presenceState) ? p.presenceState : null,
+          now,
+        ),
+      })),
+      locale,
+    )
+  }, [peers, now, locale])
 
   /** Admin bir kişiye tıkladığında doğrudan sohbeti açar (idempotent). */
   async function openWith(peerId: string) {
@@ -298,6 +468,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     if (!conversationId) {
       return
     }
+    signalPresence('uploading')
     setSending(true)
     try {
       const fd = new FormData()
@@ -327,6 +498,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     }
     finally {
       setSending(false)
+      signalPresence(null)
     }
   }
 
@@ -405,13 +577,12 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     anlamsız geliyordu. Artık:
       · normal kullanıcı → sahibiyle sohbet kendiliğinden açılır,
       · admin → kime yazacağını seçer (aşağıdaki liste).
-*/
-if (isAdmin && !conversationId) {
+  */
+  if (isAdmin && !conversationId) {
     const q = peerQuery.trim().toLocaleLowerCase('tr')
-    const visible = (peers ?? []).filter((p) => {
-      if (p.id === currentUserId) {
-        return false
-      }
+    // "Henüz başka kullanıcı yok" YOK (kullanıcı isteği 2026-10-11): kendim
+    // dahil HER KAYITLI kişi burada listelenir; kendini filtreleme kaldırıldı.
+    const visible = orderedPeers.filter((p) => {
       if (!q) {
         return true
       }
@@ -442,9 +613,7 @@ if (isAdmin && !conversationId) {
         >
           {peers === null && <p className="p-4 text-sm text-foreground-50">{t('chat.loading')}</p>}
           {peers !== null && visible.length === 0 && (
-            <p className="p-4 text-sm text-foreground-50">
-              {q ? t('chat.noMatch') : t('chat.noRecipients')}
-            </p>
+            <p className="p-4 text-sm text-foreground-50">{t('chat.noMatch')}</p>
           )}
           {visible.map(p => (
             <div key={p.id} className="relative">
@@ -458,10 +627,14 @@ if (isAdmin && !conversationId) {
                 }}
                 className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-foreground/5"
               >
-                <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                  {p.avatarUrl
-                    ? <img src={p.avatarUrl} alt="" className="size-full object-cover" />
-                    : (p.nickname || p.fullName || p.username).slice(0, 2).toUpperCase()}
+                {/* profil fotoğrafı + durum noktası (yeşil/kırmızı/sarı) */}
+                <span className="relative size-9 shrink-0">
+                  <span className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-xs font-semibold text-primary">
+                    {p.avatarUrl
+                      ? <img src={p.avatarUrl} alt="" className="size-full object-cover" />
+                      : (p.nickname || p.fullName || p.username).slice(0, 2).toUpperCase()}
+                  </span>
+                  <PresenceDot presence={p.presence} state={p.presenceState} t={t} />
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">
@@ -471,8 +644,21 @@ if (isAdmin && !conversationId) {
                     {p.nickname && p.fullName
                       ? `${p.fullName} · @${p.username}`
                       : `@${p.username}`}
+                    {p.preview && (
+                      <>
+                        {' '}
+                        ·
+                        {' '}
+                        {p.preview}
+                      </>
+                    )}
                   </span>
                 </span>
+                {(p.important || p.favorite || p.blocked) && (
+                  <span className="ml-auto shrink-0 text-xs" aria-hidden="true">
+                    {p.blocked ? '🚫' : p.important ? '📌' : '⭐'}
+                  </span>
+                )}
               </button>
 
               {menuPeer?.id === p.id && (
@@ -493,6 +679,16 @@ if (isAdmin && !conversationId) {
                   onToggle={async (action, next) => {
                     setMenuPeer(null)
                     await runAdmin(action, p, { [action]: next })
+                    // 20 sn'lik tazelemeyi bekleme — menü hemen yeni durumu göstersin.
+                    setPeers(prev =>
+                      (prev ?? []).map((x) => {
+                        if (x.id !== p.id) {
+                          return x
+                        }
+                        return action === 'favorite' || action === 'important' || action === 'block'
+                          ? { ...x, [action]: next }
+                          : x
+                      }))
                   }}
                   onClear={async () => {
                     setMenuPeer(null)
@@ -660,7 +856,11 @@ if (isAdmin && !conversationId) {
           </button>
           <input
             value={draft}
-            onChange={e => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value)
+              // yazıyor → karşı tarafta SARI nokta ("bana bir şey gönderecek")
+              signalPresence('typing')
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
@@ -744,6 +944,32 @@ function ChatNotice({ icon, text }: { icon: string, text: string }) {
       <span className="text-3xl">{icon}</span>
       <p className="text-sm text-foreground-60">{text}</p>
     </div>
+  )
+}
+
+/**
+ * Durum noktası (2026-10-11 kullanıcı isteği): profil fotoğrafının köşesinde
+ *   · yeşil → çevrimiçi (nabız taze),
+ *   · kırmızı → çevrimdışı (nabız eski / hiç yok),
+ *   · sarı  → "bana bir şey gönderecek": yazıyor, dosya yüklüyor veya ses
+ *     gönderiyor. İpucu metni tam durumu söyler.
+ * Karar `lib/chat-peers.ts:presenceOf`te; bu bileşen yalnızca RENDER eder.
+ */
+function PresenceDot({ presence, state, t }: {
+  presence: Presence
+  state: unknown
+  t: (key: string) => string
+}) {
+  const ui = PRESENCE_UI[presence]
+  const tip = presence === 'active'
+    ? t(PRESENCE_STATE_LABEL_KEY[isPresenceState(state) ? state : 'typing'])
+    : t(ui.labelKey)
+  return (
+    <span
+      title={tip}
+      aria-label={tip}
+      className={cn('absolute -bottom-0.5 -right-0.5 size-3 rounded-full ring-2 ring-background', ui.dot)}
+    />
   )
 }
 

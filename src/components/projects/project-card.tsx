@@ -417,8 +417,8 @@ next.delete(opt.url)
         className={cn(
           'mx-1.5 my-0.5 flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors',
           isSelected
-            ? 'bg-primary/15 text-white'
-            : 'text-white/75 hover:bg-white/[0.06] hover:text-white',
+            ? 'bg-primary/15 text-foreground'
+            : 'text-foreground/75 hover:bg-foreground/[0.06] hover:text-foreground',
         )}
       >
         {/* Select checkbox — multi-select (batch download) */}
@@ -431,7 +431,7 @@ next.delete(opt.url)
             'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
             isSelected
               ? 'border-primary bg-primary text-primary-fg'
-              : 'border-white/25 bg-transparent hover:border-white/50',
+              : 'border-foreground/25 bg-transparent hover:border-foreground/50',
           )}
         >
           {isSelected && <CheckIcon size={11} />}
@@ -446,7 +446,7 @@ next.delete(opt.url)
           onClick={() => onSelect(opt.url)}
           className={cn(
             'shrink-0 transition-colors',
-            isCurrent ? 'text-white' : 'text-white/50 hover:text-white',
+            isCurrent ? 'text-foreground' : 'text-foreground/50 hover:text-foreground',
           )}
         >
           <DownloadIcon size={14} />

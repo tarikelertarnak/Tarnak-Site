@@ -614,7 +614,7 @@ function MessageBubble({
       <div
         className={`max-w-[82%] rounded-2xl px-3 py-2 text-sm break-words ${
           mine
-            ? 'bg-primary text-black rounded-br-sm'
+            ? 'bg-primary text-primary-fg rounded-br-sm'
             : 'bg-foreground-200/10 text-foreground rounded-bl-sm'
         }`}
       >
@@ -643,7 +643,7 @@ function MessageBubble({
         {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
         <p
           className={`mt-1 text-[10px] ${
-            mine ? 'text-black/60' : 'text-foreground-500'
+            mine ? 'text-primary-fg/60' : 'text-foreground-500'
           }`}
         >
           {formatTime(message.createdAt)}

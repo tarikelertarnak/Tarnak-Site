@@ -73,11 +73,32 @@ export function computeNextRows(
   return Math.min(2, rowsNeeded)
 }
 
+/**
+ * Butona basıldığında görünür olacak TOPLAM kart sayısı.
+ *
+ * 2026-10-11 (kullanıcı): "Daha Fazlasını Göster (+10 −278) gibi bişey olmalı,
+ * kaç tane açacağı ve kaç tane kapalı olduğu". `+N` buradan hesaplanır:
+ * `computeNextVisibleCount(...) - computeVisibleCount(...)`.
+ */
+export function computeNextVisibleCount(
+  total: number,
+  columns: number,
+  visibleRows: number,
+): number {
+  const current = computeVisibleCount(total, columns, visibleRows)
+  const rowsToAdd = computeNextRows(total, columns, visibleRows)
+  if (rowsToAdd <= 0)
+    return current
+  return computeVisibleCount(total, columns, visibleRows + rowsToAdd)
+}
+
 export interface UseRowPaginationResult<T> {
   /** Render edilecek kartlar (yoksa boş hücre doldurma uygulanmış) */
   visible: T[]
   /** Hâlâ gizli kart sayısı */
   remaining: number
+  /** Bu basışta KAÇ kart açılacak (`+N` rozeti) */
+  willOpen: number
   /** Buton görünmeli mi */
   hasMore: boolean
   /** Ölçülen sütun sayısı (N) */
@@ -154,6 +175,9 @@ export function useRowPagination<T>(
   const visibleCount = enabled ? computeVisibleCount(total, columns, visibleRows) : total
   const visible = items.slice(0, visibleCount)
   const remaining = enabled ? total - visibleCount : 0
+  const willOpen = enabled
+    ? Math.max(0, computeNextVisibleCount(total, columns, visibleRows) - visibleCount)
+    : 0
 
   const loadMore = useCallback(() => {
     const n = columns > 0 ? columns : 1
@@ -167,6 +191,7 @@ export function useRowPagination<T>(
   return {
     visible,
     remaining,
+    willOpen,
     hasMore: enabled && remaining > 0,
     columns,
     visibleRows,

@@ -27,6 +27,10 @@ export interface ChatConversationRow {
   title: string | null
   important: boolean
   favorite: boolean
+  blocked: boolean
+  /** Liste öğesi için son mesaj özeti + gönderen adı (grupta "Osman: Tamam"). */
+  last_preview: string | null
+  last_sender_name: string | null
   deleted_retention: 'off' | 'forever' | '7 days' | '30 days' | '90 days'
   created_at: string
   updated_at: string
@@ -236,12 +240,64 @@ export async function sendMessage(input: SendMessageInput): Promise<ChatMessageR
     }
     throw res.error
   }
-  // sohbetin updated_at'ini dokun (sıralama "en son hareket" için).
+  const saved = res.data as ChatMessageRow
+  // sohbetin updated_at'ini dokun (sıralama "en son hareket" için) ve LİSTE
+  // ÖĞESİ için son mesaj özetini denormalize et (liste okunurken N+1 olmasın).
   await client
     .from('chat_conversations')
-    .update({ updated_at: new Date().toISOString() })
+    .update({
+      updated_at: new Date().toISOString(),
+      last_preview: messagePreview(saved),
+      last_sender_name: input.senderName,
+    })
     .eq('id', input.conversationId)
-  return res.data as ChatMessageRow
+  return saved
+}
+
+/**
+ * Liste öğesinde gösterilecek kısa özet. Metin varsa kendisi; yoksa türün
+ * okunabilir adı ("📷 Fotoğraf", "🎤 Sesli mesaj" …).
+ */
+export function messagePreview(
+  row: Pick<ChatMessageRow, 'text' | 'kind' | 'file_name'>,
+): string {
+  const text = row.text?.trim()
+  if (text) {
+    return text.slice(0, 120)
+  }
+  switch (row.kind) {
+    case 'image':
+      return '📷 Fotoğraf'
+    case 'video':
+      return '🎬 Video'
+    case 'audio':
+      return '🎤 Sesli mesaj'
+    case 'file':
+      return `📎 ${row.file_name ?? 'Dosya'}`
+    default:
+      return ''
+  }
+}
+
+/**
+ * ÇEVRİMİÇİ NABZI (2026-10-11).
+ *
+ * Sohbet sayfası açıkken istemci 20 sn'de bir çağırır; `last_seen_at` tazelenir
+ * ve sarı nokta durumu yazılır (`null` = normal). Yeşil/kırmızı/sarı kararı
+ * `lib/chat-peers.ts:presenceOf` içinde, bu damgadan hesaplanır.
+ */
+export async function touchPresence(
+  userId: string,
+  state: 'typing' | 'uploading' | 'recording' | null,
+): Promise<void> {
+  const client = db()
+  const res = await client
+    .from('profiles')
+    .update({ last_seen_at: new Date().toISOString(), presence_state: state })
+    .eq('id', userId)
+  if (res.error) {
+    throw res.error
+  }
 }
 
 /**
