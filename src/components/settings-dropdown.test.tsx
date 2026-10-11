@@ -1,5 +1,13 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 
 import { SettingsModal } from '@/components/settings-dropdown'
 
@@ -16,6 +24,15 @@ import { SettingsModal } from '@/components/settings-dropdown'
  */
 
 // --- Mock'lar ----------------------------------------------------------
+// `vi.mock` factory'leri HOIST edilir (dosya gövdesinden önce çalışır), bu
+// yüzden factory içinde kullanılan spy'lar `vi.hoisted` ile burada
+// tanımlanmalı — aşağıda tanımlanırsa "used before defined" olur.
+const { setThemeSpy, setPrefSpy, openSpy } = vi.hoisted(() => ({
+  setThemeSpy: vi.fn(),
+  setPrefSpy: vi.fn(),
+  openSpy: vi.fn(),
+}))
+
 // LobeButton/Modal/Drawer agacina girmeyelim: testin konusu ayar mantigi.
 vi.mock('@/components/theme', () => ({
   useTheme: () => ({ theme: 'auto', setTheme: setThemeSpy }),
@@ -44,24 +61,20 @@ vi.mock('@/components/ui/drawer', () => ({
   ),
 }))
 vi.mock('@/components/ui/modal', () => ({
-  Modal: ({
-    open,
-    children,
-  }: {
-    open: boolean
-    children: React.ReactNode
-  }) => (open ? <div data-testid="modal">{children}</div> : null),
+  Modal: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
+    open ? <div data-testid="modal">{children}</div> : null,
 }))
 vi.mock('@/components/ui/searchable-combobox', () => ({
   SearchableCombobox: ({ onSelect }: { onSelect: (v: string) => void }) => (
-    <button type="button" data-testid="locale-pick" onClick={() => onSelect('de')}>
+    <button
+      type="button"
+      data-testid="locale-pick"
+      onClick={() => onSelect('de')}
+    >
       locale
     </button>
   ),
 }))
-
-const setThemeSpy = vi.fn()
-const setPrefSpy = vi.fn()
 
 /**
  * Node 22+ `globalThis.localStorage`'ı KENDI getter'i ile tanimliyor ve
@@ -93,11 +106,8 @@ const MUSIC = 'site-music-enabled'
 const MOTION = 'site-reduce-motion'
 
 function renderPanel() {
-  return render(
-    <SettingsModal githubUsername="x" open onOpenChange={openSpy} />,
-  )
+  return render(<SettingsModal open onOpenChange={openSpy} />)
 }
-const openSpy = vi.fn()
 
 /** Modalın "hareketi azalt" toggle'ı — aria-pressed ile bulunur. */
 function motionToggle() {

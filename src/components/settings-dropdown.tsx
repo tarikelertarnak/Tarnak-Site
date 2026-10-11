@@ -94,20 +94,23 @@ interface SettingsDraft {
 function readApplied(): SettingsDraft {
   return {
     theme: readLocal(THEME_KEY, ['auto', 'light', 'dark'] as const, 'auto'),
-    pref: readLocal<LocalePref>(LOCALE_COOKIE, ['auto', ...LOCALES_ALL], 'auto'),
+    pref: readLocal<LocalePref>(
+      LOCALE_COOKIE,
+      ['auto', ...LOCALES_ALL],
+      'auto',
+    ),
     reduceMotion:
-      readLocal(REDUCE_MOTION_KEY, ['true', 'false'] as const, 'false') === 'true',
+      readLocal(REDUCE_MOTION_KEY, ['true', 'false'] as const, 'false') ===
+      'true',
     musicEnabled:
       readLocal(MUSIC_KEY, ['true', 'false'] as const, 'true') === 'true',
   }
 }
 
 export function SettingsModal({
-  githubUsername,
   open,
   onOpenChange,
 }: {
-  githubUsername: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -133,8 +136,7 @@ export function SettingsModal({
 
   // Panel acilir acilmaz taslagi diskteki GERCEK degerlerden doldur.
   useEffect(() => {
-    if (!open)
-      return
+    if (!open) return
     const next = readApplied()
     setApplied(next)
     setDraft(next)
@@ -142,12 +144,12 @@ export function SettingsModal({
     bypassNav.current = false
   }, [open])
 
-  const dirty = !!draft && (
-    draft.theme !== applied.theme
-    || draft.pref !== applied.pref
-    || draft.reduceMotion !== applied.reduceMotion
-    || draft.musicEnabled !== applied.musicEnabled
-  )
+  const dirty =
+    !!draft &&
+    (draft.theme !== applied.theme ||
+      draft.pref !== applied.pref ||
+      draft.reduceMotion !== applied.reduceMotion ||
+      draft.musicEnabled !== applied.musicEnabled)
 
   /**
    * Taslagi disariye YAZ. Tek fonksiyon: hem "Kaydet" hem sifirlamadan
@@ -162,8 +164,7 @@ export function SettingsModal({
       try {
         localStorage.setItem(REDUCE_MOTION_KEY, String(next.reduceMotion))
         localStorage.setItem(MUSIC_KEY, String(next.musicEnabled))
-      }
-      catch {
+      } catch {
         /* noop — private mode */
       }
       document.documentElement.dataset.reduceMotion = String(next.reduceMotion)
@@ -178,8 +179,7 @@ export function SettingsModal({
   )
 
   const save = useCallback(() => {
-    if (!draft)
-      return
+    if (!draft) return
     commit(draft)
     onOpenChange(false)
   }, [commit, draft, onOpenChange])
@@ -190,10 +190,8 @@ export function SettingsModal({
    * HEPSINI karsiladigi icin tek nokta yeter.
    */
   const requestClose = useCallback(() => {
-    if (dirty)
-      setConfirmOpen(true)
-    else
-      onOpenChange(false)
+    if (dirty) setConfirmOpen(true)
+    else onOpenChange(false)
   }, [dirty, onOpenChange])
 
   // 'Evet' = degisiklikleri BIRAK ve cik.
@@ -217,8 +215,7 @@ export function SettingsModal({
    * gezinme icin yeterli, o akis zaten ayar kaybettirmez.
    */
   useEffect(() => {
-    if (!open || !dirty)
-      return
+    if (!open || !dirty) return
 
     const onBeforeUnload = (e: BeforeUnloadEvent) => {
       e.preventDefault()
@@ -226,16 +223,15 @@ export function SettingsModal({
       e.returnValue = t('settings.unsaved')
     }
     const onDocClick = (e: MouseEvent) => {
-      if (bypassNav.current)
-        return
+      if (bypassNav.current) return
       const el = e.target as HTMLElement | null
       const link = el?.closest?.('a') as HTMLAnchorElement | null
       // Yeni sekme / indirme / hash / dis link: bu paneli terk etmiyor.
       if (
-        !link?.href
-        || link.target === '_blank'
-        || link.hasAttribute('download')
-        || link.getAttribute('href')?.startsWith('#')
+        !link?.href ||
+        link.target === '_blank' ||
+        link.hasAttribute('download') ||
+        link.getAttribute('href')?.startsWith('#')
       ) {
         return
       }
@@ -260,8 +256,7 @@ export function SettingsModal({
     pendingNav.current = null
     setDraft(applied)
     setConfirmOpen(false)
-    if (!link)
-      return
+    if (!link) return
     bypassNav.current = true
     link.click()
   }, [applied])
@@ -273,12 +268,16 @@ export function SettingsModal({
     }
 
     // 1) Kendi localStorage anahtarlarimiz
-    const ownKeys = [THEME_KEY, REDUCE_MOTION_KEY, MUSIC_KEY, 'music-player-closed']
+    const ownKeys = [
+      THEME_KEY,
+      REDUCE_MOTION_KEY,
+      MUSIC_KEY,
+      'music-player-closed',
+    ]
     for (const k of ownKeys) {
       try {
         localStorage.removeItem(k)
-      }
-      catch {
+      } catch {
         /* noop */
       }
     }
@@ -290,19 +289,18 @@ export function SettingsModal({
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i)
         if (
-          key
-          && (key.startsWith('star-state:')
-            || key.startsWith('project-stats:')
-            || key.startsWith('project-viewed:')
-            || key.startsWith('project-downloaded:')
-            || key.startsWith('blog-stats:'))
+          key &&
+          (key.startsWith('star-state:') ||
+            key.startsWith('project-stats:') ||
+            key.startsWith('project-viewed:') ||
+            key.startsWith('project-downloaded:') ||
+            key.startsWith('blog-stats:'))
         ) {
           toDelete.push(key)
         }
       }
-      toDelete.forEach(k => localStorage.removeItem(k))
-    }
-    catch {
+      toDelete.forEach((k) => localStorage.removeItem(k))
+    } catch {
       /* noop */
     }
 
@@ -311,8 +309,7 @@ export function SettingsModal({
     //    oldugu gibi kaliyordu → "sifirla" sozu tam tutmuyordu.
     try {
       document.documentElement.removeAttribute('data-reduce-motion')
-    }
-    catch {
+    } catch {
       /* noop */
     }
 
@@ -322,8 +319,7 @@ export function SettingsModal({
     setTheme('auto')
     try {
       document.cookie = `${LOCALE_COOKIE}=auto; path=/; max-age=31536000; SameSite=Lax`
-    }
-    catch {
+    } catch {
       /* noop */
     }
     setPref('auto')
@@ -338,8 +334,16 @@ export function SettingsModal({
     router.refresh()
   }, [t, onOpenChange, router, setTheme, setPref])
 
-  const themeOptions: { value: ThemeMode, icon: React.ReactNode, label: string }[] = [
-    { value: 'auto', icon: <ThemeSystemIcon size={16} />, label: t('settings.auto') },
+  const themeOptions: {
+    value: ThemeMode
+    icon: React.ReactNode
+    label: string
+  }[] = [
+    {
+      value: 'auto',
+      icon: <ThemeSystemIcon size={16} />,
+      label: t('settings.auto'),
+    },
     { value: 'light', icon: <SunIcon size={16} />, label: t('settings.light') },
     { value: 'dark', icon: <MoonIcon size={16} />, label: t('settings.dark') },
   ]
@@ -349,7 +353,11 @@ export function SettingsModal({
   // gercek sonuctur — yani etiket tahmin degil, olculmus deger.
   const autoLabel = `${t('lang.auto')} (${NATIVE_NAMES[detected]})`
 
-  const localeOptions: { value: LocalePref, icon?: React.ReactNode, label: string }[] = [
+  const localeOptions: {
+    value: LocalePref
+    icon?: React.ReactNode
+    label: string
+  }[] = [
     { value: 'auto', icon: <AutoIcon size={16} />, label: autoLabel },
     ...LOCALES_ALL.map((l) => {
       const Flag = flagIcons[l]
@@ -373,17 +381,23 @@ export function SettingsModal({
       >
         <div className="flex flex-col gap-6 px-6 pb-8">
           {/* Theme — taslak: `setTheme` HICIR cagrilmaz */}
-          <Section title={t('settings.appearance')} icon={<CogIcon size={16} />}>
+          <Section
+            title={t('settings.appearance')}
+            icon={<CogIcon size={16} />}
+          >
             <RadioGroup
               options={themeOptions}
               value={cur.theme}
-              onChange={v => setDraft({ ...cur, theme: v as ThemeMode })}
+              onChange={(v) => setDraft({ ...cur, theme: v as ThemeMode })}
               label={t('settings.themeLabel')}
             />
           </Section>
 
           {/* Language — taslak */}
-          <Section title={t('settings.language')} icon={<GlobeIcon size={16} />}>
+          <Section
+            title={t('settings.language')}
+            icon={<GlobeIcon size={16} />}
+          >
             {/*
               `showAllOption` KALDIRILDI: combobox hem "Tümü" butonunu hem de
               listedeki 'auto' secenegini "Otomatik" olarak gosteriyordu →
@@ -394,7 +408,7 @@ export function SettingsModal({
             <SearchableCombobox
               options={localeOptions}
               selected={[cur.pref]}
-              onSelect={v => setDraft({ ...cur, pref: v as LocalePref })}
+              onSelect={(v) => setDraft({ ...cur, pref: v as LocalePref })}
               onClear={() => setDraft({ ...cur, pref: 'auto' })}
               placeholder={t('settings.languageLabel')}
               searchPlaceholder={t('country.search')}
@@ -409,7 +423,7 @@ export function SettingsModal({
           >
             <Toggle
               checked={cur.reduceMotion}
-              onChange={v => setDraft({ ...cur, reduceMotion: v })}
+              onChange={(v) => setDraft({ ...cur, reduceMotion: v })}
               label={t('settings.reduceMotion')}
             />
           </Section>
@@ -473,7 +487,9 @@ export function SettingsModal({
             </button>
             <button
               type="button"
-              onClick={pendingNav.current ? confirmDiscardAndGo : discardAndClose}
+              onClick={
+                pendingNav.current ? confirmDiscardAndGo : discardAndClose
+              }
               className="rounded-lg bg-danger px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-danger/90"
             >
               {t('common.yes')}
@@ -511,7 +527,7 @@ function RadioGroup<T extends string>({
   onChange,
   label,
 }: {
-  options: { value: T, label: string, icon?: React.ReactNode }[]
+  options: { value: T; label: string; icon?: React.ReactNode }[]
   value: T
   onChange: (v: T) => void
   /** `aria-label` — ekran okuyucuya grubun ne olduğunu söyler. */
@@ -527,7 +543,11 @@ function RadioGroup<T extends string>({
     `role="radio"` + `aria-checked`.
   */
   return (
-    <div className="grid grid-cols-3 gap-1.5" role="radiogroup" aria-label={label}>
+    <div
+      className="grid grid-cols-3 gap-1.5"
+      role="radiogroup"
+      aria-label={label}
+    >
       {options.map((o) => {
         const active = o.value === value
         return (

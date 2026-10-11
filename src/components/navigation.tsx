@@ -1,7 +1,5 @@
 'use client'
 
-import type { SiteContent } from '@/lib/content'
-
 import { useEffect, useState } from 'react'
 
 import { SettingsModal } from '@/components/settings-dropdown'
@@ -11,7 +9,7 @@ import { SettingsModal } from '@/components/settings-dropdown'
  * `settings:open` events which the SettingsModal listens to.
  * Sidebar now lives in the root layout (openable on every page).
  */
-export function Navigation({ content }: { content: SiteContent }) {
+export function Navigation() {
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   useEffect(() => {
@@ -20,11 +18,5 @@ export function Navigation({ content }: { content: SiteContent }) {
     return () => window.removeEventListener('settings:open', onSettings)
   }, [])
 
-  return (
-    <SettingsModal
-      githubUsername={content.settings.githubUsername}
-      open={settingsOpen}
-      onOpenChange={setSettingsOpen}
-    />
-  )
+  return <SettingsModal open={settingsOpen} onOpenChange={setSettingsOpen} />
 }

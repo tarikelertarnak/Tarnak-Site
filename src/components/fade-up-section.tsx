@@ -21,7 +21,10 @@ import type { HTMLMotionProps } from 'motion/react'
 import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'motion/react'
 
-export interface FadeUpSectionProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
+export interface FadeUpSectionProps extends Omit<
+  HTMLMotionProps<'div'>,
+  'children'
+> {
   children: ReactNode
   /**
    * Kademeli gecikme (saniye). `0.08` = kart başına 80 ms.
@@ -81,7 +84,10 @@ export function FadeUpSection({
   // bu yüzden yalnızca sınıf ve gerçek DOM prop'ları geçiriyoruz.
   if (azalt) {
     return (
-      <div className={className} {...domPropsOnly(rest as Record<string, unknown>)}>
+      <div
+        className={className}
+        {...domPropsOnly(rest as Record<string, unknown>)}
+      >
         {children}
       </div>
     )
@@ -136,19 +142,11 @@ export function FadeUpItem({
   const azalt = useReducedMotion()
 
   if (azalt) {
-    return (
-      <div className={className}>
-        {children}
-      </div>
-    )
+    return <div className={className}>{children}</div>
   }
 
   return (
-    <motion.div
-      variants={fadeUpItem}
-      className={className}
-      {...rest}
-    >
+    <motion.div variants={fadeUpItem} className={className} {...rest}>
       {children}
     </motion.div>
   )

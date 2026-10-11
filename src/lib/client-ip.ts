@@ -22,7 +22,7 @@
  * bu header'i kendisi gonderebilir. Bu yuzden XFF yoksa YEDEK olarak kullanilir.
  */
 
-const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/
+const IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/
 /** Basit IPv6 kontrolu (tam dogrulama degil — sadece kabaca sekil). */
 const IPV6 = /^[0-9a-f:]+$/i
 
@@ -35,7 +35,10 @@ export function clientIp(req: Request): string {
   //    Vercel ezer). Ilk degeri ASLA kullanma.
   const xff = req.headers.get('x-forwarded-for')
   if (xff) {
-    const parts = xff.split(',').map(s => s.trim()).filter(Boolean)
+    const parts = xff
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
     const last = parts[parts.length - 1]
     if (last && looksLikeIp(last)) {
       return last

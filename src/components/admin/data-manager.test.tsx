@@ -1,4 +1,11 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { DataManager } from '@/components/admin/data-manager'
@@ -21,12 +28,17 @@ vi.mock('@/components/ui/button', () => ({
     isDisabled,
     'aria-label': ariaLabel,
   }: {
-    'children'?: React.ReactNode
-    'onPress'?: () => void
-    'isDisabled'?: boolean
+    children?: React.ReactNode
+    onPress?: () => void
+    isDisabled?: boolean
     'aria-label'?: string
   }) => (
-    <button type="button" disabled={isDisabled} aria-label={ariaLabel} onClick={onPress}>
+    <button
+      type="button"
+      disabled={isDisabled}
+      aria-label={ariaLabel}
+      onClick={onPress}
+    >
       {children}
     </button>
   ),
@@ -50,7 +62,7 @@ vi.mock('@/components/ui/input', () => ({
       <input
         value={value}
         placeholder={placeholder}
-        onChange={e => onValueChange?.(e.target.value)}
+        onChange={(e) => onValueChange?.(e.target.value)}
       />
     </label>
   ),
@@ -68,7 +80,10 @@ vi.mock('@/components/ui/textarea', () => ({
   }) => (
     <label>
       {label}
-      <textarea value={value} onChange={e => onValueChange?.(e.target.value)} />
+      <textarea
+        value={value}
+        onChange={(e) => onValueChange?.(e.target.value)}
+      />
     </label>
   ),
 }))
@@ -82,14 +97,13 @@ vi.mock('@/components/ui/drawer', () => ({
     open: boolean
     children?: React.ReactNode
     title?: string
-  }) => (open
-    ? (
-        <div data-testid="drawer">
-          <h2>{title}</h2>
-          {children}
-        </div>
-      )
-    : null),
+  }) =>
+    open ? (
+      <div data-testid="drawer">
+        <h2>{title}</h2>
+        {children}
+      </div>
+    ) : null,
 }))
 
 // ---------------------------------------------------------------- yardimcilar
@@ -101,27 +115,42 @@ interface Call {
 }
 
 const POST_ROWS = [
-  { id: 1, slug: 'ilk-yazi', title: 'İlk Yazı', published: true, created_at: '2026-09-01T10:00:00Z' },
-  { id: 2, slug: 'taslak', title: 'Taslak Yazı', published: false, created_at: '2026-09-02T10:00:00Z' },
+  {
+    id: 1,
+    slug: 'ilk-yazi',
+    title: 'İlk Yazı',
+    published: true,
+    created_at: '2026-09-01T10:00:00Z',
+  },
+  {
+    id: 2,
+    slug: 'taslak',
+    title: 'Taslak Yazı',
+    published: false,
+    created_at: '2026-09-02T10:00:00Z',
+  },
 ]
 
-function installFetch(
-  responder: (url: string, method: string) => unknown,
-): { calls: Call[] } {
+function installFetch(responder: (url: string, method: string) => unknown): {
+  calls: Call[]
+} {
   const calls: Call[] = []
-  vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
-    const method = init?.method ?? 'GET'
-    calls.push({
-      url,
-      method,
-      body: init?.body ? JSON.parse(String(init.body)) : undefined,
-    })
-    return {
-      ok: true,
-      status: 200,
-      json: async () => responder(url, method),
-    }
-  }))
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? 'GET'
+      calls.push({
+        url,
+        method,
+        body: init?.body ? JSON.parse(String(init.body)) : undefined,
+      })
+      return {
+        ok: true,
+        status: 200,
+        json: async () => responder(url, method),
+      }
+    }),
+  )
   return { calls }
 }
 
@@ -140,7 +169,7 @@ function readBlobBytes(blob: Blob): Promise<Uint8Array> {
 }
 
 function lastListUrl(calls: Call[]): string {
-  const gets = calls.filter(c => c.method === 'GET')
+  const gets = calls.filter((c) => c.method === 'GET')
   return gets.length ? gets[gets.length - 1].url : ''
 }
 
@@ -201,7 +230,7 @@ describe('dataManager', () => {
     fireEvent.click(screen.getByText('Hayır'))
 
     await waitFor(() => {
-      const patch = calls.find(c => c.method === 'PATCH')
+      const patch = calls.find((c) => c.method === 'PATCH')
       expect(patch).toBeTruthy()
       expect(patch!.url).toContain('/api/admin/data/posts/2')
       expect(patch!.body).toEqual({ published: true })
@@ -214,7 +243,15 @@ describe('dataManager', () => {
   it('kaynak degistirince yeni kaynagi ceker ve basligi degistirir', async () => {
     const { calls } = installFetch((url) => {
       if (url.includes('/projects'))
-        return listResponse([{ id: 9, slug: 'p', title: 'PixelShield', featured: true, sort_order: 1 }])
+        return listResponse([
+          {
+            id: 9,
+            slug: 'p',
+            title: 'PixelShield',
+            featured: true,
+            sort_order: 1,
+          },
+        ])
       return listResponse(POST_ROWS)
     })
     render(<DataManager />)
@@ -232,12 +269,13 @@ describe('dataManager', () => {
 
     await waitFor(() => expect(screen.getByText('İlk Yazı')).toBeTruthy())
 
-    fireEvent.change(screen.getByPlaceholderText('Ara…'), { target: { value: 'taslak' } })
+    fireEvent.change(screen.getByPlaceholderText('Ara…'), {
+      target: { value: 'taslak' },
+    })
 
-    await waitFor(
-      () => expect(lastListUrl(calls)).toContain('q=taslak'),
-      { timeout: 2500 },
-    )
+    await waitFor(() => expect(lastListUrl(calls)).toContain('q=taslak'), {
+      timeout: 2500,
+    })
   })
 
   it('kolon basligina tiklayinca siralama parametresi gonderir ve yon degisir', async () => {
@@ -256,26 +294,32 @@ describe('dataManager', () => {
 
   it('silme onaylanmazsa DELETE atmaz', async () => {
     const { calls } = installFetch(() => listResponse(POST_ROWS))
-    vi.stubGlobal('confirm', vi.fn(() => false))
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => false),
+    )
     render(<DataManager />)
 
     await waitFor(() => expect(screen.getByText('İlk Yazı')).toBeTruthy())
     fireEvent.click(screen.getAllByLabelText('Sil')[0])
 
-    await new Promise(r => setTimeout(r, 50))
-    expect(calls.some(c => c.method === 'DELETE')).toBe(false)
+    await new Promise((r) => setTimeout(r, 50))
+    expect(calls.some((c) => c.method === 'DELETE')).toBe(false)
   })
 
   it('silme onaylanirsa DELETE atar', async () => {
     const { calls } = installFetch(() => listResponse(POST_ROWS))
-    vi.stubGlobal('confirm', vi.fn(() => true))
+    vi.stubGlobal(
+      'confirm',
+      vi.fn(() => true),
+    )
     render(<DataManager />)
 
     await waitFor(() => expect(screen.getByText('İlk Yazı')).toBeTruthy())
     fireEvent.click(screen.getAllByLabelText('Sil')[0])
 
     await waitFor(() => {
-      const del = calls.find(c => c.method === 'DELETE')
+      const del = calls.find((c) => c.method === 'DELETE')
       expect(del).toBeTruthy()
       expect(del!.url).toContain('/api/admin/data/posts/1')
     })
@@ -295,12 +339,16 @@ describe('dataManager', () => {
     const drawer = within(screen.getByTestId('drawer'))
     expect(screen.getByText(/Yeni · Blog Yazıları/)).toBeTruthy()
 
-    fireEvent.change(drawer.getByLabelText('Başlık'), { target: { value: 'Yepyeni' } })
-    fireEvent.change(drawer.getByLabelText('İçerik'), { target: { value: 'gövde' } })
+    fireEvent.change(drawer.getByLabelText('Başlık'), {
+      target: { value: 'Yepyeni' },
+    })
+    fireEvent.change(drawer.getByLabelText('İçerik'), {
+      target: { value: 'gövde' },
+    })
     fireEvent.click(screen.getByText('Kaydet'))
 
     await waitFor(() => {
-      const post = calls.find(c => c.method === 'POST')
+      const post = calls.find((c) => c.method === 'POST')
       expect(post).toBeTruthy()
       expect(post!.url).toContain('/api/admin/data/posts')
       expect(post!.body?.title).toBe('Yepyeni')
@@ -309,7 +357,7 @@ describe('dataManager', () => {
   })
 
   it('zorunlu alan bosken POST atmaz, hata gosterir', async () => {
-    const { calls } = installFetch((url, method) => {
+    installFetch((url, method) => {
       if (method === 'POST')
         return { success: false, message: 'Başlık zorunlu.' }
       return listResponse(POST_ROWS)
@@ -320,7 +368,9 @@ describe('dataManager', () => {
     fireEvent.click(screen.getByText('Yeni'))
     fireEvent.click(screen.getByText('Kaydet'))
 
-    await waitFor(() => expect(screen.getByText('Başlık zorunlu.')).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByText('Başlık zorunlu.')).toBeTruthy(),
+    )
   })
 
   it('duzenle cekmecesinde mevcut degerler dolu gelir', async () => {
@@ -332,7 +382,9 @@ describe('dataManager', () => {
 
     expect(screen.getByText(/Düzenle · Blog Yazıları/)).toBeTruthy()
     const drawer = within(screen.getByTestId('drawer'))
-    expect((drawer.getByLabelText('Başlık') as HTMLInputElement).value).toBe('İlk Yazı')
+    expect((drawer.getByLabelText('Başlık') as HTMLInputElement).value).toBe(
+      'İlk Yazı',
+    )
   })
 
   it('tablo yoksa yol gosteren uyari kutusunu cizer', async () => {
@@ -345,7 +397,9 @@ describe('dataManager', () => {
     }))
     render(<DataManager />)
 
-    await waitFor(() => expect(screen.getByText('Tablolar henüz oluşturulmadı')).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByText('Tablolar henüz oluşturulmadı')).toBeTruthy(),
+    )
     expect(screen.getByText('scripts/schema-ads.sql')).toBeTruthy()
     expect(screen.getByText('scripts/schema-fixes.sql')).toBeTruthy()
   })
@@ -360,13 +414,23 @@ describe('dataManager', () => {
     }))
     render(<DataManager />)
 
-    await waitFor(() => expect(screen.getByText(/listeden çıkarıldı: phone/)).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByText(/listeden çıkarıldı: phone/)).toBeTruthy(),
+    )
   })
 
   it('tek satirlik kaynakta (İstatistikler) sil butonu cikmaz', async () => {
     installFetch((url) => {
       if (url.includes('/stats'))
-        return listResponse([{ id: 1, projects: 5, technologies: 12, focus: 80, experience_years: 4 }])
+        return listResponse([
+          {
+            id: 1,
+            projects: 5,
+            technologies: 12,
+            focus: 80,
+            experience_years: 4,
+          },
+        ])
       return listResponse(POST_ROWS)
     })
     render(<DataManager />)
@@ -407,12 +471,14 @@ describe('dataManager', () => {
 
     fireEvent.click(screen.getByText('CSV indir'))
 
-    await waitFor(() => expect(calls.some(c => c.url.includes('all=1'))).toBe(true))
+    await waitFor(() =>
+      expect(calls.some((c) => c.url.includes('all=1'))).toBe(true),
+    )
     await waitFor(() => expect(blobs.length).toBe(1))
 
     const bytes = await readBlobBytes(blobs[0])
     // BOM'u BAYT seviyesinde dogrula (TextDecoder onu kendiliginden siler).
-    expect([bytes[0], bytes[1], bytes[2]]).toEqual([0xEF, 0xBB, 0xBF])
+    expect([bytes[0], bytes[1], bytes[2]]).toEqual([0xef, 0xbb, 0xbf])
 
     const text = new TextDecoder('utf-8').decode(bytes)
     expect(text).toContain('İlk Yazı')
@@ -420,7 +486,9 @@ describe('dataManager', () => {
     // Turkce Excel icin noktali virgul ayirici
     expect(text.split('\r\n')[0]).toContain(';')
 
-    await waitFor(() => expect(screen.getByText(/2 kayıt CSV olarak indirildi/)).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByText(/2 kayıt CSV olarak indirildi/)).toBeTruthy(),
+    )
     expect(URL.revokeObjectURL).toHaveBeenCalled()
   })
 
@@ -433,13 +501,17 @@ describe('dataManager', () => {
     render(<DataManager />)
     await waitFor(() => expect(screen.getByText('İlk Yazı')).toBeTruthy())
 
-    fireEvent.change(screen.getByPlaceholderText('Ara…'), { target: { value: 'ilk' } })
-    await waitFor(() => expect(lastListUrl(calls)).toContain('q=ilk'), { timeout: 2500 })
+    fireEvent.change(screen.getByPlaceholderText('Ara…'), {
+      target: { value: 'ilk' },
+    })
+    await waitFor(() => expect(lastListUrl(calls)).toContain('q=ilk'), {
+      timeout: 2500,
+    })
 
     fireEvent.click(screen.getByText('CSV indir'))
 
     await waitFor(() => {
-      const exp = calls.find(c => c.url.includes('all=1'))
+      const exp = calls.find((c) => c.url.includes('all=1'))
       expect(exp).toBeTruthy()
       expect(exp!.url).toContain('q=ilk')
     })
@@ -456,7 +528,9 @@ describe('dataManager', () => {
 
     fireEvent.click(screen.getByText('CSV indir'))
 
-    await waitFor(() => expect(screen.getByText('Dışa aktarılacak kayıt yok.')).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByText('Dışa aktarılacak kayıt yok.')).toBeTruthy(),
+    )
     expect(createSpy).not.toHaveBeenCalled()
   })
 
@@ -471,7 +545,9 @@ describe('dataManager', () => {
 
     fireEvent.click(screen.getByText('CSV indir'))
 
-    await waitFor(() => expect(screen.getByText(/toplam 9000 kayıt var/)).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByText(/toplam 9000 kayıt var/)).toBeTruthy(),
+    )
   })
 
   // ------------------------------------------------------------------ FILTRELER
@@ -484,7 +560,7 @@ describe('dataManager', () => {
     // posts icin "Durum" filtresi tanimli (Yayında / Taslak)
     const select = screen.getByLabelText('Durum') as HTMLSelectElement
     expect(select).toBeTruthy()
-    const labels = Array.from(select.options).map(o => o.textContent)
+    const labels = Array.from(select.options).map((o) => o.textContent)
     expect(labels).toEqual(['Tümü', 'Yayında', 'Taslak'])
   })
 
@@ -494,9 +570,13 @@ describe('dataManager', () => {
 
     await waitFor(() => expect(screen.getByText('İlk Yazı')).toBeTruthy())
 
-    fireEvent.change(screen.getByLabelText('Durum'), { target: { value: 'true' } })
+    fireEvent.change(screen.getByLabelText('Durum'), {
+      target: { value: 'true' },
+    })
 
-    await waitFor(() => expect(lastListUrl(calls)).toContain('f_published=true'))
+    await waitFor(() =>
+      expect(lastListUrl(calls)).toContain('f_published=true'),
+    )
     // Filtre degisince sayfa 1'e donmeli
     expect(lastListUrl(calls)).toContain('page=1')
   })
@@ -508,8 +588,12 @@ describe('dataManager', () => {
     await waitFor(() => expect(screen.getByText('İlk Yazı')).toBeTruthy())
     expect(screen.queryByText('Filtreleri temizle')).toBeNull()
 
-    fireEvent.change(screen.getByLabelText('Durum'), { target: { value: 'false' } })
-    await waitFor(() => expect(lastListUrl(calls)).toContain('f_published=false'))
+    fireEvent.change(screen.getByLabelText('Durum'), {
+      target: { value: 'false' },
+    })
+    await waitFor(() =>
+      expect(lastListUrl(calls)).toContain('f_published=false'),
+    )
     expect(screen.getByText('Filtreleri temizle')).toBeTruthy()
 
     fireEvent.click(screen.getByText('Filtreleri temizle'))
@@ -520,7 +604,16 @@ describe('dataManager', () => {
   it('filtresiz kaynakta (Yetenekler) filtre satiri cizilmez', async () => {
     installFetch((url) => {
       if (url.includes('/skills'))
-        return listResponse([{ id: 1, label: 'React', icon: 'logos:react', level: 90, years: 5, sort_order: 1 }])
+        return listResponse([
+          {
+            id: 1,
+            label: 'React',
+            icon: 'logos:react',
+            level: 90,
+            years: 5,
+            sort_order: 1,
+          },
+        ])
       return listResponse(POST_ROWS)
     })
     render(<DataManager />)
@@ -536,14 +629,27 @@ describe('dataManager', () => {
   it('kaynak degisince filtre sifirlanir', async () => {
     const { calls } = installFetch((url) => {
       if (url.includes('/messages'))
-        return listResponse([{ id: 1, name: 'Ahmet', email: 'a@b.c', subject: 'Selam', is_read: false, created_at: '2026-09-01T10:00:00Z' }])
+        return listResponse([
+          {
+            id: 1,
+            name: 'Ahmet',
+            email: 'a@b.c',
+            subject: 'Selam',
+            is_read: false,
+            created_at: '2026-09-01T10:00:00Z',
+          },
+        ])
       return listResponse(POST_ROWS)
     })
     render(<DataManager />)
 
     await waitFor(() => expect(screen.getByText('İlk Yazı')).toBeTruthy())
-    fireEvent.change(screen.getByLabelText('Durum'), { target: { value: 'true' } })
-    await waitFor(() => expect(lastListUrl(calls)).toContain('f_published=true'))
+    fireEvent.change(screen.getByLabelText('Durum'), {
+      target: { value: 'true' },
+    })
+    await waitFor(() =>
+      expect(lastListUrl(calls)).toContain('f_published=true'),
+    )
 
     fireEvent.click(screen.getByText('Mesajlar'))
 
@@ -551,7 +657,9 @@ describe('dataManager', () => {
     // Yeni kaynagin isteginde onceki kaynagin filtresi OLMAMALI
     expect(lastListUrl(calls)).not.toContain('f_published')
     // Mesajlarin kendi filtresi var, degeri bos
-    expect((screen.getByLabelText('Okunma') as HTMLSelectElement).value).toBe('')
+    expect((screen.getByLabelText('Okunma') as HTMLSelectElement).value).toBe(
+      '',
+    )
   })
 
   it('cSV indir aktif filtreyi de tasir', async () => {
@@ -563,13 +671,17 @@ describe('dataManager', () => {
     render(<DataManager />)
     await waitFor(() => expect(screen.getByText('İlk Yazı')).toBeTruthy())
 
-    fireEvent.change(screen.getByLabelText('Durum'), { target: { value: 'true' } })
-    await waitFor(() => expect(lastListUrl(calls)).toContain('f_published=true'))
+    fireEvent.change(screen.getByLabelText('Durum'), {
+      target: { value: 'true' },
+    })
+    await waitFor(() =>
+      expect(lastListUrl(calls)).toContain('f_published=true'),
+    )
 
     fireEvent.click(screen.getByText('CSV indir'))
 
     await waitFor(() => {
-      const exp = calls.find(c => c.url.includes('all=1'))
+      const exp = calls.find((c) => c.url.includes('all=1'))
       expect(exp).toBeTruthy()
       expect(exp!.url).toContain('f_published=true')
     })
@@ -579,10 +691,13 @@ describe('dataManager', () => {
     installFetch(() => ({
       ...listResponse(POST_ROWS),
       ignoredFilters: ['published'],
-      message: 'Şu filtreler uygulanamadı (kolon veritabanında yok): published. Sonuçlar filtresiz olabilir.',
+      message:
+        'Şu filtreler uygulanamadı (kolon veritabanında yok): published. Sonuçlar filtresiz olabilir.',
     }))
     render(<DataManager />)
 
-    await waitFor(() => expect(screen.getByText(/filtreler uygulanamadı/)).toBeTruthy())
+    await waitFor(() =>
+      expect(screen.getByText(/filtreler uygulanamadı/)).toBeTruthy(),
+    )
   })
 })

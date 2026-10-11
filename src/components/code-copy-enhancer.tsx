@@ -33,7 +33,9 @@ export function CodeCopyEnhancer() {
       if (!code) continue
 
       // ── Dil etiketi: `language-ts`, `language-tsx` → "TS" ────────────
-      const langClass = [...code.classList].find(c => c.startsWith('language-'))
+      const langClass = [...code.classList].find((c) =>
+        c.startsWith('language-'),
+      )
       if (langClass) {
         const dil = langClass.replace('language-', '')
         const rozet = document.createElement('span')
@@ -57,8 +59,7 @@ export function CodeCopyEnhancer() {
           dugme.classList.add('code-copy--done')
           // Ekran okuyucu duyurusu
           dugme.setAttribute('aria-live', 'polite')
-        }
-        catch {
+        } catch {
           dugme.textContent = 'Kopyalanamadı'
         }
         setTimeout(() => {

@@ -14,7 +14,12 @@
 
 /** Tek bir iskelet satırı/balığı */
 export function Skeleton({ className = '' }: { className?: string }) {
-  return <div aria-hidden className={`animate-pulse rounded-md bg-foreground/8 ${className}`} />
+  return (
+    <div
+      aria-hidden
+      className={`animate-pulse rounded-md bg-foreground/8 ${className}`}
+    />
+  )
 }
 
 /** Proje kartı iskeleti — gerçek kartın yakın boyutlarında */
@@ -52,7 +57,10 @@ export function BlogCardSkeleton() {
 }
 
 /** Izgara iskeleti — kaç kart olacağı verilir */
-export function SkeletonGrid({ count = 6, variant = 'project' }: {
+export function SkeletonGrid({
+  count = 6,
+  variant = 'project',
+}: {
   count?: number
   variant?: 'project' | 'blog'
 }) {

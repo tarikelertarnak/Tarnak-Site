@@ -1,9 +1,11 @@
 import { Navigation } from '@/components/navigation'
 import { GithubIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
-import { getLocale, getLocalizedContent } from '@/lib/i18n-server'
+import { getLocale } from '@/lib/i18n-server'
 
-export async function generateStaticParams(): Promise<Array<{ owner: string }>> {
+export async function generateStaticParams(): Promise<
+  Array<{ owner: string }>
+> {
   // Static export için bilinen owner'ları üret
   return [{ owner: 'tarikelertarnak' }]
 }
@@ -22,7 +24,6 @@ export default async function GithubOwnerPage({
 }: {
   params: Promise<{ owner: string }>
 }) {
-  const content = await getLocalizedContent()
   const locale = await getLocale()
   const isEn = locale === 'en'
   const { owner } = await params
@@ -30,7 +31,7 @@ export default async function GithubOwnerPage({
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation content={content} />
+      <Navigation />
       <main id="main" className="">
         <Section className="flex-col items-center justify-center pt-32 min-h-[80svh]">
           <SectionTitle
@@ -50,7 +51,7 @@ export default async function GithubOwnerPage({
             className="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#e5e7eb] px-3 text-sm font-medium text-black no-underline transition-colors hover:bg-[#d1d5db]"
           >
             <GithubIcon size={15} />
-            {isEn ? 'Open GitHub' : 'GitHub\'da aç'}
+            {isEn ? 'Open GitHub' : "GitHub'da aç"}
           </a>
         </Section>
       </main>

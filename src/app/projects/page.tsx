@@ -1,11 +1,11 @@
 import type { Metadata } from 'next'
-import { Navigation } from '@/components/navigation'
 import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
-import { CRUMBS } from '@/lib/breadcrumb'
+import { Navigation } from '@/components/navigation'
 import { ProjectsGrid } from '@/components/projects/projects-grid'
 import { RememberListPath } from '@/components/remember-list-path'
 import { FolderIcon, GithubIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
+import { CRUMBS } from '@/lib/breadcrumb'
 import { getStaticLocalizedContent } from '@/lib/i18n-server'
 
 // 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
@@ -30,7 +30,7 @@ export default async function ProjectsPage() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation content={content} />
+      <Navigation />
       <RememberListPath path="/projects" />
       <main id="main" className="w-full">
         {/* Breadcrumb (Faz 2 · SEO 2) */}
@@ -68,7 +68,6 @@ export default async function ProjectsPage() {
         </Section>
 
         <Section className="flex-col pb-16 sm:pb-20 lg:pb-24" framed>
-
           {/* GitHub Projects button */}
           <div className="mx-auto flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-3">
             <a
@@ -89,14 +88,14 @@ export default async function ProjectsPage() {
               arasinda mb-8 (32px) vardi; --section-gap ile esitlendi. */}
           <div aria-hidden className="h-[var(--section-gap)]" />
 
-<ProjectsGrid
-              projects={content.projects.items}
-              githubUsername={content.settings.githubUsername}
-              /* 2026-10-07 (kullanıcı): "Projeler sayfasında daha fazlasını
+          <ProjectsGrid
+            projects={content.projects.items}
+            githubUsername={content.settings.githubUsername}
+            /* 2026-10-07 (kullanıcı): "Projeler sayfasında daha fazlasını
                  göster olmasın, direkt hepsi gözüksün; o olay ana sayfada
                  olsun." → Bu sayfada sayfalama KAPALI, tüm kartlar baştan. */
-              paginate={false}
-            />
+            paginate={false}
+          />
         </Section>
       </main>
     </div>

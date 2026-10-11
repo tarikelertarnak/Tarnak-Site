@@ -19,17 +19,21 @@ import { useEffect, useState } from 'react'
  * navigasyonu `aria-current="page"` ile zaten çalışıyor; scrollspy ekran
  * okuyucuya ek gürültü yaratmaz (role/status kullanılmıyor).
  */
-export function ScrollSpy({ selector = 'main section[id]' }: { selector?: string }) {
+export function ScrollSpy({
+  selector = 'main section[id]',
+}: {
+  selector?: string
+}) {
   const [aktifId, setAktifId] = useState<string | null>(null)
 
   useEffect(() => {
     let frame = 0
-    let bolumler: Array<{ id: string, el: HTMLElement }> = []
+    let bolumler: Array<{ id: string; el: HTMLElement }> = []
 
     const olustur = () => {
       bolumler = [...document.querySelectorAll<HTMLElement>(selector)]
-        .filter(el => el.id)
-        .map(el => ({ id: el.id, el }))
+        .filter((el) => el.id)
+        .map((el) => ({ id: el.id, el }))
 
       // Eski işaretleri temizle
       for (const b of bolumler) b.el.removeAttribute('data-active')
@@ -53,7 +57,10 @@ export function ScrollSpy({ selector = 'main section[id]' }: { selector?: string
       }
 
       // Sayfa sonuna gelindiyse en son bölümü işaretle
-      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 8) {
+      if (
+        window.innerHeight + window.scrollY >=
+        document.body.offsetHeight - 8
+      ) {
         aktif = bolumler[bolumler.length - 1].id
       }
 

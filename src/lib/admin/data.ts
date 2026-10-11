@@ -18,8 +18,7 @@ import { missingColumnFrom } from '@/lib/postgrest'
 export function adminDb() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key)
-    return null
+  if (!url || !key) return null
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
@@ -44,9 +43,7 @@ export function slugify(input: string): string {
     .slice(0, 120)
 }
 
-type CoerceResult
-  = | { ok: true, value: unknown }
-    | { ok: false, error: string }
+type CoerceResult = { ok: true; value: unknown } | { ok: false; error: string }
 
 /** Istemciden gelen ham degeri alan tipine cevirir ve dogrular. */
 export function coerce(field: FieldDef, raw: unknown): CoerceResult {
@@ -84,42 +81,55 @@ export function coerce(field: FieldDef, raw: unknown): CoerceResult {
         return { ok: false, error: `${field.label} en az ${field.min} olmalı.` }
       }
       if (field.max !== undefined && n > field.max) {
-        return { ok: false, error: `${field.label} en fazla ${field.max} olmalı.` }
+        return {
+          ok: false,
+          error: `${field.label} en fazla ${field.max} olmalı.`,
+        }
       }
       return { ok: true, value: Math.round(n) }
     }
 
     case 'boolean': {
-      return { ok: true, value: raw === true || raw === 'true' || raw === 1 || raw === '1' }
+      return {
+        ok: true,
+        value: raw === true || raw === 'true' || raw === 1 || raw === '1',
+      }
     }
 
     case 'tags': {
-      const list = Array.isArray(raw)
-        ? raw.map(String)
-        : String(raw).split(',')
-      const cleaned = list.map(s => s.trim()).filter(Boolean)
+      const list = Array.isArray(raw) ? raw.map(String) : String(raw).split(',')
+      const cleaned = list.map((s) => s.trim()).filter(Boolean)
       return { ok: true, value: cleaned }
     }
 
     default: {
       const s = String(raw)
       if (field.maxLength && s.length > field.maxLength) {
-        return { ok: false, error: `${field.label} en fazla ${field.maxLength} karakter olmalı.` }
+        return {
+          ok: false,
+          error: `${field.label} en fazla ${field.maxLength} karakter olmalı.`,
+        }
       }
-      if (field.type === 'select' && field.options && !field.options.includes(s)) {
+      if (
+        field.type === 'select' &&
+        field.options &&
+        !field.options.includes(s)
+      ) {
         return { ok: false, error: `${field.label} için geçersiz değer: ${s}` }
       }
-      if (field.type === 'url' && s && !/^(https?:\/\/|\/)/.test(s)) {
-        return { ok: false, error: `${field.label} http(s):// veya / ile başlamalı.` }
+      if (field.type === 'url' && s && !/^(?:https?:\/\/|\/)/.test(s)) {
+        return {
+          ok: false,
+          error: `${field.label} http(s):// veya / ile başlamalı.`,
+        }
       }
       return { ok: true, value: s }
     }
   }
 }
 
-export type BuildResult
-  = | { ok: true, payload: Record<string, unknown> }
-    | { ok: false, error: string }
+export type BuildResult =
+  { ok: true; payload: Record<string, unknown> } | { ok: false; error: string }
 
 /**
  * Istek govdesinden DB'ye yazilacak nesneyi uretir.
@@ -130,7 +140,9 @@ export function buildPayload(
   body: Record<string, unknown>,
   partial: boolean,
 ): BuildResult {
-  const allowed = new Set(writableFieldNames(resource, partial ? 'update' : 'insert'))
+  const allowed = new Set(
+    writableFieldNames(resource, partial ? 'update' : 'insert'),
+  )
   const payload: Record<string, unknown> = {}
 
   for (const field of resource.fields) {
@@ -202,42 +214,72 @@ export async function writeWithColumnFallback(
   table: string,
   payload: Record<string, unknown>,
   mode: 'insert' | 'update',
-  match?: { column: string, value: string | number },
+  match?: { column: string; value: string | number },
   select = '*',
 ): Promise<WriteResult> {
   const db = adminDb()
   if (!db) {
-    return { ok: false, error: 'Supabase yapılandırılmamış (service_role eksik).' }
+    return {
+      ok: false,
+      error: 'Supabase yapılandırılmamış (service_role eksik).',
+    }
   }
 
   const working: Record<string, unknown> = { ...payload }
   const dropped: string[] = []
 
   for (let attempt = 0; attempt < 4; attempt++) {
-    const query = mode === 'insert'
-      ? db.from(table).insert(working).select(select)
-      : db.from(table).update(working).eq(match!.column, match!.value).select(select)
+    const query =
+      mode === 'insert'
+        ? db.from(table).insert(working).select(select)
+        : db
+            .from(table)
+            .update(working)
+            .eq(match!.column, match!.value)
+            .select(select)
 
     const { data, error } = await query
 
     if (!error) {
-      return { ok: true, data: Array.isArray(data) ? data[0] : data, droppedColumns: dropped }
+      return {
+        ok: true,
+        data: Array.isArray(data) ? data[0] : data,
+        droppedColumns: dropped,
+      }
     }
 
     const missing = missingColumnFrom(error)
     if (missing && Object.hasOwn(working, missing)) {
-      console.warn(`[admin/data] ${table}.${missing} kolonu yok — alan atlandı (${error.code}).`)
+      console.warn(
+        `[admin/data] ${table}.${missing} kolonu yok — alan atlandı (${error.code}).`,
+      )
       delete working[missing]
       dropped.push(missing)
       if (Object.keys(working).length === 0) {
-        return { ok: false, error: 'Kaydedilecek geçerli alan kalmadı.', droppedColumns: dropped }
+        return {
+          ok: false,
+          error: 'Kaydedilecek geçerli alan kalmadı.',
+          droppedColumns: dropped,
+        }
       }
       continue
     }
 
-    console.error(`[admin/data] ${mode} basarisiz (${table}):`, error.code, error.message)
-    return { ok: false, error: `${error.code || ''} ${error.message}`.trim(), droppedColumns: dropped }
+    console.error(
+      `[admin/data] ${mode} basarisiz (${table}):`,
+      error.code,
+      error.message,
+    )
+    return {
+      ok: false,
+      error: `${error.code || ''} ${error.message}`.trim(),
+      droppedColumns: dropped,
+    }
   }
 
-  return { ok: false, error: 'Kayıt denemesi başarısız oldu.', droppedColumns: dropped }
+  return {
+    ok: false,
+    error: 'Kayıt denemesi başarısız oldu.',
+    droppedColumns: dropped,
+  }
 }

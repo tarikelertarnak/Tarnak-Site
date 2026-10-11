@@ -95,13 +95,23 @@ describe('splitButton', () => {
 
   it('indirme yarisi <a download> olarak basilir (indirme calisir)', () => {
     const html = render([
-      { href: '/cv.pdf', target: '_blank', rel: 'noopener noreferrer', children: 'CV' },
-      { 'href': '/cv.pdf', 'download': true, 'aria-label': 'CV Indir', 'children': <span>D</span> },
+      {
+        href: '/cv.pdf',
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        children: 'CV',
+      },
+      {
+        href: '/cv.pdf',
+        download: true,
+        'aria-label': 'CV Indir',
+        children: <span>D</span>,
+      },
     ])
 
     expect(html).toContain('href="/cv.pdf"')
     // Ikinci parca download="true" tasiyor
-    expect(html).toMatch(/<a[^>]*download(="true")?[^>]*>/)
+    expect(html).toMatch(/<a[^>]*download[^>]*>/)
     expect(html).toContain('aria-label="CV Indir"')
     // Ilk parca yeni sekmede
     expect(html).toContain('target="_blank"')
@@ -109,14 +119,19 @@ describe('splitButton', () => {
 
   it('menu yarisi <button> olarak basilir ve aria ile baglanir', () => {
     const html = render([
-      { href: '/z.zip', onClick: () => {}, iconOnly: true, children: <span>D</span> },
       {
-        'onClick': () => {},
-        'iconOnly': true,
+        href: '/z.zip',
+        onClick: () => {},
+        iconOnly: true,
+        children: <span>D</span>,
+      },
+      {
+        onClick: () => {},
+        iconOnly: true,
         'aria-label': 'Surum sec',
         'aria-expanded': true,
         'aria-haspopup': true,
-        'children': <span>V</span>,
+        children: <span>V</span>,
       },
     ])
 

@@ -9,6 +9,7 @@
  */
 
 import { motion } from 'motion/react'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
@@ -74,10 +75,13 @@ export function TopBar() {
             >
               <HamburgerIcon small={scrolled} />
             </button>
-            <a
+            <Link
               href="/"
               onClick={(e) => {
-                if (typeof window !== 'undefined' && window.location.pathname === '/') {
+                if (
+                  typeof window !== 'undefined' &&
+                  window.location.pathname === '/'
+                ) {
                   e.preventDefault()
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }
@@ -111,7 +115,7 @@ export function TopBar() {
                   vurgularla ayni kaynak: `primary` (dark #3b82f6 /
                   light #2563eb). */}
               <span className="font-black text-primary">TARNAK</span>
-            </a>
+            </Link>
           </div>
 
           {/* Right: search trigger (command palette) — the admin "Düzenle" button was
@@ -120,7 +124,9 @@ export function TopBar() {
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={() => window.dispatchEvent(new CustomEvent('search:request-open'))}
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent('search:request-open'))
+              }
               aria-label={t('common.search')}
               className={`flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/5 text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground ${
                 scrolled ? 'h-8 px-2.5' : 'h-9 px-3'

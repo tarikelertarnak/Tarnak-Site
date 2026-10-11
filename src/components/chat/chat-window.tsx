@@ -93,9 +93,8 @@ export function ChatWindow({
   */
   const [cooldown, setCooldown] = useState(0)
   useEffect(() => {
-    if (cooldown <= 0)
-      return
-    const t = setTimeout(() => setCooldown(c => Math.max(0, c - 1)), 1000)
+    if (cooldown <= 0) return
+    const t = setTimeout(() => setCooldown((c) => Math.max(0, c - 1)), 1000)
     return () => clearTimeout(t)
   }, [cooldown])
 
@@ -116,13 +115,14 @@ export function ChatWindow({
     }
     const load = async () => {
       try {
-        const res = await fetch(`/api/chat?user=${encodeURIComponent(userName)}`)
+        const res = await fetch(
+          `/api/chat?user=${encodeURIComponent(userName)}`,
+        )
         const data = await res.json()
         if (data.success) {
           setAll(data.messages)
         }
-      }
-      catch {
+      } catch {
         // ignore polling errors
       }
     }
@@ -136,12 +136,12 @@ export function ChatWindow({
       return
     }
     fetch('/api/chat/users')
-      .then(res => (res.ok ? res.json() : { users: [] }))
+      .then((res) => (res.ok ? res.json() : { users: [] }))
       .then((data) => {
         const names = ((data.users ?? []) as Array<{ username: string | null }>)
-          .map(u => u.username)
+          .map((u) => u.username)
           .filter((n): n is string => Boolean(n))
-        setOthers(names.filter(n => n !== userName))
+        setOthers(names.filter((n) => n !== userName))
       })
       .catch(() => setOthers([]))
   }, [joined, userName])
@@ -164,8 +164,7 @@ export function ChatWindow({
       if (m.to === userName || m.to === null || m.to === undefined) {
         // Owner of private messages sent to me or of public messages → person
         upsert(m.name, m)
-      }
-      else if (m.name === userName && m.to) {
+      } else if (m.name === userName && m.to) {
         // Recipient of my private messages → person
         upsert(m.to, m)
       }
@@ -177,12 +176,12 @@ export function ChatWindow({
   const visible = useMemo(() => {
     if (contact === null) {
       // Public chat: only public messages
-      return all.filter(m => !m.to && !m.owner)
+      return all.filter((m) => !m.to && !m.owner)
     }
     return all.filter(
-      m =>
-        (m.name === userName && (!m.to || m.to === contact))
-        || (m.name === contact && (!m.to || m.to === userName)),
+      (m) =>
+        (m.name === userName && (!m.to || m.to === contact)) ||
+        (m.name === contact && (!m.to || m.to === userName)),
     )
   }, [all, contact, userName])
 
@@ -197,12 +196,12 @@ export function ChatWindow({
     url: string
   }) => {
     if (
-      !userName
-      || (!text.trim() && !fileData)
-      || sending
-      || uploading
-      || cooldown > 0
-      || Date.now() - lastSentAt.current < DEBOUNCE_MS
+      !userName ||
+      (!text.trim() && !fileData) ||
+      sending ||
+      uploading ||
+      cooldown > 0 ||
+      Date.now() - lastSentAt.current < DEBOUNCE_MS
     ) {
       return
     }
@@ -229,9 +228,9 @@ export function ChatWindow({
           başlatılıyor; buton o süre boyunca `isDisabled`.
         */
         if (res.status === 429) {
-          const retryAfter = Number(
-            res.headers.get('Retry-After') ?? data.retryAfter ?? 60,
-          ) || 60
+          const retryAfter =
+            Number(res.headers.get('Retry-After') ?? data.retryAfter ?? 60) ||
+            60
           setCooldown(Math.ceil(retryAfter))
           setError(t('chat.rateLimited', { seconds: retryAfter }))
           return
@@ -247,11 +246,9 @@ export function ChatWindow({
       if (refreshed.success) {
         setAll(refreshed.messages)
       }
-    }
-    catch {
+    } catch {
       setError(t('chat.error'))
-    }
-    finally {
+    } finally {
       setSending(false)
     }
   }
@@ -277,11 +274,9 @@ export function ChatWindow({
         return
       }
       await send(data.file)
-    }
-    catch {
+    } catch {
       setError(t('chat.uploadFailed'))
-    }
-    finally {
+    } finally {
       setUploading(false)
     }
   }
@@ -350,9 +345,7 @@ export function ChatWindow({
               {profile.nickname && (
                 <span className="text-foreground-500">
                   {' '}
-                  •
-                  {' '}
-                  {profile.nickname}
+                  • {profile.nickname}
                 </span>
               )}
             </p>
@@ -393,7 +386,7 @@ export function ChatWindow({
                 {t('chat.chats')}
               </p>
             )}
-            {contacts.map(c => (
+            {contacts.map((c) => (
               <button
                 key={c.name}
                 type="button"
@@ -405,7 +398,7 @@ export function ChatWindow({
                 }`}
               >
                 <span className="flex items-center gap-2 text-xs font-semibold">
-                  <AvatarDot name={c.name} />
+                  <AvatarDot />
                   <span className="truncate">{c.name}</span>
                 </span>
                 <span className="flex items-center justify-between gap-2">
@@ -425,7 +418,7 @@ export function ChatWindow({
                 <p className="text-foreground-500 px-2 pt-1 pb-0.5 text-[10px] font-bold tracking-wider uppercase">
                   {t('chat.others')}
                 </p>
-                {others.map(name => (
+                {others.map((name) => (
                   <button
                     key={name}
                     type="button"
@@ -436,7 +429,7 @@ export function ChatWindow({
                         : 'text-foreground-500 hover:bg-foreground-200/10 hover:text-foreground'
                     }`}
                   >
-                    <AvatarDot name={name} />
+                    <AvatarDot />
                     <span className="truncate text-xs font-semibold">
                       {name}
                     </span>
@@ -449,7 +442,7 @@ export function ChatWindow({
           {/* Right: messages */}
           <div className="flex min-w-0 flex-1 flex-col">
             <div className="border-foreground-200/10 flex items-center gap-2 border-b px-3 py-1.5">
-              <AvatarDot name={activeName} />
+              <AvatarDot />
               <p className="text-foreground truncate text-xs font-semibold">
                 {activeName}
               </p>
@@ -460,30 +453,30 @@ export function ChatWindow({
               )}
             </div>
             <div className="bg-background flex h-[48vh] w-full flex-col gap-2 overflow-y-auto p-3 sm:h-[52vh] sm:p-4">
-              {visible.length === 0
-                ? (
-                    <div className="text-foreground-500 flex h-full flex-col items-center justify-center gap-2 text-center">
-                      <ChatIcon size={40} />
-                      <p className="text-sm">{t('chat.empty')}</p>
-                    </div>
+              {visible.length === 0 ? (
+                <div className="text-foreground-500 flex h-full flex-col items-center justify-center gap-2 text-center">
+                  <ChatIcon size={40} />
+                  <p className="text-sm">{t('chat.empty')}</p>
+                </div>
+              ) : (
+                visible.map((message) => {
+                  const mine = message.owner ? false : message.name === userName
+                  return (
+                    <MessageBubble
+                      key={message.id}
+                      message={message}
+                      mine={mine}
+                      profile={profile}
+                    />
                   )
-                : (
-                    visible.map((message) => {
-                      const mine = message.owner ? false : message.name === userName
-                      return (
-                        <MessageBubble
-                          key={message.id}
-                          message={message}
-                          mine={mine}
-                          profile={profile}
-                        />
-                      )
-                    })
-                  )}
+                })
+              )}
               <div ref={bottomRef} />
             </div>
             <div className="border-foreground-200/10 flex flex-col gap-2 border-t p-3 sm:p-4">
-              {error && <p className="text-danger text-sm font-medium">{error}</p>}
+              {error && (
+                <p className="text-danger text-sm font-medium">{error}</p>
+              )}
               <div className="flex flex-row items-end gap-2">
                 <input
                   ref={fileRef}
@@ -539,7 +532,9 @@ export function ChatWindow({
                   aria-label={t('chat.send')}
                   onPress={() => send()}
                   isLoading={sending}
-                  isDisabled={!text.trim() || uploading || cooldown > 0 || sending}
+                  isDisabled={
+                    !text.trim() || uploading || cooldown > 0 || sending
+                  }
                   className="shrink-0"
                 >
                   <SendIcon size={20} />
@@ -553,7 +548,7 @@ export function ChatWindow({
   )
 }
 
-function AvatarDot({ name, size = 6 }: { name: string, size?: number }) {
+function AvatarDot({ size = 6 }: { size?: number }) {
   return (
     <span
       className="bg-foreground-500/40 inline-block shrink-0 rounded-full"
@@ -616,20 +611,18 @@ function MessageBubble({
       >
         {message.owner && (
           <div className="mb-1 flex items-center gap-1.5">
-            {message.file?.type.startsWith('image/') && profile.profileImage
-              ? (
-                  <img
-                    src={profile.profileImage}
-                    alt=""
-                    className="h-4 w-4 rounded-full object-cover"
-                    loading="lazy"
-                  />
-                )
-              : (
-                  <span className="text-foreground-500 text-[10px]">
-                    {t('chat.ownerName')}
-                  </span>
-                )}
+            {message.file?.type.startsWith('image/') && profile.profileImage ? (
+              <img
+                src={profile.profileImage}
+                alt=""
+                className="h-4 w-4 rounded-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <span className="text-foreground-500 text-[10px]">
+                {t('chat.ownerName')}
+              </span>
+            )}
           </div>
         )}
         {!message.owner && !mine && (

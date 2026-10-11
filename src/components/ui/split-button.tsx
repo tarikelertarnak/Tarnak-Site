@@ -39,22 +39,22 @@ import {
 
 export interface SplitButtonPartProps {
   /** Görünür içerik: ikon + yazı. */
-  'children': ReactNode
-  'href'?: string
-  'onClick'?: () => void
+  children: ReactNode
+  href?: string
+  onClick?: () => void
   /** Sadece ikon (sağ kare yarı için). */
-  'label'?: string
+  label?: string
   /** `download` özniteliği — indirme yarıları için. */
-  'download'?: boolean | string
-  'target'?: string
-  'rel'?: string
-  'title'?: string
+  download?: boolean | string
+  target?: string
+  rel?: string
+  title?: string
   'aria-label'?: string
   'aria-expanded'?: boolean
   'aria-haspopup'?: boolean
   /** Sabit kare genişlikte ikon yarı (ikon ortalanır). */
-  'iconOnly'?: boolean
-  'ref'?: React.Ref<HTMLButtonElement>
+  iconOnly?: boolean
+  ref?: React.Ref<HTMLButtonElement>
 }
 
 /** Sağ (ikon) yarının kare genişliği — 40px buton yüksekliğiyle aynı. */
@@ -73,8 +73,7 @@ const ICON_PART_WIDTH = 40
  * Üçü de `hero-button-style.ts`ten gelen sabitlerle kapandı; artık
  * normal butonla (LobeButton) aynı değişkenlerden besleniyoruz.
  */
-const WRAP
-  = `${HERO_BTN_SHELL} ${HERO_BTN_EDGE} ${HERO_BTN_FG} align-middle select-none group ${HERO_BTN_FOCUS}`
+const WRAP = `${HERO_BTN_SHELL} ${HERO_BTN_EDGE} ${HERO_BTN_FG} align-middle select-none group ${HERO_BTN_FOCUS}`
 
 /**
  * Her yari: geometrisiz. Yuvarlatma yok, esnemez.
@@ -91,8 +90,7 @@ const WRAP
  * Parçaya `bg-primary` eklenince `a.bg-primary` kuralı işe yarıyor ve
  * `color: var(--tprimary-fg)` uygulanıyor: light siyah, dark beyaz.
  */
-const PART
-  = `inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border-0 bg-primary text-[13px] font-medium no-underline transition-colors ${HERO_BTN_STATE} ${HERO_BTN_FG} focus-visible:outline-none`
+const PART = `inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border-0 bg-primary text-[13px] font-medium no-underline transition-colors ${HERO_BTN_STATE} ${HERO_BTN_FG} focus-visible:outline-none`
 
 /** Sag yari: sabit kare + ince ayirici (dış çerçeveyle aynı renk). */
 const ICON_PART = HERO_BTN_DIVIDER
@@ -127,14 +125,19 @@ function isModifiedClick(e: React.MouseEvent) {
  */
 function hasContentPart(parts: SplitButtonPartProps[], index: number) {
   const c = parts[index]?.children
-  if (typeof c === 'string' || typeof c === 'number')
-    return true
-  return Array.isArray(c) && c.some(x => typeof x === 'string' || typeof x === 'number')
+  if (typeof c === 'string' || typeof c === 'number') return true
+  return (
+    Array.isArray(c) &&
+    c.some((x) => typeof x === 'string' || typeof x === 'number')
+  )
 }
 
 /**
  * @param parts  Sırayla parçalar. Son parça ikon/kare yarı sayılır; öncesi
  *               içerik kadar geniş. Tek parça verilirse ikon karesi uygulanmaz.
+ * @param parts.parts     Parça listesi (`label`/`href`/`onClick`).
+ * @param parts.className Ek sınıflar.
+ * @param parts.ref       İleri yönlendirilen ref.
  */
 export function SplitButton({
   parts,
@@ -151,8 +154,7 @@ export function SplitButton({
    */
   ref?: React.Ref<HTMLDivElement>
 }) {
-  if (parts.length === 0)
-    return null
+  if (parts.length === 0) return null
 
   const lastIndex = parts.length - 1
 
@@ -162,13 +164,16 @@ export function SplitButton({
         // Sabit kare yari: ya acikca isaretlenmis ya da (yoksa) son yari
         // ve oncesinde yazi/ikon disi bir yari varsa. Proje kartinda IKISI
         // de ikon oldugu icin `iconOnly` her ikisinde de verilmek zorunda.
-        const isIcon = p.iconOnly ?? (i === lastIndex && !hasContentPart(parts, i))
+        const isIcon =
+          p.iconOnly ?? (i === lastIndex && !hasContentPart(parts, i))
         const base = cn(PART, isIcon ? ICON_PART : MAIN_PART)
 
         const inner = (
           <>
             {p.children}
-            {!p.children && p.label ? <span className="sr-only">{p.label}</span> : null}
+            {!p.children && p.label ? (
+              <span className="sr-only">{p.label}</span>
+            ) : null}
           </>
         )
 
@@ -202,12 +207,13 @@ export function SplitButton({
             {...(p.rel ? { rel: p.rel } : {})}
             {...(p.title ? { title: p.title } : {})}
             {...(p['aria-label'] ? { 'aria-label': p['aria-label'] } : {})}
-            onClick={p.onClick
-              ? (e: React.MouseEvent) => {
-                  if (!isModifiedClick(e))
-                    p.onClick!()
-                }
-              : undefined}
+            onClick={
+              p.onClick
+                ? (e: React.MouseEvent) => {
+                    if (!isModifiedClick(e)) p.onClick!()
+                  }
+                : undefined
+            }
             style={isIcon ? { width: ICON_PART_WIDTH } : undefined}
             className={cn(base, isIcon && 'px-0')}
           >

@@ -81,8 +81,9 @@ const CONTENT_LASTMOD = contentLastmod()
  * Once sitemap slash'siz, canonical slash'liydi — tutarsiz sitemap'ler
  * Google'in guvenini zedeliyor. Burada tek form kullanıyoruz: canonical.
  */
-const canonicalUrl = (p: string) =>
-  p === '/' ? siteUrl('/') : siteUrl(`${p}/`)
+function canonicalUrl(p: string) {
+  return p === '/' ? siteUrl('/') : siteUrl(`${p}/`)
+}
 
 /**
  * hreflang alternatifi (2026-10-05) — 2026-10-06 KALDIRILDI.

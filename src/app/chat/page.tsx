@@ -26,7 +26,14 @@ export const metadata: Metadata = {
     description:
       'Tarık Eler (Tarnak) ile sohbet et — yapay zeka destekli chat. tarik eler chat.',
     locale: 'tr_TR',
-    images: [{ url: `${siteUrl()}/tarnak-logo-512.png`, width: 512, height: 512, alt: 'TARNAK logo' }],
+    images: [
+      {
+        url: `${siteUrl()}/tarnak-logo-512.png`,
+        width: 512,
+        height: 512,
+        alt: 'TARNAK logo',
+      },
+    ],
   },
   robots: { index: true, follow: true },
 }
@@ -41,7 +48,7 @@ export default async function ChatPage() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation content={content} />
+      <Navigation />
       <main id="main" className="">
         <Section className="flex-col justify-center min-h-[100svh]">
           {/*
@@ -73,7 +80,11 @@ export default async function ChatPage() {
             />
           </div>
           <div className="flex w-full flex-1 items-center justify-center">
-            <ChatWindow content={content} userName={userName} isAuthenticated={!!user} />
+            <ChatWindow
+              content={content}
+              userName={userName}
+              isAuthenticated={!!user}
+            />
           </div>
         </Section>
       </main>

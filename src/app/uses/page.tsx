@@ -2,7 +2,6 @@ import type { Metadata } from 'next'
 
 import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
-import { getContent } from '@/lib/content'
 import { getStaticLocale } from '@/lib/i18n-server'
 import { getPhase6, Phase6Empty } from '@/lib/phase6-server'
 
@@ -25,14 +24,13 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function UsesPage() {
-  const content = await getContent()
   const p6 = await getPhase6()
   const uses = p6?.uses
   const groups = (uses?.groups ?? []).filter((g) => g.items.length > 0)
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation content={content} />
+      <Navigation />
       <main id="main" className="w-full">
         <Section
           className="flex-col pt-16 sm:pt-24 lg:pt-36 pb-0"

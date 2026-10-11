@@ -40,7 +40,13 @@ import { PANEL_SURFACE, PANEL_SURFACE_BORDER } from '@/lib/panel-surface'
 /* ─── Navigation Items ─────────────────────────────────────── */
 
 /** Support (Donate) icon — heart/mug. */
-function DonateIcon({ size = 18, className }: { size?: number, className?: string }) {
+function DonateIcon({
+  size = 18,
+  className,
+}: {
+  size?: number
+  className?: string
+}) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -57,7 +63,13 @@ function DonateIcon({ size = 18, className }: { size?: number, className?: strin
 }
 
 /** Contributors (credits) icon — document/pen. */
-function CreditsIcon({ size = 18, className }: { size?: number, className?: string }) {
+function CreditsIcon({
+  size = 18,
+  className,
+}: {
+  size?: number
+  className?: string
+}) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -84,7 +96,7 @@ interface NavItem {
   key: string
   labelKey: string
   href: string
-  icon: (props: { size?: number, className?: string }) => React.ReactElement
+  icon: (props: { size?: number; className?: string }) => React.ReactElement
 }
 
 const SIDEBAR_WIDTH = 325
@@ -92,11 +104,21 @@ const SIDEBAR_WIDTH = 325
 const NAV_LINKS: NavItem[] = [
   { key: 'home', labelKey: 'nav.home', href: '/', icon: HouseIcon },
   { key: 'chat', labelKey: 'nav.chat', href: '/chat', icon: ChatIcon },
-  { key: 'projects', labelKey: 'nav.projects', href: '/projects', icon: FolderIcon },
+  {
+    key: 'projects',
+    labelKey: 'nav.projects',
+    href: '/projects',
+    icon: FolderIcon,
+  },
   { key: 'blog', labelKey: 'nav.blog', href: '/blog', icon: NewspaperIcon },
   { key: 'about', labelKey: 'nav.about', href: '/about', icon: UserIcon },
   { key: 'donate', labelKey: 'nav.donate', href: '/donate', icon: DonateIcon },
-  { key: 'credits', labelKey: 'nav.credits', href: '/credits', icon: CreditsIcon },
+  {
+    key: 'credits',
+    labelKey: 'nav.credits',
+    href: '/credits',
+    icon: CreditsIcon,
+  },
 ]
 
 export function Sidebar() {
@@ -109,7 +131,7 @@ export function Sidebar() {
   const [profileOpen, setProfileOpen] = useState(false)
 
   useEffect(() => {
-    const handler = () => setIsOpen(o => !o)
+    const handler = () => setIsOpen((o) => !o)
     window.addEventListener('sidebar:request-toggle', handler)
     return () => window.removeEventListener('sidebar:request-toggle', handler)
   }, [])
@@ -129,6 +151,23 @@ export function Sidebar() {
     }
   }
 
+  const fetchSession = useCallback(() => {
+    let cancelled = false
+    fetch('/api/admin/session')
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return
+        setSessionUser(data.user || null)
+        setSessionChecked(true)
+      })
+      .catch(() => {
+        if (!cancelled) setSessionChecked(true)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   // Session değişimini dinle (profil kaydı, çıkış, hesap değiştir)
   useEffect(() => {
     const handler = () => {
@@ -140,26 +179,7 @@ export function Sidebar() {
     }
     window.addEventListener('session:changed', handler)
     return () => window.removeEventListener('session:changed', handler)
-  }, [pathname])
-
-  const fetchSession = useCallback(() => {
-    let cancelled = false
-    fetch('/api/admin/session')
-      .then(r => r.json())
-      .then((data) => {
-        if (cancelled)
-          return
-        setSessionUser(data.user || null)
-        setSessionChecked(true)
-      })
-      .catch(() => {
-        if (!cancelled)
-          setSessionChecked(true)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  }, [pathname, fetchSession])
 
   useEffect(() => {
     fetchSession()
@@ -172,18 +192,17 @@ export function Sidebar() {
   }, [isOpen])
 
   useEffect(() => {
-    if (!isOpen)
-      return
+    if (!isOpen) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape')
-        setIsOpen(false)
+      if (e.key === 'Escape') setIsOpen(false)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [isOpen])
 
   const isActive = useCallback(
-    (href: string) => (href === '/' ? pathname === '/' : pathname.startsWith(href)),
+    (href: string) =>
+      href === '/' ? pathname === '/' : pathname.startsWith(href),
     [pathname],
   )
 
@@ -194,15 +213,13 @@ export function Sidebar() {
     try {
       const { createClient } = await import('@/lib/supabase/client')
       await (await createClient()).auth.signOut()
-    }
-    catch {
+    } catch {
       // ignore — sunucu tarafı zaten temizliyor
     }
     // 2) Server-side: cookie'leri (supabase + admin_session) temizle.
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
-    }
-    catch {
+    } catch {
       // ignore
     }
     setSessionUser(null)
@@ -212,12 +229,20 @@ export function Sidebar() {
   }
 
   const sidebarInner = (
-    <nav className={`flex h-full flex-col ${PANEL_SURFACE}`} aria-label="Sidebar navigation" aria-modal="true" role="dialog" onClickCapture={closeOnNavigate}>
+    <nav
+      className={`flex h-full flex-col ${PANEL_SURFACE}`}
+      aria-label="Sidebar navigation"
+      aria-modal="true"
+      role="dialog"
+      onClickCapture={closeOnNavigate}
+    >
       {/* Brand — same layout as header: logo + "TARIK ELER — TARNAK" side by side
           Logo 2026-10-05: `logo-framed-*.svg` çerçeveli marka. İki ayrı `<img>` +
           `dark:block/dark:hidden` yerine tek inline `SiteLogo` — `fill` yazı
           rengini, `stroke` sayfa zeminini alır, tema CSS'ten okunur. */}
-      <div className={`flex items-center gap-2.5 ${PANEL_SURFACE_BORDER} px-5 py-4`}>
+      <div
+        className={`flex items-center gap-2.5 ${PANEL_SURFACE_BORDER} px-5 py-4`}
+      >
         <SiteLogo size={30} className="shrink-0" />
         <span className="truncate text-base font-bold tracking-tight text-foreground">
           TARIK ELER
@@ -231,7 +256,9 @@ export function Sidebar() {
       {/* Search — en üstte (marka bandının hemen altı). */}
       <button
         type="button"
-        onClick={() => window.dispatchEvent(new CustomEvent('search:request-open'))}
+        onClick={() =>
+          window.dispatchEvent(new CustomEvent('search:request-open'))
+        }
         aria-label={t('common.search')}
         className="flex w-full items-center gap-3 border-b border-white/5 px-5 py-3.5 text-left text-base text-foreground/50 transition-colors hover:bg-white/5 hover:text-foreground"
       >
@@ -328,20 +355,21 @@ export function Sidebar() {
               className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2 py-3 text-left transition-colors hover:bg-white/5"
             >
               <span className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/10 bg-white/5">
-                {sessionUser.avatarUrl
-                  ? (
-                      <img
-                        src={sessionUser.avatarUrl}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    )
-                  : (
-                      <UserIcon size={20} className="text-foreground/50" />
-                    )}
+                {sessionUser.avatarUrl ? (
+                  <img
+                    src={sessionUser.avatarUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <UserIcon size={20} className="text-foreground/50" />
+                )}
               </span>
               <span className="min-w-0 flex-1 truncate text-base font-medium text-foreground/90">
-                {sessionUser.fullName || sessionUser.username || sessionUser.email || 'Profil'}
+                {sessionUser.fullName ||
+                  sessionUser.username ||
+                  sessionUser.email ||
+                  'Profil'}
               </span>
             </button>
             <button

@@ -32,8 +32,7 @@ export function AnnouncementBanner() {
 
     try {
       if (localStorage.getItem(KAPATMA_ANAHTARI) === ham) return
-    }
-    catch {
+    } catch {
       /* localStorage kapalıysa (gizli sekme) — göster, hata verme */
     }
 
@@ -45,8 +44,9 @@ export function AnnouncementBanner() {
     setGizli(true)
     try {
       if (mesaj) localStorage.setItem(KAPATMA_ANAHTARI, mesaj)
+    } catch {
+      /* yoksay */
     }
-    catch { /* yoksay */ }
   }
 
   if (gizli || !mesaj) return null
@@ -56,7 +56,9 @@ export function AnnouncementBanner() {
       role="status"
       className="relative w-full border-b border-foreground/10 bg-primary/10 px-4 py-2 text-center text-sm text-foreground/80"
     >
-      <p data-announcement-text className="mx-auto max-w-4xl pr-8">{mesaj}</p>
+      <p data-announcement-text className="mx-auto max-w-4xl pr-8">
+        {mesaj}
+      </p>
       <button
         type="button"
         onClick={kapat}

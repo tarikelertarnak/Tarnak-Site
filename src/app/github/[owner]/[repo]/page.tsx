@@ -2,12 +2,12 @@ import type { Metadata } from 'next'
 import type { ProjectItem } from '@/lib/content'
 import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
 import { CodeCopyEnhancer } from '@/components/code-copy-enhancer'
-import { Navigation } from '@/components/navigation'
 import { RepoVisitCounter } from '@/components/github/repo-visit-counter'
+import { Navigation } from '@/components/navigation'
 import { Section, SectionTitle } from '@/components/ui/section'
-import { renderMarkdown } from '@/lib/markdown'
 import { fetchRepoDetails } from '@/lib/github'
 import { getLocalizedContent } from '@/lib/i18n-server'
+import { renderMarkdown } from '@/lib/markdown'
 import { pageMetadata } from '@/lib/page-metadata'
 
 /**
@@ -30,7 +30,7 @@ import { pageMetadata } from '@/lib/page-metadata'
 export const dynamic = 'force-static'
 
 export async function generateStaticParams(): Promise<
-  Array<{ owner: string, repo: string }>
+  Array<{ owner: string; repo: string }>
 > {
   return [
     { owner: 'tarikelertarnak', repo: 'tarnak' },
@@ -41,7 +41,7 @@ export async function generateStaticParams(): Promise<
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ owner: string, repo: string }>
+  params: Promise<{ owner: string; repo: string }>
 }): Promise<Metadata> {
   const { owner, repo } = await params
   return pageMetadata({
@@ -54,7 +54,7 @@ export async function generateMetadata({
 export default async function GithubRepoPage({
   params,
 }: {
-  params: Promise<{ owner: string, repo: string }>
+  params: Promise<{ owner: string; repo: string }>
 }) {
   const content = await getLocalizedContent()
   const { owner, repo } = await params
@@ -64,8 +64,7 @@ export default async function GithubRepoPage({
   let detay: Awaited<ReturnType<typeof fetchRepoDetails>> | null = null
   try {
     detay = await fetchRepoDetails(owner, repo, { forceStatic: true })
-  }
-  catch {
+  } catch {
     detay = null
   }
 
@@ -74,9 +73,9 @@ export default async function GithubRepoPage({
     GitHub reposu için admin kaydı yoksa `undefined` → placeholder gösterilir.
   */
   // `content.projects` bir GRUP nesnesi: { subtitle, title, description, items }.
-// Kayıtlar `items` dizisinde.
-  const adminKaydi = (content.projects?.items ?? []).find(
-    (p: ProjectItem) => (p.srcLink ?? '').includes(`/${owner}/${repo}`),
+  // Kayıtlar `items` dizisinde.
+  const adminKaydi = (content.projects?.items ?? []).find((p: ProjectItem) =>
+    (p.srcLink ?? '').includes(`/${owner}/${repo}`),
   )
   const vaka = adminKaydi?.caseStudy
 
@@ -88,7 +87,7 @@ export default async function GithubRepoPage({
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation content={content} />
+      <Navigation />
       <main id="main" className="w-full">
         <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">
           <Breadcrumb items={crumb} />
@@ -107,11 +106,13 @@ export default async function GithubRepoPage({
           {detay && (
             <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-foreground/60">
               {detay.language && <span>{detay.language}</span>}
-              <span>★ {detay.stars}</span>
-              <span>⑂ {detay.forks}</span>
+              <span>★{detay.stars}</span>
+              <span>⑂{detay.forks}</span>
               <span>{detay.license ?? 'Lisans belirtilmemiş'}</span>
               <span>
-                <time dateTime={detay.updatedAt}>{detay.updatedAt.slice(0, 10)}</time>
+                <time dateTime={detay.updatedAt}>
+                  {detay.updatedAt.slice(0, 10)}
+                </time>
               </span>
             </div>
           )}
@@ -192,17 +193,20 @@ export default async function GithubRepoPage({
               {/* TODO (kullanıcı): admin panelinden bu proje için vaka
                   çalışması alanlarını doldur. Boş bırakılan her bölüm
                   burada görünür — uydurma metin yazılmadı. */}
-              {(!vaka?.summary && !vaka?.problem && !vaka?.solution && !vaka?.outcome) && (
-                <div className="rounded-xl border border-foreground/10 p-5">
-                  <p className="text-sm text-foreground/60">
-                    Bu proje için vaka çalışması henüz yazılmadı.
-                  </p>
-                  <p className="mt-2 text-xs text-foreground/40">
-                    TODO: admin paneli → Projeler → {repo} → kısa özet / problem /
-                    çözüm / sonuç
-                  </p>
-                </div>
-              )}
+              {!vaka?.summary &&
+                !vaka?.problem &&
+                !vaka?.solution &&
+                !vaka?.outcome && (
+                  <div className="rounded-xl border border-foreground/10 p-5">
+                    <p className="text-sm text-foreground/60">
+                      Bu proje için vaka çalışması henüz yazılmadı.
+                    </p>
+                    <p className="mt-2 text-xs text-foreground/40">
+                      TODO: admin paneli → Projeler → {repo} → kısa özet /
+                      problem / çözüm / sonuç
+                    </p>
+                  </div>
+                )}
             </div>
 
             {/* ── Kullanılan teknolojiler ───────────────────────────── */}
@@ -210,9 +214,11 @@ export default async function GithubRepoPage({
               <>
                 <div aria-hidden className="h-[var(--section-gap)]" />
                 <section>
-                  <h3 className="text-base font-semibold">Kullanılan teknolojiler</h3>
+                  <h3 className="text-base font-semibold">
+                    Kullanılan teknolojiler
+                  </h3>
                   <ul className="mt-3 flex flex-wrap gap-2">
-                    {detay.topics.map(t => (
+                    {detay.topics.map((t) => (
                       <li
                         key={t}
                         className="rounded-full border border-foreground/10 px-3 py-1 text-xs text-foreground/70"
@@ -233,22 +239,26 @@ export default async function GithubRepoPage({
         <Section className="flex-col pb-0">
           <div className="mx-auto w-full max-w-3xl">
             <h2 className="mb-4 text-lg font-bold">README</h2>
-            {detay?.readme
-              ? (
-                  <div
-                    className="markdown-body text-sm leading-relaxed sm:text-base"
-                    dangerouslySetInnerHTML={{ __html: renderMarkdown(detay.readme) }}
-                  />
-                  )
-              : (
-                  <p className="rounded-xl border border-foreground/10 p-5 text-sm text-foreground/60">
-                    README bulunamadı veya yüklenemedi.
-                    {' '}
-                    <a href={githubUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline">
-                      GitHub&apos;de görüntüle
-                    </a>
-                  </p>
-                  )}
+            {detay?.readme ? (
+              <div
+                className="markdown-body text-sm leading-relaxed sm:text-base"
+                dangerouslySetInnerHTML={{
+                  __html: renderMarkdown(detay.readme),
+                }}
+              />
+            ) : (
+              <p className="rounded-xl border border-foreground/10 p-5 text-sm text-foreground/60">
+                README bulunamadı veya yüklenemedi.{' '}
+                <a
+                  href={githubUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline"
+                >
+                  GitHub&apos;de görüntüle
+                </a>
+              </p>
+            )}
           </div>
         </Section>
 

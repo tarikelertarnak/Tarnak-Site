@@ -4,14 +4,14 @@ import { notFound } from 'next/navigation'
 import { TrackBlogView } from '@/app/blog/[slug]/track-view'
 import { BackToListButton } from '@/components/back-to-list-button'
 import { CodeCopyEnhancer } from '@/components/code-copy-enhancer'
-import { ReadingProgress } from '@/components/reading-progress'
-import { postKind, readingMinutes, relatedPosts } from '@/lib/post-utils'
 import { Navigation } from '@/components/navigation'
+import { ReadingProgress } from '@/components/reading-progress'
 import { getPostBySlug, getPosts } from '@/lib/blog'
 import { t } from '@/lib/i18n'
-import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
-
+import { getStaticLocale } from '@/lib/i18n-server'
 import { renderMarkdown } from '@/lib/markdown'
+
+import { postKind, relatedPosts } from '@/lib/post-utils'
 import { siteUrl } from '@/lib/site-url'
 
 // 2026-10-04: force-dynamic -> force-static.
@@ -49,7 +49,7 @@ export const dynamicParams = false
 /** Mevcut yayindaki yazilar build'de prerender edilir. */
 export async function generateStaticParams() {
   const posts = await getPosts('tr')
-  return posts.map(post => ({ slug: post.slug }))
+  return posts.map((post) => ({ slug: post.slug }))
 }
 interface PostPageProps {
   params: Promise<{ slug: string }>
@@ -79,8 +79,9 @@ export async function generateMetadata({
   // yani her blog yazisi kendini ana sayfa ilan ediyordu) ve og:type 'website'
   // idi. Arama motoru blog yazisini sayfa ne anlatiyor, ne yazar, ne zaman
   // yayimlandi bilmiyordu.
-  const description = (post.excerpt || '').trim()
-    || post.content
+  const description =
+    (post.excerpt || '').trim() ||
+    post.content
       .replace(/```[\s\S]*?```/g, ' ') // kod bloklarini at
       .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ') // gorselleri at
       .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1') // link metnini birak
@@ -127,7 +128,6 @@ export default async function PostPage({ params }: PostPageProps) {
     // (post build ile istek arasinda silinmis olabilir).
     notFound()
   }
-const content = await getStaticLocalizedContent()
   // İlgili yazılar: aynı etiketler + aynı tür (TIL/normal) + yakın tarih
   const tumYazilar = await getPosts(locale)
   const ilgiliYazilar = relatedPosts(post, tumYazilar, 3)
@@ -135,10 +135,7 @@ const content = await getStaticLocalizedContent()
   return (
     <div className="min-h-screen w-full relative">
       {' '}
-      <Navigation content={content} />
-      {' '}
-      <TrackBlogView slug={post.slug} />
-      {' '}
+      <Navigation /> <TrackBlogView slug={post.slug} />{' '}
       <main
         id="main"
         className="md:ml-[240px] relative z-10 mx-auto flex w-full max-w-3xl flex-col px-4 sm:px-6 py-24 sm:py-32"
@@ -147,21 +144,20 @@ const content = await getStaticLocalizedContent()
         <div className="mb-6 flex items-center gap-3">
           {' '}
           <BackToListButton fallback="/blog" />
-  {/* Okuma ilerleme çubuğu (Faz 4 · 3) */}
-  <ReadingProgress targetId="yazi-icerik" />
-          {' '}
+          {/* Okuma ilerleme çubuğu (Faz 4 · 3) */}
+          <ReadingProgress targetId="yazi-icerik" />{' '}
           <Link
             href="/blog"
             className="inline-flex items-center gap-1 text-sm text-foreground-500 transition-colors hover:text-primary"
           >
             {' '}
-            {t(locale, 'blog.backToBlog')}
-            {' '}
-          </Link>
-          {' '}
-        </div>
-        {' '}
-        <article id="yazi-icerik" className="rounded-large bg-background p-4 sm:p-8 lg:p-10 ">
+            {t(locale, 'blog.backToBlog')}{' '}
+          </Link>{' '}
+        </div>{' '}
+        <article
+          id="yazi-icerik"
+          className="rounded-large bg-background p-4 sm:p-8 lg:p-10 "
+        >
           {' '}
           {/* BlogPosting structured data — Google/Bing "Article" sonucu ve
               zengin snippet (yazar, tarih, okuma suresi) icin. Sayfa basligi
@@ -172,31 +168,31 @@ const content = await getStaticLocalizedContent()
               __html: JSON.stringify({
                 '@context': 'https://schema.org',
                 '@type': 'BlogPosting',
-                'mainEntityOfPage': {
+                mainEntityOfPage: {
                   '@type': 'WebPage',
                   '@id': siteUrl(`/blog/${post.slug}`),
                 },
-                'headline': post.title,
-                'description': post.excerpt || undefined,
-                'datePublished': `${post.date}T12:00:00Z`,
-                'dateModified': `${post.date}T12:00:00Z`,
-                'inLanguage': 'tr',
-                'keywords': post.tags?.join(', ') || undefined,
-                'wordCount': post.content.split(/\s+/).filter(Boolean).length,
-                'timeRequired': `PT${Math.max(1, Math.round(post.content.split(/\s+/).filter(Boolean).length / 200))}M`,
-                'author': {
+                headline: post.title,
+                description: post.excerpt || undefined,
+                datePublished: `${post.date}T12:00:00Z`,
+                dateModified: `${post.date}T12:00:00Z`,
+                inLanguage: 'tr',
+                keywords: post.tags?.join(', ') || undefined,
+                wordCount: post.content.split(/\s+/).filter(Boolean).length,
+                timeRequired: `PT${Math.max(1, Math.round(post.content.split(/\s+/).filter(Boolean).length / 200))}M`,
+                author: {
                   '@type': 'Person',
-                  'name': 'Tarık Eler',
-                  'alternateName': ['Tarnak', 'tarikelertarnak'],
-                  'url': siteUrl('/'),
+                  name: 'Tarık Eler',
+                  alternateName: ['Tarnak', 'tarikelertarnak'],
+                  url: siteUrl('/'),
                 },
-                'publisher': {
+                publisher: {
                   '@type': 'Person',
-                  'name': 'Tarık Eler',
-                  'alternateName': ['Tarnak'],
-                  'url': siteUrl('/'),
+                  name: 'Tarık Eler',
+                  alternateName: ['Tarnak'],
+                  url: siteUrl('/'),
                 },
-                'image': `${siteUrl('/')}/tarik-eler-tarnak-logo.png`,
+                image: `${siteUrl('/')}/tarik-eler-tarnak-logo.png`,
               }),
             }}
           />
@@ -207,17 +203,14 @@ const content = await getStaticLocalizedContent()
               {new Date(post.date).toLocaleDateString(
                 locale === 'tr' ? 'tr-TR' : 'en-GB',
                 { day: 'numeric', month: 'long', year: 'numeric' },
-              )}
-              {' '}
-            </p>
-            {' '}
+              )}{' '}
+            </p>{' '}
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
               {post.title}
-            </h1>
-            {' '}
+            </h1>{' '}
             {post.tags && post.tags.length > 0 && (
               <div className="mt-1 flex flex-row flex-wrap gap-1.5">
-                {post.tags.map(tag => (
+                {post.tags.map((tag) => (
                   <span
                     key={tag}
                     className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-bold text-primary"
@@ -226,28 +219,27 @@ const content = await getStaticLocalizedContent()
                   </span>
                 ))}
               </div>
-            )}
-            {' '}
-          </header>
-          {' '}
+            )}{' '}
+          </header>{' '}
           <div
             className="markdown-body text-sm sm:text-base leading-relaxed"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
-          />
-          {' '}
-
+          />{' '}
           {/*
             İLGİLİ YAZILAR (Faz 4 · 3)
             Aynı etiketleri paylaşan, aynı türde (TIL/normal), tarih olarak
             yakın yazılar. Puanlama `src/lib/post-utils.ts` → `relatedPosts`.
           */}
           {ilgiliYazilar.length > 0 && (
-            <section aria-labelledby="ilgili-yazilar" className="mt-10 border-t border-foreground/10 pt-8">
+            <section
+              aria-labelledby="ilgili-yazilar"
+              className="mt-10 border-t border-foreground/10 pt-8"
+            >
               <h2 id="ilgili-yazilar" className="mb-4 text-lg font-bold">
                 {t(locale, 'blog.related')}
               </h2>
               <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {ilgiliYazilar.map(ilgili => (
+                {ilgiliYazilar.map((ilgili) => (
                   <li key={ilgili.id}>
                     <Link
                       href={`/blog/${ilgili.slug}`}
@@ -259,7 +251,10 @@ const content = await getStaticLocalizedContent()
                             TIL
                           </span>
                         )}
-                        <time dateTime={ilgili.date} className="text-xs text-foreground/50">
+                        <time
+                          dateTime={ilgili.date}
+                          className="text-xs text-foreground/50"
+                        >
                           {ilgili.date}
                         </time>
                       </div>
@@ -272,13 +267,10 @@ const content = await getStaticLocalizedContent()
               </ul>
             </section>
           )}
-        </article>
-        {' '}
-      </main>
-      {' '}
+        </article>{' '}
+      </main>{' '}
       {/* Kod bloklarına "Kopyala" düğmesi + dil etiketi (Faz 4 · 3) */}
-      <CodeCopyEnhancer />
-      {' '}
+      <CodeCopyEnhancer />{' '}
     </div>
   )
 }

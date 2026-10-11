@@ -39,7 +39,7 @@ interface SearchableComboboxProps {
 }
 
 function optionsLabel(options: SearchableComboboxOption[], selected: string[]) {
-  const found = options.find(o => o.value === selected[0])
+  const found = options.find((o) => o.value === selected[0])
   return found ? found.label : ''
 }
 
@@ -70,29 +70,22 @@ export function SearchableCombobox({
     ve dar ekranda panel ekrandan taşabiliyordu. Artık ortak çözümleyici:
     alt → üst → sağ → sol, asla tetikleyicinin üstüne binmez.
   */
-  const {
-    triggerRef,
-    panelRef,
-    ready,
-    portalStyle,
-  } = usePopoverPosition<HTMLDivElement>(open, 6)
+  const { triggerRef, panelRef, portalStyle } =
+    usePopoverPosition<HTMLDivElement>(open, 6)
 
   useEffect(() => {
-    if (!open)
-      return
+    if (!open) return
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node
       // PORTAL: panel `document.body` altında, `rootRef` disinda —
       // eski tek-kapsayici kontrolu listeye tiklayinca paneli kapatiyordu.
-      const icerde
-        = (rootRef.current?.contains(t) ?? false)
-          || (panelRef.current?.contains(t) ?? false)
-      if (!icerde)
-        setOpen(false)
+      const icerde =
+        (rootRef.current?.contains(t) ?? false) ||
+        (panelRef.current?.contains(t) ?? false)
+      if (!icerde) setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape')
-        setOpen(false)
+      if (e.key === 'Escape') setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
@@ -104,13 +97,16 @@ export function SearchableCombobox({
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
-    if (!needle)
-      return options
-    return options.filter(o => o.label.toLowerCase().includes(needle))
+    if (!needle) return options
+    return options.filter((o) => o.label.toLowerCase().includes(needle))
   }, [options, q])
 
-  const triggerText = multiple ? placeholder : optionsLabel(options, selected) || placeholder
-  const selectedOption = multiple ? undefined : options.find(o => o.value === selected[0])
+  const triggerText = multiple
+    ? placeholder
+    : optionsLabel(options, selected) || placeholder
+  const selectedOption = multiple
+    ? undefined
+    : options.find((o) => o.value === selected[0])
 
   return (
     <div ref={rootRef} className="relative">
@@ -118,7 +114,7 @@ export function SearchableCombobox({
         ref={triggerRef as React.RefObject<HTMLButtonElement>}
         type="button"
         onClick={() => {
-          setOpen(v => !v)
+          setOpen((v) => !v)
           setQ('')
         }}
         aria-label={ariaLabel}
@@ -149,99 +145,99 @@ export function SearchableCombobox({
         />
       </button>
 
-      {open && createPortal(
-        <div
-          ref={panelRef as React.RefObject<HTMLDivElement>}
-          style={portalStyle}
-          className="z-50 flex w-64 flex-col overflow-hidden rounded-xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/20"
-        >
-          {/* Search */}
-          <div className="border-b border-foreground-200/10 p-2">
-            <div className="relative">
-              <SearchIcon
-                size={13}
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40"
-              />
-              <input
-                value={q}
-                onChange={e => setQ(e.target.value)}
-                placeholder={searchPlaceholder}
-                aria-label={searchPlaceholder}
-                className="h-8 w-full rounded-lg border border-foreground-200/15 bg-surface-3 pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
-              />
-              {q && (
-                <button
-                  type="button"
-                  onClick={() => setQ('')}
-                  aria-label="Temizle"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground"
-                >
-                  <CloseIcon size={12} />
-                </button>
-              )}
+      {open &&
+        createPortal(
+          <div
+            ref={panelRef as React.RefObject<HTMLDivElement>}
+            style={portalStyle}
+            className="z-50 flex w-64 flex-col overflow-hidden rounded-xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/20"
+          >
+            {/* Search */}
+            <div className="border-b border-foreground-200/10 p-2">
+              <div className="relative">
+                <SearchIcon
+                  size={13}
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40"
+                />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder={searchPlaceholder}
+                  aria-label={searchPlaceholder}
+                  className="h-8 w-full rounded-lg border border-foreground-200/15 bg-surface-3 pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
+                />
+                {q && (
+                  <button
+                    type="button"
+                    onClick={() => setQ('')}
+                    aria-label="Temizle"
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground"
+                  >
+                    <CloseIcon size={12} />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Options */}
-          <ul className="max-h-64 overflow-y-auto p-1.5" role="listbox">
-            {showAllOption && (
-              <li>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClear()
-                    setOpen(false)
-                  }}
-                  className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
-                    selected.length === 0
-                      ? 'bg-primary/15 text-primary'
-                      : 'text-foreground/80 hover:bg-foreground-200/10 hover:text-foreground'
-                  }`}
-                >
-                  <CheckIcon
-                    size={13}
-                    className={selected.length === 0 ? '' : 'opacity-0'}
-                  />
-                  {allLabel || placeholder}
-                </button>
-              </li>
-            )}
-            {filtered.length === 0 && (
-              <li className="px-2.5 py-1.5 text-xs text-foreground-500">
-                <span className="opacity-60">‹boş›</span>
-              </li>
-            )}
-            {filtered.map((o) => {
-              const active = selected.includes(o.value)
-              return (
-                <li key={o.value}>
+            {/* Options */}
+            <ul className="max-h-64 overflow-y-auto p-1.5" role="listbox">
+              {showAllOption && (
+                <li>
                   <button
                     type="button"
                     onClick={() => {
-                      onSelect(o.value)
-                      if (!multiple)
-                        setOpen(false)
+                      onClear()
+                      setOpen(false)
                     }}
                     className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
-                      active
+                      selected.length === 0
                         ? 'bg-primary/15 text-primary'
                         : 'text-foreground/80 hover:bg-foreground-200/10 hover:text-foreground'
                     }`}
                   >
                     <CheckIcon
                       size={13}
-                      className={active ? '' : 'opacity-0'}
+                      className={selected.length === 0 ? '' : 'opacity-0'}
                     />
-                    {o.icon}
-                    <span className="truncate">{o.label}</span>
+                    {allLabel || placeholder}
                   </button>
                 </li>
-              )
-            })}
-          </ul>
-        </div>,
-        document.body,
-      )}
+              )}
+              {filtered.length === 0 && (
+                <li className="px-2.5 py-1.5 text-xs text-foreground-500">
+                  <span className="opacity-60">‹boş›</span>
+                </li>
+              )}
+              {filtered.map((o) => {
+                const active = selected.includes(o.value)
+                return (
+                  <li key={o.value}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelect(o.value)
+                        if (!multiple) setOpen(false)
+                      }}
+                      className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
+                        active
+                          ? 'bg-primary/15 text-primary'
+                          : 'text-foreground/80 hover:bg-foreground-200/10 hover:text-foreground'
+                      }`}
+                    >
+                      <CheckIcon
+                        size={13}
+                        className={active ? '' : 'opacity-0'}
+                      />
+                      {o.icon}
+                      <span className="truncate">{o.label}</span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

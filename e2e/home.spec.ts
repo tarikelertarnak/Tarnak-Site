@@ -32,7 +32,7 @@ test.describe('ana sayfa', () => {
     await expect(h1).toHaveCount(1)
     await expect(h1).toBeVisible()
 
-    const text = (await h1.innerText()).replace(/\s+/g, ' ').trim()
+    const text = ((await h1.textContent()) ?? '').replace(/\s+/g, ' ').trim()
     expect(text.length).toBeGreaterThan(3)
 
     // Logo başlığın üstünde görünmeli (2026-10-07 kullanıcı isteği).
@@ -48,8 +48,11 @@ test.describe('ana sayfa', () => {
   })
 
   test('yatay taşma yok', async ({ page }) => {
-    const taşma = await page.evaluate(() =>
-      document.documentElement.scrollWidth - document.documentElement.clientWidth)
+    const taşma = await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
+    )
     // 1px tolerans: yuvarlama farkı olabiliyor, fazlası kaydırma çubuğu demek.
     expect(taşma).toBeLessThanOrEqual(1)
   })
@@ -76,7 +79,10 @@ test.describe('ana sayfa', () => {
     await page.keyboard.press('Tab')
     const odak = await page.evaluate(() => {
       const el = document.activeElement
-      return { text: (el?.textContent ?? '').trim().slice(0, 40), href: el?.getAttribute('href') ?? '' }
+      return {
+        text: (el?.textContent ?? '').trim().slice(0, 40),
+        href: el?.getAttribute('href') ?? '',
+      }
     })
     expect(odak.text.length).toBeGreaterThan(0)
   })
@@ -92,7 +98,9 @@ test.describe('ana sayfa', () => {
       const root = document.documentElement
       return { dataTheme: root.getAttribute('data-theme'), cls: root.className }
     })
-    expect(erken.dataTheme, 'ilk paintta data-theme yok → FOUC olur').toMatch(/light|dark/)
+    expect(erken.dataTheme, 'ilk paintta data-theme yok → FOUC olur').toMatch(
+      /light|dark/,
+    )
     expect(erken.cls).toMatch(/light|dark/)
   })
 
@@ -101,7 +109,7 @@ test.describe('ana sayfa', () => {
     page.on('console', (msg) => {
       if (msg.type() === 'error') hatalar.push(msg.text())
     })
-    page.on('pageerror', err => hatalar.push(String(err)))
+    page.on('pageerror', (err) => hatalar.push(String(err)))
 
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await expect(page.locator('h1')).toBeVisible()
@@ -110,7 +118,10 @@ test.describe('ana sayfa', () => {
 
     // Hydration uyarısı bu projede yaşandı (input id'si Math.random ile
     // üretiliyordu) — regresyonu yakalamak için AÇIKÇA kontrol ediliyor.
-    const hydration = hatalar.filter(h => /hydrat|did not match/i.test(h))
-    expect(hydration, `hydration hatası: ${hydration.join(' | ')}`).toHaveLength(0)
+    const hydration = hatalar.filter((h) => /hydrat|did not match/i.test(h))
+    expect(
+      hydration,
+      `hydration hatası: ${hydration.join(' | ')}`,
+    ).toHaveLength(0)
   })
 })

@@ -32,7 +32,9 @@ export function ReadingProgress({ targetId }: { targetId?: string }) {
 
     const hesapla = () => {
       frame = 0
-      const kapsayici = targetId ? document.getElementById(targetId) : document.documentElement
+      const kapsayici = targetId
+        ? document.getElementById(targetId)
+        : document.documentElement
       if (!kapsayici) return
 
       const govde = kapsayici.getBoundingClientRect()

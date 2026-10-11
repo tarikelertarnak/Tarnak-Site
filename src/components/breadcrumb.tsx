@@ -28,7 +28,9 @@ export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
       type="application/ld+json"
       // JSON-LD: içerik tamamen bizim string'lerimizden geliyor; `</script>`
       // enjeksiyonunu kapatmak için `>` kaçırılır.
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+      }}
     />
   )
 }
@@ -44,20 +46,21 @@ export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
           const son = i === items.length - 1
           return (
             <li key={item.href} className="flex items-center gap-1.5">
-              {son
-                ? (
-                    <span aria-current="page" className="font-medium text-foreground/80">
-                      {item.label}
-                    </span>
-                  )
-                : (
-                    <a
-                      href={item.href}
-                      className="rounded transition-colors duration-200 hover:text-primary"
-                    >
-                      {item.label}
-                    </a>
-                  )}
+              {son ? (
+                <span
+                  aria-current="page"
+                  className="font-medium text-foreground/80"
+                >
+                  {item.label}
+                </span>
+              ) : (
+                <a
+                  href={item.href}
+                  className="rounded transition-colors duration-200 hover:text-primary"
+                >
+                  {item.label}
+                </a>
+              )}
               {!son && (
                 <span aria-hidden className="text-foreground/30">
                   /

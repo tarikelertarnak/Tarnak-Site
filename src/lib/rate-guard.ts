@@ -22,12 +22,14 @@ import { checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
  *               PAYLAŞIR — dikkat: `/api/admin/login` ile
  *               `/api/auth/login` aynı scope'u kullanıyor mu diye seç.
  * @param limit  `LIMITS.write` (dakikada 20) varsayılan.
+ * @param limit.limit     Pencere başına izin verilen istek.
+ * @param limit.windowMs  Pencere uzunluğu (ms).
  * @returns `null` → devam et, `Response` → 429/503 döndür.
  */
 export async function guardWrite(
   req: Request,
   scope: string,
-  limit: { limit: number, windowMs: number } = LIMITS.write,
+  limit: { limit: number; windowMs: number } = LIMITS.write,
 ): Promise<Response | null> {
   // `failClosed: false` — bu uç noktalar ucuz (bir kayıt güncellemesi).
   // KV kesintisi kullanıcıyı admin panelinden veya profilinden mahrum

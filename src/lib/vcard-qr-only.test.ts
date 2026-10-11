@@ -86,6 +86,9 @@ describe('about "Kişisel Bilgiler" kartı', () => {
     const infoRow = about.slice(start, end)
     expect(infoRow).toContain('text-left')
     expect(infoRow).not.toContain('justify-between')
-    expect(infoRow).toMatch(/\{label\}:/)
+    // Biçimden bağımsız: prettier/eslint JSX'i satıra bölebilir
+    // (`{label}` / `:` ayrı satır). Önemli olan render edilen metnin
+    // "etiket + iki nokta" olması — yani ikisi aynı öğede bulunması.
+    expect(infoRow.replace(/\s+/g, '')).toMatch(/\{label\}:/)
   })
 })

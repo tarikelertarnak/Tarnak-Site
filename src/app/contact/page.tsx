@@ -1,9 +1,9 @@
-import { Navigation } from '@/components/navigation'
-import { pageMetadata } from '@/lib/page-metadata'
 import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
-import { CRUMBS } from '@/lib/breadcrumb'
+import { Navigation } from '@/components/navigation'
 import { ContactSection } from '@/components/sections/contact-section'
+import { CRUMBS } from '@/lib/breadcrumb'
 import { getStaticLocalizedContent } from '@/lib/i18n-server'
+import { pageMetadata } from '@/lib/page-metadata'
 
 /**
  * 2026-10-04: `#contact` çapası kaldırıldı — hero'daki "İletişim" düğmesi
@@ -22,7 +22,8 @@ export const dynamic = 'force-static'
 export const metadata = pageMetadata({
   path: '/contact',
   title: 'İletişim',
-  description: 'Tarık Eler (Tarnak) ile iletişime geç: e-posta, telefon, Discord ve iletişim formu.',
+  description:
+    'Tarık Eler (Tarnak) ile iletişime geç: e-posta, telefon, Discord ve iletişim formu.',
 })
 
 export default async function ContactPage() {
@@ -30,7 +31,7 @@ export default async function ContactPage() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation content={content} />
+      <Navigation />
       <main id="main" className="w-full">
         {/* Breadcrumb (Faz 2 · SEO 2): görünür navigasyon + BreadcrumbList */}
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">

@@ -3,7 +3,6 @@ import type { Metadata } from 'next'
 import type { LegalBodyProps } from '@/lib/phase6-server'
 import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
-import { getContent } from '@/lib/content'
 import { getStaticLocale } from '@/lib/i18n-server'
 import { getPhase6, LegalBody } from '@/lib/phase6-server'
 
@@ -24,13 +23,12 @@ export async function LegalPage({
   varsayilanBaslik: string
   yol: string
 }) {
-  const content = await getContent()
   const p6 = await getPhase6()
   const sayfa = p6?.[anahtar]
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation content={content} />
+      <Navigation />
       <main id="main" className="w-full">
         <Section
           className="flex-col pt-16 sm:pt-24 lg:pt-36 pb-0"

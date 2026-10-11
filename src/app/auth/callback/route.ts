@@ -7,11 +7,11 @@ function safeNextPath(raw: string | null): string {
   const value = raw ?? '/'
   // Only relative, local paths are accepted (//host, /\\host, scheme:... rejected)
   if (
-    value.startsWith('/')
-    && !value.startsWith('//')
-    && !value.startsWith('/\\')
-    && !value.includes('\\')
-    && !/^[a-z][a-z0-9+.-]*:/i.test(value)
+    value.startsWith('/') &&
+    !value.startsWith('//') &&
+    !value.startsWith('/\\') &&
+    !value.includes('\\') &&
+    !/^[a-z][a-z0-9+.-]*:/i.test(value)
   ) {
     return value.slice(0, 500)
   }
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       if (isLocalEnv) {
         return NextResponse.redirect(`${origin}${next}`)
       }
-      if (forwardedHost && /^[a-z0-9.-]+\.[a-z]{2,}(:\d+)?$/i.test(forwardedHost)) {
+      if (forwardedHost && /^[a-z0-9.-]+\.[a-z]{2,}\d*$/i.test(forwardedHost)) {
         return NextResponse.redirect(`https://${forwardedHost}${next}`)
       }
       return NextResponse.redirect(`${origin}${next}`)

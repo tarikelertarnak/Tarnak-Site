@@ -219,7 +219,7 @@ export default async function AboutPage() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation content={content} />
+      <Navigation />
       <main id="main" className="w-full">
         {/* Breadcrumb (Faz 2 · SEO 2): görünür navigasyon + BreadcrumbList */}
         <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">

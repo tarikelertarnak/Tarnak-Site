@@ -18,8 +18,7 @@ function readMusicEnabled(): boolean {
   }
   try {
     return localStorage.getItem(MUSIC_ENABLED_KEY) !== 'false'
-  }
-  catch {
+  } catch {
     return true
   }
 }
@@ -37,10 +36,17 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
   const [duration, setDuration] = useState('0:00')
   const [volume, setVolume] = useState(0.7)
 
+  // `onTimeUpdate` aşağıda bu fonksiyonu çağırıyor; tanımı kullanımdan ÖNCE
+  // olmalı (ts/no-use-before-define). Saf fonksiyon — state'e bağlı değil.
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
+  }
+
   useEffect(() => {
     const saved = localStorage.getItem('music-player-closed')
-    if (saved === 'true')
-      setIsClosed(true)
+    if (saved === 'true') setIsClosed(true)
     setIsGloballyEnabled(readMusicEnabled())
 
     // Cross-tab updates: storage event fires only in *other* tabs.
@@ -61,11 +67,9 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
   }, [])
 
   useEffect(() => {
-    if (!src)
-      return
+    if (!src) return
     const audio = audioRef.current
-    if (!audio)
-      return
+    if (!audio) return
 
     const onTimeUpdate = () => {
       if (audio.duration) {
@@ -84,20 +88,12 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
     }
   }, [src])
 
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60)
-    const sec = Math.floor(s % 60)
-    return `${m}:${sec.toString().padStart(2, '0')}`
-  }
-
   const togglePlay = () => {
     const audio = audioRef.current
-    if (!audio)
-      return
+    if (!audio) return
     if (isPlaying) {
       audio.pause()
-    }
-    else {
+    } else {
       audio.play().catch(() => {})
     }
     setIsPlaying(!isPlaying)
@@ -105,8 +101,7 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
 
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current
-    if (!audio || !audio.duration)
-      return
+    if (!audio || !audio.duration) return
     const pct = Number(e.target.value)
     audio.currentTime = (pct / 100) * audio.duration
     setProgress(pct)
@@ -114,8 +109,7 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
 
   const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
     const audio = audioRef.current
-    if (!audio)
-      return
+    if (!audio) return
     const v = Number(e.target.value)
     audio.volume = v
     setVolume(v)
@@ -123,8 +117,7 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
 
   const handleClose = () => {
     const audio = audioRef.current
-    if (audio)
-      audio.pause()
+    if (audio) audio.pause()
     setIsPlaying(false)
     setIsClosed(true)
     localStorage.setItem('music-player-closed', 'true')
@@ -134,8 +127,7 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
     setIsMinimized(!isMinimized)
   }
 
-  if (isClosed || !src || !isGloballyEnabled)
-    return null
+  if (isClosed || !src || !isGloballyEnabled) return null
 
   const displayTitle = title || (isEn ? 'Music' : 'Müzik')
 
@@ -179,15 +171,29 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
               <button
                 type="button"
                 onClick={togglePlay}
-                aria-label={isPlaying ? (isEn ? 'Pause' : 'Duraklat') : isEn ? 'Play' : 'Oynat'}
+                aria-label={
+                  isPlaying
+                    ? isEn
+                      ? 'Pause'
+                      : 'Duraklat'
+                    : isEn
+                      ? 'Play'
+                      : 'Oynat'
+                }
                 className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary transition-all hover:bg-primary/25"
               >
-                <Icon icon={isPlaying ? 'mdi:pause' : 'mdi:play'} width={18} height={18} />
+                <Icon
+                  icon={isPlaying ? 'mdi:pause' : 'mdi:play'}
+                  width={18}
+                  height={18}
+                />
               </button>
               {!isMinimized && (
                 <button
                   type="button"
-                  onClick={() => audioRef.current && (audioRef.current.currentTime = 0)}
+                  onClick={() =>
+                    audioRef.current && (audioRef.current.currentTime = 0)
+                  }
                   aria-label={isEn ? 'Restart' : 'Başa sar'}
                   className="text-foreground-500 hover:text-foreground transition-colors"
                 >
@@ -200,7 +206,15 @@ export function MusicPlayer({ src, title = 'Müzik' }: MusicPlayerProps) {
                 type="button"
                 onClick={handleMinimize}
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-foreground-500 hover:text-foreground hover:bg-background transition-all"
-                title={isMinimized ? (isEn ? 'Expand' : 'Genişlet') : isEn ? 'Minimize' : 'Küçült'}
+                title={
+                  isMinimized
+                    ? isEn
+                      ? 'Expand'
+                      : 'Genişlet'
+                    : isEn
+                      ? 'Minimize'
+                      : 'Küçült'
+                }
               >
                 <Icon
                   icon={isMinimized ? 'mdi:chevron-up' : 'mdi:minus'}

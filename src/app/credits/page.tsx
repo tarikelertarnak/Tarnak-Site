@@ -1,31 +1,35 @@
-import type { ContributorItem, DonorItem, TeamItem, TranslatorItem } from '@/components/credits/credits-browser'
-import {
-
-  CreditsBrowser,
-
+import type {
+  ContributorItem,
+  DonorItem,
+  TeamItem,
+  TranslatorItem,
 } from '@/components/credits/credits-browser'
+import { CreditsBrowser } from '@/components/credits/credits-browser'
 import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
-import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
+import { getStaticLocale } from '@/lib/i18n-server'
 
 // 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
 export const dynamic = 'force-static'
-
 
 export async function generateMetadata() {
   const locale = await getStaticLocale()
   const isEn = locale === 'en'
   return {
-    title: isEn ? 'Credits — TARIK ELER - TARNAK' : 'Katkıda Bulunanlar — TARIK ELER - TARNAK',
+    title: isEn
+      ? 'Credits — TARIK ELER - TARNAK'
+      : 'Katkıda Bulunanlar — TARIK ELER - TARNAK',
     description: isEn
       ? 'Everyone who contributed to TARNAK. Thanks to everyone who develops my open source projects, gives feedback and supports them.'
-      : 'TARNAK\'a katkıda bulunan herkes. Açık kaynak projelerimi geliştiren, geri bildirim veren ve destekleyen herkese teşekkürler.',
+      : "TARNAK'a katkıda bulunan herkes. Açık kaynak projelerimi geliştiren, geri bildirim veren ve destekleyen herkese teşekkürler.",
     alternates: { canonical: '/credits' },
     openGraph: {
-      title: isEn ? 'Credits — TARIK ELER - TARNAK' : 'Katkıda Bulunanlar — TARIK ELER - TARNAK',
+      title: isEn
+        ? 'Credits — TARIK ELER - TARNAK'
+        : 'Katkıda Bulunanlar — TARIK ELER - TARNAK',
       description: isEn
         ? 'Everyone who contributed to TARNAK.'
-        : 'TARNAK\'a katkıda bulunan herkes.',
+        : "TARNAK'a katkıda bulunan herkes.",
       url: '/credits',
       type: 'website',
     },
@@ -51,9 +55,13 @@ const TEAM: TeamItem[] = [
 ]
 
 const TOP_DONORS: DonorItem[] = [
-  { nameTr: 'Henüz yok', nameEn: 'None yet', noteTr: 'İlk destekçi sen ol!', noteEn: 'Be the first supporter!' },
+  {
+    nameTr: 'Henüz yok',
+    nameEn: 'None yet',
+    noteTr: 'İlk destekçi sen ol!',
+    noteEn: 'Be the first supporter!',
+  },
 ]
-
 
 const TRANSLATORS: TranslatorItem[] = [
   /*
@@ -67,16 +75,18 @@ const TRANSLATORS: TranslatorItem[] = [
 ]
 
 export default async function CreditsPage() {
-  const content = await getStaticLocalizedContent()
   const locale = await getStaticLocale()
   const isEn = locale === 'en'
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation content={content} />
+      <Navigation />
       <main id="main" className="w-full">
         {/* Hero */}
-        <Section className="flex-col pt-28 sm:pt-32 pb-12 sm:pb-16" id="credits">
+        <Section
+          className="flex-col pt-28 sm:pt-32 pb-12 sm:pb-16"
+          id="credits"
+        >
           <div className="flex flex-col items-center justify-center pb-8 sm:pb-10 lg:pb-12 text-center">
             <h1 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
               <svg
@@ -108,7 +118,8 @@ export default async function CreditsPage() {
         <Section className="flex-col pb-24 sm:pb-32" framed>
           <CreditsBrowser
             contributors={CONTRIBUTORS}
-            team={TEAM}
+            team={TEAM}
+
             translators={TRANSLATORS}
             topDonors={TOP_DONORS}
           />

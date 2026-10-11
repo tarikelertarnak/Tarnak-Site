@@ -1,6 +1,7 @@
-export type { Metadata } from 'next'
 import type { Metadata } from 'next'
 import { SITE_URL } from '@/lib/site-url'
+
+export type { Metadata } from 'next'
 
 /**
  * Sayfa metadata'sı — TEK kaynak (Faz 2 · SEO 1)
@@ -54,7 +55,9 @@ export function pageMetadata({
       title: tamTitle,
       description,
       locale: 'tr_TR',
-      images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: title }],
+      images: [
+        { url: '/opengraph-image', width: 1200, height: 630, alt: title },
+      ],
     },
     twitter: {
       card: 'summary_large_image',

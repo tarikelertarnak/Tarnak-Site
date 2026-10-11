@@ -32,8 +32,9 @@ const DSN = process.env.SENTRY_DSN
 const RELEASE = process.env.NEXT_PUBLIC_COMMIT_SHA || undefined
 
 /** Ortam: production varsayılan; preview'ı ayırt etmek için kullanışlı. */
-const ENVIRONMENT = process.env.NEXT_PUBLIC_VERCEL_ENV
-  || (process.env.NODE_ENV === 'production' ? 'production' : 'development')
+const ENVIRONMENT =
+  process.env.NEXT_PUBLIC_VERCEL_ENV ||
+  (process.env.NODE_ENV === 'production' ? 'production' : 'development')
 
 /**
  * PII temizleyici.
@@ -46,20 +47,26 @@ const ENVIRONMENT = process.env.NEXT_PUBLIC_VERCEL_ENV
  * `breadcrumbs[].data`.
  */
 const PII_EMAIL = /[\w.+-]+@[\w-]+\.[\w.-]{2,}/g
-const PII_PHONE = /(?:\+?\d[\d\s().-]{8,}\d)/g
-const SECRET_HEADERS = ['cookie', 'authorization', 'set-cookie', 'x-forwarded-for', 'x-api-key']
+const PII_PHONE = /\+?\d[\d\s().-]{8,}\d/g
+const SECRET_HEADERS = [
+  'cookie',
+  'authorization',
+  'set-cookie',
+  'x-forwarded-for',
+  'x-api-key',
+]
 
 function scrub(value: unknown, depth = 0): unknown {
-  if (depth > 6 || value === null || value === undefined)
-    return value
+  if (depth > 6 || value === null || value === undefined) return value
   if (typeof value === 'string')
     return value.replace(PII_EMAIL, '[email]').replace(PII_PHONE, '[phone]')
-  if (Array.isArray(value))
-    return value.map(v => scrub(v, depth + 1))
+  if (Array.isArray(value)) return value.map((v) => scrub(v, depth + 1))
   if (typeof value === 'object') {
     const out: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      out[k] = SECRET_HEADERS.includes(k.toLowerCase()) ? '[filtered]' : scrub(v, depth + 1)
+      out[k] = SECRET_HEADERS.includes(k.toLowerCase())
+        ? '[filtered]'
+        : scrub(v, depth + 1)
     }
     return out
   }
@@ -76,7 +83,8 @@ function scrub(value: unknown, depth = 0): unknown {
 async function loadSentry(): Promise<SentryLike> {
   const mod = await import('@sentry/cloudflare')
   const candidate = mod as unknown as SentryLike & { default?: SentryLike }
-  const resolved = typeof candidate.init === 'function' ? candidate : candidate.default
+  const resolved =
+    typeof candidate.init === 'function' ? candidate : candidate.default
   if (!resolved || typeof resolved.init !== 'function') {
     // Beklenmeyen export şekli — sessizce devre dışı bırak, siteyi düşürme.
     return {
@@ -87,13 +95,13 @@ async function loadSentry(): Promise<SentryLike> {
   return resolved
 }
 
-type SentryLike = {
+interface SentryLike {
   init: (options: Record<string, unknown>) => void
   captureException: (error: unknown, hint?: Record<string, unknown>) => void
 }
 
-type SentryEvent = {
-  request?: { url?: string, headers?: unknown, data?: unknown }
+interface SentryEvent {
+  request?: { url?: string; headers?: unknown; data?: unknown }
   extra?: Record<string, unknown>
   contexts?: Record<string, unknown>
   breadcrumbs?: unknown[]
@@ -136,7 +144,10 @@ export async function init(): Promise<void> {
 
     beforeSend(event: SentryEvent) {
       if (event.request) {
-        event.request.headers = scrub(event.request.headers) as Record<string, unknown>
+        event.request.headers = scrub(event.request.headers) as Record<
+          string,
+          unknown
+        >
         // URL'den sorgu parametreleri sır taşıyabilir (token, e-posta).
         if (event.request.url) {
           event.request.url = event.request.url.split('?')[0]
@@ -147,7 +158,9 @@ export async function init(): Promise<void> {
       event.extra = scrub(event.extra) as Record<string, unknown>
       event.contexts = scrub(event.contexts) as Record<string, unknown>
       if (event.breadcrumbs) {
-        event.breadcrumbs = scrub(event.breadcrumbs) as SentryEvent['breadcrumbs']
+        event.breadcrumbs = scrub(
+          event.breadcrumbs,
+        ) as SentryEvent['breadcrumbs']
       }
       return event
     },
@@ -160,7 +173,7 @@ export async function init(): Promise<void> {
  */
 export async function onRequestError(
   error: unknown,
-  request: { path?: string, method?: string },
+  request: { path?: string; method?: string },
 ): Promise<void> {
   if (!DSN) return
   try {
@@ -169,8 +182,7 @@ export async function onRequestError(
       extra: { path: request.path, method: request.method },
       tags: { runtime: 'nextjs' },
     })
-  }
-  catch {
+  } catch {
     // Sentry yüklenemezse sessiz geç — hata yakalama asla siteyi düşürmez.
   }
 }

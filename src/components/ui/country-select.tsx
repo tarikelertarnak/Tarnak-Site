@@ -21,7 +21,7 @@ import { COUNTRIES } from '@/lib/countries-data'
  * Emoji yerine SVG: emoji Windows'ta "TR" gibi harf çiftlerine düşüyordu.
  * `<img>` ayrıca `<mask id>` çakışmasını imkânsız kılıyor.
  */
-function CountryFlag({ iso2, size = 18 }: { iso2: string, size?: number }) {
+function CountryFlag({ iso2, size = 18 }: { iso2: string; size?: number }) {
   const h = Math.round(size * 0.75)
   return (
     <img
@@ -80,11 +80,8 @@ interface CountrySelectProps {
   onChange: (iso2: string) => void
 }
 
-export function CountrySelect({
-  value,
-  onChange,
-}: CountrySelectProps) {
-  const { t, locale } = useT()
+export function CountrySelect({ value, onChange }: CountrySelectProps) {
+  const { t } = useT()
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState('')
   /** Klavye ile gezinilen satır indeksi. */
@@ -104,7 +101,12 @@ export function CountrySelect({
    * bir kısmı alttaki alanların ARDINDA kalıyordu. Portal hem kırpılmayı hem de
    * z-index savaşını bitirir.
    */
-  const [panelPos, setPanelPos] = useState<{ top: number, left: number, width: number, dropUp: boolean } | null>(null)
+  const [panelPos, setPanelPos] = useState<{
+    top: number
+    left: number
+    width: number
+    dropUp: boolean
+  } | null>(null)
 
   useLayoutEffect(() => {
     if (!open) {
@@ -136,8 +138,7 @@ export function CountrySelect({
   }, [open])
 
   useEffect(() => {
-    if (!open)
-      return
+    if (!open) return
     const onDown = (e: MouseEvent) => {
       const target = e.target as Node
       /*
@@ -145,7 +146,10 @@ export function CountrySelect({
         rootRef'e bakarsak, bir seçeneğe tıklamak "dışarı tıklama" sayılıp liste
         kapanıyor ve seçim hiç uygulanmıyordu. İkisine de bakıyoruz.
       */
-      if (rootRef.current?.contains(target) || panelRef.current?.contains(target))
+      if (
+        rootRef.current?.contains(target) ||
+        panelRef.current?.contains(target)
+      )
         return
       setOpen(false)
     }
@@ -176,7 +180,8 @@ export function CountrySelect({
         name,
         enName,
         flag: '',
-        haystack: `${name} ${enName} ${c.name} ${iso} ${c.code} ${c.code}`.toLowerCase(),
+        haystack:
+          `${name} ${enName} ${c.name} ${iso} ${c.code} ${c.code}`.toLowerCase(),
       }
     })
   }, [])
@@ -193,22 +198,22 @@ export function CountrySelect({
         const iso = r.iso2
         const code = r.callingCode
         // Sıralama: tam eşleşme > ön ek > içinde geçme.
-        if (iso === needle || code === needle)
-          return { r, score: 0 }
+        if (iso === needle || code === needle) return { r, score: 0 }
         if (name.startsWith(needle) || enName.startsWith(needle))
           return { r, score: 1 }
         if (iso.startsWith(needle) || code.startsWith(needle))
           return { r, score: 2 }
         if (name.includes(needle) || enName.includes(needle))
           return { r, score: 3 }
-        if (r.haystack.includes(needle))
-          return { r, score: 4 }
+        if (r.haystack.includes(needle)) return { r, score: 4 }
         return null
       })
-      .filter((x): x is { r: Row, score: number } => x !== null)
+      .filter((x): x is { r: Row; score: number } => x !== null)
     // Eşit skorda alfabetik (kararlı sıra).
-    scored.sort((a, b) => a.score - b.score || a.r.name.localeCompare(b.r.name, 'tr'))
-    return scored.map(x => x.r)
+    scored.sort(
+      (a, b) => a.score - b.score || a.r.name.localeCompare(b.r.name, 'tr'),
+    )
+    return scored.map((x) => x.r)
   }, [q, rows])
 
   // Klavye: ↑ ↓ seç, Enter onayla, Esc kapat.
@@ -227,9 +232,10 @@ export function CountrySelect({
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
       setActive((prev) => {
-        const next = e.key === 'ArrowDown'
-          ? Math.min(prev + 1, filtered.length - 1)
-          : Math.max(prev - 1, 0)
+        const next =
+          e.key === 'ArrowDown'
+            ? Math.min(prev + 1, filtered.length - 1)
+            : Math.max(prev - 1, 0)
         // Aktif satırı görünür alana getir.
         const el = listRef.current?.children[next] as HTMLElement | undefined
         el?.scrollIntoView({ block: 'nearest' })
@@ -242,14 +248,13 @@ export function CountrySelect({
       const row = filtered[active]
       if (row) {
         commit(row.iso2)
-      }
-      else if (filtered.length === 1) {
+      } else if (filtered.length === 1) {
         commit(filtered[0].iso2)
       }
     }
   }
 
-  const selected = rows.find(c => c.iso2 === value)
+  const selected = rows.find((c) => c.iso2 === value)
 
   /*
     Tetikleyici SABİT ve dar. Önceden genişlik en uzun ülke adından türetiliyordu
@@ -262,8 +267,12 @@ export function CountrySelect({
       <button
         type="button"
         ref={triggerRef}
-        onClick={() => setOpen(o => !o)}
-        aria-label={selected ? `${t('country.select')}: ${selected.name}` : t('country.select')}
+        onClick={() => setOpen((o) => !o)}
+        aria-label={
+          selected
+            ? `${t('country.select')}: ${selected.name}`
+            : t('country.select')
+        }
         title={selected ? selected.name : t('country.select')}
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -273,14 +282,14 @@ export function CountrySelect({
             : 'border-foreground-200/20 text-foreground/60 hover:border-primary/40'
         }`}
       >
-        {selected
-          ? (
-              <>
-                <CountryFlag iso2={selected.iso2} size={20} />
-                <span className="truncate uppercase">{selected.iso2}</span>
-              </>
-            )
-          : <SearchIcon size={16} className="shrink-0" />}
+        {selected ? (
+          <>
+            <CountryFlag iso2={selected.iso2} size={20} />
+            <span className="truncate uppercase">{selected.iso2}</span>
+          </>
+        ) : (
+          <SearchIcon size={16} className="shrink-0" />
+        )}
         <ChevronDownIcon
           size={14}
           className={`ml-auto shrink-0 text-foreground/50 transition-transform ${open ? 'rotate-180' : ''}`}
@@ -288,111 +297,118 @@ export function CountrySelect({
       </button>
 
       {/* Panel: portal ile body'ye basılır (kırpılma/z-index sorunu yok). */}
-      {open && panelPos && typeof document !== 'undefined' && createPortal(
-        <div
-          ref={panelRef}
-          style={{
-            position: 'fixed',
-            top: panelPos.dropUp ? undefined : panelPos.top,
-            bottom: panelPos.dropUp ? window.innerHeight - panelPos.top : undefined,
-            left: Math.min(panelPos.left, window.innerWidth - panelPos.width - 12),
-            width: Math.min(panelPos.width, window.innerWidth - 24),
-          }}
-          className="z-[9999] overflow-hidden rounded-xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/30"
-        >
-          {/* Arama */}
-          <div className="border-b border-foreground/200/10 p-2">
-            <div className="relative">
-              <SearchIcon
-                size={13}
-                className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40"
-              />
-              <input
-                ref={inputRef}
-                value={q}
-                onChange={(e) => {
-                  setQ(e.target.value)
-                  setActive(0)
-                }}
-                onKeyDown={onKeyDown}
-                placeholder={t('country.search')}
-                aria-label={t('country.search')}
-                autoComplete="off"
-                // rakam/harf dışını yazmayı engelle
-                pattern="[\\p{L}\\p{N}\\s+.-]*"
-                className="h-8 w-full rounded-lg border border-foreground/200/15 bg-background pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
-              />
-              {q && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setQ('')
-                    setActive(0)
-                    inputRef.current?.focus()
-                  }}
-                  aria-label={t('country.clear')}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground"
-                >
-                  <CloseIcon size={12} />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Seçenekler */}
-          <ul
-            ref={listRef}
-            className="max-h-64 overflow-y-auto p-1.5"
-            role="listbox"
-            aria-label={t('country.select')}
+      {open &&
+        panelPos &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={panelRef}
+            style={{
+              position: 'fixed',
+              top: panelPos.dropUp ? undefined : panelPos.top,
+              bottom: panelPos.dropUp
+                ? window.innerHeight - panelPos.top
+                : undefined,
+              left: Math.min(
+                panelPos.left,
+                window.innerWidth - panelPos.width - 12,
+              ),
+              width: Math.min(panelPos.width, window.innerWidth - 24),
+            }}
+            className="z-[9999] overflow-hidden rounded-xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/30"
           >
-            {filtered.length === 0 && (
-              <li className="px-2.5 py-3 text-center text-xs text-foreground/50">
-                <span className="opacity-70">{t('country.empty')}</span>
-              </li>
-            )}
-            {filtered.map((c, i) => {
-              const isActive = c.iso2 === value
-              return (
-                <li key={c.iso2} role="option" aria-selected={isActive}>
+            {/* Arama */}
+            <div className="border-b border-foreground/200/10 p-2">
+              <div className="relative">
+                <SearchIcon
+                  size={13}
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40"
+                />
+                <input
+                  ref={inputRef}
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value)
+                    setActive(0)
+                  }}
+                  onKeyDown={onKeyDown}
+                  placeholder={t('country.search')}
+                  aria-label={t('country.search')}
+                  autoComplete="off"
+                  // rakam/harf dışını yazmayı engelle
+                  pattern="[\\p{L}\\p{N}\\s+.-]*"
+                  className="h-8 w-full rounded-lg border border-foreground/200/15 bg-background pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
+                />
+                {q && (
                   <button
                     type="button"
-                    onClick={() => commit(c.iso2)}
-                    onMouseEnter={() => setActive(i)}
-                    className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
-                      i === active
-                        ? 'bg-foreground-200/10'
-                        : ''
-                    } ${isActive ? 'text-primary' : 'text-foreground/80'}`}
+                    onClick={() => {
+                      setQ('')
+                      setActive(0)
+                      inputRef.current?.focus()
+                    }}
+                    aria-label={t('country.clear')}
+                    className="absolute right-1.5 top-1/2 -translate-y-1/2 text-foreground/50 hover:text-foreground"
                   >
-                    {/*
+                    <CloseIcon size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Seçenekler */}
+            <ul
+              ref={listRef}
+              className="max-h-64 overflow-y-auto p-1.5"
+              role="listbox"
+              aria-label={t('country.select')}
+            >
+              {filtered.length === 0 && (
+                <li className="px-2.5 py-3 text-center text-xs text-foreground/50">
+                  <span className="opacity-70">{t('country.empty')}</span>
+                </li>
+              )}
+              {filtered.map((c, i) => {
+                const isActive = c.iso2 === value
+                return (
+                  <li key={c.iso2} role="option" aria-selected={isActive}>
+                    <button
+                      type="button"
+                      onClick={() => commit(c.iso2)}
+                      onMouseEnter={() => setActive(i)}
+                      className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
+                        i === active ? 'bg-foreground-200/10' : ''
+                      } ${isActive ? 'text-primary' : 'text-foreground/80'}`}
+                    >
+                      {/*
                       Sıra: [bayrak] [ülke adı] [kısaltım] ...... [+90 sağda].
                       +90'lar aynı hizada durabilsin diye kısa satırlarda
                       sabit genişlikli bir sütun kullanıyoruz.
                     */}
-                    <CountryFlag iso2={c.iso2} />
-                    <span className="min-w-0 flex-1 truncate">{c.name}</span>
-                    <span className="w-6 shrink-0 text-center text-[10px] font-semibold uppercase text-foreground/60">
-                      {c.iso2}
-                    </span>
-                    <span className="w-[3.75rem] shrink-0 text-right text-[11px] tabular-nums text-foreground/55">
-                      +
-                      {c.callingCode}
-                    </span>
-                    <span className="w-4 shrink-0">
-                      <CheckIcon
-                        size={13}
-                        className={isActive ? 'shrink-0' : 'shrink-0 opacity-0'}
-                      />
-                    </span>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </div>,
-        document.body,
-      )}
+                      <CountryFlag iso2={c.iso2} />
+                      <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                      <span className="w-6 shrink-0 text-center text-[10px] font-semibold uppercase text-foreground/60">
+                        {c.iso2}
+                      </span>
+                      <span className="w-[3.75rem] shrink-0 text-right text-[11px] tabular-nums text-foreground/55">
+                        +{c.callingCode}
+                      </span>
+                      <span className="w-4 shrink-0">
+                        <CheckIcon
+                          size={13}
+                          className={
+                            isActive ? 'shrink-0' : 'shrink-0 opacity-0'
+                          }
+                        />
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }

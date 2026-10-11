@@ -1,5 +1,4 @@
 import { Icon } from '@iconify/react'
-import { Skeleton } from '@/components/ui/skeleton'
 
 export default function GithubLoading() {
   return (
@@ -18,7 +17,7 @@ export default function GithubLoading() {
         </div>
       </div>
       <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 animate-pulse bg-foreground/8">
-        {[0, 1, 2].map(i => (
+        {[0, 1, 2].map((i) => (
           <div
             key={i}
             className="flex flex-col gap-3 rounded-2xl bg-background p-4 animate-pulse bg-foreground/8"

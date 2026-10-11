@@ -9,9 +9,11 @@ import type { BlogPost } from '@/lib/content'
  */
 
 /** Tür tespiti: `kind` alanı varsa ona, yoksa etiketlere bakarak. */
-export function postKind(post: Pick<BlogPost, 'kind' | 'tags' | 'badge'>): 'til' | 'article' {
+export function postKind(
+  post: Pick<BlogPost, 'kind' | 'tags' | 'badge'>,
+): 'til' | 'article' {
   if (post.kind === 'til') return 'til'
-  const etiketler = (post.tags ?? []).map(t => t.toLowerCase())
+  const etiketler = (post.tags ?? []).map((t) => t.toLowerCase())
   if (etiketler.includes('til') || etiketler.includes('t-i-l')) return 'til'
   return 'article'
 }
@@ -54,11 +56,13 @@ export function relatedPosts(
   all: BlogPost[],
   limit = 3,
 ): BlogPost[] {
-  const benimEtiketlerim = new Set((current.tags ?? []).map(t => t.toLowerCase()))
+  const benimEtiketlerim = new Set(
+    (current.tags ?? []).map((t) => t.toLowerCase()),
+  )
   if (benimEtiketlerim.size === 0) {
     // Etiket yoksa en yeni yazılardan göster (boş ekrandan iyi).
     return all
-      .filter(p => p.id !== current.id)
+      .filter((p) => p.id !== current.id)
       .slice()
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, limit)
@@ -68,7 +72,9 @@ export function relatedPosts(
   const benimTur = postKind(current)
 
   return all
-    .filter(p => p.id !== current.id && (p.slug ?? '') !== (current.slug ?? ''))
+    .filter(
+      (p) => p.id !== current.id && (p.slug ?? '') !== (current.slug ?? ''),
+    )
     .map((p) => {
       let puan = 0
       for (const t of p.tags ?? []) {
@@ -79,8 +85,8 @@ export function relatedPosts(
       if (fark < 1000 * 60 * 60 * 24 * 90) puan += 1
       return { p, puan }
     })
-    .filter(x => x.puan > 0)
+    .filter((x) => x.puan > 0)
     .sort((a, b) => b.puan - a.puan || b.p.date.localeCompare(a.p.date))
     .slice(0, limit)
-    .map(x => x.p)
+    .map((x) => x.p)
 }

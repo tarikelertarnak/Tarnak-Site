@@ -51,7 +51,7 @@ jobs:
       # ── Bütçe tanımı ────────────────────────────────────────────────
       - uses: treosh/lighthouse-ci-action@v12
         with:
-          configPath: './lighthouserc.json'
+          configPath: ./lighthouserc.json
           uploadArtifacts: true
           temporaryPublicStorage: true
 
