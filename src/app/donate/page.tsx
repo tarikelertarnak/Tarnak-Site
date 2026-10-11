@@ -142,7 +142,7 @@ export default async function DonatePage() {
                 </span>
               </div>
               {/* Rows */}
-              {METHODS.map((m) => (
+              {METHODS.map(m => (
                 <div
                   key={m.name}
                   className="grid grid-cols-1 items-center gap-3 border-b border-foreground-200/5 px-4 py-4 last:border-b-0 transition-colors hover:bg-foreground/[0.02] sm:grid-cols-[1.4fr_2fr_auto] sm:gap-4 sm:px-6"
@@ -181,7 +181,7 @@ export default async function DonatePage() {
           <div className="mx-auto w-full max-w-2xl text-center">
             <p className="text-sm text-foreground/60 sm:text-base">
               {isEn
-                ? "Even if you don't support financially — thank you. Using my open source projects, starring them and sharing them helps me a lot too."
+                ? 'Even if you don\'t support financially — thank you. Using my open source projects, starring them and sharing them helps me a lot too.'
                 : 'Destek olmasan bile teşekkürler — açık kaynak projelerimi kullanman, yıldız vermen ve paylaşman da bana çok yardımcı oluyor.'}
             </p>
           </div>

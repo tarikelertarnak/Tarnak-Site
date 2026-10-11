@@ -32,8 +32,8 @@ test.describe('Faz 6 sayfaları', () => {
       await page.goto(yol, { waitUntil: 'domcontentloaded' })
       const tasma = await page.evaluate(
         () =>
-          document.documentElement.scrollWidth -
-          document.documentElement.clientWidth,
+          document.documentElement.scrollWidth
+          - document.documentElement.clientWidth,
       )
       expect(tasma).toBeLessThanOrEqual(1)
       // Sayfa yatay KAYDIRILMAMIŞ olmalı (scrollIntoView kaçakları burada çıkardı).
@@ -46,15 +46,16 @@ test.describe('Faz 6 sayfaları', () => {
     test(`${yol} konsol/hydration hatası yok`, async ({ page }) => {
       const hatalar: string[] = []
       page.on('console', (m) => {
-        if (m.type() === 'error') hatalar.push(m.text())
+        if (m.type() === 'error')
+hatalar.push(m.text())
       })
-      page.on('pageerror', (e) => hatalar.push(String(e)))
+      page.on('pageerror', e => hatalar.push(String(e)))
 
       await page.goto(yol, { waitUntil: 'domcontentloaded' })
       await expect(page.locator('h1').first()).toBeVisible()
       await page.waitForTimeout(900)
 
-      const hydration = hatalar.filter((h) => /hydrat|did not match/i.test(h))
+      const hydration = hatalar.filter(h => /hydrat|did not match/i.test(h))
       expect(hydration, `hydration: ${hydration.join(' | ')}`).toHaveLength(0)
     })
   }

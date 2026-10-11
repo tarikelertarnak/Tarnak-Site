@@ -42,10 +42,10 @@ import './tokens.css'
  * yalnızca `dynamic()` kullanıldı: kod yine ayrı chunk'a düşer.
  */
 const MusicPlayer = nextDynamic(() =>
-  import('@/components/music-player').then((m) => m.MusicPlayer),
+  import('@/components/music-player').then(m => m.MusicPlayer),
 )
 const SearchDialog = nextDynamic(() =>
-  import('@/components/search-dialog').then((m) => m.SearchDialog),
+  import('@/components/search-dialog').then(m => m.SearchDialog),
 )
 
 // 2026-10-03: `revalidate = 300` BURADAN KALDIRILDI — KOK NEDEN.
@@ -76,8 +76,8 @@ export async function generateMetadata(): Promise<Metadata> {
   // indeksleyip "site:" aramasıyla buluyor; spam görünen meta etiketler
   // SEO'yu degil paylaşım kartını bozuyordu. `keywords` alani tamamen
   // silindi (aşağıda metadata'ya da girdi).
-  const description =
-    'Tarık Eler (Tarnak) — web developer ve içerik üretici. Next.js, TypeScript ve yapay zeka ile modern web projeleri geliştiriyorum. Portfolio, blog ve projelerim.'
+  const description
+    = 'Tarık Eler (Tarnak) — web developer ve içerik üretici. Next.js, TypeScript ve yapay zeka ile modern web projeleri geliştiriyorum. Portfolio, blog ve projelerim.'
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -87,8 +87,8 @@ export async function generateMetadata(): Promise<Metadata> {
     creator: 'Tarık Eler (Tarnak)',
     publisher: 'Tarık Eler (Tarnak)',
     robots: {
-      index: true,
-      follow: true,
+      'index': true,
+      'follow': true,
       'max-image-preview': 'large',
       // max-snippet:-1 = Google istediği kadar uzun metin gösterebilir
       // (yazı seçiminde "tarik eler" görünsün diye önemli).
@@ -216,8 +216,8 @@ export default async function RootLayout({
    */
   const nonce = (await headers()).get('x-nonce') ?? generateCspNonce()
   const musicSrc = content.settings?.musicSrc
-  const defaultTheme =
-    (content.settings?.defaultTheme as
+  const defaultTheme
+    = (content.settings?.defaultTheme as
       'light' | 'dark' | 'system' | 'auto' | undefined) || 'auto'
   // Value interpolated into an inline script — pinned to the enum for XSS safety.
   const safeDefaultTheme = ['light', 'dark', 'system', 'auto'].includes(
@@ -278,17 +278,17 @@ export default async function RootLayout({
                 // Tarık (ad) / Eler (soyad) / Tarnak (takma ad, marka).
                 // `name` resmî tam ad; `alternateName` içinde takma ad ve
                 // yaygın yazım varyantları.
-                name: 'Tarık Eler',
+                'name': 'Tarık Eler',
                 // 2026-10-06: 9 varyanttan 3'e indirildi. `alternateName`
                 // "bu kişinin diğer gerçek adları" demektir; 'tarikelertarnak',
                 // 'elertarik', 'tarik eler tarnak' gibi heceleme varyantları
                 // Google'a spam sinyali veriyor. Gercek alternatifler:
                 // marka/takma ad + yaygin buyuk-harf yazim.
-                alternateName: ['Tarnak', 'Tarık Eler Tarnak', 'TARIK ELER'],
-                url: SITE_URL,
-                image: `${SITE_URL}/opengraph-image`,
-                logo: `${SITE_URL}/icon-512x512.png`,
-                jobTitle: 'Web Developer',
+                'alternateName': ['Tarnak', 'Tarık Eler Tarnak', 'TARIK ELER'],
+                'url': SITE_URL,
+                'image': `${SITE_URL}/opengraph-image`,
+                'logo': `${SITE_URL}/icon-512x512.png`,
+                'jobTitle': 'Web Developer',
                 /*
                  * sameAs (Faz 2 · SEO 3, kullanıcı isteği): "sosyal linkleri
                  * content dosyasından oku, bilmediğin linki uydurma".
@@ -302,13 +302,13 @@ export default async function RootLayout({
                  * http(s) bağlantıları. Admin panelinden sosyal eklenip
                  * çıkarılınca JSON-LD otomatik güncellenir; uydurma link yok.
                  */
-                sameAs: (content.social ?? [])
+                'sameAs': (content.social ?? [])
                   .map((s: { href?: string }) => s?.href?.trim())
                   .filter(
                     (h: string | undefined): h is string =>
                       !!h && /^https?:\/\//i.test(h),
                   ),
-                knowsAbout: [
+                'knowsAbout': [
                   'Next.js',
                   'TypeScript',
                   'Web Development',
@@ -319,12 +319,12 @@ export default async function RootLayout({
               {
                 '@context': 'https://schema.org',
                 '@type': 'WebSite',
-                name: 'Tarık Eler (Tarnak)',
+                'name': 'Tarık Eler (Tarnak)',
                 // 2026-10-06: 19 varyant -> 1. WebSite icin `alternateName`
                 // gereksiz: `name` zaten "Tarık Eler (Tarnak)" diyor.
-                alternateName: ['Tarnak'],
-                url: SITE_URL,
-                inLanguage: ['tr', 'en'],
+                'alternateName': ['Tarnak'],
+                'url': SITE_URL,
+                'inLanguage': ['tr', 'en'],
                 // 2026-10-04: `potentialAction: SearchAction` KALDIRILDI.
                 // Iki neden: (1) Google Kasim 2024'te sitelinks arama kutusu
                 // ozelligini kaldirdi, schema.org uzerinden isteniyorsa bile

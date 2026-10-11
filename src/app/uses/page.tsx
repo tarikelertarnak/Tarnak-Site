@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function UsesPage() {
   const p6 = await getPhase6()
   const uses = p6?.uses
-  const groups = (uses?.groups ?? []).filter((g) => g.items.length > 0)
+  const groups = (uses?.groups ?? []).filter(g => g.items.length > 0)
 
   return (
     <div className="min-h-screen w-full relative">
@@ -54,7 +54,7 @@ export default async function UsesPage() {
                 Admin panelinden içerik girildiğinde burada görünecek.
               </Phase6Empty>
             ) : (
-              groups.map((group) => (
+              groups.map(group => (
                 <div key={group.title} className="flex flex-col gap-3">
                   <div>
                     <h2 className="text-lg font-semibold">{group.title}</h2>
@@ -65,7 +65,7 @@ export default async function UsesPage() {
                     ) : null}
                   </div>
                   <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {group.items.map((item) => (
+                    {group.items.map(item => (
                       <li
                         key={item.name}
                         className="rounded-xl border border-foreground/10 bg-card/40 p-3"

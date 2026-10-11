@@ -64,7 +64,8 @@ function contentLastmod(): Date {
   for (const f of files) {
     try {
       dates.push(statSync(/* turbopackIgnore: true */ f).mtimeMs)
-    } catch {
+    }
+ catch {
       // dosya yoksa o katkiyi at — digerinden devam et
     }
   }
@@ -112,15 +113,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const posts = await getPosts()
     for (const post of posts) {
-      if (!post?.slug) continue
+      if (!post?.slug)
+continue
       // 2026-10-04: her yazi icin CONTENT_LASTMOD (dosya mtime) kullaniliyordu.
       // Bu, "bu yazi 2020'de yazildi" sinyali yerine "su an degisti" sinyali
       // veriyordu; Google lastModified'a guvenir. Yazinin kendi tarihi elimizde
       // (`post.date`, yyyy-mm-dd) -> onu kullan. Bozuk tarih varsa guvenli
       // tarafa dus (CONTENT_LASTMOD).
       const published = post.date ? new Date(`${post.date}T12:00:00Z`) : null
-      const lastModified =
-        published && !Number.isNaN(published.getTime())
+      const lastModified
+        = published && !Number.isNaN(published.getTime())
           ? published
           : CONTENT_LASTMOD
       entries.push({
@@ -130,7 +132,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.7,
       })
     }
-  } catch (err) {
+  }
+ catch (err) {
     console.error(
       '[sitemap] blog yazilari alinamadi, statik rotalar gonderiliyor',
       err,

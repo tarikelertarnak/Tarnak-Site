@@ -51,7 +51,7 @@ export default async function GithubOwnerPage({
             className="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-[#e5e7eb] px-3 text-sm font-medium text-black no-underline transition-colors hover:bg-[#d1d5db]"
           >
             <GithubIcon size={15} />
-            {isEn ? 'Open GitHub' : "GitHub'da aç"}
+            {isEn ? 'Open GitHub' : 'GitHub\'da aç'}
           </a>
         </Section>
       </main>

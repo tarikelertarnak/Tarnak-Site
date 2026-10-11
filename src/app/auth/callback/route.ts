@@ -7,11 +7,11 @@ function safeNextPath(raw: string | null): string {
   const value = raw ?? '/'
   // Only relative, local paths are accepted (//host, /\\host, scheme:... rejected)
   if (
-    value.startsWith('/') &&
-    !value.startsWith('//') &&
-    !value.startsWith('/\\') &&
-    !value.includes('\\') &&
-    !/^[a-z][a-z0-9+.-]*:/i.test(value)
+    value.startsWith('/')
+    && !value.startsWith('//')
+    && !value.startsWith('/\\')
+    && !value.includes('\\')
+    && !/^[a-z][a-z0-9+.-]*:/i.test(value)
   ) {
     return value.slice(0, 500)
   }

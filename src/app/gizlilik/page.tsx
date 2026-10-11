@@ -8,7 +8,7 @@ export function generateMetadata(): Promise<Metadata> {
   return legalMetadata(
     '/gizlilik',
     'Gizlilik Politikası',
-    "TARNAK'ın gizlilik politikası ve veri işleme uygulamaları.",
+    'TARNAK\'ın gizlilik politikası ve veri işleme uygulamaları.',
   )
 }
 

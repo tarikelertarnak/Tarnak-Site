@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ChangelogPage() {
   const p6 = await getPhase6()
   const log = p6?.changelog
-  const entries = (log?.entries ?? []).filter((e) => e.title)
+  const entries = (log?.entries ?? []).filter(e => e.title)
 
   return (
     <div className="min-h-screen w-full relative">

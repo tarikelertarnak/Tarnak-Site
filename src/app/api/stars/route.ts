@@ -7,20 +7,22 @@ const DATA_DIR = path.join(process.cwd(), 'data')
 const STARS_FILE = path.join(DATA_DIR, 'stars.json')
 
 interface StarsData {
-  [key: string]: { total: number; count: number }
+  [key: string]: { total: number, count: number }
 }
 
 // Cloudflare Workers: no filesystem — writes are in-memory for the worker lifetime.
 let memoryStars: StarsData | null = null
 
 async function readStars(): Promise<StarsData> {
-  if (memoryStars) return memoryStars
+  if (memoryStars)
+return memoryStars
   try {
     const raw = await fs.readFile(STARS_FILE, 'utf-8')
     const parsed = JSON.parse(raw) as StarsData
     memoryStars = parsed
     return parsed
-  } catch {
+  }
+ catch {
     memoryStars = {}
     return {}
   }
@@ -35,7 +37,8 @@ async function writeStars(data: StarsData): Promise<void> {
       `${JSON.stringify(data, null, 2)}\n`,
       'utf-8',
     )
-  } catch {
+  }
+ catch {
     /* Workers: in-memory only */
   }
 }
@@ -72,8 +75,8 @@ export async function POST(request: Request) {
         itemId?: string
         itemType?: string
       } | null
-      const keyEarly =
-        bodyEarly?.itemId && bodyEarly?.itemType
+      const keyEarly
+        = bodyEarly?.itemId && bodyEarly?.itemType
           ? `${bodyEarly.itemType}:${bodyEarly.itemId}`
           : ''
       const existingEarly = keyEarly
@@ -85,8 +88,8 @@ export async function POST(request: Request) {
           count: existingEarly.count,
           average:
             existingEarly.count > 0
-              ? Math.round((existingEarly.total / existingEarly.count) * 10) /
-                10
+              ? Math.round((existingEarly.total / existingEarly.count) * 10)
+              / 10
               : 0,
           counted: false,
         },
@@ -111,15 +114,15 @@ export async function POST(request: Request) {
 
     // Input doğrulama: itemId/itemType uzunluk sınırı, rating 1-5
     if (
-      !itemId ||
-      !itemType ||
-      typeof itemId !== 'string' ||
-      itemId.length > 200 ||
-      typeof itemType !== 'string' ||
-      itemType.length > 50 ||
-      typeof rating !== 'number' ||
-      rating < 1 ||
-      rating > 5
+      !itemId
+      || !itemType
+      || typeof itemId !== 'string'
+      || itemId.length > 200
+      || typeof itemType !== 'string'
+      || itemType.length > 50
+      || typeof rating !== 'number'
+      || rating < 1
+      || rating > 5
     ) {
       return NextResponse.json({ error: 'Geçersiz veri' }, { status: 400 })
     }
@@ -132,7 +135,8 @@ export async function POST(request: Request) {
       // Undo the star — total never drops below 0
       existing.total = Math.max(0, existing.total - rating)
       existing.count = Math.max(0, existing.count - 1)
-    } else {
+    }
+ else {
       existing.total += rating
       existing.count += 1
     }
@@ -148,7 +152,8 @@ export async function POST(request: Request) {
           ? Math.round((existing.total / existing.count) * 10) / 10
           : 0,
     })
-  } catch {
+  }
+ catch {
     return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
   }
 }
@@ -191,7 +196,8 @@ export async function GET(request: Request) {
       average:
         data.count > 0 ? Math.round((data.total / data.count) * 10) / 10 : 0,
     })
-  } catch {
+  }
+ catch {
     return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
   }
 }

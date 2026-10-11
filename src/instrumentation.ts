@@ -32,9 +32,9 @@ const DSN = process.env.SENTRY_DSN
 const RELEASE = process.env.NEXT_PUBLIC_COMMIT_SHA || undefined
 
 /** Ortam: production varsayılan; preview'ı ayırt etmek için kullanışlı. */
-const ENVIRONMENT =
-  process.env.NEXT_PUBLIC_VERCEL_ENV ||
-  (process.env.NODE_ENV === 'production' ? 'production' : 'development')
+const ENVIRONMENT
+  = process.env.NEXT_PUBLIC_VERCEL_ENV
+    || (process.env.NODE_ENV === 'production' ? 'production' : 'development')
 
 /**
  * PII temizleyici.
@@ -57,10 +57,12 @@ const SECRET_HEADERS = [
 ]
 
 function scrub(value: unknown, depth = 0): unknown {
-  if (depth > 6 || value === null || value === undefined) return value
+  if (depth > 6 || value === null || value === undefined)
+return value
   if (typeof value === 'string')
     return value.replace(PII_EMAIL, '[email]').replace(PII_PHONE, '[phone]')
-  if (Array.isArray(value)) return value.map((v) => scrub(v, depth + 1))
+  if (Array.isArray(value))
+return value.map(v => scrub(v, depth + 1))
   if (typeof value === 'object') {
     const out: Record<string, unknown> = {}
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
@@ -83,8 +85,8 @@ function scrub(value: unknown, depth = 0): unknown {
 async function loadSentry(): Promise<SentryLike> {
   const mod = await import('@sentry/cloudflare')
   const candidate = mod as unknown as SentryLike & { default?: SentryLike }
-  const resolved =
-    typeof candidate.init === 'function' ? candidate : candidate.default
+  const resolved
+    = typeof candidate.init === 'function' ? candidate : candidate.default
   if (!resolved || typeof resolved.init !== 'function') {
     // Beklenmeyen export şekli — sessizce devre dışı bırak, siteyi düşürme.
     return {
@@ -101,7 +103,7 @@ interface SentryLike {
 }
 
 interface SentryEvent {
-  request?: { url?: string; headers?: unknown; data?: unknown }
+  request?: { url?: string, headers?: unknown, data?: unknown }
   extra?: Record<string, unknown>
   contexts?: Record<string, unknown>
   breadcrumbs?: unknown[]
@@ -173,16 +175,18 @@ export async function init(): Promise<void> {
  */
 export async function onRequestError(
   error: unknown,
-  request: { path?: string; method?: string },
+  request: { path?: string, method?: string },
 ): Promise<void> {
-  if (!DSN) return
+  if (!DSN)
+return
   try {
     const Sentry = await loadSentry()
     Sentry.captureException(error, {
       extra: { path: request.path, method: request.method },
       tags: { runtime: 'nextjs' },
     })
-  } catch {
+  }
+ catch {
     // Sentry yüklenemezse sessiz geç — hata yakalama asla siteyi düşürmez.
   }
 }

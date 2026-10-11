@@ -34,8 +34,8 @@ export default async function Page() {
   const phase6 = parsePhase6(
     (content as unknown as Record<string, unknown>).phase6,
   )
-  const hizmetler = phase6?.services?.items.filter((i) => i.title) ?? []
-  const referanslar = phase6?.testimonials?.items.filter((i) => i.quote) ?? []
+  const hizmetler = phase6?.services?.items.filter(i => i.title) ?? []
+  const referanslar = phase6?.testimonials?.items.filter(i => i.quote) ?? []
   // Faz 6 · 3 — YouTube videoları. Kanal ID boşsa veya besleme hata
   // verirse boş dizi döner ve bölüm render edilmez (kullanıcı kuralı).
   const videolar = await kanalVideolari(

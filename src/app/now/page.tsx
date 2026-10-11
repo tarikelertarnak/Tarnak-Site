@@ -33,7 +33,7 @@ const GRUPLAR = [
 export default async function NowPage() {
   const p6 = await getPhase6()
   const now = p6?.now
-  const dolu = GRUPLAR.filter((g) => (now?.[g.anahtar] ?? []).length > 0)
+  const dolu = GRUPLAR.filter(g => (now?.[g.anahtar] ?? []).length > 0)
 
   return (
     <div className="min-h-screen w-full relative">
@@ -64,7 +64,7 @@ export default async function NowPage() {
                 </Phase6Empty>
               </div>
             ) : (
-              dolu.map((grup) => (
+              dolu.map(grup => (
                 <div key={grup.anahtar} className="flex flex-col gap-3">
                   <h2 className="text-lg font-semibold">{grup.baslik}</h2>
                   <ul className="flex flex-col gap-2">

@@ -30,7 +30,7 @@ import { pageMetadata } from '@/lib/page-metadata'
 export const dynamic = 'force-static'
 
 export async function generateStaticParams(): Promise<
-  Array<{ owner: string; repo: string }>
+  Array<{ owner: string, repo: string }>
 > {
   return [
     { owner: 'tarikelertarnak', repo: 'tarnak' },
@@ -41,7 +41,7 @@ export async function generateStaticParams(): Promise<
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ owner: string; repo: string }>
+  params: Promise<{ owner: string, repo: string }>
 }): Promise<Metadata> {
   const { owner, repo } = await params
   return pageMetadata({
@@ -54,7 +54,7 @@ export async function generateMetadata({
 export default async function GithubRepoPage({
   params,
 }: {
-  params: Promise<{ owner: string; repo: string }>
+  params: Promise<{ owner: string, repo: string }>
 }) {
   const content = await getLocalizedContent()
   const { owner, repo } = await params
@@ -64,7 +64,8 @@ export default async function GithubRepoPage({
   let detay: Awaited<ReturnType<typeof fetchRepoDetails>> | null = null
   try {
     detay = await fetchRepoDetails(owner, repo, { forceStatic: true })
-  } catch {
+  }
+ catch {
     detay = null
   }
 
@@ -106,8 +107,14 @@ export default async function GithubRepoPage({
           {detay && (
             <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-foreground/60">
               {detay.language && <span>{detay.language}</span>}
-              <span>★{detay.stars}</span>
-              <span>⑂{detay.forks}</span>
+              <span>
+★
+{detay.stars}
+</span>
+              <span>
+⑂
+{detay.forks}
+</span>
               <span>{detay.license ?? 'Lisans belirtilmemiş'}</span>
               <span>
                 <time dateTime={detay.updatedAt}>
@@ -193,18 +200,22 @@ export default async function GithubRepoPage({
               {/* TODO (kullanıcı): admin panelinden bu proje için vaka
                   çalışması alanlarını doldur. Boş bırakılan her bölüm
                   burada görünür — uydurma metin yazılmadı. */}
-              {!vaka?.summary &&
-                !vaka?.problem &&
-                !vaka?.solution &&
-                !vaka?.outcome && (
+              {!vaka?.summary
+                && !vaka?.problem
+                && !vaka?.solution
+                && !vaka?.outcome && (
                   <div className="rounded-xl border border-foreground/10 p-5">
                     <p className="text-sm text-foreground/60">
                       Bu proje için vaka çalışması henüz yazılmadı.
                     </p>
                     <p className="mt-2 text-xs text-foreground/40">
-                      TODO: admin paneli → Projeler → {repo} → kısa özet /
+                      TODO: admin paneli → Projeler →
+{' '}
+{repo}
+{' '}
+→ kısa özet /
                       problem / çözüm / sonuç
-                    </p>
+</p>
                   </div>
                 )}
             </div>
@@ -218,7 +229,7 @@ export default async function GithubRepoPage({
                     Kullanılan teknolojiler
                   </h3>
                   <ul className="mt-3 flex flex-wrap gap-2">
-                    {detay.topics.map((t) => (
+                    {detay.topics.map(t => (
                       <li
                         key={t}
                         className="rounded-full border border-foreground/10 px-3 py-1 text-xs text-foreground/70"
@@ -248,7 +259,8 @@ export default async function GithubRepoPage({
               />
             ) : (
               <p className="rounded-xl border border-foreground/10 p-5 text-sm text-foreground/60">
-                README bulunamadı veya yüklenemedi.{' '}
+                README bulunamadı veya yüklenemedi.
+{' '}
                 <a
                   href={githubUrl}
                   target="_blank"

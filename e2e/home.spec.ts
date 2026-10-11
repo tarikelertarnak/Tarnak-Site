@@ -50,8 +50,8 @@ test.describe('ana sayfa', () => {
   test('yatay taşma yok', async ({ page }) => {
     const taşma = await page.evaluate(
       () =>
-        document.documentElement.scrollWidth -
-        document.documentElement.clientWidth,
+        document.documentElement.scrollWidth
+        - document.documentElement.clientWidth,
     )
     // 1px tolerans: yuvarlama farkı olabiliyor, fazlası kaydırma çubuğu demek.
     expect(taşma).toBeLessThanOrEqual(1)
@@ -107,9 +107,10 @@ test.describe('ana sayfa', () => {
   test('konsol hatası yok', async ({ page }) => {
     const hatalar: string[] = []
     page.on('console', (msg) => {
-      if (msg.type() === 'error') hatalar.push(msg.text())
+      if (msg.type() === 'error')
+hatalar.push(msg.text())
     })
-    page.on('pageerror', (err) => hatalar.push(String(err)))
+    page.on('pageerror', err => hatalar.push(String(err)))
 
     await page.goto('/', { waitUntil: 'domcontentloaded' })
     await expect(page.locator('h1')).toBeVisible()
@@ -118,7 +119,7 @@ test.describe('ana sayfa', () => {
 
     // Hydration uyarısı bu projede yaşandı (input id'si Math.random ile
     // üretiliyordu) — regresyonu yakalamak için AÇIKÇA kontrol ediliyor.
-    const hydration = hatalar.filter((h) => /hydrat|did not match/i.test(h))
+    const hydration = hatalar.filter(h => /hydrat|did not match/i.test(h))
     expect(
       hydration,
       `hydration hatası: ${hydration.join(' | ')}`,

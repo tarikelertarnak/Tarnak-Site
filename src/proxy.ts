@@ -31,13 +31,14 @@ const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0'])
 function permanentRedirect(request: NextRequestType): NextResponse | null {
   const { pathname } = request.nextUrl
   // Trailing slash normalize (Next `trailingSlash: true` kullanıyor).
-  const yol =
-    pathname.length > 1 && pathname.endsWith('/')
+  const yol
+    = pathname.length > 1 && pathname.endsWith('/')
       ? pathname.slice(0, -1)
       : pathname
 
   const hedef = PERMANENT_REDIRECTS[yol]
-  if (!hedef || hedef === yol) return null
+  if (!hedef || hedef === yol)
+return null
 
   const url = request.nextUrl.clone()
   url.pathname = `${hedef}/` // trailingSlash: true ile tutarlı
@@ -46,7 +47,8 @@ function permanentRedirect(request: NextRequestType): NextResponse | null {
 
 function redirectToCanonical(request: NextRequestType): NextResponse | null {
   const host = (request.headers.get('host') ?? '').split(':')[0].toLowerCase()
-  if (!host || LOCAL_HOSTS.has(host) || host === CANONICAL_HOST) return null
+  if (!host || LOCAL_HOSTS.has(host) || host === CANONICAL_HOST)
+return null
   const url = request.nextUrl.clone()
   url.host = CANONICAL_HOST
   url.protocol = 'https:'
@@ -55,13 +57,16 @@ function redirectToCanonical(request: NextRequestType): NextResponse | null {
 
 export async function proxy(request: NextRequestType) {
   const maintenance = maintenanceResponse(request)
-  if (maintenance) return maintenance
+  if (maintenance)
+return maintenance
 
   const moved = permanentRedirect(request)
-  if (moved) return moved
+  if (moved)
+return moved
 
   const guard = redirectToCanonical(request)
-  if (guard) return guard
+  if (guard)
+return guard
 
   /*
    * 2026-10-07 CSP faz 1 — nonce tabanlı politika (REPORT-ONLY).
@@ -153,7 +158,7 @@ const SESSION_PREFIXES = [
 function needsServerSession(request: NextRequestType): boolean {
   const { pathname } = request.nextUrl
   return SESSION_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    prefix => pathname === prefix || pathname.startsWith(`${prefix}/`),
   )
 }
 
@@ -174,7 +179,8 @@ function needsServerSession(request: NextRequestType): boolean {
  * tesadüfen kapatmasın diye. Kapalıyken de `/api/health` herkese açık.
  */
 function maintenanceResponse(request: NextRequestType): NextResponse | null {
-  if (process.env.MAINTENANCE_MODE !== '1') return null
+  if (process.env.MAINTENANCE_MODE !== '1')
+return null
 
   const { pathname } = request.nextUrl
 
@@ -195,8 +201,8 @@ function maintenanceResponse(request: NextRequestType): NextResponse | null {
   // Statik varlıklar (JS/CSS/görsel) sunulmaya devam eder; yoksa bakım
   // sayfası bile stilleri yükleyemez.
   if (
-    pathname.startsWith('/_next/') ||
-    /\.(?:svg|png|jpe?g|gif|webp|avif|ico|mp3|mp4|woff2?|xml|txt|webmanifest)$/.test(
+    pathname.startsWith('/_next/')
+    || /\.(?:svg|png|jpe?g|gif|webp|avif|ico|mp3|mp4|woff2?|xml|txt|webmanifest)$/.test(
       pathname,
     )
   ) {
@@ -225,8 +231,8 @@ function maintenancePage(): string {
   // ⚠️ DİKKAT: `isEn` İNGİLİZCEYİ seçer. Değişken adı ters yazılırsa
   // (2026-10-07'de öyle bir hata vardı: `tr` adı `=== 'en'` kontrolüydü)
   // `MAINTENANCE_LANG=tr` yazınca site İngilizce gösteriyordu.
-  const isEn =
-    (process.env.MAINTENANCE_LANG ?? 'tr').trim().toLowerCase() === 'en'
+  const isEn
+    = (process.env.MAINTENANCE_LANG ?? 'tr').trim().toLowerCase() === 'en'
   const t = (tr: string, en: string) => (isEn ? en : tr)
   return `<!DOCTYPE html>
 <html lang="${isEn ? 'en' : 'tr'}" data-theme="dark">

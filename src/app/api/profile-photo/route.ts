@@ -39,13 +39,13 @@ function looksLikeImage(bytes: Uint8Array, mime: ImageMime): boolean {
   switch (mime) {
     case 'image/png':
       return (
-        bytes[0] === 0x89 &&
-        bytes[1] === 0x50 &&
-        bytes[2] === 0x4e &&
-        bytes[3] === 0x47
+        bytes[0] === 0x89
+        && bytes[1] === 0x50
+        && bytes[2] === 0x4E
+        && bytes[3] === 0x47
       )
     case 'image/jpeg':
-      return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff
+      return bytes[0] === 0xFF && bytes[1] === 0xD8 && bytes[2] === 0xFF
     case 'image/webp':
       return bytes.length >= 12 && tag(0, 4) === 'RIFF' && tag(8, 12) === 'WEBP'
     default:
@@ -69,8 +69,8 @@ export async function POST(req: Request) {
 
   // Depolama yoksa SUNUCU ÇÖKMEMELİ — istemciye anlaşılır mesaj dön.
   if (
-    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    !process.env.SUPABASE_SERVICE_ROLE
+    !process.env.NEXT_PUBLIC_SUPABASE_URL
+    || !process.env.SUPABASE_SERVICE_ROLE
   ) {
     return NextResponse.json(
       { ok: false, error: 'Depolama yapılandırılmamış' },
@@ -81,7 +81,8 @@ export async function POST(req: Request) {
   let formData: FormData
   try {
     formData = await req.formData()
-  } catch {
+  }
+ catch {
     return NextResponse.json(
       { ok: false, error: 'Form verisi okunamadı.' },
       { status: 400 },
@@ -124,7 +125,8 @@ export async function POST(req: Request) {
     const path = `${FOLDER}/${crypto.randomUUID()}.${EXT_BY_MIME[mime]}`
     const url = await uploadToStorage(path, file, mime)
     return NextResponse.json({ ok: true, url, path })
-  } catch (error) {
+  }
+ catch (error) {
     // Sunucu logunda ayrıntı, kullanıcıda tek cümle — iç hata sızdırma.
     console.error('[profile-photo] yükleme başarısız:', error)
     return NextResponse.json(
