@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server'
 import {
   ChatSchemaMissing,
+  clearConversation,
+  deleteConversation,
   deleteForAll,
+  getAdminProfileView,
   getOrCreateDirectConversation,
   isParticipant,
   listForUser,
   listMessages,
   markDelivered,
   markRead,
+  setBlocked,
+  setFavorite,
   setImportant,
+  setNickname,
   setPinned,
 } from '@/lib/chat-v2'
 import { BODY_LIMITS, checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
@@ -75,6 +81,10 @@ export async function GET(req: Request) {
   }
 }
 
+/** Yalnızca site sahibinin (admin) kullanabileceği eylemler. */
+const ADMIN_ACTIONS
+  = ['favorite', 'block', 'clear', 'deleteConversation', 'nickname', 'profile'] as const
+
 /** POST /api/chat/v2 — eyleme göre dallanır (action: open | pin | important | deleteAll). */
 export async function POST(req: Request) {
   const user = await getSessionUser()
@@ -84,6 +94,15 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null)
   const action = typeof body?.action === 'string' ? body.action : ''
   const admin = user.role === 'admin'
+
+  /*
+    YÖNETİCİ EYLEMLERİ (2026-10-11 kullanıcı isteği: sağ tık menüsü).
+    Hepsi SADECE admin'e açık — normal kullanıcı favorileyemez, engelleyemez,
+    sohbet silemez, takma ad veremez veya profili göremez.
+  */
+  if ((ADMIN_ACTIONS as readonly string[]).includes(action) && !admin) {
+    return NextResponse.json({ success: false, message: 'Yetki yok.' }, { status: 403 })
+  }
 
   try {
     // ADMIN herhangi biriyle sohbet açabilir; NORMAL KULLANICI yalnızca site
@@ -112,12 +131,56 @@ export async function POST(req: Request) {
       })
     }
 
-    if (!hasSessionPermission(user, 'chat.send')) {
+if (!hasSessionPermission(user, 'chat.send')) {
       return NextResponse.json({ success: false, message: 'Yetki yok.' }, { status: 403 })
     }
 
     const conversationId = typeof body?.conversationId === 'string' ? body.conversationId : ''
     const messageId = typeof body?.messageId === 'string' ? body.messageId : ''
+
+    // ── yönetici eylemleri (yukarıda yetki denetlendi) ──
+    const targetUserId = typeof body?.userId === 'string' ? body.userId : ''
+
+    if (action === 'profile') {
+      if (!targetUserId) {
+        return NextResponse.json({ success: false, message: 'Kullanıcı gerekli.' }, { status: 400 })
+      }
+      // Yalnız beyaz listeli, hassas olmayan alanlar (şifre/e-posta/telefon YOK)
+      return NextResponse.json({ success: true, profile: await getAdminProfileView(targetUserId) })
+    }
+
+    if (action === 'nickname') {
+      if (!targetUserId) {
+        return NextResponse.json({ success: false, message: 'Kullanıcı gerekli.' }, { status: 400 })
+      }
+      const nickname = typeof body?.nickname === 'string' ? body.nickname.slice(0, 40) : ''
+      await setNickname(targetUserId, nickname)
+      return NextResponse.json({ success: true, nickname: nickname.trim() || null })
+    }
+
+    if (!conversationId) {
+      return NextResponse.json({ success: false, message: 'Sohbet gerekli.' }, { status: 400 })
+    }
+    if (!(await isParticipant(conversationId, user.id)) && action !== 'clear' && action !== 'deleteConversation') {
+      return NextResponse.json({ success: false, message: 'Erişim yok.' }, { status: 403 })
+    }
+
+    if (action === 'favorite') {
+      await setFavorite(conversationId, body?.favorite === true)
+      return NextResponse.json({ success: true })
+    }
+    if (action === 'block') {
+      await setBlocked(conversationId, body?.blocked === true)
+      return NextResponse.json({ success: true })
+    }
+    if (action === 'clear') {
+      await clearConversation(conversationId)
+      return NextResponse.json({ success: true, message: 'Sohbet temizlendi.' })
+    }
+    if (action === 'deleteConversation') {
+      await deleteConversation(conversationId)
+      return NextResponse.json({ success: true, message: 'Sohbet silindi.' })
+    }
 
     // herkes sabitleyebilir / önemli işaretleyebilir (kendi sohbetinde)
     if (action === 'pin') {

@@ -20,7 +20,7 @@ export async function GET() {
     .from('profiles')
     // `id` şart: sohbet açmak için `action:'open'` peerId bekliyor (kullanıcı
     // adı değil, uuid). 2026-10-11: admin "kime yazayım?" listesini görüyordu.
-    .select('id, username, full_name, avatar_url')
+    .select('id, username, full_name, nickname, avatar_url')
     .not('username', 'is', null)
     .order('full_name', { ascending: true })
 
@@ -37,6 +37,9 @@ export async function GET() {
       id: p.id,
       username: p.username,
       fullName: p.full_name,
+      // Takma ad aramada da kullanılır (kullanıcı isteği: aynı kullanıcı hem
+      // takma ad hem normal adla aranabilir, biri gitmemeli).
+      nickname: p.nickname ?? null,
       avatarUrl: p.avatar_url,
     })),
   })

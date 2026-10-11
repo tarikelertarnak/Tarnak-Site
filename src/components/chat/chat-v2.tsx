@@ -34,7 +34,12 @@ interface Peer {
   id: string
   username: string
   fullName: string | null
+  nickname: string | null
   avatarUrl: string | null
+  /** Admin işaretleri (sağ tık menüsü bunları aç/kapatır). */
+  favorite?: boolean
+  important?: boolean
+  blocked?: boolean
 }
 
 /**
@@ -62,6 +67,9 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const [schemaMissing, setSchemaMissing] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [peers, setPeers] = useState<Peer[] | null>(null)
+  const [peerQuery, setPeerQuery] = useState('')
+  const [menuPeer, setMenuPeer] = useState<Peer | null>(null)
+  const [profilePeer, setProfilePeer] = useState<Peer | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
 
@@ -164,6 +172,50 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     }
     finally {
       setLoading(false)
+    }
+  }
+
+  /*
+    Yönetici eylemi çalıştırır (sağ tık menüsü). Sohbet gerektiren
+    eylemler için önce sohbeti bulundurur — `open` idempotent olduğu için
+    var olan sohbeti silmez, yalnızca yoksa oluşturur.
+  */
+  async function runAdmin(
+    action: 'favorite' | 'important' | 'block' | 'clear' | 'deleteConversation' | 'nickname' | 'profile',
+    peer: Peer,
+    extra: Record<string, unknown> = {},
+  ) {
+    try {
+      let conversationId = ''
+      if (action !== 'nickname' && action !== 'profile') {
+        const open = await fetch('/api/chat/v2', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'open', peerId: peer.id }),
+        })
+        const openJson = await open.json()
+        if (openJson?.code === 'CHAT_SCHEMA_MISSING') {
+          setSchemaMissing(true)
+          return
+        }
+        conversationId = openJson?.conversation?.id ?? ''
+        if (!conversationId) {
+          setError(openJson?.message ?? t('chat.error'))
+          return
+        }
+      }
+      const res = await fetch('/api/chat/v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, conversationId, userId: peer.id, ...extra }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        setError(json?.message ?? t('chat.error'))
+      }
+    }
+    catch {
+      setError(t('chat.error'))
     }
   }
 
@@ -355,40 +407,110 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       · admin → kime yazacağını seçer (aşağıdaki liste).
 */
 if (isAdmin && !conversationId) {
+    const q = peerQuery.trim().toLocaleLowerCase('tr')
+    const visible = (peers ?? []).filter((p) => {
+      if (p.id === currentUserId) {
+        return false
+      }
+      if (!q) {
+        return true
+      }
+      // Takma ad, kullanıcı adı VE gerçek ad birlikte aranır — takma ad
+      // konulsa bile gerçek ad kaybolmaz (kullanıcı isteği).
+      return [p.nickname, p.username, p.fullName].some(
+        v => !!v && v.toLocaleLowerCase('tr').includes(q),
+      )
+    })
     return (
-      <div className="flex h-[70vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background">
-        <div className="border-b border-foreground/10 px-4 py-3 text-sm font-semibold">
-          {t('chat.pickRecipient')}
+      <div className="flex h-[min(68svh,100svh-19rem)] max-h-[760px] min-h-[260px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background">
+        <div className="border-b border-foreground/10 px-4 py-3">
+          <p className="text-sm font-semibold">{t('chat.pickRecipient')}</p>
+          <input
+            type="search"
+            value={peerQuery}
+            onChange={e => setPeerQuery(e.target.value)}
+            placeholder={t('chat.searchPeople')}
+            aria-label={t('chat.searchPeople')}
+            className="mt-2 w-full rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
+          />
         </div>
-        <div className="flex-1 overflow-y-auto p-2">
+
+        <div
+          className="relative flex-1 overflow-y-auto p-2"
+          onClick={() => setMenuPeer(null)}
+          onContextMenu={e => e.preventDefault()}
+        >
           {peers === null && <p className="p-4 text-sm text-foreground-50">{t('chat.loading')}</p>}
-          {peers?.length === 0 && (
-            <p className="p-4 text-sm text-foreground-50">{t('chat.noRecipients')}</p>
+          {peers !== null && visible.length === 0 && (
+            <p className="p-4 text-sm text-foreground-50">
+              {q ? t('chat.noMatch') : t('chat.noRecipients')}
+            </p>
           )}
-          {peers?.filter(p => p.id !== currentUserId).map(p => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => openWith(p.id)}
-              className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-foreground/5"
-            >
-              <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-xs font-semibold text-primary">
-                {p.avatarUrl
-                  ? <img src={p.avatarUrl} alt="" className="size-full object-cover" />
-                  : (p.fullName || p.username).slice(0, 2).toUpperCase()}
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium">{p.fullName || p.username}</span>
-                {p.fullName && (
+          {visible.map(p => (
+            <div key={p.id} className="relative">
+              <button
+                type="button"
+                onClick={() => openWith(p.id)}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setMenuPeer(p)
+                }}
+                className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-foreground/5"
+              >
+                <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-xs font-semibold text-primary">
+                  {p.avatarUrl
+                    ? <img src={p.avatarUrl} alt="" className="size-full object-cover" />
+                    : (p.nickname || p.fullName || p.username).slice(0, 2).toUpperCase()}
+                </span>
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium">
+                    {p.nickname || p.fullName || p.username}
+                  </span>
                   <span className="block truncate text-xs text-foreground-50">
-@
-{p.username}
-</span>
-                )}
-              </span>
-            </button>
+                    {p.nickname && p.fullName
+                      ? `${p.fullName} · @${p.username}`
+                      : `@${p.username}`}
+                  </span>
+                </span>
+              </button>
+
+              {menuPeer?.id === p.id && (
+                <PeerMenu
+                  peer={p}
+                  t={t}
+                  onClose={() => setMenuPeer(null)}
+                  onNicknameSave={async (nickname) => {
+                    await runAdmin('nickname', p, { nickname })
+                    setPeers(prev =>
+                      (prev ?? []).map(x => (x.id === p.id ? { ...x, nickname: nickname || null } : x)))
+                    setMenuPeer(null)
+                  }}
+                  onProfile={() => {
+                    setProfilePeer(p)
+                    setMenuPeer(null)
+                  }}
+                  onToggle={async (action, next) => {
+                    setMenuPeer(null)
+                    await runAdmin(action, p, { [action]: next })
+                  }}
+                  onClear={async () => {
+                    setMenuPeer(null)
+                    await runAdmin('clear', p)
+                  }}
+                  onDelete={async () => {
+                    setMenuPeer(null)
+                    await runAdmin('deleteConversation', p)
+                  }}
+                />
+              )}
+            </div>
           ))}
         </div>
+
+        {profilePeer && (
+          <ProfileSheet peer={profilePeer} t={t} onClose={() => setProfilePeer(null)} />
+        )}
       </div>
     )
   }
@@ -400,7 +522,7 @@ if (isAdmin && !conversationId) {
   }
 
   return (
-    <div className="flex h-[70vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background">
+    <div className="flex h-[min(68svh,100svh-19rem)] max-h-[760px] min-h-[260px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background">
       {/* başlık + önemli kişi */}
       <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3">
         <div className="flex min-w-0 items-center gap-2">
@@ -667,6 +789,234 @@ function MessageInfo({ message, onClose, labels }: {
             <dd>{fmt(message.created_at) ?? '—'}</dd>
           </div>
         </dl>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Admin için kullanıcı sağ tık menüsü (2026-10-11 kullanıcı isteği).
+ * Sohbet düzeyinde: sabitle/favori, engelle, temizle, sil + takma ad + profil.
+ */
+function PeerMenu({ peer, t, onClose, onNicknameSave, onProfile, onToggle, onClear, onDelete }: {
+  peer: Peer
+  t: (key: string) => string
+  onClose: () => void
+  onNicknameSave: (nickname: string) => void | Promise<void>
+  onProfile: () => void
+  onToggle: (action: 'favorite' | 'important' | 'block', next: boolean) => void | Promise<void>
+  onClear: () => void | Promise<void>
+  onDelete: () => void | Promise<void>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(peer.nickname ?? '')
+  const item = 'block w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-foreground/10'
+
+  return (
+    <div className="absolute top-2 right-2 z-50 min-w-56 overflow-hidden rounded-xl border border-foreground/10 bg-background shadow-xl" onClick={e => e.stopPropagation()}>
+      {editing
+        ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                onNicknameSave(draft.trim())
+              }}
+              className="p-2"
+            >
+              <input
+                autoFocus
+                value={draft}
+                maxLength={40}
+                onChange={e => setDraft(e.target.value)}
+                placeholder={t('chat.nicknamePlaceholder')}
+                aria-label={t('chat.setNickname')}
+                className="w-full rounded-lg border border-foreground/10 bg-transparent px-2 py-1.5 text-sm outline-none focus-visible:border-primary"
+              />
+              <div className="mt-2 flex gap-2">
+                <button type="submit" className="flex-1 cursor-pointer rounded-lg bg-primary px-2 py-1.5 text-xs font-medium text-primary-fg">
+                  {t('chat.save')}
+                </button>
+                <button type="button" onClick={() => setEditing(false)} className="cursor-pointer rounded-lg border border-foreground/10 px-2 py-1.5 text-xs">
+                  {t('cancel')}
+                </button>
+              </div>
+            </form>
+          )
+        : (
+            <>
+              <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-2">
+                <p className="min-w-0 truncate text-xs text-foreground-50">
+                  {peer.nickname || peer.fullName || peer.username}
+                </p>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  aria-label={t('common.close')}
+                  className="cursor-pointer rounded px-1 text-xs hover:bg-foreground/10"
+                >
+                  ✕
+                </button>
+              </div>
+              <button type="button" className={item} onClick={() => onProfile()}>
+👤
+{t('chat.viewProfile')}
+</button>
+              <button type="button" className={item} onClick={() => setEditing(true)}>
+✏️
+{t('chat.setNickname')}
+</button>
+              <button type="button" className={item} onClick={() => onToggle('favorite', !peer.favorite)}>
+                ⭐
+{' '}
+{peer.favorite ? t('chat.unfavorite') : t('chat.favorite')}
+              </button>
+              <button type="button" className={item} onClick={() => onToggle('important', !peer.important)}>
+                📌
+{' '}
+{peer.important ? t('chat.unpinConversation') : t('chat.pinConversation')}
+              </button>
+              <button type="button" className={item} onClick={() => onToggle('block', !peer.blocked)}>
+                🚫
+{' '}
+{peer.blocked ? t('chat.unblock') : t('chat.block')}
+              </button>
+              <button type="button" className={item} onClick={() => onClear()}>
+🧹
+{t('chat.clearConversation')}
+</button>
+              <button type="button" className={`${item} text-red-500`} onClick={() => onDelete()}>
+🗑
+{t('chat.deleteConversation')}
+</button>
+            </>
+          )}
+    </div>
+  )
+}
+
+/**
+ * "Profilini incele" (2026-10-11 kullanıcı isteği).
+ *
+ * GÜVENLİK: yalnız sunucunun beyaz listeyle döndürdüğü alanlar gösterilir.
+ * Şifre, e-posta/gmail ve telefon uçtan HİÇ gelmez; burada da gösterilmez.
+ */
+function ProfileSheet({ peer, t, onClose }: {
+  peer: Peer
+  t: (key: string) => string
+  onClose: () => void
+}) {
+  const [profile, setProfile] = useState<{
+    fullName: string | null
+    nickname: string | null
+    username: string | null
+    bio: string | null
+    githubHandle: string | null
+    website: string | null
+    role: string | null
+    isOwner: boolean
+    createdAt: string | null
+    messageCount: number
+    groups: Array<{ conversationId: string, title: string | null }>
+  } | null>(null)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const res = await fetch('/api/chat/v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'profile', userId: peer.id }),
+      })
+      const json = await res.json()
+      if (!cancelled) {
+        if (json?.success && json.profile) {
+          setProfile(json.profile)
+        }
+        else {
+          setError(true)
+        }
+      }
+    })().catch(() => {
+      if (!cancelled) {
+        setError(true)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [peer.id])
+
+  const rows: Array<[string, string | null | undefined]> = profile
+    ? [
+        [t('chat.nickname'), profile.nickname],
+        [t('chat.fullName'), profile.fullName],
+        ['@username', profile.username],
+        [t('chat.role'), profile.role],
+        [t('chat.github'), profile.githubHandle],
+        [t('chat.website'), profile.website],
+        [t('chat.memberSince'), profile.createdAt ? profile.createdAt.slice(0, 10) : null],
+      ]
+    : []
+
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div className="max-h-full w-full max-w-md overflow-y-auto rounded-2xl border border-foreground/10 bg-background p-5" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3">
+          <span className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-sm font-semibold text-primary">
+            {peer.avatarUrl
+              ? <img src={peer.avatarUrl} alt="" className="size-full object-cover" />
+              : (peer.nickname || peer.fullName || peer.username).slice(0, 2).toUpperCase()}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-semibold">{peer.nickname || peer.fullName || peer.username}</p>
+            <p className="truncate text-xs text-foreground-50">
+@
+{peer.username}
+</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label={t('common.close')} className="cursor-pointer rounded-lg px-2 py-1 text-sm hover:bg-foreground/10">
+            ✕
+          </button>
+        </div>
+
+        {error && <p className="mt-4 text-sm text-foreground-50">{t('chat.profileFailed')}</p>}
+        {!error && !profile && <p className="mt-4 text-sm text-foreground-50">{t('chat.loading')}</p>}
+
+        {profile && (
+          <>
+            <dl className="mt-4 space-y-2 text-sm">
+              {rows.map(([label, value]) => (
+                <div key={label} className="flex justify-between gap-3 border-b border-foreground/5 pb-1.5">
+                  <dt className="shrink-0 text-foreground-50">{label}</dt>
+                  <dd className="truncate text-right">{value || '—'}</dd>
+                </div>
+              ))}
+              <div className="flex justify-between gap-3 border-b border-foreground/5 pb-1.5">
+                <dt className="text-foreground-50">{t('chat.messageCount')}</dt>
+                <dd>{profile.messageCount}</dd>
+              </div>
+              <div className="flex justify-between gap-3 pb-1.5">
+                <dt className="text-foreground-50">{t('chat.groups')}</dt>
+                <dd className="truncate text-right">
+                  {profile.groups.length ? profile.groups.map(g => g.title).join(', ') : '—'}
+                </dd>
+              </div>
+            </dl>
+            {profile.bio && <p className="mt-3 text-sm text-foreground-70">{profile.bio}</p>}
+
+            {/*
+              Kullanıcı isteği: e-posta (gmail), telefon ve ŞİFRE canlıda
+              GÖSTERİLMEZ. Sunucu bu alanları hiç göndermiyor; burada da
+              hiçbir yerde yer almıyorlar.
+            */}
+            <p className="mt-4 rounded-lg bg-foreground/5 px-3 py-2 text-xs text-foreground-50">
+              🔒
+{' '}
+{t('chat.privacyNote')}
+            </p>
+          </>
+        )}
       </div>
     </div>
   )

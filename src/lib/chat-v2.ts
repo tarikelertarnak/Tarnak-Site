@@ -385,6 +385,160 @@ export async function setImportant(
   }
 }
 
+/** Sohbeti favorilere ekle / çıkar. */
+export async function setFavorite(
+  conversationId: string,
+  favorite: boolean,
+): Promise<void> {
+  const client = db()
+  const res = await client
+    .from('chat_conversations')
+    .update({ favorite })
+    .eq('id', conversationId)
+  if (res.error) {
+    if (isMissingTable(res.error)) {
+      throw new ChatSchemaMissing()
+    }
+    throw res.error
+  }
+}
+
+/** Sohbeti engelle / engeli kaldır (admin). */
+export async function setBlocked(
+  conversationId: string,
+  blocked: boolean,
+): Promise<void> {
+  const client = db()
+  const res = await client
+    .from('chat_conversations')
+    .update({ blocked })
+    .eq('id', conversationId)
+  if (res.error) {
+    if (isMissingTable(res.error)) {
+      throw new ChatSchemaMissing()
+    }
+    throw res.error
+  }
+}
+
+/** Sohbeti temizle: mesajları sil, sohbet KALIR (geçmişi boşalt). */
+export async function clearConversation(conversationId: string): Promise<void> {
+  const client = db()
+  const res = await client.from('chat_messages').delete().eq('conversation_id', conversationId)
+  if (res.error) {
+    if (isMissingTable(res.error)) {
+      throw new ChatSchemaMissing()
+    }
+    throw res.error
+  }
+}
+
+/** Sohbeti tamamen sil (katılımlar ve mesajlar cascade). */
+export async function deleteConversation(conversationId: string): Promise<void> {
+  const client = db()
+  const res = await client.from('chat_conversations').delete().eq('id', conversationId)
+  if (res.error) {
+    if (isMissingTable(res.error)) {
+      throw new ChatSchemaMissing()
+    }
+    throw res.error
+  }
+}
+
+/**
+ * Kullanıcıya TAKMA AD ver (admin).
+ *
+ * Arama `username` · `full_name` · `nickname` ÜÇÜNÜ birden kapsar; takma ad
+ * konulduğunda gerçek ad aranmaya devam eder (kullanıcı isteği: "aynı
+ * kullanıcı hem takma ad hem normal adla aranabilir, biri gitme sorunu olmaz").
+ */
+export async function setNickname(userId: string, nickname: string): Promise<void> {
+  const client = db()
+  const res = await client
+    .from('profiles')
+    .update({ nickname: nickname.trim() || null })
+    .eq('id', userId)
+  if (res.error) {
+    throw res.error
+  }
+}
+
+/**
+ * "Profilini incele" — YALNIZCA güvenli alanlar.
+ *
+ * GÜVENLİK (kullanıcı isteği 2026-10-11): şifre, gmail/e-posta ve telefon
+ * ASLA dönmez — canlıda sızarsa geri dönüşü yok. Beyaz liste (allow-list)
+ * kullanılır; veritabanından yalnız bu sütunlar okunur, yani yeni bir gizli
+ * sütun eklendiğinde sızma olmaz.
+ */
+export interface AdminProfileView {
+  id: string
+  username: string | null
+  fullName: string | null
+  nickname: string | null
+  avatarUrl: string | null
+  bio: string | null
+  githubHandle: string | null
+  website: string | null
+  role: string | null
+  isOwner: boolean
+  createdAt: string | null
+  /** Kullanıcının katıldığı sohbetler (grup üyeliği dahil). */
+  groups: Array<{ conversationId: string, title: string | null }>
+  messageCount: number
+}
+
+/** `email` / `phone` / parola özeti hiçbir koşulda okunmaz bile. */
+export async function getAdminProfileView(userId: string): Promise<AdminProfileView | null> {
+  const client = db()
+  const { data, error } = await client
+    .from('profiles')
+    .select('id, username, full_name, nickname, avatar_url, bio, github_handle, website, role, is_owner, created_at')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) {
+    throw error
+  }
+  if (!data) {
+    return null
+  }
+
+  const [part, msgs] = await Promise.all([
+    client.from('chat_participants').select('conversation_id').eq('user_id', userId),
+    client.from('chat_messages').select('id', { count: 'exact', head: true }).eq('sender_id', userId),
+  ])
+
+  const ids = (part.data ?? []).map(r => r.conversation_id as string)
+  let groups: AdminProfileView['groups'] = []
+  if (ids.length > 0) {
+    const convs = await client
+      .from('chat_conversations')
+      .select('id, title')
+      .in('id', ids)
+      .not('title', 'is', null)
+    groups = (convs.data ?? []).map(c => ({
+      conversationId: c.id as string,
+      title: c.title as string | null,
+    }))
+  }
+
+  return {
+    id: data.id,
+    username: data.username,
+    fullName: data.full_name,
+    nickname: data.nickname,
+    avatarUrl: data.avatar_url,
+    bio: data.bio,
+    githubHandle: data.github_handle,
+    website: data.website,
+    role: data.role,
+    isOwner: !!data.is_owner,
+    createdAt: data.created_at,
+    groups,
+    messageCount: msgs.count ?? 0,
+  }
+}
+
 /**
  * Retention penceresi geçmiş silinen mesajları FİZİKSEL olarak siler.
  * `forever`/`off` → dokunmaz. Bu, "admin 30 gün içinde görür, sonra silinir"

@@ -334,8 +334,10 @@ const PROFILES: ResourceDef = {
   orderBy: { column: 'created_at', ascending: false },
   // ⚠️ master_key_enc / master_key_salt / github_token_enc / admin_key_salt
   // BILEREK YOK — sifreli sir kolonlari, panelde asla gorunmemeli.
-  listColumns: ['id', 'username', 'full_name', 'avatar_url', 'role', 'bio', 'github_handle', 'website', 'is_owner', 'created_at'],
-  searchColumns: ['username', 'full_name', 'github_handle'],
+  listColumns: ['id', 'username', 'full_name', 'nickname', 'avatar_url', 'role', 'bio', 'github_handle', 'website', 'is_owner', 'created_at'],
+  // `nickname` de aranır: takma ad konulsa bile GERÇEK AD kaybolmaz ve takma
+  // adla da bulunur (kullanıcı isteği 2026-10-11).
+  searchColumns: ['username', 'full_name', 'nickname', 'github_handle'],
   filters: [
     {
       column: 'role',
@@ -350,6 +352,7 @@ const PROFILES: ResourceDef = {
   fields: [
     { name: 'username', label: 'Kullanıcı adı', type: 'text', inTable: true, searchable: true, maxLength: 60 },
     { name: 'full_name', label: 'Tam ad', type: 'text', inTable: true, maxLength: 120 },
+    { name: 'nickname', label: 'Takma ad', type: 'text', inTable: true, searchable: true, maxLength: 40, help: 'Sohbette görünen ad. Arama takma adı da kapsar.' },
     { name: 'bio', label: 'Biyografi', type: 'textarea', maxLength: 500 },
     { name: 'github_handle', label: 'GitHub kullanıcı adı', type: 'text', maxLength: 60 },
     { name: 'website', label: 'Web sitesi', type: 'url' },

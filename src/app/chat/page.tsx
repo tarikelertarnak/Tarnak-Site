@@ -52,27 +52,24 @@ export default async function ChatPage() {
     <div className="min-h-screen w-full relative">
       <Navigation />
       <main id="main" className="">
-        <Section className="flex-col justify-center min-h-[100svh]">
-          {/*
-            ORTALAMA (2026-10-06, kullanıcı: "çok altta kalmış, ortala").
-
-            Ölçüm (localhost, 943px viewport) — deneme/yanılma:
-              önce  kart merkezi y=622   (ekran merkezi 471 → 151px aşağı)
-              sonra kart merkezi y=632   (flex-1 ekleyince DAHA KÖTÜ)
-
-            Neden `flex-1` yetmiyor: `flex-1` kartı "başlıktan SONRA kalan
-            alanın" ortasına koyar. Başlık bloğu + üst dolgu 208px yer
-            kapladığı için kalan alanın merkezi, ekran merkezinden ~104px
-            AŞAĞIDA kalıyor — kartı ne kadar "esnetirsek esnetelim" ekran
-            ortasına getiremiyoruz. Kartın ekran ortasına gelmesi için
-            başlığın akışta YER TUTMAMASI gerekiyor.
-
-            Çözüm: başlık `absolute` (üstte durur, yer kaplamaz), kart
-            `flex-1` ile bölümün TAMAMINI doldurur → kart tam ortada.
-            Kart 464px, ekran 943px → kart 239..703; başlık 96..192 →
-            ÇAKIŞMA YOK.
+        {/*
+            `100svh` DEĞİL `calc(100svh - 3.5rem)`: üstte sabit TopBar (h-14 =
+            56px) var. Ölçüldü: `min-h-[100svh]` sayfayı her yükseklikte tam
+            56px taşırıyordu (900px ekranda belge 956px).
           */}
-          <div className="absolute inset-x-0 top-24 z-10 sm:top-28 lg:top-32">
+          <Section className="flex-col min-h-[calc(100svh-3.5rem)] pt-24 sm:pt-28 lg:pt-32">
+          {/*
+            DÜZELTME 2026-10-11 (kullanıcı: "chat başlığı grubun içine giriyor").
+
+            Başlık `absolute` idi; sohbet kartı ise `flex-1` ile ortalanıyordu.
+            Kısa ekranlarda ikisi ÇAKIŞIYORDU — başlık kartın içine giriyordu.
+            2026-10-06'daki "kart çok altta kalsın" düzeltmesinin bedeli buydu.
+
+            Çözüm: başlık akışa alındı (kutu + başlık artık kardeş, asla üst
+            üste binmez) ve kartın yüksekliği başlığın altında kalan alana
+            göre sınırlandı.
+          */}
+          <div className="flex w-full shrink-0 justify-center">
             <SectionTitle
               title=""
               subTitle={content.chat.subtitle}
@@ -81,7 +78,10 @@ export default async function ChatPage() {
               big
             />
           </div>
-          <div className="flex w-full flex-1 items-center justify-center px-4">
+          <div
+            data-testid="chat-slot"
+            className="flex w-full flex-1 items-center justify-center px-4 pt-4 pb-8 sm:pt-6"
+          >
             <ChatV2 />
           </div>
         </Section>

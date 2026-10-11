@@ -22,6 +22,9 @@ create table if not exists public.chat_conversations (
   -- ÖNEMLİ KİŞİ: kullanıcı "önemli" işaretlerse bildirim gürültülü/sesli olur.
   important      boolean not null default false,
   favorite       boolean not null default false,
+  -- ENGELLİ (2026-10-11): admin bir kullanıcıyı engelleyince bu sohbet
+  -- listeden düşer ve yeni mesaj gönderilemez.
+  blocked        boolean not null default false,
   -- silinen mesajların admin'e GÖRÜNMESİ için yumuşak silme (retention):
   --   'off'    → silinen mesaj herkesten gider, admin de göremez
   --   'forever'→ admin süresiz görebilir

@@ -17,6 +17,9 @@ create table if not exists public.profiles (
   username    text,
   full_name   text,
   avatar_url  text,
+  -- 2026-10-11: admin'in verdiği TAKMA AD. Aramada `username`/`full_name`
+  -- ile BİRLİKTE aranır — takma ad konulduğunda gerçek ad kaybolmaz.
+  nickname    text,
   role        text not null default 'user',
   is_owner    boolean not null default false,
   roles       jsonb not null default '[]'::jsonb,
@@ -30,6 +33,10 @@ create table if not exists public.profiles (
 );
 
 alter table public.profiles enable row level security;
+
+-- 2026-10-11: `profiles` ZATEN kurulu olanlara da `nickname` eklenir
+-- (idempotent). `create table if not exists` mevcut tabloyu DEĞİŞTİRMEZ.
+alter table public.profiles add column if not exists nickname text;
 
 -- Herkes profilleri okuyabilir (site herkese açık)
 drop policy if exists "public profiles are viewable" on public.profiles;

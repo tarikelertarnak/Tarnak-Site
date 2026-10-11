@@ -824,3 +824,64 @@ PATLAYACAKTI; yani istenen "herkeze yazma" alanı aslında hiç çalışmayacakt
 ### Bekleyen
 
 `supabase/chat.sql'ı SQL Editor'da çalıştır (yeni şema ile).` O ana kadar API 503 döner.
+
+---
+
+## [2026-10-11] YERLEŞİM + YÖNETİCİ SOHBET YÖNETİMİ
+
+### A. Yerleşim düzeltmeleri (ölçüldü)
+
+1. **"Chat başlığı grubun içine giriyor"** — Başlık `absolute` idi, sohbet kartı
+   `flex-1` ile ortalanıyordu; kısa ekranlarda ÇAKIŞIYORDU (2026-10-06'daki "kart
+   altta kalmasın" düzeltmesinin bedeli). Başlık akışa alındı → kardeş, asla üst
+   üste binmez.
+   **Yan ölçüm:** `min-h-[100svh]` sayfayı her yükseklikte tam **56px** taşırıyordu
+   (sabit TopBar h-14 altında kaldığı için) → `min-h-[calc(100svh-3.5rem)]`.
+   Kart yüksekliği `h-[min(68svh,100svh-19rem)] min-h-[260px]`.
+
+2. **"Yan panel tam kaplıyor"** — Sidebar `w-[325px]` sabitti. Artık
+   `maxWidth = ekranın %85'i` (dar ekranda her zaman bir kenardan içerik görünür)
+   - gerçek genişlik `style.width` ile ayrıldı.
+
+3. **"Yan panel büyüyüp küçültüle bilinmeli"** — Sağ kenarda sürükleme
+   tutamağı (`role="separator"`, `onPointerDown`, 260..560px aralığı) + klavye
+   (←/→ 16px) + `localStorage('sidebar:width')` ile hatırlama.
+
+**Kanıt:** Playwright `e2e/chat-layout.spec.ts` — 5 ekran yüksekliğinde
+(1080/900/768/640/560) başlığın alt kenarı ≤ kutunun üst kenarı **VE** sayfa
+ekrandan taşmıyor + başlık `absolute` değil. **6/6 PASS**, tam e2e **62/62**.
+
+**NEGATİF KONTROL:** eski yerleşime (absolute + min-h-[100svh]) dönülünce 6 test
+kırıldı; byte-exact geri yüklendi.
+
+**Tuzak kaydı:** `playwright.config.ts` BASE_URL'ı `localhost`'a çevirmeyi
+DENEDİM (çünkü 127.0.0.1:3000'i başka bir proje — `Tarnak/tooling`, bun —
+işgal etmiş görünüyordu). Ölçüm: `localhost` ile `phase6` tıklama testi
+tutarlı KIRILDI (3/3), `127.0.0.1` ile 3/3 GEÇTİ. Değişiklik **geri alındı**.
+
+### B. Yönetici sohbet yönetimi (kullanıcı isteği)
+
+- **Takma ad**: `profiles.nickname` (yeni kolon, `alter table ... add column if
+not exists` ile idempotent). Arama `username` · `full_name` · `nickname`
+  **üçünü birden** kapsar → takma ad konunca gerçek ad kaybolmaz.
+  Yönetici panelindeki `searchColumns`'a da eklendi.
+- **Kullanıcıya sağ tık** (admin): Profilini incele · Takma ad koy · Favorilere
+  ekle · Sohbeti sabille · Engelle · Sohbeti temizle · Sohbeti sil.
+- **Profilini incele**: takma ad, ad soyad, @kullanıcıadı, rol, GitHub, web
+  sitesi, kayıt tarihi, mesaj sayısı, **gruplar (üyelik)**.
+- **GİZLİ ALANLAR** — kullanıcı açıkça istedi: "şifre, gmail, telefon gizlenir".
+  `getAdminProfileView()` **beyaz liste** ile sorgular; `email` / `phone` /
+  parola sütunu SEÇİM bile yapılmaz, arayüzde de görünmez.
+- Yetki: `ADMIN_ACTIONS = favorite|block|clear|deleteConversation|nickname|profile`
+  → hepsi **admin-only** (403).
+
+**Doğrulama:** vitest **540/540** (529 → +11: admin menü 5, gizlilik sözleşmesi 4,
+yetki kapısı 2) · `tsc` 0 · `eslint . --max-warnings 0` **0** · e2e **62/62**.
+**NEGATİF KONTROL (4 mutasyon):** yetki kapısı `if (false)`, profile select'e
+`email, phone` ekleme, aramadan `nickname` çıkarma, menüden bir eylemi kaldırma
+→ 4 test kırıldı; byte-exact geri yüklendi.
+
+### Bekleyen
+
+- `supabase/chat.sql` (blocked kolonu) **ve** `profiles.nickname` ALTER'i
+  Supabase SQL Editor'da çalıştırılmalı. O ana kadar API 503 döner.
