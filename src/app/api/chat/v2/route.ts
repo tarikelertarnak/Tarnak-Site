@@ -11,7 +11,8 @@ import {
   setImportant,
   setPinned,
 } from '@/lib/chat-v2'
-import { getSessionUser, hasSessionPermission } from '@/lib/supabase/session'
+import { BODY_LIMITS, checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
+import { getSessionUser, hasSessionPermission, sessionUserName } from '@/lib/supabase/session'
 
 /**
  * Chat v2 API (2026-10-11) — konuşma tabanlı sohbet.
@@ -127,7 +128,64 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true })
     }
 
-    return NextResponse.json({ success: false, message: 'Bilinmeyen işlem.' }, { status: 400 })
+    // varsayılan: mesaj GÖNDER
+    const { sendMessage } = await import('@/lib/chat-v2')
+    const text = typeof body?.text === 'string' ? body.text.trim() : ''
+    const kind = ['text', 'image', 'file', 'audio', 'video'].includes(body?.kind)
+      ? body.kind
+      : 'text'
+    const replyToId = typeof body?.replyToId === 'string' ? body.replyToId : ''
+    const audioDuration = typeof body?.audioDuration === 'number'
+      ? Math.min(600_000, Math.max(0, Math.round(body.audioDuration)))
+      : undefined
+    const file = body?.file && typeof body.file === 'object'
+      ? {
+          url: String(body.file.url ?? ''),
+          name: String(body.file.name ?? 'dosya').slice(0, 80),
+          type: String(body.file.type ?? 'application/octet-stream'),
+          size: Number(body.file.size ?? 0),
+        }
+      : undefined
+
+    if (!conversationId) {
+      return NextResponse.json({ success: false, message: 'Sohbet gerekli.' }, { status: 400 })
+    }
+    if (!text && !file) {
+      return NextResponse.json({ success: false, message: 'Mesaj veya dosya gerekli.' }, { status: 400 })
+    }
+    if (text.length > BODY_LIMITS.chatMessageChars) {
+      return NextResponse.json(
+        { success: false, message: `Mesaj en fazla ${BODY_LIMITS.chatMessageChars} karakter olabilir.` },
+        { status: 400 },
+      )
+    }
+    if (file && !file.url.startsWith('/uploads/chat/')) {
+      return NextResponse.json({ success: false, message: 'Geçersiz dosya.' }, { status: 400 })
+    }
+    if (!(await isParticipant(conversationId, user.id))) {
+      return NextResponse.json({ success: false, message: 'Erişim yok.' }, { status: 403 })
+    }
+
+    // admin sınırsız; kullanıcı hız sınırına tabidir
+    if (!admin) {
+      const rl = await checkLimit('chat-v2', { ...LIMITS.chat, failClosed: true }, req)
+      if (!rl.ok) {
+        return rateLimitResponse(rl)
+      }
+    }
+
+    const senderName = sessionUserName(user) ?? 'bilinmeyen'
+    const message = await sendMessage({
+      conversationId,
+      senderId: user.id,
+      senderName,
+      text,
+      kind: file ? kind : 'text',
+      file,
+      audioDuration,
+      replyToId: replyToId || undefined,
+    })
+    return NextResponse.json({ success: true, data: message })
   }
   catch (e) {
     if (e instanceof ChatSchemaMissing) {
