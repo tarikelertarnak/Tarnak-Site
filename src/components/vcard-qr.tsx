@@ -3,34 +3,30 @@
 import { QRCodeSVG } from '@rc-component/qrcode'
 
 /**
- * Dijital kartvizit (Faz 6 · 2; düzenleme: yalnızca QR kod).
+ * Dijital kartvizit (Faz 6 · 2) — yalnızca QR kod.
  *
  * vCard indirme route'u ve indirme düğmesi KALDIRILDI. vCard verileri doğrudan
  * `getContent()` (Supabase merge sonrası `content`) üzerinden `buildVCard()` ile
  * üretilir ve QR kodunun içine gömülür — telefon taradığında kişiyi otomatik
  * tanır.
  *
- * Tasarım: aynı kart — `rounded-* border-foreground/10`, mavi vurgu.
- * Glow/parlama YOK. `vcardText` boşsa hiç render edilmez.
+ * 2026-10-11 (kullanıcı): "QR kodu telefonunla okut; kartvizit otomatik
+ * kaydedilir. bu yazıyı kaldır sadece QR Code olsun" — kart üstündeki başlık ve
+ * açıklama metinleri kaldırıldı, geriye SADECE QR kodu kaldı. `baslik` /
+ * `aciklama` prop'ları ve i18n anahtarları (`about.vcardTitle`,
+ * `about.vcardDescription`) bu yüzden ölü koddu.
+ *
+ * Tasarım: QR beyaz zeminde, koyu mürekkep — yüksek kontrast, her telefonda
+ * okunabilir. `vcardText` boşsa hiç render edilmez.
  */
-export function VCardQr({
-  vcardText,
-  baslik = 'Dijital kartvisit',
-  aciklama,
-}: {
-  /** RFC 6350 vCard 3.0 metni (`src/lib/vcard.ts` → `buildVCard`) */
-  vcardText: string
-  baslik?: string
-  /** Alt açıklama; verilmezse gösterilmez. */
-  aciklama?: string
-}) {
+export function VCardQr({ vcardText }: { /** RFC 6350 vCard 3.0 metni (`src/lib/vcard.ts` → `buildVCard`) */ vcardText: string }) {
   if (!vcardText) {
     return null
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-2xl border border-foreground/10 bg-card/40 p-4 sm:flex-row sm:items-center sm:gap-5">
-      <div className="shrink-0 self-start rounded-xl bg-white p-2 sm:self-auto">
+    <div className="flex justify-center rounded-2xl border border-foreground/10 bg-card/40 p-4">
+      <div className="shrink-0 rounded-xl bg-white p-2">
         <QRCodeSVG
           value={vcardText}
           size={132}
@@ -40,15 +36,6 @@ export function VCardQr({
           bgColor="#ffffff"
           marginSize={1}
         />
-      </div>
-
-      <div className="flex min-w-0 flex-col gap-2">
-        <p className="text-sm font-semibold">{baslik}</p>
-        {aciklama ? (
-          <p className="text-xs leading-relaxed text-foreground/60">
-            {aciklama}
-          </p>
-        ) : null}
       </div>
     </div>
   )

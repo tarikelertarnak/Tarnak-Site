@@ -282,16 +282,12 @@ export function AboutSection({
                 </div>
               </div>
             </div>
-            {/* Dijital kartvizit (Faz 6 · 2) — QR kod, vCard içeriğini
-                doğrudan taşır (tarayıcı taratınca kişiyi tanır). İndirme
-                düğmesi kaldırıldı; yalnızca QR kaldı ve Faz 6
-                vcard bölümü kapalıysa hiç gösterilmez. */}
+            {/* Dijital kartvizit (Faz 6 · 2) — YALNIZCA QR kod. vCard içeriğini
+                doğrudan taşır (telefon taratınca kişiyi tanır). İndirme
+                düğmesi ve kart üstü metinler (2026-10-11, kullanıcı) kaldırıldı;
+                Faz 6 vcard bölümü kapalıysa hiç gösterilmez. */}
             {vcard && vcard.enabled !== false && vcardQrMetin ? (
-              <VCardQr
-                vcardText={vcardQrMetin}
-                baslik={t('about.vcardTitle')}
-                aciklama={t('about.vcardDescription')}
-              />
+              <VCardQr vcardText={vcardQrMetin} />
             ) : null}
           </BentoBoxItem>
 

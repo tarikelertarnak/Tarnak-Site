@@ -59,6 +59,50 @@ describe('kaldırılan vCard indirme yolu geri gelmedi', () => {
 })
 
 /**
+ * 2026-10-11 (kullanıcı): "QR kodu telefonunla okut; kartvizit otomatik
+ * kaydedilir. bu yazıyı kaldır sadece QR Code olsun"
+ *
+ * `VCardQr` artık YALNIZCA QR kodu basar: `baslik` ("Dijital kartvisit") ve
+ * `aciklama` ("QR kodu telefonunla okut…") prop'ları ve i18n anahtarları kaldırıldı.
+ */
+describe('qr kartinda metin yok — sadece qr kodu', () => {
+  const root = process.cwd()
+
+  it('vcardQr yalnızca `vcardText` prop\'u alır (baslik/aciklama yok)', () => {
+    const src = readFileSync(join(root, 'src/components/vcard-qr.tsx'), 'utf8')
+    // Prop imzaları ve kullanımları gitti.
+    expect(src).not.toMatch(/baslik\??\s*:\s*string/)
+    expect(src).not.toMatch(/aciklama\??\s*:\s*string/)
+    expect(src).not.toMatch(/\{baslik\}/)
+    expect(src).not.toMatch(/\{aciklama\}/)
+    // QR render ediliyor.
+    expect(src).toContain('QRCodeSVG')
+  })
+
+  it('about-section metin prop\'larını geçmiyor', () => {
+    const src = readFileSync(
+      join(root, 'src/components/sections/about-section.tsx'),
+      'utf8',
+    )
+    const call = src.slice(src.indexOf('<VCardQr'), src.indexOf('/>', src.indexOf('<VCardQr')))
+    expect(call).toContain('vcardText=')
+    expect(call).not.toContain('baslik=')
+    expect(call).not.toContain('aciklama=')
+  })
+
+  it('i18n sözlüklerinde `vcardTitle`/`vcardDescription` anahtarları yok', () => {
+    const i18nDir = join(root, 'src/i18n')
+    const offenders = readdirSync(i18nDir)
+      .filter(n => n.endsWith('.json') || n.endsWith('.ts'))
+      .filter((n) => {
+        const s = readFileSync(join(i18nDir, n), 'utf8')
+        return s.includes('vcardTitle') || s.includes('vcardDescription')
+      })
+    expect(offenders).toEqual([])
+  })
+})
+
+/**
  * 2026-10-10 — "Kişisel Bilgiler" kartı düzeni (kullanıcı isteği):
  *   1) Discord satırı karttan ÇIKTI → "İletişim Bilgileri" menüsüne taşındı.
  *   2) InfoRow değerleri SOLA yaslı ve etiketin HEMEN yanında ("Ad: TARIK");
