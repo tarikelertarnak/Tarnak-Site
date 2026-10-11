@@ -18,7 +18,9 @@ export async function GET() {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('profiles')
-    .select('username, full_name, avatar_url')
+    // `id` şart: sohbet açmak için `action:'open'` peerId bekliyor (kullanıcı
+    // adı değil, uuid). 2026-10-11: admin "kime yazayım?" listesini görüyordu.
+    .select('id, username, full_name, avatar_url')
     .not('username', 'is', null)
     .order('full_name', { ascending: true })
 
@@ -32,6 +34,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     users: (data ?? []).map(p => ({
+      id: p.id,
       username: p.username,
       fullName: p.full_name,
       avatarUrl: p.avatar_url,

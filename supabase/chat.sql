@@ -33,9 +33,19 @@ create table if not exists public.chat_conversations (
 );
 
 -- ---------- participants (sohbete katılanlar) ----------
+--
+-- user_id BİLEREK `text` ve FK'siz (2026-10-11 ölçümü):
+--   Site sahibi iki farklı kimlikle giriş yapabiliyor.
+--     1) `/sign` → Supabase Auth UUID  (profiles.id ile aynı)
+--     2) `/login` → admin.json oturumu → id = `admin:TARIKELERTARNAK`
+--   İkinci kimlik UUID DEĞİL; `uuid references auth.users(id)` ile admin
+--   herhangi biriyle sohbet açmaya çalıştığında "invalid input syntax for
+--   type uuid" hatası alıyordu (canlı ölçüm: id = "admin:TARIKELERTARNAK").
+--   Katılım bu yüzden metin tutar; bütünlük uygulama katmanında
+--   (isParticipant + getSessionUser) doğrulanıyor.
 create table if not exists public.chat_participants (
   conversation_id uuid not null references public.chat_conversations(id) on delete cascade,
-  user_id         uuid not null references auth.users(id) on delete cascade,
+  user_id         text not null,
   -- 'member' | 'admin' (grup sahibi = site sahibi)
   role            text not null default 'member' check (role in ('member', 'admin')),
   joined_at       timestamptz not null default now(),
@@ -46,7 +56,7 @@ create table if not exists public.chat_participants (
 create table if not exists public.chat_messages (
   id              uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references public.chat_conversations(id) on delete cascade,
-  sender_id       uuid not null references auth.users(id) on delete cascade,
+  sender_id       text not null,
   sender_name     text not null,
 
   text            text,
@@ -77,7 +87,7 @@ create table if not exists public.chat_messages (
   --   deleted_for_all=true → mesaj gizlenir, "Bu mesajı sildiniz" gösterilir
   --   admin ise deleted_retention boyunca GERÇEK içeriği görebilir
   deleted_for_all boolean not null default false,
-  deleted_by      uuid references auth.users(id) on delete set null,
+  deleted_by      text,
   deleted_at      timestamptz,
 
   created_at      timestamptz not null default now()

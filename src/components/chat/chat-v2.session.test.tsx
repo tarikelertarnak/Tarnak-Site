@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LocaleProvider } from '@/components/locale-provider'
 import { ChatV2 } from './chat-v2'
@@ -103,7 +103,7 @@ describe('sohbet v2 oturum ekranı', () => {
     // "giriş yap" ekranına düşmemelidir.
     mockFetch((url) => {
       if (url.includes('/api/admin/session')) {
-        return jsonResponse({ success: true, user: { id: 'admin:TARIKELERTARNAK', role: 'admin' } })
+        return jsonResponse({ success: true, user: { id: 'user-1', role: 'user' } })
       }
       return jsonResponse({ success: false, code: 'CHAT_SCHEMA_MISSING', message: 'şema kurulmadı' }, 503)
     })
@@ -117,10 +117,10 @@ describe('sohbet v2 oturum ekranı', () => {
     expect(screen.getByText(/supabase\/chat\.sql/)).not.toBeNull()
   })
 
-  it('oturum VARSA: girişli kullanıcı için sohbet sahibiyle otomatik açılır', async () => {
+  it('normal kullanıcı: sohbet sahibiyle otomatik açılır, "sohbet yok" ekranı yok', async () => {
     const spy = mockFetch((url) => {
       if (url.includes('/api/admin/session')) {
-        return jsonResponse({ success: true, user: { id: 'admin:TARIKELERTARNAK', role: 'admin' } })
+        return jsonResponse({ success: true, user: { id: 'user-1', role: 'user' } })
       }
       if (url.includes('/api/chat/v2')) {
         return jsonResponse({ success: true, conversation: { id: 'conv-1' } })
@@ -134,5 +134,64 @@ describe('sohbet v2 oturum ekranı', () => {
     const openCall = spy.mock.calls.find(c => String(c[0]).includes('/api/chat/v2') && c[1]?.method === 'POST')
     expect(openCall).toBeTruthy()
     expect(JSON.parse(String(openCall![1]!.body))).toMatchObject({ action: 'open' })
+  })
+
+  /*
+    Kullanıcı isteği (2026-10-11): "Henüs bir sohbet yok saçma — giren adminse
+    herkeze yazacağı alanı görmeli." Admin'in tek bir sohbeti yoktur; kime
+    yazacağını seçer.
+  */
+  it('admin: "kime yazmak istiyorsun?" listesi görür, sohbet yok ekranı yok', async () => {
+    mockFetch((url) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'admin:TARIKELERTARNAK', role: 'admin' } })
+      }
+      return jsonResponse({
+        success: true,
+        users: [
+          { id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', avatarUrl: null },
+          { id: 'u-2', username: 'mehmet', fullName: null, avatarUrl: null },
+        ],
+      })
+    })
+
+    await renderChat()
+
+    expect(screen.getByText(/kime yazmak istiyorsun/i)).not.toBeNull()
+    expect(screen.getByText('Ayşe Yılmaz')).not.toBeNull()
+    expect(screen.getByText('mehmet')).not.toBeNull()
+    // kullanıcının istediği: o saçma ekran ARTIK YOK
+    expect(screen.queryByText(/henüz bir sohbet yok/i)).toBeNull()
+  })
+
+  it('admin: bir kişiye tıklayınca o sohbet açılır (peerId gönderilir)', async () => {
+    const spy = mockFetch((url) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'admin:TARIKELERTARNAK', role: 'admin' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({
+          success: true,
+          users: [{ id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', avatarUrl: null }],
+        })
+      }
+      if (url.includes('/api/chat/v2')) {
+        return jsonResponse({ success: true, conversation: { id: 'conv-9' } })
+      }
+      return jsonResponse({ success: true, messages: [] })
+    })
+
+    await renderChat()
+
+    fireEvent.click(screen.getByText('Ayşe Yılmaz'))
+
+    await waitFor(() => expect(screen.getByPlaceholderText(/mesajını yaz/i)).not.toBeNull())
+    const openWithPeer = spy.mock.calls.find(
+      c => String(c[0]).includes('/api/chat/v2')
+        && c[1]?.method === 'POST'
+        && String(c[1]?.body).includes('peerId'),
+    )
+    expect(openWithPeer).toBeTruthy()
+    expect(JSON.parse(String(openWithPeer![1]!.body))).toMatchObject({ action: 'open', peerId: 'u-1' })
   })
 })

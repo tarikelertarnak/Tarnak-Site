@@ -29,6 +29,14 @@ interface ChatV2Props {
 
 const EMOJIS = ['😀', '😂', '😊', '😍', '😎', '🤔', '👍', '🙏', '🔥', '💯', '🎉', '❤️', '✅', '⚡', '📌', '🤝']
 
+/** Sohbete yazılacak kişi (admin için liste). */
+interface Peer {
+  id: string
+  username: string
+  fullName: string | null
+  avatarUrl: string | null
+}
+
 /**
  * Oturumu İSTEMCİDE çözeriz (2026-10-11 ölçümü): root layout `force-static`
  * olduğu için sunucuda `cookies()` boş dönüyor ve `getSessionUser()` her zaman
@@ -49,20 +57,24 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const [confirmMsg, setConfirmMsg] = useState<ChatMessageRow | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
   const [important, setImportant] = useState(false)
-  const [session, setSession] = useState<{ id: string } | null>(null)
+  const [session, setSession] = useState<{ id: string, role?: string } | null>(null)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [schemaMissing, setSchemaMissing] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(null)
+  const [peers, setPeers] = useState<Peer[] | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
 
   const isAuthenticated = !!session
   const currentUserId = session?.id ?? ''
+  const isAdmin = session?.role === 'admin'
 
   /*
-    1) Oturumu oku. 2) Girişliyse site sahibiyle sohbeti aç/yokla.
-    İkisi de API üzerinden; `action: 'open'` yetkisiz kullanıcıyı otomatik
-    olarak sahibin sohbetine yönlendirir (kullanıcılar SADECE benimle konuşur).
+    1) Oturumu oku. 2) Rolüne göre yol:
+       · NORMAL KULLANICI → site sahibiyle sohbet kendiliğinden açılır
+         ("kullanıcılar sadece benimle konuşur"; "Henüz bir sohbet yok"
+          ekranı kullanıcıya anlamsız geliyordu — o yüzden kaldırıldı).
+       · ADMIN → kiminle konuşacağını SEÇER; herkese yazabilir.
   */
   useEffect(() => {
     let cancelled = false
@@ -77,7 +89,18 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
           setSession(null)
           return
         }
-        setSession({ id: json.user.id })
+        setSession({ id: json.user.id, role: json.user.role })
+
+        if (json.user.role === 'admin') {
+          // Admin'in tek bir "sohbeti" yoktur — kime yazacağını seçer.
+          const users = await fetch('/api/chat/users')
+          const usersJson = await users.json()
+          if (!cancelled) {
+            setPeers(usersJson?.success ? (usersJson.users as Peer[]) : [])
+          }
+          return
+        }
+
         const open = await fetch('/api/chat/v2', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -92,6 +115,9 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
         }
         else if (openJson?.conversation?.id) {
           setConversationId(openJson.conversation.id)
+        }
+        else {
+          setError(openJson?.message ?? t('chat.error'))
         }
       }
       catch {
@@ -109,6 +135,37 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       cancelled = true
     }
   }, [t])
+
+  /** Admin bir kişiye tıkladığında doğrudan sohbeti açar (idempotent). */
+  async function openWith(peerId: string) {
+    setLoading(true)
+    setError(null)
+    setMessages([])
+    setConversationId(null)
+    try {
+      const res = await fetch('/api/chat/v2', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'open', peerId }),
+      })
+      const json = await res.json()
+      if (json?.code === 'CHAT_SCHEMA_MISSING') {
+        setSchemaMissing(true)
+      }
+      else if (json?.conversation?.id) {
+        setConversationId(json.conversation.id)
+      }
+      else {
+        setError(json?.message ?? t('chat.error'))
+      }
+    }
+    catch {
+      setError(t('chat.error'))
+    }
+    finally {
+      setLoading(false)
+    }
+  }
 
   const load = useCallback(async () => {
     if (!conversationId) {
@@ -291,8 +348,49 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       </div>
     )
   }
-  if (!conversationId) {
-    return <ChatNotice icon="💬" text={t('chat.noConversation')} />
+  /*
+    "Henüz bir sohbet yok" ekranı KALDIRILDI (kullanıcı isteği 2026-10-11):
+    anlamsız geliyordu. Artık:
+      · normal kullanıcı → sahibiyle sohbet kendiliğinden açılır,
+      · admin → kime yazacağını seçer (aşağıdaki liste).
+*/
+if (isAdmin && !conversationId) {
+    return (
+      <div className="flex h-[70vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background">
+        <div className="border-b border-foreground/10 px-4 py-3 text-sm font-semibold">
+          {t('chat.pickRecipient')}
+        </div>
+        <div className="flex-1 overflow-y-auto p-2">
+          {peers === null && <p className="p-4 text-sm text-foreground-50">{t('chat.loading')}</p>}
+          {peers?.length === 0 && (
+            <p className="p-4 text-sm text-foreground-50">{t('chat.noRecipients')}</p>
+          )}
+          {peers?.filter(p => p.id !== currentUserId).map(p => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => openWith(p.id)}
+              className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-foreground/5"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-xs font-semibold text-primary">
+                {p.avatarUrl
+                  ? <img src={p.avatarUrl} alt="" className="size-full object-cover" />
+                  : (p.fullName || p.username).slice(0, 2).toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium">{p.fullName || p.username}</span>
+                {p.fullName && (
+                  <span className="block truncate text-xs text-foreground-50">
+@
+{p.username}
+</span>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    )
   }
   if (loading) {
     return <ChatNotice icon="⏳" text={t('chat.loading')} />
@@ -305,7 +403,24 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     <div className="flex h-[70vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background">
       {/* başlık + önemli kişi */}
       <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3">
-        <span className="text-sm font-semibold">{t('chat.v2Title')}</span>
+        <div className="flex min-w-0 items-center gap-2">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => {
+                setConversationId(null)
+                setMessages([])
+                setError(null)
+              }}
+              title={t('chat.backToList')}
+              aria-label={t('chat.backToList')}
+              className="cursor-pointer rounded-lg px-2 py-1 text-sm transition-colors hover:bg-foreground/10"
+            >
+              ←
+            </button>
+          )}
+          <span className="truncate text-sm font-semibold">{t('chat.v2Title')}</span>
+        </div>
         <button
           type="button"
           onClick={toggleImportant}

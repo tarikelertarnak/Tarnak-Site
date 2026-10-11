@@ -470,7 +470,6 @@
   "chat.v2Title": "Sohbet",
   "chat.schemaMissing": "Sohbet şeması kurulmamış.",
   "chat.schemaMissingHint": "Sohbet sistemi için `supabase/chat.sql` dosyasını Supabase SQL Editor'da çalıştır.",
-  "chat.noConversation": "Henüz bir sohbet yok.",
   "chat.loading": "Sohbet yükleniyor…",
   "chat.emptyThread": "Henüz mesaj yok. Merhaba de!",
   "chat.deletedByYou": "Bu mesajı sildiniz",
@@ -489,5 +488,8 @@
   "chat.readAt": "Okundu",
   "chat.deliveredAt": "Teslim edildi",
   "chat.notRead": "Okunmadı",
-  "chat.notDelivered": "Teslim edilmedi"
+  "chat.notDelivered": "Teslim edilmedi",
+  "chat.backToList": "Sohbet listesine dön",
+  "chat.noRecipients": "Henüz başka kullanıcı yok.",
+  "chat.pickRecipient": "Kime yazmak istiyorsun?"
 }

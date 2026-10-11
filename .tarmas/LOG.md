@@ -774,3 +774,53 @@ Sonra sayfaya geçici `DBG|` marker'ı basıldı: `user=NULL, schema=false, conv
 
 `supabase/chat.sql` SQL Editor'da çalıştırılmalı; o ana kadar API 503 döner ve şema
 uyarısı görünür (uygulama çökmez).
+
+---
+
+## [2026-10-11] UX · "Henüs bir sohbet yok" yerine admin için "kime yazayım?"
+
+**Kullanıcı:** "Henüs bir sohbet yok ekranı olması yerine boş sohbetleri göre bilemiyim.
+Henüs bir sohbet yok saçma — giren bana mesaj atacğı adminse herkeze yazacağı alanı
+görmeli."
+
+### Ölçülen kök neden
+
+`role:'admin'` iken istemci `action:'open'` çağırıyordu, API de `peerId` olmadığı için
+**400 "Karşı taraf gerekli."** döndürüyordu → `conversationId` null → "Henüz bir sohbet yok".
+Yani ekran normal kullanıcı için de anlamsız, admin için de yanlış bilgiydi.
+
+### İkinci (daha derin) hata — şema
+
+`supabase/chat.sql`'de `chat_participants.user_id` **uuid + `references auth.users(id)`**
+idi. Ama site sahibi `/login` (admin.json) ile girince kimliği `admin:TARIKELERTARNAK`
+(canlı ölçüm: `/api/admin/session` → `"id":"admin:TARIKELERTARNAK"`) — **UUID değil**.
+Yani admin birine tıklayınca katılım ekleme "invalid input syntax for type uuid" ile
+PATLAYACAKTI; yani istenen "herkeze yazma" alanı aslında hiç çalışmayacaktı.
+Şema henüz kurulmadığı (API 503 CHAT_SCHEMA_MISSING) için güvenle düzeltilebildi:
+`user_id` / `sender_id` / `deleted_by` → `text`, FK kaldırıldı. Mesajın kendi referansı
+(`reply_to_id`) uuid kaldı — o kimlik değil, mesaj referansı.
+
+### Değişiklikler
+
+- `chat-v2.tsx` — rol bazlı yol:
+  · normal kullanıcı → site sahibiyle sohbet kendiliğinden açılır (ekran yok),
+  · admin → "Kime yazmak istiyorsun?" listesi; tıklayınca `open` + **peerId**.
+  Sohbet başlığında ← ile listeye dönüş.
+  · `chat.noConversation` ekranı ve i18n anahtarı **kaldırıldı** (8 dil).
+- `api/chat/users` — `id` alanı eklendi (`open` peerId istiyordu, uç yalnız username
+  veriyordu → admin listeye tıklayınca sohbet açılamazdı).
+- `supabase/chat.sql` — kimlik sütunları `text` (yukarıdaki gerekçe).
+- i18n: `chat.pickRecipient` · `chat.noRecipients` · `chat.backToList` (8 dil).
+
+### Doğrulama
+
+- **Canlı API:** `/api/chat/users` → 200, `id` geliyor (2 gerçek profil);
+  girişsiz → 401; admin `open` (peerId'siz) → 400 (istemci artık çağırmıyor).
+- `vitest run` **529/529** (525 → +4: admin liste, admin tıklama→peerId, şema sözleşmesi ×4).
+- `tsc` 0 · `eslint . --max-warnings 0` **0** (tam repo).
+- **NEGATİF KONTROL:** admin dalı `if (false)` yapılınca ve `peerId` gönderimi
+  kaldırılınca 2 test kırıldı; byte-exact geri yüklendi.
+
+### Bekleyen
+
+`supabase/chat.sql'ı SQL Editor'da çalıştır (yeni şema ile).` O ana kadar API 503 döner.
