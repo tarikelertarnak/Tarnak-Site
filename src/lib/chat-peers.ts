@@ -133,10 +133,10 @@ export function sortPeers<T extends PeerOrderInput>(
 }
 
 /** Nokta rengi → Tailwind sınıfı + i18n etiket anahtarı (tek kaynak). */
-export const PRESENCE_UI: Record<Presence, { dot: string, ring: string, labelKey: string }> = {
-  active: { dot: 'bg-amber-400', ring: 'ring-amber-400/30', labelKey: 'chat.presenceActive' },
-  online: { dot: 'bg-green-500', ring: 'ring-green-500/30', labelKey: 'chat.presenceOnline' },
-  offline: { dot: 'bg-red-500', ring: 'ring-red-500/30', labelKey: 'chat.presenceOffline' },
+export const PRESENCE_UI: Record<Presence, { dot: string, labelKey: string }> = {
+  active: { dot: 'bg-amber-400', labelKey: 'chat.presenceActive' },
+  online: { dot: 'bg-green-500', labelKey: 'chat.presenceOnline' },
+  offline: { dot: 'bg-red-500', labelKey: 'chat.presenceOffline' },
 }
 
 /** Sarı noktanın ipucu metni: tam olarak NE yapıyor. */
