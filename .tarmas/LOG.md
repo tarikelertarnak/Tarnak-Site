@@ -678,3 +678,26 @@ zaten dogru (dinamik + noindex rotalar disarida).
 
 **Not:** `public/github-data.json` `prebuild` regen artifactidir ve `d327f29` ile
 commit'lendi; her build'de degisir.
+
+### UÇTAN UCA DOGRULAMA — dev sunucu + Playwright e2e (2026-10-11)
+
+Daha once `pnpm build` ortam sorunu (eksik `lightningcss` native binary) yuzunden
+calismiyordu; bu yuzden refactor tarayicida hic DOGRULANMAMISTI. Dev sunucu ile kapandi:
+
+- `next dev --turbopack` :3000 → PID 23888, HTTP 200 (15 sn), log:
+  `%TEMP%/opencode/devserver/` (dev.out.log / dev.err.log / dev.pid)
+- **16 rota taramasi: 16/16 temiz** — `/ /projects/ /blog/ /about/ /contact/ /now/ /uses/
+/changelog/ /credits/ /donate/ /gizlilik/ /kvkk/ /login/ /sign/ /chat/` hepsi 200 ve
+  runtime hata izi yok; `/nonexistent-page-xyz/` → dogru **404** (soft-404 fix calisiyor).
+- **Playwright e2e: 50/50 PASS** (57 sn, gercek Chromium, masaustu + Pixel 7).
+  Kapsam: ana sayfa (hero, yatay tasma, bolumler, dugmeler, klavye gezinme, tema/FOUC,
+  konsol hatasi yok) + 5 Faz 6 sayfasi (`/uses /now /changelog /gizlilik /kvkk`: acilis,
+  tasma, konsol/hydration hatasi) + footer baglantilari + sitemap.
+- **DOM dogrulamasi:** "Basasa don" butonu `min-h-11` (44px) ile sunucuda render ediliyor;
+  `/about/` HTML'inde "Kartvisiti indir" ve `/api/vcard` **yok**; `sitemap.xml` ve
+  `robots.txt` uretiliyor.
+
+**KAPSAM DISI (dogrulanmadi):** "Yildiz"/"Fork" siralamasinin tarayicida tiklanarak
+testi yapilmadi — siralama secenekleri `SearchableCombobox` icinde kapali panelde
+render edilmiyor (SSR HTML'inde yok). Bu defect `projects-grid.sort-contract.test.ts`
+ile deterministik olarak korunuyor; e2e testi ayni garanti icin kirilgan olurdu.
