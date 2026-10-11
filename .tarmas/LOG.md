@@ -989,3 +989,74 @@ ses kaydı düğmesi (`audio_duration` hazır) · GIF link önizleme + virüs ko
 bildirim sesi · kullanıcı 5 MB limiti ve admin tür engelleme UI'ı · admin retention
 ayar UI'ı · `components/chat/chat-window.tsx` **ölü kod** (hiçbir yerden import
 edilmiyor) → silme adayı.
+
+## [2026-10-12] SOHBET CANLIYA ALINDI + "TANIMSIZ TEMA JETONU" SINIF HATASI
+
+Kullanıcı: "Sohbet yükleniyor… yazısı siyah, koyu temadayım — koyu temada siyah,
+açık temada beyaz yazı olmasın, düzelt. Ve bu sahte şeyi de düzelt, chat gerçek
+çalışır tam olsun."
+
+### A. Renk hatası — KÖK NEDEN: tanımsız tema jetonu (sessiz arıza)
+
+`chat-v2.tsx` metinleri `text-foreground-50` / `-60` / `-70` yazıyordu (**16 yer**).
+`globals.css` yalnız `--color-foreground-200..950` tanımlar. Sonuç iki sessiz hataydı:
+
+- `-50` Tailwind'den DEĞİL, **HeroUI eklentisinden** üretiliyordu:
+  `.text-foreground-50{color:hsl(var(--heroui-foreground-50)/1)}` → temaya bağlı
+  olmayan sabit renk (koyu temada KOYU = kullanıcının gördüğü siyah yazı).
+- `-60` / `-70` ise **hiç CSS üretmiyordu** → metin üst elemandan miras alıyordu.
+
+Canlı CSS ölçümü (önce): `.text-foreground-50 { color: hsl(var(--heroui-foreground-50) / 1); }`
+→ 16 kullanımın tamamı `text-foreground-500`e çevrildi (projenin soluk metin jetonu).
+
+**Kanıt (koyu tema, canlı):** `--tfg-600: #a1a1aa`; `text-foreground-500` taşıyan
+elemanların hesaplanmış rengi `rgb(161, 161, 170)`; eski sınıflardan **kalan eleman: 0**.
+
+**Kalıcı guard:** `src/lib/theme-contrast.test.ts` +1 test → jeton adlarını
+`globals.css`ten OKUR, koda yazılanla karşılaştırır
+(`text|bg|border|ring|divide|fill|stroke|from|to|via|…`-`foreground-<N>`).
+Jeton eklenirse otomatik izinli; jeton uydurulursa test kırılır. Sınıf kapandı.
+
+### B. "Sahte" sohbet — KÖK NEDEN: şema canlıya hiç uygulanmamıştı
+
+`/api/chat/users` sorgusu `profiles.nickname` / `last_seen_at` / `presence_state`
+sütunlarını ister; sütunlar yoktu (PostgREST `42703`) → sorgu 500 dönüyordu →
+`loadPeers()` `null` dönüyor → `peers` bir daha set edilmiyor → ekran **sonsuza
+kadar** "Sohbet yükleniyor…" gösteriyordu. Üstüne `chat_conversations` /
+`chat_participants` / `chat_messages` tabloları hiç yoktu (`PGRST205`).
+
+1. **Şema canlıya uygulandı** (Supabase SQL Editor): `supabase/chat.sql` birebir +
+   `schema.sql`ten **yalnız `profiles` ALTER'leri** (RLS politika bloğuna
+   dokunulmadı). 153 satır, **0 yıkıcı ifade**, hepsi `if not exists` → sonuç
+   "Success. No rows returned".
+   Şema sondası (öncesi → sonrası): `profiles.nickname` 400 → **200** ·
+   `chat_conversations` 404 → **200** · `chat_participants` 404 → **200** ·
+   `chat_messages` 404 → **200**.
+2. **Uçtan uca gerçek gönderim kanıtı:** `/api/chat/users` **200 → 2 kişi**
+   (admin'in kendi profili dahil), `/api/chat/v2` **200**; arayüzden mesaj
+   gönderildi → `chat_messages` 1 satır, `chat_conversations.last_preview` +
+   `last_sender_name` denormalize, `chat_participants` 2 satır.
+3. **Sonsuz "yükleniyor" sınıfı kapatıldı:** `peersError` durumu eklendi; sorgu
+   patlarsa "yükleniyor" yerine hata gösterilir
+   (`peers === null && !peersError` → yükleniyor). Ayrıca `/api/chat/v2` GET
+   `CHAT_SCHEMA_MISSING` dönerse `schemaMissing` işaretlenir → kalıcı yükleme
+   yerine tek ve anlaşılır şema ekranı.
+
+### Doğrulama
+
+`tsc` 0 · `eslint --max-warnings 0` 0 · vitest **570/570** (47 dosya; +3) ·
+**playwright e2e 62/62** · dev `/` ve `/chat` 200 · canlı şema **4 tablo + 3 kolon**.
+
+**NEGATİF KONTROL (11/11):** `text-foreground-500` → `-50` bozuldu → tema jetonu
+testi KIRILDI; `peersError` bloğu eski hâline döndürüldü → regresyon testi KIRILDI
+(1 failed | 9 passed). İkisi de byte-exact geri yüklendi (sha256 aynı).
+
+### Notlar
+
+- Canlı kanıt olarak `tarikelertr` sohbetine tek test mesajı gönderildi
+  ("TARMAS canli test: sohbet gercekten calisiyor ✓") — arayüzden silinebilir.
+- Supabase oturumu tarayıcıda yoktu; **GitHub OAuth** ile yeniden açıldı (MFA geçti).
+- `site_content` tablosu HÂLÂ YOK (`PGRST205`) — sohbetle ilgisi yok, içerik
+  `data/content.json`tan geliyor; ayrı karar.
+- `CLAUDE.md` + `.claude/` (ekip sistemi, 00:42) commit'e DAHİL EDİLMEDİ — benim
+  değişikliğim değil, çalışma ağacında untracked kalıyor.

@@ -366,4 +366,56 @@ describe('globals.css tema kontrasti', () => {
     expect(used.size, 'border-white sinifi hic kullanilmamis — kontrol guncellenmeli').toBeGreaterThan(0)
     expect(missing, `light temada gorunmez border-white:\n${missing.join('\n')}`).toEqual([])
   })
+
+  /**
+   * TANIMSIZ TEMA JETONU (2026-10-12, kullanıcı bildirimi).
+   *
+   * Kullanıcı: "Sohbet yükleniyor… yazısı siyah, koyu temadayım — koyu temada
+   * siyah, açıkta beyaz yazı olmasın."
+   *
+   * KÖK NEDEN: sohbet arayüzü `text-foreground-50` / `-60` / `-70` yazıyordu;
+   * `globals.css` yalnız 200–950 arasını tanımlar. Sonuç iki sessiz hataydı:
+   *   · `-50` Tailwind tarafından DEĞİL, HeroUI eklentisi tarafından üretiliyordu
+   *     (`.text-foreground-50{color:hsl(var(--heroui-foreground-50)/1)}`) →
+   *     temaya bağlı olmayan, yanlış renk,
+   *   · `-60` / `-70` ise HİÇ CSS üretmiyordu → metin üst elemandan miras alıyor.
+   * İkisi de ne tip denetimine ne linte takılır. Bu test jeton adlarını
+   * `globals.css`ten OKUR, koda yazılanla karşılaştırır: jeton eklenirse
+   * otomatik izin verilir, jeton uydurulursa test kırılır.
+   */
+  it('kullanilan tema jetonu adlari globals.css te tanimli', () => {
+    const CSS = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8')
+    const defined = new Set<string>()
+    for (const m of CSS.matchAll(/--color-foreground-(\d+)\s*:/g)) {
+      defined.add(m[1])
+    }
+    expect(defined.size, 'globals.css te foreground jetonu bulunamadi — desen guncellenmeli').toBeGreaterThan(5)
+
+    // `-foreground-<rakam>` yazan TUM utility onekleri. `foreground/<opacity>`
+    // (orn. `border-foreground/10`) kapsam disi: o cifte rengin kendisidir.
+    const USED = /\b(?:text|bg|border|ring|divide|fill|stroke|from|to|via|outline|decoration|caret|accent|placeholder|shadow)-foreground-(\d+)\b/g
+    const offenders: string[] = []
+
+    for (const file of walk(join(process.cwd(), 'src'))) {
+      if (file.endsWith('theme-contrast.test.ts')) {
+        continue
+      }
+      for (const [i, line] of readFileSync(file, 'utf8').split('\n').entries()) {
+        const trimmed = line.trim()
+        if (/^(?:\/\/|\*|\/\*|\{\/\*)/.test(trimmed)) {
+          continue
+        }
+        for (const m of line.matchAll(USED)) {
+          if (!defined.has(m[1])) {
+            offenders.push(`${file.replace(`${process.cwd()}\\`, '')}:${i + 1}: ${m[0]}`)
+          }
+        }
+      }
+    }
+
+    expect(
+      offenders,
+      `tanimsiz tema jetonu (globals.css te yok → renk ya miras kalir ya HeroUI'den gelir):\n${offenders.join('\n')}`,
+    ).toEqual([])
+  })
 })

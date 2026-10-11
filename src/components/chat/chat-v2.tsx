@@ -102,6 +102,12 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const [schemaMissing, setSchemaMissing] = useState(false)
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [peers, setPeers] = useState<Peer[] | null>(null)
+  /**
+   * Kişi listesi SORGUSU çöktüğünde true. `peers === null` tek başına hem
+   * "yükleniyor" hem "başarısız" demek olduğu için, ayrılmazsa istek hata
+   * verdiğinde ekran sonsuza kadar "Sohbet yükleniyor…" gösteriyordu.
+   */
+  const [peersError, setPeersError] = useState(false)
   const [peerQuery, setPeerQuery] = useState('')
   const [menuPeer, setMenuPeer] = useState<Peer | null>(null)
   const [profilePeer, setProfilePeer] = useState<Peer | null>(null)
@@ -132,6 +138,11 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     ])
     const usersJson = await usersRes.json().catch(() => null)
     const convsJson = await convsRes.json().catch(() => null)
+    if (convsJson?.code === 'CHAT_SCHEMA_MISSING') {
+      // Tablolar yok → liste sorgusu da anlamsız; boş liste yerine tek ve
+      // anlaşılır "şema gerekli" ekranı gösterilir.
+      setSchemaMissing(true)
+    }
     if (!usersJson?.success) {
       return null
     }
@@ -272,8 +283,10 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     let cancelled = false
     const run = async () => {
       const list = await loadPeers()
-      if (!cancelled && list) {
+      if (!cancelled) {
+        // null → sorgu başarısız: "yükleniyor"da takılı kalma, hatayı göster.
         setPeers(list)
+        setPeersError(list === null)
       }
     }
     void run()
@@ -554,7 +567,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     return (
       <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-foreground/10 bg-background p-10 text-center">
         <span className="text-3xl">🔒</span>
-        <p className="text-sm text-foreground-60">{t('chat.loginRequired')}</p>
+        <p className="text-sm text-foreground-500">{t('chat.loginRequired')}</p>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
           <Link
             href={`/sign?next=${encodeURIComponent(nextPath)}`}
@@ -611,9 +624,10 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
           onClick={() => setMenuPeer(null)}
           onContextMenu={e => e.preventDefault()}
         >
-          {peers === null && <p className="p-4 text-sm text-foreground-50">{t('chat.loading')}</p>}
+          {peers === null && !peersError && <p className="p-4 text-sm text-foreground-500">{t('chat.loading')}</p>}
+          {peers === null && peersError && <p className="p-4 text-sm text-danger">{t('chat.error')}</p>}
           {peers !== null && visible.length === 0 && (
-            <p className="p-4 text-sm text-foreground-50">{t('chat.noMatch')}</p>
+            <p className="p-4 text-sm text-foreground-500">{t('chat.noMatch')}</p>
           )}
           {visible.map(p => (
             <div key={p.id} className="relative">
@@ -640,7 +654,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
                   <span className="block truncate text-sm font-medium">
                     {p.nickname || p.fullName || p.username}
                   </span>
-                  <span className="block truncate text-xs text-foreground-50">
+                  <span className="block truncate text-xs text-foreground-500">
                     {p.nickname && p.fullName
                       ? `${p.fullName} · @${p.username}`
                       : `@${p.username}`}
@@ -755,7 +769,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       {/* mesajlar */}
       <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
         {messages.length === 0 && (
-          <p className="pt-8 text-center text-sm text-foreground-50">{t('chat.emptyThread')}</p>
+          <p className="pt-8 text-center text-sm text-foreground-500">{t('chat.emptyThread')}</p>
         )}
         {messages.map((m) => {
           const mine = m.sender_id === currentUserId
@@ -942,7 +956,7 @@ function ChatNotice({ icon, text }: { icon: string, text: string }) {
   return (
     <div className="flex w-full max-w-3xl flex-col items-center gap-3 rounded-2xl border border-foreground/10 bg-background p-10 text-center">
       <span className="text-3xl">{icon}</span>
-      <p className="text-sm text-foreground-60">{text}</p>
+      <p className="text-sm text-foreground-500">{text}</p>
     </div>
   )
 }
@@ -1071,7 +1085,7 @@ function PeerMenu({ peer, t, onClose, onNicknameSave, onProfile, onToggle, onCle
         : (
             <>
               <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-2">
-                <p className="min-w-0 truncate text-xs text-foreground-50">
+                <p className="min-w-0 truncate text-xs text-foreground-500">
                   {peer.nickname || peer.fullName || peer.username}
                 </p>
                 <button
@@ -1196,7 +1210,7 @@ function ProfileSheet({ peer, t, onClose }: {
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate font-semibold">{peer.nickname || peer.fullName || peer.username}</p>
-            <p className="truncate text-xs text-foreground-50">
+            <p className="truncate text-xs text-foreground-500">
 @
 {peer.username}
 </p>
@@ -1206,37 +1220,37 @@ function ProfileSheet({ peer, t, onClose }: {
           </button>
         </div>
 
-        {error && <p className="mt-4 text-sm text-foreground-50">{t('chat.profileFailed')}</p>}
-        {!error && !profile && <p className="mt-4 text-sm text-foreground-50">{t('chat.loading')}</p>}
+        {error && <p className="mt-4 text-sm text-foreground-500">{t('chat.profileFailed')}</p>}
+        {!error && !profile && <p className="mt-4 text-sm text-foreground-500">{t('chat.loading')}</p>}
 
         {profile && (
           <>
             <dl className="mt-4 space-y-2 text-sm">
               {rows.map(([label, value]) => (
                 <div key={label} className="flex justify-between gap-3 border-b border-foreground/5 pb-1.5">
-                  <dt className="shrink-0 text-foreground-50">{label}</dt>
+                  <dt className="shrink-0 text-foreground-500">{label}</dt>
                   <dd className="truncate text-right">{value || '—'}</dd>
                 </div>
               ))}
               <div className="flex justify-between gap-3 border-b border-foreground/5 pb-1.5">
-                <dt className="text-foreground-50">{t('chat.messageCount')}</dt>
+                <dt className="text-foreground-500">{t('chat.messageCount')}</dt>
                 <dd>{profile.messageCount}</dd>
               </div>
               <div className="flex justify-between gap-3 pb-1.5">
-                <dt className="text-foreground-50">{t('chat.groups')}</dt>
+                <dt className="text-foreground-500">{t('chat.groups')}</dt>
                 <dd className="truncate text-right">
                   {profile.groups.length ? profile.groups.map(g => g.title).join(', ') : '—'}
                 </dd>
               </div>
             </dl>
-            {profile.bio && <p className="mt-3 text-sm text-foreground-70">{profile.bio}</p>}
+            {profile.bio && <p className="mt-3 text-sm text-foreground-500">{profile.bio}</p>}
 
             {/*
               Kullanıcı isteği: e-posta (gmail), telefon ve ŞİFRE canlıda
               GÖSTERİLMEZ. Sunucu bu alanları hiç göndermiyor; burada da
               hiçbir yerde yer almıyorlar.
             */}
-            <p className="mt-4 rounded-lg bg-foreground/5 px-3 py-2 text-xs text-foreground-50">
+            <p className="mt-4 rounded-lg bg-foreground/5 px-3 py-2 text-xs text-foreground-500">
               🔒
 {' '}
 {t('chat.privacyNote')}
@@ -1265,7 +1279,7 @@ function MessageMenu({ message, onClose, onReply, onCopy, onPin, onInfo, onDelet
         onClick={e => e.stopPropagation()}
       >
         {message.text && (
-          <p className="max-h-20 overflow-y-auto border-b border-foreground/10 px-4 py-2 text-xs text-foreground-60">
+          <p className="max-h-20 overflow-y-auto border-b border-foreground/10 px-4 py-2 text-xs text-foreground-500">
             {message.text}
           </p>
         )}

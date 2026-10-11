@@ -321,4 +321,58 @@ describe('admin kullanıcı menüsü', () => {
     expect(rows[1]).toContain('Cem')
     expect(rows[2]).toContain('Deniz')
   })
+
+  /*
+    2026-10-12 (kullanıcı): "chat gerçek çalışır tam olsun". Kullanıcının
+    gördüğü hâl: kişi listesi sorgusu hataya düştüğünde ekran SONSUZA KADAR
+    "Sohbet yükleniyor…" diyordu. Sebep: `peers === null` hem "yükleniyor" hem
+    "başarısız" demekti ve hata yutuluyordu — `peers` bir daha set edilmediği
+    için yükleme ekranı hiç değişmiyordu.
+  */
+  it('kişi listesi sorgusu patlarsa "yükleniyor"da takılı kalmaz, hatayı gösterir', async () => {
+    mockFetch((url) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({ success: false, message: 'boom' }, 500)
+      }
+      return jsonResponse({ success: true })
+    })
+    render(
+      <LocaleProvider detectedLocale="tr">
+        <ChatV2 />
+      </LocaleProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByText('Bir hata oluştu.')).not.toBeNull())
+    expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull()
+  })
+
+  /*
+    Şema hiç yoksa (tablolar oluşturulmamış) kişi listesi de anlamsız: kalıcı
+    "yükleniyor" yerine tek ve anlaşılır uyarı gösterilir.
+  */
+  it('chat tabloları yoksa şema uyarısı gösterilir, "yükleniyor"da kalınmaz', async () => {
+    mockFetch((url, init) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({ success: true, users: [] })
+      }
+      if (url.includes('/api/chat/v2') && !init?.method) {
+        return jsonResponse({ success: false, code: 'CHAT_SCHEMA_MISSING', message: 'tablo yok' }, 503)
+      }
+      return jsonResponse({ success: true })
+    })
+    render(
+      <LocaleProvider detectedLocale="tr">
+        <ChatV2 />
+      </LocaleProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByText(/supabase\/chat\.sql/)).not.toBeNull())
+    expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull()
+  })
 })
