@@ -7,22 +7,20 @@ const DATA_DIR = path.join(process.cwd(), 'data')
 const STARS_FILE = path.join(DATA_DIR, 'stars.json')
 
 interface StarsData {
-  [key: string]: { total: number, count: number }
+  [key: string]: { total: number; count: number }
 }
 
 // Cloudflare Workers: no filesystem — writes are in-memory for the worker lifetime.
 let memoryStars: StarsData | null = null
 
 async function readStars(): Promise<StarsData> {
-  if (memoryStars)
-    return memoryStars
+  if (memoryStars) return memoryStars
   try {
     const raw = await fs.readFile(STARS_FILE, 'utf-8')
     const parsed = JSON.parse(raw) as StarsData
     memoryStars = parsed
     return parsed
-  }
-  catch {
+  } catch {
     memoryStars = {}
     return {}
   }
@@ -32,9 +30,14 @@ async function writeStars(data: StarsData): Promise<void> {
   memoryStars = data
   try {
     await fs.mkdir(DATA_DIR, { recursive: true })
-    await fs.writeFile(STARS_FILE, `${JSON.stringify(data, null, 2)}\n`, 'utf-8')
+    await fs.writeFile(
+      STARS_FILE,
+      `${JSON.stringify(data, null, 2)}\n`,
+      'utf-8',
+    )
+  } catch {
+    /* Workers: in-memory only */
   }
-  catch { /* Workers: in-memory only */ }
 }
 
 export async function POST(request: Request) {
@@ -55,38 +58,47 @@ export async function POST(request: Request) {
     /*
       Limit DÜZELTMESİ (2026-10-06, kullanıcı isteği).
 
-      Burada `LIMITS.write` (dakikada 20) kullanılıyordu; kullanıcı isteği
-      yıldızlamada "IP+proje başına saatte 1" idi ve `LIMITS.counter`
-      tam olarak bunu tanımlıyor. İsteyi göndermeden `write`a düşülmüştü.
-
-      `counter` kullanılınca kullanıcı yıldızlarını görebiliyor ama
-      sayımı saatte bir kez güncelleniyor (istek "sessizce yok sayılır",
-      429 DÖNMEZ — yukarıdaki açıklamaya göre).
+      Burada `LIMITS.counter` (saatte 1, IP+proje başına) kullanınıyor —
+      eski yorum `LIMITS.write` (dakikada 20) idi.
     */
-    const rl = await checkLimit('stars', { ...LIMITS.counter, failClosed: false }, request)
+    const rl = await checkLimit(
+      'stars',
+      { ...LIMITS.counter, failClosed: false },
+      request,
+    )
     if (!rl.ok) {
       const current = await readStars()
-      const bodyEarly = (await request.json().catch(() => null)) as
-        { itemId?: string, itemType?: string } | null
-      const keyEarly = bodyEarly?.itemId && bodyEarly?.itemType
-        ? `${bodyEarly.itemType}:${bodyEarly.itemId}`
-        : ''
-      const existingEarly = keyEarly ? current[keyEarly] ?? { total: 0, count: 0 } : { total: 0, count: 0 }
-      return NextResponse.json({
-        totalStars: existingEarly.total,
-        count: existingEarly.count,
-        average: existingEarly.count > 0
-          ? Math.round((existingEarly.total / existingEarly.count) * 10) / 10
-          : 0,
-        counted: false,
-      }, {
-        status: 200,
-        headers: {
-          'X-RateLimit-Limit': String(rl.limit),
-          'X-RateLimit-Remaining': '0',
-          'X-RateLimit-Reset': String(Math.ceil(rl.resetAt / 1000)),
+      const bodyEarly = (await request.json().catch(() => null)) as {
+        itemId?: string
+        itemType?: string
+      } | null
+      const keyEarly =
+        bodyEarly?.itemId && bodyEarly?.itemType
+          ? `${bodyEarly.itemType}:${bodyEarly.itemId}`
+          : ''
+      const existingEarly = keyEarly
+        ? (current[keyEarly] ?? { total: 0, count: 0 })
+        : { total: 0, count: 0 }
+      return NextResponse.json(
+        {
+          totalStars: existingEarly.total,
+          count: existingEarly.count,
+          average:
+            existingEarly.count > 0
+              ? Math.round((existingEarly.total / existingEarly.count) * 10) /
+                10
+              : 0,
+          counted: false,
         },
-      })
+        {
+          status: 200,
+          headers: {
+            'X-RateLimit-Limit': String(rl.limit),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(Math.ceil(rl.resetAt / 1000)),
+          },
+        },
+      )
     }
 
     const body = (await request.json()) as {
@@ -99,10 +111,15 @@ export async function POST(request: Request) {
 
     // Input doğrulama: itemId/itemType uzunluk sınırı, rating 1-5
     if (
-      !itemId || !itemType
-      || typeof itemId !== 'string' || itemId.length > 200
-      || typeof itemType !== 'string' || itemType.length > 50
-      || (typeof rating !== 'number' || rating < 1 || rating > 5)
+      !itemId ||
+      !itemType ||
+      typeof itemId !== 'string' ||
+      itemId.length > 200 ||
+      typeof itemType !== 'string' ||
+      itemType.length > 50 ||
+      typeof rating !== 'number' ||
+      rating < 1 ||
+      rating > 5
     ) {
       return NextResponse.json({ error: 'Geçersiz veri' }, { status: 400 })
     }
@@ -115,8 +132,7 @@ export async function POST(request: Request) {
       // Undo the star — total never drops below 0
       existing.total = Math.max(0, existing.total - rating)
       existing.count = Math.max(0, existing.count - 1)
-    }
-    else {
+    } else {
       existing.total += rating
       existing.count += 1
     }
@@ -127,10 +143,12 @@ export async function POST(request: Request) {
     return NextResponse.json({
       totalStars: existing.total,
       count: existing.count,
-      average: existing.count > 0 ? Math.round((existing.total / existing.count) * 10) / 10 : 0,
+      average:
+        existing.count > 0
+          ? Math.round((existing.total / existing.count) * 10) / 10
+          : 0,
     })
-  }
-  catch {
+  } catch {
     return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
   }
 }
@@ -152,7 +170,10 @@ export async function GET(request: Request) {
           itemId: key.slice(itemType.length + 1),
           totalStars: value.total,
           count: value.count,
-          average: value.count > 0 ? Math.round((value.total / value.count) * 10) / 10 : 0,
+          average:
+            value.count > 0
+              ? Math.round((value.total / value.count) * 10) / 10
+              : 0,
         }))
       return NextResponse.json({ success: true, items: entries })
     }
@@ -167,10 +188,10 @@ export async function GET(request: Request) {
     return NextResponse.json({
       totalStars: data.total,
       count: data.count,
-      average: data.count > 0 ? Math.round((data.total / data.count) * 10) / 10 : 0,
+      average:
+        data.count > 0 ? Math.round((data.total / data.count) * 10) / 10 : 0,
     })
-  }
-  catch {
+  } catch {
     return NextResponse.json({ error: 'Sunucu hatası' }, { status: 500 })
   }
 }
