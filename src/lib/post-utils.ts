@@ -12,9 +12,11 @@ import type { BlogPost } from '@/lib/content'
 export function postKind(
   post: Pick<BlogPost, 'kind' | 'tags' | 'badge'>,
 ): 'til' | 'article' {
-  if (post.kind === 'til') return 'til'
-  const etiketler = (post.tags ?? []).map((t) => t.toLowerCase())
-  if (etiketler.includes('til') || etiketler.includes('t-i-l')) return 'til'
+  if (post.kind === 'til')
+return 'til'
+  const etiketler = (post.tags ?? []).map(t => t.toLowerCase())
+  if (etiketler.includes('til') || etiketler.includes('t-i-l'))
+return 'til'
   return 'article'
 }
 
@@ -57,12 +59,12 @@ export function relatedPosts(
   limit = 3,
 ): BlogPost[] {
   const benimEtiketlerim = new Set(
-    (current.tags ?? []).map((t) => t.toLowerCase()),
+    (current.tags ?? []).map(t => t.toLowerCase()),
   )
   if (benimEtiketlerim.size === 0) {
     // Etiket yoksa en yeni yazılardan göster (boş ekrandan iyi).
     return all
-      .filter((p) => p.id !== current.id)
+      .filter(p => p.id !== current.id)
       .slice()
       .sort((a, b) => b.date.localeCompare(a.date))
       .slice(0, limit)
@@ -73,20 +75,23 @@ export function relatedPosts(
 
   return all
     .filter(
-      (p) => p.id !== current.id && (p.slug ?? '') !== (current.slug ?? ''),
+      p => p.id !== current.id && (p.slug ?? '') !== (current.slug ?? ''),
     )
     .map((p) => {
       let puan = 0
       for (const t of p.tags ?? []) {
-        if (benimEtiketlerim.has(t.toLowerCase())) puan += 3
+        if (benimEtiketlerim.has(t.toLowerCase()))
+puan += 3
       }
-      if (postKind(p) === benimTur) puan += 2
+      if (postKind(p) === benimTur)
+puan += 2
       const fark = Math.abs(new Date(p.date).getTime() - benimTarih)
-      if (fark < 1000 * 60 * 60 * 24 * 90) puan += 1
+      if (fark < 1000 * 60 * 60 * 24 * 90)
+puan += 1
       return { p, puan }
     })
-    .filter((x) => x.puan > 0)
+    .filter(x => x.puan > 0)
     .sort((a, b) => b.puan - a.puan || b.p.date.localeCompare(a.p.date))
     .slice(0, limit)
-    .map((x) => x.p)
+    .map(x => x.p)
 }

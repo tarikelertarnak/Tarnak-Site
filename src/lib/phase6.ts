@@ -213,22 +213,26 @@ export type Phase6 = z.infer<typeof phase6Schema>
  * `undefined` dönerse çağıran kendi boş durumunu gösterir.
  */
 export function parsePhase6(input: unknown): Phase6 | null {
-  if (input === undefined || input === null) return null
+  if (input === undefined || input === null)
+return null
   const sonuc = phase6Schema.safeParse(input)
   if (!sonuc.success) {
     console.warn(
       '[phase6] şema doğrulaması başarısız:',
       sonuc.error.issues
         .slice(0, 3)
-        .map((i) => i.message)
+        .map(i => i.message)
         .join(' | '),
     )
     return null
   }
   const d = sonuc.data
   // Grupları sırala (order küçük = üstte)
-  if (d.services) d.services.items.sort((a, b) => a.order - b.order)
-  if (d.timeline) d.timeline.items.sort((a, b) => a.order - b.order)
-  if (d.uses) d.uses.groups.sort((a, b) => a.order - b.order)
+  if (d.services)
+d.services.items.sort((a, b) => a.order - b.order)
+  if (d.timeline)
+d.timeline.items.sort((a, b) => a.order - b.order)
+  if (d.uses)
+d.uses.groups.sort((a, b) => a.order - b.order)
   return d
 }

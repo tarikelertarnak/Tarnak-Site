@@ -29,7 +29,7 @@ import { checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
 export async function guardWrite(
   req: Request,
   scope: string,
-  limit: { limit: number; windowMs: number } = LIMITS.write,
+  limit: { limit: number, windowMs: number } = LIMITS.write,
 ): Promise<Response | null> {
   // `failClosed: false` — bu uç noktalar ucuz (bir kayıt güncellemesi).
   // KV kesintisi kullanıcıyı admin panelinden veya profilinden mahrum

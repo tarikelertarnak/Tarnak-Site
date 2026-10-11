@@ -156,8 +156,8 @@ export function buildContactChannels(
     }
     // Gorunen ad/deger: `label`/`value` varsa onlar, yoksa name + adres.
     const gorunenAd = item.label?.trim() || item.name
-    const gorunenDeger =
-      item.value?.trim() || item.href.replace(/^https?:\/\/(www\.)?/, '')
+    const gorunenDeger
+      = item.value?.trim() || item.href.replace(/^https?:\/\/(www\.)?/, '')
     const aramaKelimeleri = [
       'sosyal',
       'social',
@@ -206,7 +206,7 @@ export function groupChannels(channels: readonly ContactChannel[]): {
   social: ContactChannel[]
 } {
   return {
-    builtin: channels.filter((c) => c.kind !== 'social'),
-    social: channels.filter((c) => c.kind === 'social'),
+    builtin: channels.filter(c => c.kind !== 'social'),
+    social: channels.filter(c => c.kind === 'social'),
   }
 }

@@ -22,31 +22,32 @@ const SELF = 'vcard-qr-only.test.ts'
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const full = join(dir, name)
-    if (statSync(full).isDirectory()) return walk(full)
+    if (statSync(full).isDirectory())
+return walk(full)
     return /\.tsx?$/.test(name) ? [full] : []
   })
 }
 
 describe('kaldırılan vCard indirme yolu geri gelmedi', () => {
   const root = process.cwd()
-  const srcFiles = walk(join(root, 'src')).filter((f) => !f.endsWith(SELF))
+  const srcFiles = walk(join(root, 'src')).filter(f => !f.endsWith(SELF))
 
   it('route dosyası silinmiş', () => {
     expect(existsSync(join(root, 'src/app/api/vcard/route.ts'))).toBe(false)
   })
 
   it('src/ altında kalan `/api/vcard` referansı yok', () => {
-    const offenders = srcFiles.filter((f) =>
+    const offenders = srcFiles.filter(f =>
       readFileSync(f, 'utf8').includes('api/vcard'),
     )
-    expect(offenders.map((f) => f.replace(/\\/g, '/'))).toEqual([])
+    expect(offenders.map(f => f.replace(/\\/g, '/'))).toEqual([])
   })
 
   it('i18n sözlüklerinde `vcardDownload` ("Kartvisiti indir") yok', () => {
     const i18nDir = join(root, 'src/i18n')
     const offenders = readdirSync(i18nDir)
-      .filter((n) => n.endsWith('.json') || n.endsWith('.ts'))
-      .filter((n) =>
+      .filter(n => n.endsWith('.json') || n.endsWith('.ts'))
+      .filter(n =>
         readFileSync(join(i18nDir, n), 'utf8').includes('vcardDownload'),
       )
     expect(offenders).toEqual([])

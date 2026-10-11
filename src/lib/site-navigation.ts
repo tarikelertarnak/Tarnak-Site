@@ -118,13 +118,13 @@ function buildStaticGroups(l: Labels): NavGroup[] {
  */
 function appendContentLinks(
   groups: NavGroup[],
-  items: { title?: string; href?: string }[] | undefined,
+  items: { title?: string, href?: string }[] | undefined,
 ): NavGroup[] {
   if (!items?.length) {
     return groups
   }
 
-  const known = new Set(groups.flatMap((g) => g.entries.map((e) => e.href)))
+  const known = new Set(groups.flatMap(g => g.entries.map(e => e.href)))
   const extra: NavEntry[] = []
 
   items.forEach((item, i) => {
@@ -141,7 +141,7 @@ function appendContentLinks(
     return groups
   }
 
-  return groups.map((g) =>
+  return groups.map(g =>
     g.id === 'pages' ? { ...g, entries: [...g.entries, ...extra] } : g,
   )
 }
@@ -152,7 +152,7 @@ function appendContentLinks(
  */
 export function buildSiteNavigation(
   t: (key: string) => string,
-  navItems?: { title?: string; href?: string }[],
+  navItems?: { title?: string, href?: string }[],
 ): NavGroup[] {
   const labels: Labels = {
     home: t('nav.home'),

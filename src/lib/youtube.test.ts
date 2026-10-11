@@ -42,7 +42,7 @@ const ORNEK = `<?xml version="1.0" encoding="UTF-8"?>
 
 describe('parseKanalBesleme', () => {
   it('videoları besleme sırasıyla çıkarır', () => {
-    expect(parseKanalBesleme(ORNEK).map((v) => v.id)).toEqual([
+    expect(parseKanalBesleme(ORNEK).map(v => v.id)).toEqual([
       'AAA111',
       'BBB222',
       'CCC333',

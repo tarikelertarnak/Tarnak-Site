@@ -7,11 +7,11 @@ const t = (key: string) => key
 
 describe('buildSiteNavigation', () => {
   const groups = buildSiteNavigation(t)
-  const all = groups.flatMap((g) => g.entries)
-  const hrefs = all.map((e) => e.href)
+  const all = groups.flatMap(g => g.entries)
+  const hrefs = all.map(e => e.href)
 
   it('dort grup uretir: Sayfalar / Hukuki / Bolumler / Hesap', () => {
-    expect(groups.map((g) => g.id)).toEqual([
+    expect(groups.map(g => g.id)).toEqual([
       'pages',
       'legal',
       'sections',
@@ -60,7 +60,7 @@ describe('buildSiteNavigation', () => {
   // REGRESYON: capali href geri gelirse yakala. Ayri sayfaIci `#main` (atlama
   // linki) bu listede degil — gezinme girdileri dis sayfa olmali.
   it('hicbir gezinme linki capa (#) icermez', () => {
-    const hashed = hrefs.filter((h) => h.includes('#'))
+    const hashed = hrefs.filter(h => h.includes('#'))
     expect(hashed).toEqual([])
   })
 
@@ -98,14 +98,14 @@ describe('buildSiteNavigation', () => {
   // ---- Panelden eklenen ozel sayfalar
   it('content.nav.items icindeki YENI baglanti eklenir', () => {
     const g = buildSiteNavigation(t, [{ title: 'Ozel Sayfa', href: '/ozel' }])
-    const list = g.flatMap((x) => x.entries).map((e) => e.href)
+    const list = g.flatMap(x => x.entries).map(e => e.href)
     expect(list).toContain('/ozel')
   })
 
   it('content.nav.items ZATEN VAR olan baglantiyı TEKRAR eklemez', () => {
     const g = buildSiteNavigation(t, [{ title: 'Projeler', href: '/projects' }])
-    const list = g.flatMap((x) => x.entries).map((e) => e.href)
-    expect(list.filter((h) => h === '/projects').length).toBe(1)
+    const list = g.flatMap(x => x.entries).map(e => e.href)
+    expect(list.filter(h => h === '/projects').length).toBe(1)
   })
 
   it('eksik/bozuk kayitlar atlanir (kirilgan olmasin)', () => {
@@ -114,13 +114,13 @@ describe('buildSiteNavigation', () => {
       { title: 'Adsiz', href: '' },
       {},
     ])
-    const list = g.flatMap((x) => x.entries).map((e) => e.href)
+    const list = g.flatMap(x => x.entries).map(e => e.href)
     expect(list).not.toContain('/bos')
     expect(list).not.toContain('')
   })
 
   it('nav.items verilmezse sabit liste bozulmaz', () => {
     const g = buildSiteNavigation(t, undefined)
-    expect(g.flatMap((x) => x.entries).length).toBe(18)
+    expect(g.flatMap(x => x.entries).length).toBe(18)
   })
 })

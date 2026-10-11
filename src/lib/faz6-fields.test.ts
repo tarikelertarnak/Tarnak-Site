@@ -41,7 +41,7 @@ describe('fAZ6_BOLUMLERI', () => {
     const cozulmus = parsePhase6(ornek)
     expect(cozulmus).not.toBeNull()
 
-    const specAnahtarlari = FAZ6_BOLUMLERI.map((b) => b.anahtar).sort()
+    const specAnahtarlari = FAZ6_BOLUMLERI.map(b => b.anahtar).sort()
     const semaAnahtarlari = Object.keys(ornek).sort()
     expect(specAnahtarlari).toEqual(semaAnahtarlari)
   })
@@ -66,15 +66,15 @@ describe('fAZ6_BOLUMLERI', () => {
 
   it('select alanlarının seçenekleri şemadaki enum ile aynı', () => {
     const availability = FAZ6_BOLUMLERI.find(
-      (b) => b.anahtar === 'availability',
+      b => b.anahtar === 'availability',
     )
-    const tone = availability?.alanlar?.find((a) => a.anahtar === 'tone')
+    const tone = availability?.alanlar?.find(a => a.anahtar === 'tone')
     // phase6.ts: z.enum(['available', 'busy', 'offline'])
     expect(tone?.secenekler).toEqual(['available', 'busy', 'offline'])
   })
 
   it('duplicate anahtar yok', () => {
-    const anahtarlar = FAZ6_BOLUMLERI.map((b) => b.anahtar)
+    const anahtarlar = FAZ6_BOLUMLERI.map(b => b.anahtar)
     expect(new Set(anahtarlar).size).toBe(anahtarlar.length)
   })
 })

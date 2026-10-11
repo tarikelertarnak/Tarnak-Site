@@ -12,7 +12,8 @@ import bundledContentJson from '../../data/content.json'
 function dataDir(): string {
   try {
     return path.join(process.cwd(), 'data')
-  } catch {
+  }
+ catch {
     return 'data'
   }
 }
@@ -22,7 +23,7 @@ function dataDir(): string {
  * Goal: avoid repeating the initial TCP/TLS connection setup (20s+ on this machine)
  * on every request. Cleared by saveContent on admin edits.
  */
-let supabaseMergeCache: { ts: number; data: SiteContent | null } | null = null
+let supabaseMergeCache: { ts: number, data: SiteContent | null } | null = null
 const SUPABASE_CACHE_TTL_MS = 300_000
 
 /**
@@ -32,21 +33,21 @@ const SUPABASE_CACHE_TTL_MS = 300_000
  */
 const SKILL_LABEL_LINKS: Record<string, string> = {
   'Next.js': 'https://nextjs.org',
-  Tailwind: 'https://tailwindcss.com',
+  'Tailwind': 'https://tailwindcss.com',
   'Tailwind CSS': 'https://tailwindcss.com',
-  Docker: 'https://www.docker.com',
+  'Docker': 'https://www.docker.com',
   'Node.js': 'https://nodejs.org',
-  Git: 'https://git-scm.com',
-  Python: 'https://www.python.org',
-  HTML: 'https://developer.mozilla.org/en-US/docs/Web/HTML',
-  Html: 'https://developer.mozilla.org/en-US/docs/Web/HTML',
-  CSS: 'https://developer.mozilla.org/en-US/docs/Web/CSS',
-  JavaScript: 'https://developer.mozilla.org/en-US/docs/Web/JavaScript',
-  TypeScript: 'https://www.typescriptlang.org',
-  React: 'https://react.dev',
-  PostgreSQL: 'https://www.postgresql.org',
+  'Git': 'https://git-scm.com',
+  'Python': 'https://www.python.org',
+  'HTML': 'https://developer.mozilla.org/en-US/docs/Web/HTML',
+  'Html': 'https://developer.mozilla.org/en-US/docs/Web/HTML',
+  'CSS': 'https://developer.mozilla.org/en-US/docs/Web/CSS',
+  'JavaScript': 'https://developer.mozilla.org/en-US/docs/Web/JavaScript',
+  'TypeScript': 'https://www.typescriptlang.org',
+  'React': 'https://react.dev',
+  'PostgreSQL': 'https://www.postgresql.org',
   'C#': 'https://learn.microsoft.com/en-us/dotnet/csharp/',
-  SQL: 'https://www.postgresql.org/docs/current/sql.html',
+  'SQL': 'https://www.postgresql.org/docs/current/sql.html',
   'C++': 'https://en.cppreference.com',
 }
 
@@ -230,7 +231,7 @@ export interface SiteContent {
     exploreLabel: string
     connectLabel: string
     emoji: string
-    stats: { label: string; value: string }[]
+    stats: { label: string, value: string }[]
   }
   nav: {
     ctaLabel: string
@@ -337,7 +338,8 @@ const ADMIN_FILE = () => path.join(dataDir(), 'admin.json')
 async function ensureDataDir() {
   try {
     await fs.mkdir(dataDir(), { recursive: true })
-  } catch {
+  }
+ catch {
     /* Workers: no-op */
   }
 }
@@ -348,7 +350,7 @@ async function ensureDataDir() {
  * bundle at build time (data/ is copied into the worker), so no ISR cache is
  * needed on Cloudflare. `cache()` (React) already dedupes per-request.
  */
-let contentMergeCache: { ts: number; data: SiteContent | null } | null = null
+let contentMergeCache: { ts: number, data: SiteContent | null } | null = null
 const CONTENT_CACHE_TTL_MS = 300_000
 
 /**
@@ -402,7 +404,8 @@ async function readSupabaseContent(): Promise<Partial<SiteContent> | null> {
     return Object.keys(content).length > 0
       ? (content as Partial<SiteContent>)
       : null
-  } catch {
+  }
+ catch {
     return null
   }
 }
@@ -425,7 +428,8 @@ export async function saveContentToSupabase(
       throw new Error(error.message)
     }
     return { ok: true }
-  } catch (error) {
+  }
+ catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
     console.error('[content] Supabase yazma basarisiz:', detail)
     return { ok: false, error: `Supabase yazma başarısız (${detail}).` }
@@ -434,8 +438,8 @@ export async function saveContentToSupabase(
 
 export const getContent = cache(async (): Promise<SiteContent> => {
   if (
-    contentMergeCache &&
-    Date.now() - contentMergeCache.ts < CONTENT_CACHE_TTL_MS
+    contentMergeCache
+    && Date.now() - contentMergeCache.ts < CONTENT_CACHE_TTL_MS
   ) {
     return contentMergeCache.data as SiteContent
   }
@@ -457,11 +461,13 @@ export const getContent = cache(async (): Promise<SiteContent> => {
   const fromSupabase = await readSupabaseContent()
   if (fromSupabase) {
     parsed = fromSupabase
-  } else {
+  }
+ else {
     try {
       const raw = await fs.readFile(CONTENT_FILE(), 'utf-8')
       parsed = JSON.parse(raw) as Partial<SiteContent>
-    } catch {
+    }
+ catch {
       parsed = null
     }
   }
@@ -485,8 +491,8 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
 
   // TTL cache: don't call Supabase over the network on warm requests
   if (
-    supabaseMergeCache &&
-    Date.now() - supabaseMergeCache.ts < SUPABASE_CACHE_TTL_MS
+    supabaseMergeCache
+    && Date.now() - supabaseMergeCache.ts < SUPABASE_CACHE_TTL_MS
   ) {
     return supabaseMergeCache.data ?? base
   }
@@ -524,11 +530,12 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
             'slug, title, description, tech, repo_url, demo_url, image, featured',
           )
           .order('sort_order', { ascending: true })
-        if (projectError) throw projectError
+        if (projectError)
+throw projectError
         // `featured` DB'de tutulur ama KARTTA gösterilmez — kullanıcı
         // "[Featured]" etiketini kaldırmamı istedi. Sıralama kullanmıyorsa
         // alan tamamen boşta kalmasın diye okumuyoruz.
-        const dbItems = (dbProjects ?? []).map((p) => ({
+        const dbItems = (dbProjects ?? []).map(p => ({
           title: p.title,
           description: p.description ?? '',
           projectLink: p.demo_url ?? p.repo_url ?? '#',
@@ -536,13 +543,14 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
           image: p.image ?? '',
         }))
         if (dbItems.length) {
-          const dbTitles = new Set(dbItems.map((p) => p.title))
+          const dbTitles = new Set(dbItems.map(p => p.title))
           merged.projects.items = [
             ...dbItems,
-            ...merged.projects.items.filter((p) => !dbTitles.has(p.title)),
+            ...merged.projects.items.filter(p => !dbTitles.has(p.title)),
           ]
         }
-      } catch (error) {
+      }
+ catch (error) {
         silent('projects')(error)
       }
     })(),
@@ -554,14 +562,15 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
           .select('label, icon')
           .order('sort_order', { ascending: true })
         if (!skillError && dbSkills?.length) {
-          merged.about.toolbox = dbSkills.map((s) => ({
+          merged.about.toolbox = dbSkills.map(s => ({
             label: s.label,
             icon: s.icon,
             type: 'link' as const,
             href: SKILL_LABEL_LINKS[s.label] ?? '',
           }))
         }
-      } catch (error) {
+      }
+ catch (error) {
         silent('skills')(error)
       }
     })(),
@@ -580,7 +589,8 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
             { label: 'Focus', value: `${dbStats.focus}%` },
           ]
         }
-      } catch (error) {
+      }
+ catch (error) {
         silent('stats')(error)
       }
     })(),
@@ -665,10 +675,12 @@ export async function saveContent(
   const supabaseResult = await saveContentToSupabase(content)
   if (supabaseResult?.ok) {
     result = { ok: true }
-  } else if (supabaseResult) {
+  }
+ else if (supabaseResult) {
     // Supabase var ama yazılamadı — diske de dene.
     result = (await trySaveToDisk(content)) ?? supabaseResult
-  } else {
+  }
+ else {
     result = (await trySaveToDisk(content)) ?? {
       ok: false,
       error:
@@ -694,14 +706,15 @@ async function trySaveToDisk(
       'utf-8',
     )
     return { ok: true }
-  } catch (error) {
+  }
+ catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
     console.error('[content] saveContent diske yazamadi:', detail)
     return {
       ok: false,
       error:
-        `İçerik kalıcı olarak yazılamadı (${detail}). ` +
-        'Sunucu dosya sistemi salt-okunur olabilir — değişiklik yeniden deploy sonrası kaybolur.',
+        `İçerik kalıcı olarak yazılamadı (${detail}). `
+        + 'Sunucu dosya sistemi salt-okunur olabilir — değişiklik yeniden deploy sonrası kaybolur.',
     }
   }
 }
@@ -715,7 +728,8 @@ export async function getAdmin(): Promise<AdminCredentials> {
   try {
     const raw = await fs.readFile(ADMIN_FILE(), 'utf-8')
     return JSON.parse(raw) as AdminCredentials
-  } catch {
+  }
+ catch {
     return bundledAdmin
   }
 }
@@ -731,14 +745,15 @@ export async function saveAdmin(
       'utf-8',
     )
     return { ok: true }
-  } catch (error) {
+  }
+ catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
     console.error('[content] saveAdmin yazamadi:', detail)
     return {
       ok: false,
       error:
-        `Şifre kalıcı olarak kaydedilemedi (${detail}). ` +
-        'Sunucu dosya sistemi salt-okunur olabilir (Vercel) — ESKİ ŞİFRE geçerli kalmaya devam eder.',
+        `Şifre kalıcı olarak kaydedilemedi (${detail}). `
+        + 'Sunucu dosya sistemi salt-okunur olabilir (Vercel) — ESKİ ŞİFRE geçerli kalmaya devam eder.',
     }
   }
 }
@@ -793,10 +808,10 @@ async function getDefaultContent(): Promise<SiteContent> {
       subtitle: 'ABOUT ME',
       title: 'A Glimpse Into My World',
       description:
-        "Learn more about me, what I do, and what I'm passionate about.",
+        'Learn more about me, what I do, and what I\'m passionate about.',
       whoTitle: 'Who I Am',
       whoText:
-        "I'm a web developer who loves to code and build things. I'm passionate about web development, design, and technology.",
+        'I\'m a web developer who loves to code and build things. I\'m passionate about web development, design, and technology.',
       toolboxTitle: 'My Toolbox',
       toolboxDescription:
         'Explore the technologies I use to build projects and websites.',
@@ -830,7 +845,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       ],
       beyondTitle: 'Beyond the Code',
       beyondDescription:
-        "Explore my interests, hobbies, and what I do when I'm not coding.",
+        'Explore my interests, hobbies, and what I do when I\'m not coding.',
       interests: [
         {
           label: 'Hardware',
@@ -842,7 +857,7 @@ async function getDefaultContent(): Promise<SiteContent> {
           label: 'Music',
           icon: 'mdi:music',
           content:
-            "I'm a big fan of music and love discovering new artists and genres.",
+            'I\'m a big fan of music and love discovering new artists and genres.',
         },
         {
           label: 'AI',
@@ -882,7 +897,7 @@ async function getDefaultContent(): Promise<SiteContent> {
     projects: {
       subtitle: 'PROJECTS',
       title: 'All Projects',
-      description: "Projects I've built and worked on.",
+      description: 'Projects I\'ve built and worked on.',
       items: [],
     },
     github: {
@@ -919,7 +934,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       footerText: '',
       successTitle: 'Message has been delivered!',
       successText:
-        "Thank you for reaching out! I've received your message and will get back to you as soon as possible.",
+        'Thank you for reaching out! I\'ve received your message and will get back to you as soon as possible.',
       email: '',
       phone: '',
       location: '',

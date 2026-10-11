@@ -57,7 +57,8 @@ async function getKv(): Promise<KVNamespaceLike | null> {
     // namespace'leri bu kadar ucuz (1000 yazma/gün).
     const kv = env?.NEXT_INC_CACHE_KV as KVNamespaceLike | undefined
     return kv ?? null
-  } catch {
+  }
+ catch {
     return null
   }
 }
@@ -174,7 +175,7 @@ async function kvFixedWindow(
 
 /* ── In-memory fallback (local dev / KV yok) ───────────────────────────── */
 
-const memStore = new Map<string, { n: number; resetAt: number }>()
+const memStore = new Map<string, { n: number, resetAt: number }>()
 
 function memFixedWindow(
   key: string,
@@ -187,7 +188,8 @@ function memFixedWindow(
   const resetAt = (slot + 1) * windowMs
   const cur = memStore.get(slotKey)
 
-  if (memStore.size > 5000) memStore.clear()
+  if (memStore.size > 5000)
+memStore.clear()
 
   if (cur && cur.n >= limit) {
     return {
@@ -226,7 +228,7 @@ function memFixedWindow(
  */
 export async function checkLimit(
   scope: string,
-  opts: { limit: number; windowMs: number; failClosed?: boolean },
+  opts: { limit: number, windowMs: number, failClosed?: boolean },
   req?: Request,
   extra?: string,
 ): Promise<LimitResult> {
@@ -239,8 +241,8 @@ export async function checkLimit(
   const ip = req ? clientIp(req) : 'unknown'
   const key = extra ? `${scope}:${ip}:${extra}` : `${scope}:${ip}`
 
-  const effective =
-    ip === 'unknown'
+  const effective
+    = ip === 'unknown'
       ? {
           limit: Math.max(1, Math.floor(opts.limit / 2)),
           windowMs: opts.windowMs,
@@ -257,7 +259,8 @@ export async function checkLimit(
         effective.windowMs,
         now,
       )
-    } catch {
+    }
+ catch {
       // KV HATA VERDİ. Pahalıysa fail-closed, ucuzsa fail-open.
       if (failClosed) {
         return {

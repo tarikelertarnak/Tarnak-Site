@@ -97,10 +97,10 @@ export function useScrollState<T extends HTMLElement>(
       clientWidth: el.clientWidth,
       scrollWidth: el.scrollWidth,
     }
-    setMetrics((prev) =>
-      prev.scrollLeft === next.scrollLeft &&
-      prev.clientWidth === next.clientWidth &&
-      prev.scrollWidth === next.scrollWidth
+    setMetrics(prev =>
+      prev.scrollLeft === next.scrollLeft
+      && prev.clientWidth === next.clientWidth
+      && prev.scrollWidth === next.scrollWidth
         ? prev
         : next,
     )

@@ -37,7 +37,7 @@ export function clientIp(req: Request): string {
   if (xff) {
     const parts = xff
       .split(',')
-      .map((s) => s.trim())
+      .map(s => s.trim())
       .filter(Boolean)
     const last = parts[parts.length - 1]
     if (last && looksLikeIp(last)) {

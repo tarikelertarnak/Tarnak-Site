@@ -43,7 +43,7 @@ export interface LegalBodyProps {
 export function LegalBody({ page }: LegalBodyProps) {
   const paragraflar = (page.body ?? '')
     .split(/\n\s*\n/)
-    .map((p) => p.trim())
+    .map(p => p.trim())
     .filter(Boolean)
 
   return (
@@ -68,7 +68,9 @@ export function LegalBody({ page }: LegalBodyProps) {
       )}
       {page.updated ? (
         <p className="mt-8 text-xs text-foreground/45">
-          Son güncelleme: {page.updated}
+          Son güncelleme:
+{' '}
+{page.updated}
         </p>
       ) : null}
     </div>

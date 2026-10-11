@@ -8,7 +8,7 @@ import {
   validateImageFile,
 } from '@/lib/image-crop'
 
-function gecerliDosya(overrides: { type?: string; size?: number } = {}): File {
+function gecerliDosya(overrides: { type?: string, size?: number } = {}): File {
   const { type = 'image/png', size = 1024 } = overrides
   return { type, size, name: 'x.png' } as File
 }
@@ -55,7 +55,7 @@ describe('profil fotoğrafı dosya doğrulaması', () => {
 })
 
 describe('dataUrlToFile', () => {
-  it("base64 PNG verisini gerçek MIME'li File'a çevirir", () => {
+  it('base64 PNG verisini gerçek MIME\'li File\'a çevirir', () => {
     const file = dataUrlToFile('data:image/png;base64,aGVsbG8=', 'profil.png')
     assert.equal(file.name, 'profil.png')
     assert.equal(file.type, 'image/png')

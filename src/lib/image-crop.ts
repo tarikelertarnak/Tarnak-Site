@@ -33,7 +33,7 @@ export interface PixelCrop {
   height: number
 }
 
-export type ImageValidation = { ok: true } | { ok: false; error: string }
+export type ImageValidation = { ok: true } | { ok: false, error: string }
 
 /** Tür + boyut kontrolü. Hata mesajları doğrudan kullanıcıya gösterilir. */
 export function validateImageFile(file: File): ImageValidation {

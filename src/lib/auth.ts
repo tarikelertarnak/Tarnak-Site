@@ -45,7 +45,7 @@ export async function verifyPassword(
     return bcrypt.compare(password, storedHash)
   }
   // Legacy SHA-256 fallback — migrate to new hash
-  const sha = await import('node:crypto').then((m) =>
+  const sha = await import('node:crypto').then(m =>
     m.createHash('sha256').update(password).digest('hex'),
   )
   return safeEqual(sha, storedHash)
@@ -63,7 +63,7 @@ function safeEqual(a: string, b: string): boolean {
 export async function verifyCredentials(
   username: string,
   password: string,
-): Promise<{ ok: boolean; needsRehash: boolean }> {
+): Promise<{ ok: boolean, needsRehash: boolean }> {
   const admin = await getAdmin()
   const userOk = safeEqual(username, admin.username)
   // Kullanici adi yanlissa bile sifre dogrulamasini CALISTIR (erken donus YOK).

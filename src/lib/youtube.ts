@@ -97,7 +97,7 @@ function temizle(deger: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    .replace(/&#39;/g, '\'')
     .trim()
 }
 
@@ -121,7 +121,8 @@ export async function kanalVideolari(
       return []
     }
     return parseKanalBesleme(await yanit.text(), enFazla)
-  } catch {
+  }
+ catch {
     // Ağ hatası / kanal silinmiş — bölüm gizlensin, sayfa patlamasın.
     return []
   }

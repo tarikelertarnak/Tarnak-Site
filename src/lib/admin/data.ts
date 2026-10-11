@@ -18,7 +18,8 @@ import { missingColumnFrom } from '@/lib/postgrest'
 export function adminDb() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key) return null
+  if (!url || !key)
+return null
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
@@ -43,7 +44,7 @@ export function slugify(input: string): string {
     .slice(0, 120)
 }
 
-type CoerceResult = { ok: true; value: unknown } | { ok: false; error: string }
+type CoerceResult = { ok: true, value: unknown } | { ok: false, error: string }
 
 /** Istemciden gelen ham degeri alan tipine cevirir ve dogrular. */
 export function coerce(field: FieldDef, raw: unknown): CoerceResult {
@@ -98,7 +99,7 @@ export function coerce(field: FieldDef, raw: unknown): CoerceResult {
 
     case 'tags': {
       const list = Array.isArray(raw) ? raw.map(String) : String(raw).split(',')
-      const cleaned = list.map((s) => s.trim()).filter(Boolean)
+      const cleaned = list.map(s => s.trim()).filter(Boolean)
       return { ok: true, value: cleaned }
     }
 
@@ -111,9 +112,9 @@ export function coerce(field: FieldDef, raw: unknown): CoerceResult {
         }
       }
       if (
-        field.type === 'select' &&
-        field.options &&
-        !field.options.includes(s)
+        field.type === 'select'
+        && field.options
+        && !field.options.includes(s)
       ) {
         return { ok: false, error: `${field.label} için geçersiz değer: ${s}` }
       }
@@ -128,8 +129,8 @@ export function coerce(field: FieldDef, raw: unknown): CoerceResult {
   }
 }
 
-export type BuildResult =
-  { ok: true; payload: Record<string, unknown> } | { ok: false; error: string }
+export type BuildResult
+  = { ok: true, payload: Record<string, unknown> } | { ok: false, error: string }
 
 /**
  * Istek govdesinden DB'ye yazilacak nesneyi uretir.
@@ -214,7 +215,7 @@ export async function writeWithColumnFallback(
   table: string,
   payload: Record<string, unknown>,
   mode: 'insert' | 'update',
-  match?: { column: string; value: string | number },
+  match?: { column: string, value: string | number },
   select = '*',
 ): Promise<WriteResult> {
   const db = adminDb()
@@ -229,8 +230,8 @@ export async function writeWithColumnFallback(
   const dropped: string[] = []
 
   for (let attempt = 0; attempt < 4; attempt++) {
-    const query =
-      mode === 'insert'
+    const query
+      = mode === 'insert'
         ? db.from(table).insert(working).select(select)
         : db
             .from(table)
