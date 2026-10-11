@@ -110,8 +110,22 @@ export function useLocale(): LocaleContextValue {
   return ctx
 }
 
-/** Look up static UI strings for the active locale. */
+/**
+ * Look up static UI strings for the active locale.
+ *
+ * `t` MEMOIZE EDİLİR (2026-10-11 ölçümü). Önce her render'da yeni bir `t`
+ * üretiyordu; `useEffect(..., [t])` kullanan her bileşen (chat dahil) her
+ * render'da temizlenip yeniden başlıyor, uçuştaki istek/yanıt `cancelled`
+ * bayrağına takılıp sessizce düşüyordu. Kimlik artık yalnızca `locale`
+ * değiştiğinde değişir.
+ */
 export function useT() {
   const { locale } = useLocale()
-  return { t: (key: string, vars?: Record<string, string | number>) => t(locale, key, vars), locale }
+  return useMemo(
+    () => ({
+      t: (key: string, vars?: Record<string, string | number>) => t(locale, key, vars),
+      locale,
+    }),
+    [locale],
+  )
 }

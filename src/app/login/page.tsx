@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AuthForm } from '@/components/auth/auth-form'
 import { Navigation } from '@/components/navigation'
+import { safeNext } from '@/lib/safe-next'
 import { getSessionUser } from '@/lib/supabase/session'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,10 +19,18 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export const dynamic = 'force-dynamic'
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>
+}) {
+  // Kullanici istegi (2026-10-11): giris/kayit sonrasi "?next=/chat" degerine
+  // don. safeNext() acik yonlendirmeyi (open redirect) engeller.
+  const next = safeNext((await searchParams)?.next, '/')
   const user = await getSessionUser()
   if (user) {
-    redirect(user.role === 'admin' ? '/admin' : '/')
+    // `next` varsa ona don; yoksa eski davranis (admin -> /admin).
+    redirect(next !== '/' ? next : (user.role === 'admin' ? '/admin' : '/'))
   }
 
   return (

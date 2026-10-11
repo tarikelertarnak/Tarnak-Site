@@ -90,4 +90,50 @@ describe('chat-v2 arayüz sözleşmesi', () => {
     expect(SRC).toContain('loginRequired')
     expect(SRC).toContain('isAuthenticated')
   })
+
+  /*
+    REGRESYON (2026-10-11): "Sohbete girmek için giriş yap." GİRİŞ YAPMIŞKEN
+    çıkıyordu. Ölçülen kök neden: root layout `dynamic = 'force-static'`
+    (layout.tsx:58) → Next alt rotalarda `cookies()`'ı BOŞ döndürüyor, yani
+    sunucudaki getSessionUser() daima null dönüyordu. Route handler'lar layout
+    DIŞINDA olduğu için /api/admin/session aynı çerezi doğru okuyordu.
+  */
+  describe('oturum İSTEMCİDE çözülür (force-static tuzağı)', () => {
+    const PAGE = readFileSync(
+      join(process.cwd(), 'src/app/chat/page.tsx'),
+      'utf8',
+    )
+
+    it('/chat sayfası oturumu SUNUCUDA okumaz', () => {
+      // Sunucu tarafı okuma her zaman null döndürüyordu; tamamen kaldırıldı.
+      // (Yorumlarda geçebilir; önemli olan import + çağrı.)
+      expect(PAGE).not.toMatch(/^import \{[^}]*getSessionUser/m)
+      expect(PAGE).not.toMatch(/await getSessionUser\(/)
+      expect(PAGE).not.toContain('supabase/session')
+    })
+
+    it('bileşen oturumu /api/admin/session üzerinden okur', () => {
+      expect(SRC).toContain('/api/admin/session')
+      // layout dışında olduğu için çerezi doğru okuyan yol
+      expect(SRC).toMatch(/action:\s*'open'/)
+    })
+
+    it('giriş yapmamış kullanıcıya iki buton verir: Kayıt ol + Giriş yap', () => {
+      expect(SRC).toContain('chat.registerBtn')
+      expect(SRC).toContain('chat.loginBtn')
+      // her ikisi de next ile (giriş sonrası sohbete dönüş)
+      expect(SRC).toMatch(/\/sign\?next=/)
+      expect(SRC).toMatch(/\/login\?next=/)
+    })
+
+    it('/login ve /sign sayfaları ?next= destekler', () => {
+      for (const page of ['login', 'sign']) {
+        const src = readFileSync(join(process.cwd(), `src/app/${page}/page.tsx`), 'utf8')
+        expect(src).toContain('safeNext')
+        expect(src).toContain('searchParams')
+        // giriş sonrası her zaman / veya /admin'e atan ESKİ davranış kalktı
+        expect(src).toMatch(/redirect\(next !== '\/' \? next/)
+      }
+    })
+  })
 })

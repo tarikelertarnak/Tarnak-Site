@@ -5,7 +5,6 @@ import { ChatIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { getLocalizedContent } from '@/lib/i18n-server'
 import { siteUrl } from '@/lib/site-url'
-import { getSessionUser } from '@/lib/supabase/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,40 +38,15 @@ export const metadata: Metadata = {
 }
 
 export default async function ChatPage() {
-  // Chat no longer requires login on the PAGE level (SEO visibility for
-  // "tarik eler chat" searches); auth lives in the API layer. Logged-in users
-  // get their name; anonymous visitors just see the window (writes still 401).
-  const user = await getSessionUser()
-  const content = await getLocalizedContent()
-
   /*
-    Chat v2 (2026-10-11): girisli her kullaniciya otomatik olarak site sahibiyle
-    TEK bir dogrudan sohbet acilir (kullanici istegi). Sema kurulmamissa
-    conversationId null doner ve ChatV2 kurulum yonlendirmesi gosterir.
+    Chat v2 — oturum ve sohbet İSTEMCİDE çözümlenir.
+    Gerekçe: root layout 'force-static' olduğu için sunucuda cookies() boş
+    dönüyor ve burada getSessionUser() her zaman null kalıyordu. Layout'a
+    dokunmuyoruz (1102 nedeniyle bilinçli); bunun yerine /api/admin/session
+    route handler'ı (layout dışında, çerezi doğru okuyor) kullanılıyor.
+    Sayfa yalnızca SEO/yerleşim için sunucuda render edilir.
   */
-  let conversationId: string | null = null
-  let schemaMissing = false
-  if (user) {
-    try {
-      const { getOrCreateDirectConversation } = await import('@/lib/chat-v2')
-      const { createAdminClient } = await import('@/lib/supabase/admin')
-      const { data: owner } = await createAdminClient()
-        .from('profiles')
-        .select('id')
-        .eq('is_owner', true)
-        .limit(1)
-        .maybeSingle()
-      if (owner?.id && owner.id !== user.id) {
-        const conv = await getOrCreateDirectConversation(user.id, owner.id)
-        conversationId = conv.id
-      }
-    }
-    catch (e) {
-      if (e instanceof Error && e.name === 'ChatSchemaMissing') {
-        schemaMissing = true
-      }
-    }
-  }
+  const content = await getLocalizedContent()
 
   return (
     <div className="min-h-screen w-full relative">
@@ -108,12 +82,7 @@ export default async function ChatPage() {
             />
           </div>
           <div className="flex w-full flex-1 items-center justify-center px-4">
-            <ChatV2
-              conversationId={conversationId}
-              currentUserId={user?.id ?? ''}
-              isAuthenticated={!!user}
-              schemaMissing={schemaMissing}
-            />
+            <ChatV2 />
           </div>
         </Section>
       </main>

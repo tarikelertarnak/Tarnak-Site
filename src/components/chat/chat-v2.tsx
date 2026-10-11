@@ -1,6 +1,7 @@
 'use client'
 
 import type { ChatMessageRow } from '@/lib/chat-v2'
+import Link from 'next/link'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
@@ -22,19 +23,20 @@ import { cn } from '@/components/ui/cn'
  */
 
 interface ChatV2Props {
-  /** Kullanıcının oturum kimliği (mesaj göndermek için gerekli). */
-  conversationId: string | null
-  /** Bu istemcinin kullanıcı id'si — "benim mesajlarım"ı vurgulamak için. */
-  currentUserId: string
-  /** Oturum yoksa true → giriş çağrısı gösterilir. */
-  isAuthenticated: boolean
-  /** Şema kurulmamışsa sunucudan gelen uyarı. */
-  schemaMissing?: boolean
+  /** Geri dönülecek adres (giriş/kayıt sonrası). Varsayılan `/chat`. */
+  nextPath?: string
 }
 
 const EMOJIS = ['😀', '😂', '😊', '😍', '😎', '🤔', '👍', '🙏', '🔥', '💯', '🎉', '❤️', '✅', '⚡', '📌', '🤝']
 
-export function ChatV2({ conversationId, currentUserId, isAuthenticated, schemaMissing }: ChatV2Props) {
+/**
+ * Oturumu İSTEMCİDE çözeriz (2026-10-11 ölçümü): root layout `force-static`
+ * olduğu için sunucuda `cookies()` boş dönüyor ve `getSessionUser()` her zaman
+ * null kalıyordu — giriş yapmış kullanıcı bile "giriş yap" ekranını görüyordu.
+ * `/api/admin/session` route handler'ı layout DIŞINDA olduğu için aynı çerezi
+ * doğru okuyor. Güvenlik aynı: her API çağrısı yine yetkiyi sunucuda doğrular.
+ */
+export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const { t } = useT()
   const [messages, setMessages] = useState<ChatMessageRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -47,8 +49,66 @@ export function ChatV2({ conversationId, currentUserId, isAuthenticated, schemaM
   const [confirmMsg, setConfirmMsg] = useState<ChatMessageRow | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
   const [important, setImportant] = useState(false)
+  const [session, setSession] = useState<{ id: string } | null>(null)
+  const [sessionChecked, setSessionChecked] = useState(false)
+  const [schemaMissing, setSchemaMissing] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
+
+  const isAuthenticated = !!session
+  const currentUserId = session?.id ?? ''
+
+  /*
+    1) Oturumu oku. 2) Girişliyse site sahibiyle sohbeti aç/yokla.
+    İkisi de API üzerinden; `action: 'open'` yetkisiz kullanıcıyı otomatik
+    olarak sahibin sohbetine yönlendirir (kullanıcılar SADECE benimle konuşur).
+  */
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/admin/session')
+        const json = await res.json()
+        if (cancelled) {
+          return
+        }
+        if (!json?.user) {
+          setSession(null)
+          return
+        }
+        setSession({ id: json.user.id })
+        const open = await fetch('/api/chat/v2', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'open' }),
+        })
+        const openJson = await open.json()
+        if (cancelled) {
+          return
+        }
+        if (openJson?.code === 'CHAT_SCHEMA_MISSING') {
+          setSchemaMissing(true)
+        }
+        else if (openJson?.conversation?.id) {
+          setConversationId(openJson.conversation.id)
+        }
+      }
+      catch {
+        if (!cancelled) {
+          setError(t('chat.error'))
+        }
+      }
+      finally {
+        if (!cancelled) {
+          setSessionChecked(true)
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [t])
 
   const load = useCallback(async () => {
     if (!conversationId) {
@@ -198,11 +258,38 @@ export function ChatV2({ conversationId, currentUserId, isAuthenticated, schemaM
   }
 
   /* ── durumlar ─────────────────────────────────────────────────────── */
+  if (!sessionChecked) {
+    return <ChatNotice icon="⏳" text={t('chat.loading')} />
+  }
   if (schemaMissing) {
     return <ChatNotice icon="⚠️" text={t('chat.schemaMissingHint')} />
   }
   if (!isAuthenticated) {
-    return <ChatNotice icon="🔒" text={t('chat.loginRequired')} />
+    /*
+      Kullanıcı isteği (2026-10-11): "giriş yapmadıysam bana Kayıt ol ve
+      Giriş yap diye iki buton vermeli". `next` parametresiyle giriş/kayıt
+      sonrası doğrudan bu sohbete dönülür.
+    */
+    return (
+      <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-foreground/10 bg-background p-10 text-center">
+        <span className="text-3xl">🔒</span>
+        <p className="text-sm text-foreground-60">{t('chat.loginRequired')}</p>
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            href={`/sign?next=${encodeURIComponent(nextPath)}`}
+            className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
+          >
+            {t('chat.registerBtn')}
+          </Link>
+          <Link
+            href={`/login?next=${encodeURIComponent(nextPath)}`}
+            className="inline-flex h-10 items-center rounded-lg border border-primary px-4 text-sm font-medium text-primary no-underline transition-colors hover:bg-primary/10"
+          >
+            {t('chat.loginBtn')}
+          </Link>
+        </div>
+      </div>
+    )
   }
   if (!conversationId) {
     return <ChatNotice icon="💬" text={t('chat.noConversation')} />

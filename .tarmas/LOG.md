@@ -701,3 +701,76 @@ calismiyordu; bu yuzden refactor tarayicida hic DOGRULANMAMISTI. Dev sunucu ile 
 testi yapilmadi — siralama secenekleri `SearchableCombobox` icinde kapali panelde
 render edilmiyor (SSR HTML'inde yok). Bu defect `projects-grid.sort-contract.test.ts`
 ile deterministik olarak korunuyor; e2e testi ayni garanti icin kirilgan olurdu.
+
+---
+
+## [2026-10-11] BUG · Sohbet "giriş yapmışken giriş yap" + giriş/kayıt butonları + dönüş
+
+**Kullanıcı şikayeti:** "Sohbete girmek için giriş yap." GİRİŞ YAPMIŞKEN çıkıyor.
+Giriş yapılmamışsa "Kayıt ol" + "Giriş yap" butonları olsun; girişten sonra otomatik
+/chat'e dönsün.
+
+### Ölçüm (tahmin değil)
+
+Projenin kendi `ADMIN_SECRET`'ıyla geçerli `admin_session` token'ı imzalanıp HTTP ile
+gönderildi:
+
+| istek                | sonuç                                    |
+| -------------------- | ---------------------------------------- |
+| `/api/admin/session` | 200 · kullanıcı DÖNDÜ ✅                 |
+| `/api/chat/v2`       | 503 CHAT_SCHEMA_MISSING (beklenen)       |
+| `/chat`              | 200 · "Sohbete girmek için giriş yap" ❌ |
+
+Sonra sayfaya geçici `DBG|` marker'ı basıldı: `user=NULL, schema=false, conv=null`.
+Önbellek değil (`cache-control: no-store`, `x-nextjs-cache: -`).
+
+### Kök neden (2 katman)
+
+1. **`src/app/layout.tsx:58` → `export const dynamic = 'force-static'`.** Next'in
+   belgelenmiş davranışı: `force-static` altındaki tüm segment ağacında `cookies()`
+   **boş** döner. `/chat` kendi `force-dynamic` dese bile layout kazanıyor. Yani
+   sunucudaki `getSessionUser()` **her zaman** null döndürüyordu — giriş yapmış kullanıcı
+   da "giriş yap" ekranını görüyordu. Route handler'lar layout DIŞINDA olduğu için
+   `/api/admin/session` aynı çerezi doğru okuyordu.
+   Layout bilinçli (`revalidate=300` → Cloudflare "Dummy queue" 1102 askıya çıkması);
+   **dokunulmadı.** `/chat` oturumu istemciye taşındı.
+2. **`useT()` her render'da YENİ `t` fonksiyonu üretiyordu** (`useMemo` yok). Bu yüzden
+   `useEffect(..., [t])` her render'da temizlenip yeniden başlıyor, uçuştaki istek
+   `cancelled` bayrağına takılıp sessizce düşüyordu. Paylaşılan kodda
+   (`locale-provider.tsx`) `useMemo` ile düzeltildi.
+
+### Değişiklikler
+
+- `src/app/chat/page.tsx` — sunucu tarafı oturum okuması KALDIRILDI; `<ChatV2 />`.
+- `src/components/chat/chat-v2.tsx` — oturum `/api/admin/session` → `action:'open'`
+  ile istemcide çözülüyor. Giriş yoksa **Kayıt Ol + Giriş Yap** butonları
+  (`?next=%2Fchat` taşıyarak). Props sadeleşti (`isAuthenticated`/`conversationId`
+  kaldırıldı → state).
+- `src/lib/safe-next.ts` (yeni) — `?next=` çözümleyici. **Açık yönlendirme (open
+  redirect) engeli:** yalnız kök-relative site içi yollar; `//evil.com`, `/\\evil.com`,
+  `https://…`, `javascript:` reddedilir.
+- `src/app/login/page.tsx` + `sign/page.tsx` — `?next=` desteği. Öncesi girişten sonra
+  **her zaman** `/` veya `/admin`'e atıyordu.
+- `src/app/api/chat/v2/route.ts` — `action:'open'` artık `peerId` vermeyen normal
+  kullanıcıyı da sahibin sohbetine yönlendiriyor (istemci öyle çağırıyordu).
+
+### Doğrulama
+
+- `tsc --noEmit` **0** · `eslint . --max-warnings 0` **0** · `vitest run` **523/523**
+  (509 → +14: 3 oturum ekranı + 7 safeNext + 4 sözleşme).
+- **NEGATİF KONTROL (2 kez, byte-exact geri yükleme):** `isAuthenticated=false` + Kayıt
+  Ol butonu kaldırılınca 2 test kırıldı; `//host` guard'ı ve `redirect(next…)`
+  bozulunca testler kırıldı. Testler gerçekten koruyor.
+- **Playwright ile tarayıcı doğrulaması YAPILAMADI (ortam):** bu makinede `next dev`
+  hiç hidrasyon yapmıyor — HMR ws `ERR_INVALID_HTTP_RESPONSE`, taze sunucuda bile
+  `/ /chat /about /login` → React mount 0, "Ara" butonu açmıyor. Bu **kode değil ortam**
+  sorunu; `playwright.config.ts` zaten yazılı ("next dev HMR WebSocket'i ölüyor ve
+  hydration başlamıyor") ve bu yüzden e2e'yi `next build && next start`'a taşımış.
+  `next build` ise bu makinede (WSL'de `lightningcss.linux-x64-gnu.node` eksik)
+  çalışmıyor. Bu yüzden doğrulama **jsdom render testi** ile yapıldı; geçici Playwright
+  spec'leri geri dönüşüm kutusuna gönderildi (doğrulanamayan test bırakılmaz).
+
+### Bekleyen
+
+`supabase/chat.sql` SQL Editor'da çalıştırılmalı; o ana kadar API 503 döner ve şema
+uyarısı görünür (uygulama çökmez).

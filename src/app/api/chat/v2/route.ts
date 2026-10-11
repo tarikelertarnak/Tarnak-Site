@@ -86,16 +86,30 @@ export async function POST(req: Request) {
   const admin = user.role === 'admin'
 
   try {
-    // ADMIN herkese açık sohbet başlatabilir (panelde "sohbet oluştur").
+    // ADMIN herhangi biriyle sohbet açabilir; NORMAL KULLANICI yalnızca site
+    // sahibiyle (kullanıcı isteği: "kullanıcılar sadece benle konuşabilir").
     if (action === 'open') {
       const peerId = typeof body?.peerId === 'string' ? body.peerId : ''
-      if (!peerId) {
-        return NextResponse.json({ success: false, message: 'Karşı taraf gerekli.' }, { status: 400 })
+      if (admin) {
+        if (!peerId) {
+          return NextResponse.json({ success: false, message: 'Karşı taraf gerekli.' }, { status: 400 })
+        }
+        return NextResponse.json({
+          success: true,
+          conversation: await getOrCreateDirectConversation(user.id, peerId),
+        })
       }
-      const conv = admin
-        ? await getOrCreateDirectConversation(user.id, peerId)
-        : await getOrCreateDirectConversation(user.id, await siteOwnerId())
-      return NextResponse.json({ success: true, conversation: conv })
+      const ownerId = await siteOwnerId()
+      if (!ownerId) {
+        return NextResponse.json({ success: false, message: 'Sohbet sahibi bulunamadı.' }, { status: 503 })
+      }
+      if (ownerId === user.id) {
+        return NextResponse.json({ success: false, message: 'Sahip kendi sohbetini açamaz.' }, { status: 400 })
+      }
+      return NextResponse.json({
+        success: true,
+        conversation: await getOrCreateDirectConversation(user.id, ownerId),
+      })
     }
 
     if (!hasSessionPermission(user, 'chat.send')) {
