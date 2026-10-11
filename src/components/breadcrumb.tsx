@@ -16,11 +16,11 @@ export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
-    itemListElement: items.map((item, i) => ({
+    'itemListElement': items.map((item, i) => ({
       '@type': 'ListItem',
-      position: i + 1,
-      name: item.label,
-      item: siteUrl(item.href),
+      'position': i + 1,
+      'name': item.label,
+      'item': siteUrl(item.href),
     })),
   }
   return (
@@ -37,7 +37,8 @@ export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
 
 export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
   // Tek öğe varsa navigasyon anlamsız — basma.
-  if (items.length < 2) return null
+  if (items.length < 2)
+return null
 
   return (
     <nav aria-label="Breadcrumb" className="w-full">

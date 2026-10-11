@@ -107,7 +107,8 @@ export function CropModal({
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault()
         last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
+      }
+ else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault()
         first.focus()
       }
@@ -131,7 +132,7 @@ export function CropModal({
     let cancelled = false
     getCroppedImg(imageSrc, pixels, rotation, PREVIEW_SIZE)
       .then(
-        (canvas) =>
+        canvas =>
           !cancelled && setPreview(canvas.toDataURL('image/webp', 0.8)),
       )
       .catch(() => {
@@ -151,9 +152,11 @@ export function CropModal({
     try {
       const canvas = await getCroppedImg(imageSrc, pixels, rotation, OUTPUT)
       await onSave(canvasToFile(canvas))
-    } catch {
+    }
+ catch {
       setError('Fotoğraf işlenemedi. Farklı bir görsel dene.')
-    } finally {
+    }
+ finally {
       setSaving(false)
     }
   }
@@ -172,7 +175,7 @@ export function CropModal({
         role="dialog"
         aria-modal="true"
         aria-label="Profil fotoğrafını kırp"
-        onClick={(event) => event.stopPropagation()}
+        onClick={event => event.stopPropagation()}
         className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-foreground-200/10 bg-background"
       >
         <div className="flex shrink-0 items-center justify-between border-b border-foreground-200/10 px-5 py-3.5">
@@ -207,7 +210,7 @@ export function CropModal({
             zoomSpeed={0.15}
             keyboardStep={0.1}
             cropperProps={{
-              tabIndex: 0,
+              'tabIndex': 0,
               'aria-label': 'Kırpma alanı — ok tuşlarıyla kaydır',
             }}
             // "Yeniden Kırp" akışında görsel Supabase URL'inden gelir; CORS'suz
@@ -243,7 +246,7 @@ export function CropModal({
               max={MAX_ZOOM}
               step={ZOOM_STEP}
               value={zoom}
-              onChange={(event) => setZoom(Number(event.target.value))}
+              onChange={event => setZoom(Number(event.target.value))}
               aria-label="Yakınlaştırma"
               className="h-2 min-w-0 flex-1 cursor-pointer accent-[var(--tprimary)]"
             />
@@ -271,7 +274,7 @@ export function CropModal({
               <Button
                 variant="bordered"
                 size="sm"
-                onPress={() => setRotation((value) => (value + 90) % 360)}
+                onPress={() => setRotation(value => (value + 90) % 360)}
                 isDisabled={saving}
                 startContent={
                   <Icon icon="mdi:rotate-right" width={16} height={16} />
@@ -290,13 +293,13 @@ export function CropModal({
                 onPress={submit}
                 isLoading={saving}
                 isDisabled={!pixels}
-                startContent={
+                startContent={(
                   <Icon
                     icon="mdi:content-save-outline"
                     width={18}
                     height={18}
                   />
-                }
+                )}
               >
                 Yeni profil fotoğrafını kaydet
               </Button>

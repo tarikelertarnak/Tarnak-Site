@@ -39,22 +39,22 @@ import {
 
 export interface SplitButtonPartProps {
   /** Görünür içerik: ikon + yazı. */
-  children: ReactNode
-  href?: string
-  onClick?: () => void
+  'children': ReactNode
+  'href'?: string
+  'onClick'?: () => void
   /** Sadece ikon (sağ kare yarı için). */
-  label?: string
+  'label'?: string
   /** `download` özniteliği — indirme yarıları için. */
-  download?: boolean | string
-  target?: string
-  rel?: string
-  title?: string
+  'download'?: boolean | string
+  'target'?: string
+  'rel'?: string
+  'title'?: string
   'aria-label'?: string
   'aria-expanded'?: boolean
   'aria-haspopup'?: boolean
   /** Sabit kare genişlikte ikon yarı (ikon ortalanır). */
-  iconOnly?: boolean
-  ref?: React.Ref<HTMLButtonElement>
+  'iconOnly'?: boolean
+  'ref'?: React.Ref<HTMLButtonElement>
 }
 
 /** Sağ (ikon) yarının kare genişliği — 40px buton yüksekliğiyle aynı. */
@@ -125,10 +125,11 @@ function isModifiedClick(e: React.MouseEvent) {
  */
 function hasContentPart(parts: SplitButtonPartProps[], index: number) {
   const c = parts[index]?.children
-  if (typeof c === 'string' || typeof c === 'number') return true
+  if (typeof c === 'string' || typeof c === 'number')
+return true
   return (
-    Array.isArray(c) &&
-    c.some((x) => typeof x === 'string' || typeof x === 'number')
+    Array.isArray(c)
+    && c.some(x => typeof x === 'string' || typeof x === 'number')
   )
 }
 
@@ -154,7 +155,8 @@ export function SplitButton({
    */
   ref?: React.Ref<HTMLDivElement>
 }) {
-  if (parts.length === 0) return null
+  if (parts.length === 0)
+return null
 
   const lastIndex = parts.length - 1
 
@@ -164,8 +166,8 @@ export function SplitButton({
         // Sabit kare yari: ya acikca isaretlenmis ya da (yoksa) son yari
         // ve oncesinde yazi/ikon disi bir yari varsa. Proje kartinda IKISI
         // de ikon oldugu icin `iconOnly` her ikisinde de verilmek zorunda.
-        const isIcon =
-          p.iconOnly ?? (i === lastIndex && !hasContentPart(parts, i))
+        const isIcon
+          = p.iconOnly ?? (i === lastIndex && !hasContentPart(parts, i))
         const base = cn(PART, isIcon ? ICON_PART : MAIN_PART)
 
         const inner = (
@@ -210,7 +212,8 @@ export function SplitButton({
             onClick={
               p.onClick
                 ? (e: React.MouseEvent) => {
-                    if (!isModifiedClick(e)) p.onClick!()
+                    if (!isModifiedClick(e))
+p.onClick!()
                   }
                 : undefined
             }

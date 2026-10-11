@@ -52,12 +52,12 @@ export function Faz6Editor({
 }) {
   return (
     <div className="space-y-4 pt-4">
-      {specs.map((spec) => (
+      {specs.map(spec => (
         <BolumKarti
           key={spec.anahtar}
           spec={spec}
           deger={value[spec.anahtar] as Kayit | undefined}
-          onChange={(yeni) => onChange({ ...value, [spec.anahtar]: yeni })}
+          onChange={yeni => onChange({ ...value, [spec.anahtar]: yeni })}
         />
       ))}
     </div>
@@ -85,12 +85,12 @@ function BolumKarti({
 
       {spec.alanlar ? (
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {spec.alanlar.map((alan) => (
+          {spec.alanlar.map(alan => (
             <Alan
               key={alan.anahtar}
               spec={alan}
               deger={mevcut[alan.anahtar]}
-              onChange={(y) => onChange({ ...mevcut, [alan.anahtar]: y })}
+              onChange={y => onChange({ ...mevcut, [alan.anahtar]: y })}
             />
           ))}
         </div>
@@ -104,7 +104,7 @@ function BolumKarti({
               ? (mevcut[spec.liste.anahtar] as Kayit[])
               : []
           }
-          onChange={(y) => onChange({ ...mevcut, [spec.liste!.anahtar]: y })}
+          onChange={y => onChange({ ...mevcut, [spec.liste!.anahtar]: y })}
         />
       ) : null}
     </section>
@@ -124,10 +124,11 @@ function ListeEdit({
     const k: Kayit = {}
     if (spec.tip === 'list') {
       k[spec.anahtar] = []
-    } else {
+    }
+ else {
       for (const a of spec.cocuk ?? [spec]) {
-        k[a.anahtar] =
-          a.tip === 'bool'
+        k[a.anahtar]
+          = a.tip === 'bool'
             ? false
             : a.tip === 'number'
               ? 0
@@ -150,7 +151,8 @@ function ListeEdit({
           <div key={i} className="rounded-xl border border-foreground/10 p-3">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-medium text-foreground/60">
-                #{i + 1}
+                #
+{i + 1}
               </span>
               <Button
                 size="sm"
@@ -167,7 +169,7 @@ function ListeEdit({
               </Button>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {(spec.cocuk ?? [spec]).map((a) => (
+              {(spec.cocuk ?? [spec]).map(a => (
                 <Alan
                   key={a.anahtar}
                   spec={a}
@@ -180,11 +182,11 @@ function ListeEdit({
                 />
               ))}
             </div>
-            {(spec.cocuk ?? [spec]).some((a) => a.cocuk) && (
+            {(spec.cocuk ?? [spec]).some(a => a.cocuk) && (
               <div className="mt-3 flex flex-col gap-3">
                 {(spec.cocuk ?? [spec])
-                  .filter((a) => a.cocuk)
-                  .map((a) => (
+                  .filter(a => a.cocuk)
+                  .map(a => (
                     <ListeEdit
                       key={a.anahtar}
                       spec={a}
@@ -243,7 +245,7 @@ function Alan({
         <input
           type="checkbox"
           checked={Boolean(deger)}
-          onChange={(e) => onChange(e.target.checked)}
+          onChange={e => onChange(e.target.checked)}
           className="h-4 w-4 accent-primary"
         />
         {spec.etiket}
@@ -257,10 +259,10 @@ function Alan({
         {etiket}
         <select
           value={String(deger ?? '')}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={e => onChange(e.target.value)}
           className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
         >
-          {(spec.secenekler ?? []).map((s) => (
+          {(spec.secenekler ?? []).map(s => (
             <option key={s} value={s}>
               {s}
             </option>

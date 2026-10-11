@@ -66,7 +66,8 @@ const MOTION_ONLY = new Set([
 function domPropsOnly(props: Record<string, unknown>) {
   const out: Record<string, unknown> = {}
   for (const [k, v] of Object.entries(props)) {
-    if (!MOTION_ONLY.has(k)) out[k] = v
+    if (!MOTION_ONLY.has(k))
+out[k] = v
   }
   return out
 }

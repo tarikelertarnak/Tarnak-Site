@@ -61,7 +61,7 @@ vi.mock('@/components/ui/drawer', () => ({
   ),
 }))
 vi.mock('@/components/ui/modal', () => ({
-  Modal: ({ open, children }: { open: boolean; children: React.ReactNode }) =>
+  Modal: ({ open, children }: { open: boolean, children: React.ReactNode }) =>
     open ? <div data-testid="modal">{children}</div> : null,
 }))
 vi.mock('@/components/ui/searchable-combobox', () => ({

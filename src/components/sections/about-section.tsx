@@ -57,8 +57,8 @@ export function AboutSection({
    * Artık HEPSİ aynı: ince mavi çerçeve, şeffaf arka plan, mavi yazı,
    * normal yazı boyutu/fontu.
    */
-  const LEVEL_BADGE_PILL =
-    'inline-flex items-center rounded-full border border-primary/70 bg-transparent px-2.5 py-0.5 text-xs font-normal normal-case text-primary'
+  const LEVEL_BADGE_PILL
+    = 'inline-flex items-center rounded-full border border-primary/70 bg-transparent px-2.5 py-0.5 text-xs font-normal normal-case text-primary'
   const about = content.about
   const { t } = useT()
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
@@ -80,7 +80,7 @@ export function AboutSection({
     phone: content.contact.phone,
     email: content.contact.email,
     url: siteUrl('/'),
-    social: content.social?.find((s) => s?.href)?.href,
+    social: content.social?.find(s => s?.href)?.href,
     note: vcard?.note,
   })
 
@@ -88,7 +88,7 @@ export function AboutSection({
     void navigator.clipboard?.writeText(value)
     setCopiedKey(key)
     window.setTimeout(
-      () => setCopiedKey((prev) => (prev === key ? null : prev)),
+      () => setCopiedKey(prev => (prev === key ? null : prev)),
       2000,
     )
   }
@@ -182,16 +182,15 @@ export function AboutSection({
                   <InfoRow
                     label={t('about.infoName')}
                     value={content.profile.firstName}
-                    action={
+                    action={(
                       <CopyValueButton
                         copied={copiedKey === 'name'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
                         onClick={() =>
-                          copyValue('name', content.profile.firstName)
-                        }
+                          copyValue('name', content.profile.firstName)}
                       />
-                    }
+                    )}
                   />
                   {/*
                     SOYAD — kopyala düğmesi 2026-10-06'da eklendi.
@@ -204,16 +203,15 @@ export function AboutSection({
                   <InfoRow
                     label={t('about.infoLastName')}
                     value={content.profile.lastName}
-                    action={
+                    action={(
                       <CopyValueButton
                         copied={copiedKey === 'lastName'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
                         onClick={() =>
-                          copyValue('lastName', content.profile.lastName)
-                        }
+                          copyValue('lastName', content.profile.lastName)}
                       />
-                    }
+                    )}
                   />
                   {/*
                     TAKMA AD SATIRI (2026-10-06, kullanıcı "bozuk" dedi).
@@ -234,44 +232,41 @@ export function AboutSection({
                   <InfoRow
                     label={t('about.infoNickname')}
                     value={content.profile.nickname}
-                    action={
+                    action={(
                       <CopyValueButton
                         copied={copiedKey === 'nickname'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
                         onClick={() =>
-                          copyValue('nickname', content.profile.nickname)
-                        }
+                          copyValue('nickname', content.profile.nickname)}
                       />
-                    }
+                    )}
                   />
                   <InfoRow
                     label={t('about.infoPhone')}
                     value={content.contact.phone}
-                    action={
+                    action={(
                       <CopyValueButton
                         copied={copiedKey === 'phone'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
                         onClick={() =>
-                          copyValue('phone', content.contact.phone)
-                        }
+                          copyValue('phone', content.contact.phone)}
                       />
-                    }
+                    )}
                   />
                   <InfoRow
                     label={t('about.infoEmail')}
                     value={content.contact.email}
-                    action={
+                    action={(
                       <CopyValueButton
                         copied={copiedKey === 'email'}
                         label={t('about.copy')}
                         copiedLabel={t('about.copied')}
                         onClick={() =>
-                          copyValue('email', content.contact.email)
-                        }
+                          copyValue('email', content.contact.email)}
                       />
-                    }
+                    )}
                   />
                   {/*
                     DİSCORD SATIRI TAŞINDI (2026-10-10, kullanıcı): "Kişisel
@@ -329,7 +324,7 @@ export function AboutSection({
                       </span>
                     </td>
                   </tr>
-                  {parseLanguages(content.profile.otherLanguages).map((row) => (
+                  {parseLanguages(content.profile.otherLanguages).map(row => (
                     <tr
                       key={row.name}
                       className="border-b border-foreground/200/10 last:border-b-0"
@@ -370,7 +365,7 @@ export function AboutSection({
                   {t('about.cvEducation')}
                 </p>
                 <ul className="flex flex-col gap-2.5">
-                  {about.cv.education.map((entry) => (
+                  {about.cv.education.map(entry => (
                     <CvEntryItem
                       key={`${entry.company}-${entry.role}`}
                       entry={entry}
@@ -390,7 +385,7 @@ export function AboutSection({
             </p>
             <div className="flex w-full">
               <ul className="mt-3 sm:mt-4 grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 lg:gap-4 w-full">
-                {about.toolbox.map((item) => (
+                {about.toolbox.map(item => (
                   <ToolboxItem key={item.label} item={item} />
                 ))}
               </ul>
@@ -406,7 +401,7 @@ export function AboutSection({
             </p>
             <div className="flex w-full">
               <ul className="mt-3 sm:mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 w-full">
-                {about.interests.map((item) => (
+                {about.interests.map(item => (
                   <InterestsItem
                     key={item.label}
                     icon={INTEREST_ICONS[item.icon] ?? <CodeIcon size={14} />}
@@ -428,10 +423,10 @@ export function AboutSection({
  * "İngilizce (A2), Almanca (A1)" → [{ name, level }].
  * Seviye parantezi yoksa boş string döner; ana dil tabloda ayrı satır.
  */
-function parseLanguages(raw: string): { name: string; level: string }[] {
+function parseLanguages(raw: string): { name: string, level: string }[] {
   return raw
     .split(',')
-    .map((s) => s.trim())
+    .map(s => s.trim())
     .filter(Boolean)
     .map((entry) => {
       const m = entry.match(/^(.*?)\s*\(([^)]+)\)$/)
@@ -465,7 +460,10 @@ function InfoRow({
   */
   return (
     <div className="flex items-center gap-2 border-b border-foreground/200/10 py-2">
-      <span className="shrink-0 text-sm text-foreground/60">{label}:</span>
+      <span className="shrink-0 text-sm text-foreground/60">
+{label}
+:
+</span>
       <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-foreground">
         {value.trim() || '—'}
       </span>
@@ -526,7 +524,10 @@ function CvEntryItem({
       <div className="flex min-w-0 flex-col gap-0.5">
         <p className="text-sm font-semibold leading-tight">{entry.role}</p>
         <p className="text-xs text-foreground-500">
-          {entry.company} <span className="mx-1.5 opacity-50">•</span>{' '}
+          {entry.company}
+{' '}
+<span className="mx-1.5 opacity-50">•</span>
+{' '}
           <span className="text-primary/80">{entry.period}</span>
         </p>
         <p className="mt-1 text-xs text-foreground-500 leading-relaxed">
@@ -550,8 +551,8 @@ function ToolboxItem({ item }: { item: ToolboxItemType }) {
   const icon = isCommand ? (
     <TerminalIcon size={14} />
   ) : (
-    (techIcon(item.label) ??
-    (href ? <LinkIcon size={14} /> : <CodeIcon size={14} />))
+    (techIcon(item.label)
+      ?? (href ? <LinkIcon size={14} /> : <CodeIcon size={14} />))
   )
   const body = (
     <>
@@ -567,8 +568,8 @@ function ToolboxItem({ item }: { item: ToolboxItemType }) {
       )}
     </>
   )
-  const chipCls =
-    'group flex flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-lg hover:shadow-primary/5 min-h-[38px]'
+  const chipCls
+    = 'group flex flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-lg hover:shadow-primary/5 min-h-[38px]'
 
   // Command type: clicking copies the command text to the clipboard.
   if (isCommand) {
@@ -577,7 +578,8 @@ function ToolboxItem({ item }: { item: ToolboxItemType }) {
         className={`${chipCls} cursor-pointer`}
         title={href ? t('about.toolboxCopy') : undefined}
         onClick={() => {
-          if (href) void navigator.clipboard?.writeText(href)
+          if (href)
+void navigator.clipboard?.writeText(href)
         }}
       >
         {body}
@@ -616,11 +618,11 @@ function InterestsItem({
   return (
     <Popover
       placement="bottom"
-      content={
+      content={(
         <div className="max-w-[200px] sm:max-w-[225px] break-words px-1 py-2 text-xs sm:text-sm">
           {content}
         </div>
-      }
+      )}
     >
       <li className="group flex animate-gradient cursor-pointer flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 min-h-[38px]">
         <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">

@@ -44,7 +44,7 @@ export function parsePhone(raw: string): PhoneValue {
     return EMPTY_PHONE
   }
   // En uzun eşleşen ülke kodunu seç (1, 3 ve 4 haneli kodlar var).
-  const match = COUNTRIES.filter((c) => digits.startsWith(c.code)).sort(
+  const match = COUNTRIES.filter(c => digits.startsWith(c.code)).sort(
     (a, b) => b.code.length - a.code.length,
   )[0]
   if (!match) {
@@ -59,7 +59,7 @@ export function parsePhone(raw: string): PhoneValue {
   }
 }
 
-const ISO_TO_CODE = new Map(COUNTRIES.map((c) => [c.iso2, c.code]))
+const ISO_TO_CODE = new Map(COUNTRIES.map(c => [c.iso2, c.code]))
 
 /** Ülke değişti: numarayı koru, eski ülke kodunu numaradan soy. */
 function rebaseNumber(prev: PhoneValue, nextIso2: string): PhoneValue {
@@ -108,7 +108,7 @@ export function PhoneInput({
   const minLen = minNumberDigits(value.code, value.iso2)
 
   const CODE_TO_ISO = useMemo(
-    () => new Map(COUNTRIES.map((c) => [c.code, c.iso2])),
+    () => new Map(COUNTRIES.map(c => [c.code, c.iso2])),
     [],
   )
 
@@ -142,14 +142,16 @@ export function PhoneInput({
    */
   const [autoGuessed, setAutoGuessed] = useState(false)
   useEffect(() => {
-    if (autoGuessed) return
+    if (autoGuessed)
+return
     // Alan zaten doluysa (kayıt geldi / kullanıcı seçti) karışma.
     if (value.iso2 || value.number || value.code) {
       setAutoGuessed(true)
       return
     }
     const detected = countryFromLanguages()
-    if (detected) onChange(rebaseNumber(EMPTY_PHONE, detected))
+    if (detected)
+onChange(rebaseNumber(EMPTY_PHONE, detected))
     setAutoGuessed(true)
   }, [autoGuessed])
 
@@ -209,7 +211,7 @@ export function PhoneInput({
             inputMode="numeric"
             placeholder={t('phone.codePlaceholder')}
             value={shownCode}
-            onValueChange={(v) => setCodeDraft(sanitizeCountryCode(v))}
+            onValueChange={v => setCodeDraft(sanitizeCountryCode(v))}
             maxLength={COUNTRY_CODE_MAX}
             className="[&_input]:w-full [&_input]:min-w-0 [&_input]:px-1 [&_input]:text-center [&_input]:text-sm"
             isInvalid={isInvalid}
@@ -223,12 +225,11 @@ export function PhoneInput({
             aria-label={label}
             placeholder={placeholder ?? t('phone.numberPlaceholder')}
             value={value.number}
-            onValueChange={(number) =>
+            onValueChange={number =>
               onChange({
                 ...value,
                 number: sanitizeNumber(number, value.code, value.iso2),
-              })
-            }
+              })}
             maxLength={hasRule ? maxLen : undefined}
             minLength={hasRule && minLen > 0 ? minLen : undefined}
             inputMode="numeric"

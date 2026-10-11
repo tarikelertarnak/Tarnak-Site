@@ -28,14 +28,16 @@ import { describe, expect, it } from 'vitest'
 const FILE = join(process.cwd(), 'src/components/projects/projects-grid.tsx')
 
 function scoreSwitch(): string {
-  const src = readFileSync(FILE, 'utf8')
+  // Satır sonları normalize edilir: prettier/eslint CRLF<->LF dönüşümü yapıyor,
+  // test bunun TIKANMAMALI (satır sonuna göre kırılganlık = kırık regresyon testi).
+  const src = readFileSync(FILE, 'utf8').replace(/\r\n/g, '\n')
   const start = src.indexOf('const score = (p: ProjectItem): number =>')
   expect(start, 'score() bulunamadı').toBeGreaterThan(-1)
   // score() govdesi, `switch`in kapanışından ve `return 0` satirindan sonra
   // biter. En guvenli sinir: score() satirindan sonraki ilk `    }` (4 bosluk
   // girintili fonksiyon kapanisi) — ic ice switch'ler 8/10 bosluk girintili.
   const tail = src.slice(start)
-  const endRel = tail.indexOf('\r\n    }')
+  const endRel = tail.indexOf('\n    }')
   expect(endRel, 'score() kapanışı bulunamadı').toBeGreaterThan(-1)
   return src.slice(start, start + endRel)
 }
@@ -51,19 +53,19 @@ describe('projectsGrid score() switch yapısı', () => {
     expect(after).not.toMatch(/\bcase\s+['"]/)
   })
 
-  it("stars ve forks case'leri default: önce gelir (sıralama gerçekten çalışsın)", () => {
+  it('stars ve forks case\'leri default: önce gelir (sıralama gerçekten çalışsın)', () => {
     const defIdx = block.indexOf('default:')
-    const starsIdx = block.indexOf("case 'stars':")
-    const forksIdx = block.indexOf("case 'forks':")
-    expect(starsIdx, "case 'stars' yok").toBeGreaterThan(-1)
-    expect(forksIdx, "case 'forks' yok").toBeGreaterThan(-1)
+    const starsIdx = block.indexOf('case \'stars\':')
+    const forksIdx = block.indexOf('case \'forks\':')
+    expect(starsIdx, 'case \'stars\' yok').toBeGreaterThan(-1)
+    expect(forksIdx, 'case \'forks\' yok').toBeGreaterThan(-1)
     expect(starsIdx).toBeLessThan(defIdx)
     expect(forksIdx).toBeLessThan(defIdx)
   })
 
   it('score() stars için p.stars, forks için p.forks döndürür', () => {
-    const starsIdx = block.indexOf("case 'stars':")
-    const forksIdx = block.indexOf("case 'forks':")
+    const starsIdx = block.indexOf('case \'stars\':')
+    const forksIdx = block.indexOf('case \'forks\':')
     const afterStars = block.slice(starsIdx, starsIdx + 200)
     const afterForks = block.slice(forksIdx, forksIdx + 200)
     expect(afterStars).toContain('p.stars')

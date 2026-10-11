@@ -196,14 +196,16 @@ export function CreditsBrowser({
   useEffect(() => {
     let alive = true
     fetch('/api/credits/leaderboard')
-      .then((res) =>
+      .then(res =>
         res.ok ? (res.json() as Promise<{ items?: LeaderboardEntry[] }>) : null,
       )
       .then((data) => {
-        if (alive) setLeaderboard(data?.items ?? [])
+        if (alive)
+setLeaderboard(data?.items ?? [])
       })
       .catch(() => {
-        if (alive) setLeaderboard([])
+        if (alive)
+setLeaderboard([])
       })
     return () => {
       alive = false
@@ -214,8 +216,8 @@ export function CreditsBrowser({
   const hit = (e: Entry) => !q || e.searchText.includes(q)
   const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name, 'tr')
   const arrange = (list: Entry[]) => {
-    const sorted =
-      sort === 'az'
+    const sorted
+      = sort === 'az'
         ? [...list].sort(byName)
         : [...list].sort(
             (a, b) => (b.revenue ?? 0) - (a.revenue ?? 0) || byName(a, b),
@@ -223,7 +225,7 @@ export function CreditsBrowser({
     return sorted.filter(hit)
   }
 
-  const contributorEntries: Entry[] = contributors.map((c) => ({
+  const contributorEntries: Entry[] = contributors.map(c => ({
     key: c.name,
     name: c.name,
     searchText: `${c.name} ${c.role} ${c.roleEn}`.toLowerCase(),
@@ -231,16 +233,18 @@ export function CreditsBrowser({
       <CreditRow
         left={c.name
           .split(' ')
-          .map((w) => w[0])
+          .map(w => w[0])
           .join('')
           .slice(0, 2)
           .toUpperCase()}
         title={c.name}
-        subtitle={
+        subtitle={(
           <>
-            <RoleIcon name={c.roleIcon} /> {isEn ? c.roleEn : c.role}
+            <RoleIcon name={c.roleIcon} />
+{' '}
+{isEn ? c.roleEn : c.role}
           </>
-        }
+        )}
         right={
           c.link ? (
             <a
@@ -271,44 +275,49 @@ export function CreditsBrowser({
     ),
   }))
 
-  const translatorEntries: Entry[] = translators.map((x) => ({
+  const translatorEntries: Entry[] = translators.map(x => ({
     key: x.lang,
     name: x.lang,
     searchText: `${x.lang} ${x.name} ${x.noteTr} ${x.noteEn}`.toLowerCase(),
     render: () => (
       <CreditRow
         left={<PersonIcon />}
-        title={
+        title={(
           <>
-            {x.lang} <span className="text-foreground/40">—{x.name}</span>
+            {x.lang}
+{' '}
+<span className="text-foreground/40">
+—
+{x.name}
+</span>
           </>
-        }
+        )}
         subtitle={isEn ? x.noteEn : x.noteTr}
       />
     ),
   }))
 
-  const donorEntries: Entry[] = topDonors.map((x) => ({
+  const donorEntries: Entry[] = topDonors.map(x => ({
     key: x.nameTr,
     name: isEn ? x.nameEn : x.nameTr,
     searchText: `${x.nameTr} ${x.nameEn} ${x.noteTr} ${x.noteEn}`.toLowerCase(),
-    render: (rank) => (
+    render: rank => (
       <CreditRow
         left={<span className="text-sm font-bold text-primary">{rank}</span>}
         title={isEn ? x.nameEn : x.nameTr}
-        subtitle={
+        subtitle={(
           <a
             href="/donate"
             className="font-semibold text-primary underline-offset-2 hover:underline"
           >
             {isEn ? x.noteEn : x.noteTr}
           </a>
-        }
+        )}
       />
     ),
   }))
 
-  const teamEntries: Entry[] = team.map((x) => ({
+  const teamEntries: Entry[] = team.map(x => ({
     key: x.name,
     name: x.name,
     searchText: `${x.name} ${x.role} ${x.roleEn}`.toLowerCase(),
@@ -324,31 +333,31 @@ export function CreditsBrowser({
   const viewsLine = (count: number) =>
     t('credits.views').replace('{count}', String(count))
 
-  const sponsorEntries: Entry[] = (leaderboard ?? []).map((x) => ({
+  const sponsorEntries: Entry[] = (leaderboard ?? []).map(x => ({
     key: x.sponsor,
     name: x.sponsor,
     searchText:
       `${x.sponsor} ${t('credits.sponsorRole')} ${viewsLine(x.views)}`.toLowerCase(),
     revenue: x.estimatedRevenue,
-    render: (rank) => (
+    render: rank => (
       <CreditRow
         left={<span className="text-sm font-bold text-primary">{rank}</span>}
         title={x.sponsor}
-        subtitle={
+        subtitle={(
           <>
             {t('credits.sponsorRole')}
             {' · '}
             {viewsLine(x.views)}
           </>
-        }
-        right={
+        )}
+        right={(
           <span className="whitespace-nowrap text-xs font-semibold text-primary">
             {t('credits.earned').replace(
               '{amount}',
               formatUsd(x.estimatedRevenue),
             )}
           </span>
-        }
+        )}
       />
     ),
   }))
@@ -363,19 +372,19 @@ export function CreditsBrowser({
   const catAllows = (g: Category) => category === 'all' || category === g
   const teamEmptyCard = catAllows('team') && team.length === 0 && !q
   const sponsorsLoadingCard = catAllows('sponsors') && leaderboard === null
-  const sponsorsEmptyCard =
-    catAllows('sponsors') &&
-    leaderboard !== null &&
-    leaderboard.length === 0 &&
-    !q
-  const total =
-    shownContributors.length +
-    shownTranslators.length +
-    shownDonors.length +
-    shownTeam.length +
-    shownSponsors.length
-  const noResults =
-    total === 0 && !teamEmptyCard && !sponsorsEmptyCard && !sponsorsLoadingCard
+  const sponsorsEmptyCard
+    = catAllows('sponsors')
+      && leaderboard !== null
+      && leaderboard.length === 0
+      && !q
+  const total
+    = shownContributors.length
+      + shownTranslators.length
+      + shownDonors.length
+      + shownTeam.length
+      + shownSponsors.length
+  const noResults
+    = total === 0 && !teamEmptyCard && !sponsorsEmptyCard && !sponsorsLoadingCard
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-col gap-6">
@@ -383,7 +392,7 @@ export function CreditsBrowser({
       <div className="flex w-full flex-col gap-3">
         <Input
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={e => setQuery(e.target.value)}
           placeholder={t('credits.search')}
           aria-label={t('credits.search')}
           className="h-11 w-full"
@@ -398,7 +407,7 @@ export function CreditsBrowser({
               { value: 'sponsors', label: t('credits.filterSponsors') },
             ]}
             selected={[category]}
-            onSelect={(v) => setCategory(v as Category)}
+            onSelect={v => setCategory(v as Category)}
             onClear={() => setCategory('all')}
             placeholder={t('credits.filterAll')}
             searchPlaceholder={t('common.search')}
@@ -410,21 +419,23 @@ export function CreditsBrowser({
               { value: 'az', label: t('credits.sortAz') },
             ]}
             selected={[sort]}
-            onSelect={(v) => setSort(v as SortKey)}
+            onSelect={v => setSort(v as SortKey)}
             onClear={() => setSort('leadership')}
             placeholder={t('credits.sort')}
             searchPlaceholder={t('common.search')}
             ariaLabel={t('credits.sort')}
           />
           <span className="ml-auto text-sm font-medium text-foreground/70">
-            {total} {t('credits.found')}
+            {total}
+{' '}
+{t('credits.found')}
           </span>
         </div>
       </div>
 
       {catAllows('contributors') && shownContributors.length > 0 && (
         <CreditGroup
-          icon={
+          icon={(
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -435,7 +446,7 @@ export function CreditsBrowser({
             >
               <path d="M20.33 3.06a1 1 0 0 0-1.11.32L16 7.4l-3.22-4.02c-.38-.47-1.18-.47-1.56 0L8 7.4L4.78 3.38c-.27-.33-.71-.46-1.11-.32S3 3.58 3 4v15c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-.42-.27-.8-.67-.94M7.22 9.63c.38.47 1.18.47 1.56 0L12 5.61l3.22 4.02c.38.47 1.18.47 1.56 0L19 6.86v8.15H5V6.85l2.22 2.77ZM5 19.01v-2h14v2z" />
             </svg>
-          }
+          )}
           title={t('credits.contributors')}
         >
           {shownContributors.map((e, i) => (
@@ -448,7 +459,7 @@ export function CreditsBrowser({
 
       {catAllows('contributors') && shownTranslators.length > 0 && (
         <CreditGroup
-          icon={
+          icon={(
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -459,7 +470,7 @@ export function CreditsBrowser({
             >
               <path d="M17 11c-.4 0-.75.23-.91.59l-4 9l1.83.81l1.07-2.41h4.03l1.07 2.41l1.83-.81l-4-9a1 1 0 0 0-.91-.59Zm-1.13 6L17 14.46L18.13 17zm-3.62-2.03l.49-1.94c-.13-.03-1.6-.43-3.17-1.42c1.4-1.41 2.49-3.26 2.74-5.61h1.68V4h-5V2h-2v2H2v2h8.3c-.25 1.91-1.19 3.34-2.31 4.4C7.3 9.75 6.68 8.96 6.25 8H4.12c.5 1.44 1.33 2.63 2.3 3.61c-1.57.99-3.04 1.39-3.17 1.42l.49 1.94c1.18-.3 2.76-.96 4.26-2.02c1.49 1.06 3.08 1.72 4.25 2.02" />
             </svg>
-          }
+          )}
           title={t('credits.translators')}
           description={t('credits.translatorsDescription')}
         >
@@ -473,7 +484,7 @@ export function CreditsBrowser({
 
       {catAllows('contributors') && shownDonors.length > 0 && (
         <CreditGroup
-          icon={
+          icon={(
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -485,7 +496,7 @@ export function CreditsBrowser({
               <path d="m21.32 12.05l-2.23-.74c-.81-.27-1.69-.11-2.35.42l-3.4 2.72l-1.17-2.34A2 2 0 0 0 10.38 11H4c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h9.62c1.17 0 2.28-.51 3.04-1.4l5.1-5.95c.22-.25.29-.6.2-.92s-.33-.58-.65-.68Zm-6.18 6.25c-.38.44-.93.7-1.52.7H4v-6h6.38l1 2H7v2h6c.23 0 .45-.08.63-.22l4.36-3.49c.13-.11.31-.14.47-.08l.81.27z" />
               <path d="M13.28 10.69a.99.99 0 0 0 1.44 0l3.4-3.57C18.69 6.55 19 5.8 19 5s-.31-1.55-.88-2.12S16.8 2 16 2c-.06 0-1 .02-2 .7c-1-.68-1.85-.74-2-.7c-.8 0-1.56.31-2.12.88C9.31 3.45 9 4.2 9 5s.31 1.56.86 2.1l3.41 3.59Zm-1.98-6.4c.19-.19.44-.29.68-.29c.03 0 .65.04 1.31.71c.39.39 1.02.39 1.41 0c.67-.67 1.29-.71 1.29-.71a.99.99 0 0 1 1 1c0 .27-.1.52-.31.72l-2.69 2.83l-2.71-2.84c-.19-.19-.29-.44-.29-.71s.1-.52.29-.71Z" />
             </svg>
-          }
+          )}
           title={t('credits.topDonors')}
           description={t('credits.topDonorsDescription')}
         >
@@ -499,7 +510,7 @@ export function CreditsBrowser({
 
       {catAllows('team') && (shownTeam.length > 0 || teamEmptyCard) && (
         <CreditGroup
-          icon={
+          icon={(
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -510,7 +521,7 @@ export function CreditsBrowser({
             >
               <path d="M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3s-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5S5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05c1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
             </svg>
-          }
+          )}
           title={t('credits.team')}
           description={t('credits.teamDescription')}
         >
@@ -522,12 +533,12 @@ export function CreditsBrowser({
         </CreditGroup>
       )}
 
-      {catAllows('sponsors') &&
-        (sponsorsLoadingCard ||
-          shownSponsors.length > 0 ||
-          sponsorsEmptyCard) && (
+      {catAllows('sponsors')
+        && (sponsorsLoadingCard
+          || shownSponsors.length > 0
+          || sponsorsEmptyCard) && (
           <CreditGroup
-            icon={
+            icon={(
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -543,7 +554,7 @@ export function CreditsBrowser({
                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                 <polyline points="17 6 23 6 23 12" />
               </svg>
-            }
+            )}
             title={t('credits.sponsors')}
             description={t('credits.sponsorsDescription')}
           >

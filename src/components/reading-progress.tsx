@@ -26,7 +26,8 @@ export function ReadingProgress({ targetId }: { targetId?: string }) {
 
   useEffect(() => {
     const bar = barRef.current
-    if (!bar) return
+    if (!bar)
+return
 
     let frame = 0
 
@@ -35,7 +36,8 @@ export function ReadingProgress({ targetId }: { targetId?: string }) {
       const kapsayici = targetId
         ? document.getElementById(targetId)
         : document.documentElement
-      if (!kapsayici) return
+      if (!kapsayici)
+return
 
       const govde = kapsayici.getBoundingClientRect()
       const baslangic = -govde.top + window.scrollY
@@ -53,7 +55,8 @@ export function ReadingProgress({ targetId }: { targetId?: string }) {
     }
 
     const onScroll = () => {
-      if (frame) return
+      if (frame)
+return
       frame = requestAnimationFrame(hesapla)
     }
 
@@ -64,7 +67,8 @@ export function ReadingProgress({ targetId }: { targetId?: string }) {
     return () => {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
-      if (frame) cancelAnimationFrame(frame)
+      if (frame)
+cancelAnimationFrame(frame)
     }
   }, [targetId])
 

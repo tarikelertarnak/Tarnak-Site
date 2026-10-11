@@ -24,17 +24,19 @@ export function ShortcutHelp({ shortcuts }: { shortcuts: ShortcutSpec[] }) {
     const onKey = (e: KeyboardEvent) => {
       const hedef = e.target as HTMLElement | null
       // Yazarken açılmasın (yoksa "ne yazıyorum?" olur)
-      const yaziyor =
-        hedef?.tagName === 'INPUT' ||
-        hedef?.tagName === 'TEXTAREA' ||
-        hedef?.isContentEditable
-      if (yaziyor) return
+      const yaziyor
+        = hedef?.tagName === 'INPUT'
+          || hedef?.tagName === 'TEXTAREA'
+          || hedef?.isContentEditable
+      if (yaziyor)
+return
 
       const soruIsareti = e.key === '?' || (e.key === '/' && e.shiftKey)
-      if (!soruIsareti) return
+      if (!soruIsareti)
+return
 
       e.preventDefault()
-      setAcik((v) => !v)
+      setAcik(v => !v)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -47,23 +49,27 @@ export function ShortcutHelp({ shortcuts }: { shortcuts: ShortcutSpec[] }) {
       requestAnimationFrame(() =>
         document.getElementById('kisayol-kapat')?.focus(),
       )
-    } else if (oncekiOdak) {
+    }
+ else if (oncekiOdak) {
       oncekiOdak.focus()
     }
   }, [acik, oncekiOdak])
 
   useEffect(() => {
-    if (!acik) return
+    if (!acik)
+return
     const onEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setAcik(false)
+      if (e.key === 'Escape')
+setAcik(false)
     }
     window.addEventListener('keydown', onEsc)
     return () => window.removeEventListener('keydown', onEsc)
   }, [acik])
 
-  if (!acik) return null
+  if (!acik)
+return null
 
-  const gorunurler = shortcuts.filter((s) => s.label)
+  const gorunurler = shortcuts.filter(s => s.label)
 
   return (
     <div
@@ -75,7 +81,7 @@ export function ShortcutHelp({ shortcuts }: { shortcuts: ShortcutSpec[] }) {
         aria-modal="true"
         aria-labelledby="kisayol-baslik"
         className="w-full max-w-md rounded-xl border border-foreground/10 bg-background p-5"
-        onClick={(e) => e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 id="kisayol-baslik" className="text-base font-bold">
@@ -93,7 +99,7 @@ export function ShortcutHelp({ shortcuts }: { shortcuts: ShortcutSpec[] }) {
         </div>
 
         <ul className="space-y-2">
-          {gorunurler.map((s) => (
+          {gorunurler.map(s => (
             <li
               key={`${s.ctrl ? 'c' : ''}${s.key}`}
               className="flex items-center justify-between gap-4"
@@ -109,10 +115,12 @@ export function ShortcutHelp({ shortcuts }: { shortcuts: ShortcutSpec[] }) {
         </ul>
 
         <p className="mt-4 border-t border-foreground/10 pt-3 text-xs text-foreground/45">
-          Bu pencereyi açmak için{' '}
+          Bu pencereyi açmak için
+{' '}
           <kbd className="rounded border border-foreground/15 px-1 py-0.5">
             ?
-          </kbd>{' '}
+          </kbd>
+{' '}
           tuşuna bas.
         </p>
       </div>
@@ -122,16 +130,16 @@ export function ShortcutHelp({ shortcuts }: { shortcuts: ShortcutSpec[] }) {
 
 function isMac(): boolean {
   return (
-    typeof navigator !== 'undefined' &&
-    /Mac|iPhone|iPad/.test(navigator.platform || '')
+    typeof navigator !== 'undefined'
+    && /Mac|iPhone|iPad/.test(navigator.platform || '')
   )
 }
 
 /** `ArrowUp` → `↑`, `/` → `/` gibi okunur kısayol gösterimi. */
 function tusa(key: string): string {
   const harita: Record<string, string> = {
-    ArrowUp: '↑',
-    ArrowDown: '↓',
+    'ArrowUp': '↑',
+    'ArrowDown': '↓',
     '/': '/',
     '?': '?',
   }

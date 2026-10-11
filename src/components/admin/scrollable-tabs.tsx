@@ -33,8 +33,8 @@ export function ScrollableTabs({
 
   const attach = useCallback((node: HTMLDivElement | null) => {
     stripRef.current = node
-    scrollElRef.current =
-      node?.querySelector<HTMLElement>('[role="tablist"]') ?? null
+    scrollElRef.current
+      = node?.querySelector<HTMLElement>('[role="tablist"]') ?? null
   }, [])
 
   const state = useScrollState(scrollElRef)

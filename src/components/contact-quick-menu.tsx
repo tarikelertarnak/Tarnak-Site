@@ -58,7 +58,7 @@ import {
  * dolayisiyla bu deger degismedi.
  */
 /** Kanal ikonu: yerlesik kanallar sabit, sosyaller mdi adiyla. */
-function ChannelIcon({ icon, size = 18 }: { icon: string; size?: number }) {
+function ChannelIcon({ icon, size = 18 }: { icon: string, size?: number }) {
   switch (icon) {
     case 'email':
       return <MailIcon size={size} />
@@ -197,8 +197,8 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
     Konum (2026-10-06). `gap: 6` = kullanıcı "hemen altında çok az
     boşlukla" dedi — önceki `-mt-7` butonun üstüne biniyordu.
   */
-  const { triggerRef, panelRef, portalStyle } =
-    usePopoverPosition<HTMLDivElement>(open, 6)
+  const { triggerRef, panelRef, portalStyle }
+    = usePopoverPosition<HTMLDivElement>(open, 6)
 
   const channels = useMemo(() => buildContactChannels(content, t), [content, t])
   const filtered = useMemo(() => filterChannels(channels, q), [channels, q])
@@ -237,9 +237,9 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
         "dışarı tıklandı" sayıp paneli KAPATTI — yani listeye hiç
         tıklayamıyordun. İki kapsayıcıyı da kontrol etmek zorunlu.
       */
-      const icerde =
-        (rootRef.current?.contains(t) ?? false) ||
-        (panelRef.current?.contains(t) ?? false)
+      const icerde
+        = (rootRef.current?.contains(t) ?? false)
+          || (panelRef.current?.contains(t) ?? false)
       if (!icerde) {
         setOpen(false)
       }
@@ -280,7 +280,8 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
       setCopiedId(channel.id)
       setCopyFailed(false)
       resetTimer.current = setTimeout(() => setCopiedId(null), 1800)
-    } else {
+    }
+ else {
       // Sessizce yutmak yok: kullanici "kopyalandi" sanmasin.
       setCopiedId(null)
       setCopyFailed(true)
@@ -295,7 +296,8 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
     }
     if (channel.href.startsWith('http')) {
       window.open(channel.href, '_blank', 'noopener,noreferrer')
-    } else {
+    }
+ else {
       window.location.href = channel.href
     }
   }
@@ -321,16 +323,20 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
       moveActive(1)
-    } else if (e.key === 'ArrowUp') {
+    }
+ else if (e.key === 'ArrowUp') {
       e.preventDefault()
       moveActive(-1)
-    } else if (e.key === 'Home') {
+    }
+ else if (e.key === 'Home') {
       e.preventDefault()
       setActiveIndex(0)
-    } else if (e.key === 'End') {
+    }
+ else if (e.key === 'End') {
       e.preventDefault()
       setActiveIndex(Math.max(0, filtered.length - 1))
-    } else if (e.key === 'Enter') {
+    }
+ else if (e.key === 'Enter') {
       e.preventDefault()
       const channel = filtered[activeIndex]
       if (channel) {
@@ -344,7 +350,7 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
 
   // Grup icindeki satirin listedeki GERCEK sirasini bul (klavye vurgusu icin)
   const indexOf = (channel: ContactChannel) =>
-    filtered.findIndex((c) => c.id === channel.id)
+    filtered.findIndex(c => c.id === channel.id)
 
   return (
     <div className="relative">
@@ -383,8 +389,8 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
         />
       </button>
 
-      {open &&
-        createPortal(
+      {open
+        && createPortal(
           <div
             ref={panelRef as React.RefObject<HTMLDivElement>}
             role="menu"
@@ -460,14 +466,14 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
 
               {groups.builtin.length > 0 && (
                 <ul className="flex flex-col">
-                  {groups.builtin.map((c) => (
+                  {groups.builtin.map(c => (
                     <ChannelRow
                       key={c.id}
                       channel={c}
                       copied={copiedId === c.id}
                       active={indexOf(c) === activeIndex}
                       index={indexOf(c)}
-                      onCopy={(ch) => void handleCopy(ch)}
+                      onCopy={ch => void handleCopy(ch)}
                       onActivate={activate}
                       onHover={() => setActiveIndex(indexOf(c))}
                     />
@@ -481,14 +487,14 @@ export function ContactQuickMenu({ content }: { content: SiteContent }) {
                     {t('contact.socials')}
                   </p>
                   <ul className="flex flex-col">
-                    {groups.social.map((c) => (
+                    {groups.social.map(c => (
                       <ChannelRow
                         key={c.id}
                         channel={c}
                         copied={copiedId === c.id}
                         active={indexOf(c) === activeIndex}
                         index={indexOf(c)}
-                        onCopy={(ch) => void handleCopy(ch)}
+                        onCopy={ch => void handleCopy(ch)}
                         onActivate={activate}
                         onHover={() => setActiveIndex(indexOf(c))}
                       />

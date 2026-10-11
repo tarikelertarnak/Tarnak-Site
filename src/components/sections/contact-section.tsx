@@ -67,7 +67,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
   useEffect(() => {
     let alive = true
     fetch('/api/admin/session', { cache: 'no-store' })
-      .then((r) => r.json())
+      .then(r => r.json())
       .then((d) => {
         if (!alive) {
           return
@@ -80,7 +80,8 @@ export function ContactSection({ content }: { content: SiteContent }) {
           if (u.email) {
             switchContactMethod('email')
             updateField('contactValue', u.email)
-          } else if (u.phone) {
+          }
+ else if (u.phone) {
             switchContactMethod('phone')
             setPhoneValue(parsePhone(u.phone))
             updateField('contactValue', u.phone)
@@ -196,7 +197,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
           title=""
           subTitle={content.contact.subtitle}
           description={content.contact.description}
-          icon={
+          icon={(
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width={36}
@@ -208,7 +209,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
             >
               <path d="M958 1328q101 40 184 106t142 153t91 187t33 210v64h-128v-64q0-119-45-224t-124-183t-183-123t-224-46q-119 0-224 45t-183 124t-123 183t-46 224v64H0v-64q0-109 32-210t92-187t142-152t184-107q-45-31-81-72t-61-88t-38-100t-14-108q0-93 35-174t96-142t142-96t175-36q93 0 174 35t142 96t96 142t36 175q0 55-13 107t-39 100t-61 89t-81 72m-254-48q66 0 124-25t101-68t69-102t26-125t-25-124t-69-101t-102-69t-124-26t-124 25t-102 69t-69 102t-25 124t25 124t68 102t102 69t125 25M2048 0v1024h-256l-384 384v-384h-128V896h256v203l203-203h181V128H640v230q-32 4-64 10t-64 18V0z" />
             </svg>
-          }
+          )}
           big
           tightGap
         />
@@ -265,7 +266,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
                   inputRef={nameRef}
                   placeholder={t('contact.placeholderName')}
                   value={formData.name}
-                  onValueChange={(value) => updateField('name', value)}
+                  onValueChange={value => updateField('name', value)}
                   isInvalid={!!errors.name}
                   errorMessage={errors.name}
                   required
@@ -275,9 +276,8 @@ export function ContactSection({ content }: { content: SiteContent }) {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
                   <select
                     value={formData.contactMethod}
-                    onChange={(e) =>
-                      switchContactMethod(e.target.value as 'email' | 'phone')
-                    }
+                    onChange={e =>
+                      switchContactMethod(e.target.value as 'email' | 'phone')}
                     aria-label={t('contact.method')}
                     className="h-12 w-full rounded-xl border border-foreground-200/20 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary/50 sm:w-44 [&>option]:bg-background"
                   >
@@ -304,9 +304,8 @@ export function ContactSection({ content }: { content: SiteContent }) {
                         inputRef={contactRef}
                         placeholder={t('contact.placeholderEmail')}
                         value={formData.contactValue}
-                        onValueChange={(value) =>
-                          updateField('contactValue', value)
-                        }
+                        onValueChange={value =>
+                          updateField('contactValue', value)}
                         isInvalid={!!errors.contactValue}
                         errorMessage={errors.contactValue}
                         required
@@ -321,7 +320,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
                   inputRef={messageRef}
                   placeholder={t('contact.placeholderMessage')}
                   value={formData.message}
-                  onValueChange={(value) => updateField('message', value)}
+                  onValueChange={value => updateField('message', value)}
                   isInvalid={!!errors.message}
                   errorMessage={errors.message}
                   minRows={3}

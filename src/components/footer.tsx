@@ -94,13 +94,13 @@ export function Footer({ content }: { content: SiteContent }) {
                 </p>
 
                 <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
-                  {groups.map((group) => (
+                  {groups.map(group => (
                     <div key={group.id} className="flex flex-col gap-2">
                       <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground-500/70">
                         {group.title}
                       </p>
                       <ul className="flex flex-col gap-1">
-                        {group.entries.map((entry) => (
+                        {group.entries.map(entry => (
                           <li key={entry.id}>
                             <Link
                               href={entry.href}
@@ -125,7 +125,14 @@ export function Footer({ content }: { content: SiteContent }) {
                 aksi halde kart dolgusunun icinde kisa bir cizgi gibi duruyordu. */}
             <div className="-mx-6 mt-8 flex flex-col items-center gap-3 border-t border-foreground-200/10 px-6 pt-5 sm:-mx-10 sm:flex-row sm:justify-between sm:px-10">
               <p className="text-center text-xs text-foreground-500 sm:text-left sm:text-sm">
-                &copy; {year} {content.footer.copyright} &middot;{' '}
+                &copy;
+{' '}
+{year}
+{' '}
+{content.footer.copyright}
+{' '}
+&middot;
+{' '}
                 {t('footer.rights')}
               </p>
 

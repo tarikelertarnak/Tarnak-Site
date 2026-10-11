@@ -39,7 +39,7 @@ interface SearchableComboboxProps {
 }
 
 function optionsLabel(options: SearchableComboboxOption[], selected: string[]) {
-  const found = options.find((o) => o.value === selected[0])
+  const found = options.find(o => o.value === selected[0])
   return found ? found.label : ''
 }
 
@@ -70,22 +70,25 @@ export function SearchableCombobox({
     ve dar ekranda panel ekrandan taşabiliyordu. Artık ortak çözümleyici:
     alt → üst → sağ → sol, asla tetikleyicinin üstüne binmez.
   */
-  const { triggerRef, panelRef, portalStyle } =
-    usePopoverPosition<HTMLDivElement>(open, 6)
+  const { triggerRef, panelRef, portalStyle }
+    = usePopoverPosition<HTMLDivElement>(open, 6)
 
   useEffect(() => {
-    if (!open) return
+    if (!open)
+return
     const onDown = (e: MouseEvent) => {
       const t = e.target as Node
       // PORTAL: panel `document.body` altında, `rootRef` disinda —
       // eski tek-kapsayici kontrolu listeye tiklayinca paneli kapatiyordu.
-      const icerde =
-        (rootRef.current?.contains(t) ?? false) ||
-        (panelRef.current?.contains(t) ?? false)
-      if (!icerde) setOpen(false)
+      const icerde
+        = (rootRef.current?.contains(t) ?? false)
+          || (panelRef.current?.contains(t) ?? false)
+      if (!icerde)
+setOpen(false)
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+      if (e.key === 'Escape')
+setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
@@ -97,8 +100,9 @@ export function SearchableCombobox({
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
-    if (!needle) return options
-    return options.filter((o) => o.label.toLowerCase().includes(needle))
+    if (!needle)
+return options
+    return options.filter(o => o.label.toLowerCase().includes(needle))
   }, [options, q])
 
   const triggerText = multiple
@@ -106,7 +110,7 @@ export function SearchableCombobox({
     : optionsLabel(options, selected) || placeholder
   const selectedOption = multiple
     ? undefined
-    : options.find((o) => o.value === selected[0])
+    : options.find(o => o.value === selected[0])
 
   return (
     <div ref={rootRef} className="relative">
@@ -114,7 +118,7 @@ export function SearchableCombobox({
         ref={triggerRef as React.RefObject<HTMLButtonElement>}
         type="button"
         onClick={() => {
-          setOpen((v) => !v)
+          setOpen(v => !v)
           setQ('')
         }}
         aria-label={ariaLabel}
@@ -145,8 +149,8 @@ export function SearchableCombobox({
         />
       </button>
 
-      {open &&
-        createPortal(
+      {open
+        && createPortal(
           <div
             ref={panelRef as React.RefObject<HTMLDivElement>}
             style={portalStyle}
@@ -161,7 +165,7 @@ export function SearchableCombobox({
                 />
                 <input
                   value={q}
-                  onChange={(e) => setQ(e.target.value)}
+                  onChange={e => setQ(e.target.value)}
                   placeholder={searchPlaceholder}
                   aria-label={searchPlaceholder}
                   className="h-8 w-full rounded-lg border border-foreground-200/15 bg-surface-3 pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
@@ -216,7 +220,8 @@ export function SearchableCombobox({
                       type="button"
                       onClick={() => {
                         onSelect(o.value)
-                        if (!multiple) setOpen(false)
+                        if (!multiple)
+setOpen(false)
                       }}
                       className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
                         active

@@ -102,10 +102,10 @@ describe('splitButton', () => {
         children: 'CV',
       },
       {
-        href: '/cv.pdf',
-        download: true,
+        'href': '/cv.pdf',
+        'download': true,
         'aria-label': 'CV Indir',
-        children: <span>D</span>,
+        'children': <span>D</span>,
       },
     ])
 
@@ -126,12 +126,12 @@ describe('splitButton', () => {
         children: <span>D</span>,
       },
       {
-        onClick: () => {},
-        iconOnly: true,
+        'onClick': () => {},
+        'iconOnly': true,
         'aria-label': 'Surum sec',
         'aria-expanded': true,
         'aria-haspopup': true,
-        children: <span>V</span>,
+        'children': <span>V</span>,
       },
     ])
 

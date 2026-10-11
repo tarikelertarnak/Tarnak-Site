@@ -450,7 +450,7 @@ describe('contactQuickMenu', () => {
         .querySelectorAll<HTMLElement>('li[data-index]'),
     ]
     const activeIdx = () =>
-      rows().findIndex((r) => r.className.includes('bg-foreground-200/15'))
+      rows().findIndex(r => r.className.includes('bg-foreground-200/15'))
 
     expect(activeIdx()).toBe(0)
 
@@ -468,7 +468,7 @@ describe('contactQuickMenu', () => {
         .querySelectorAll<HTMLElement>('li[data-index]'),
     ]
     const activeIdx = () =>
-      rows().findIndex((r) => r.className.includes('bg-foreground-200/15'))
+      rows().findIndex(r => r.className.includes('bg-foreground-200/15'))
 
     const input = screen.getByLabelText('Ara...')
     fireEvent.keyDown(input, { key: 'End' })

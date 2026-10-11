@@ -26,14 +26,16 @@ export function CodeCopyEnhancer() {
 
     for (const pre of bloklar) {
       // Aynı blok iki kez işlenmesin (StrictMode etkisi).
-      if (pre.dataset.copyReady === '1') continue
+      if (pre.dataset.copyReady === '1')
+continue
       pre.dataset.copyReady = '1'
 
       const code = pre.querySelector('code')
-      if (!code) continue
+      if (!code)
+continue
 
       // ── Dil etiketi: `language-ts`, `language-tsx` → "TS" ────────────
-      const langClass = [...code.classList].find((c) =>
+      const langClass = [...code.classList].find(c =>
         c.startsWith('language-'),
       )
       if (langClass) {
@@ -59,7 +61,8 @@ export function CodeCopyEnhancer() {
           dugme.classList.add('code-copy--done')
           // Ekran okuyucu duyurusu
           dugme.setAttribute('aria-live', 'polite')
-        } catch {
+        }
+ catch {
           dugme.textContent = 'Kopyalanamadı'
         }
         setTimeout(() => {

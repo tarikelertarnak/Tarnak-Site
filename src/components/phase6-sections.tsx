@@ -27,7 +27,8 @@ const TONE_RENK: Record<Availability['tone'], string> = {
 }
 
 export function AvailabilityBadge({ data }: { data?: Availability }) {
-  if (!data?.enabled || !data.label) return null
+  if (!data?.enabled || !data.label)
+return null
 
   return (
     <Link
@@ -71,7 +72,8 @@ export function ServicesSection({
   ctaHref: string
 }) {
   const azalt = useReducedMotion()
-  if (items.length === 0) return null
+  if (items.length === 0)
+return null
 
   return (
     <section
@@ -117,7 +119,7 @@ export function ServicesSection({
             )}
             {hizmet.tech.length > 0 && (
               <ul className="mt-3 flex flex-wrap gap-1.5">
-                {hizmet.tech.map((t) => (
+                {hizmet.tech.map(t => (
                   <li
                     key={t}
                     className="rounded-full border border-foreground/10 px-2 py-0.5 text-[11px] text-foreground/60"
@@ -154,8 +156,9 @@ export function TestimonialsSection({
   items: Testimonial[]
 }) {
   // Yalnızca metni dolu kartları göster — isim/rol boşsa kart işe yaramaz.
-  const dolu = items.filter((i) => i.quote)
-  if (dolu.length === 0) return null
+  const dolu = items.filter(i => i.quote)
+  if (dolu.length === 0)
+return null
 
   return (
     <section
@@ -223,8 +226,9 @@ export function TimelineSection({
   title?: string
   items: TimelineItem[]
 }) {
-  const dolu = items.filter((i) => i.title)
-  if (dolu.length === 0) return null
+  const dolu = items.filter(i => i.title)
+  if (dolu.length === 0)
+return null
 
   return (
     <section
@@ -291,8 +295,9 @@ export function CertificatesSection({
   title?: string
   items: Certificate[]
 }) {
-  const dolu = items.filter((i) => i.name)
-  if (dolu.length === 0) return null
+  const dolu = items.filter(i => i.name)
+  if (dolu.length === 0)
+return null
 
   return (
     <section

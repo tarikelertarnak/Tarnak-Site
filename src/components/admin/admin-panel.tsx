@@ -30,7 +30,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { FAZ6_BOLUMLERI } from '@/lib/faz6-fields'
 import { clientFetchUserRepos } from '@/lib/github-client'
 
-type SaveStatus = { type: 'success' | 'error'; text: string } | null
+type SaveStatus = { type: 'success' | 'error', text: string } | null
 
 export function AdminPanel({
   initialContent,
@@ -69,7 +69,8 @@ export function AdminPanel({
 
   useEffect(() => {
     const username = content.settings.githubUsername
-    if (!username) return
+    if (!username)
+return
     clientFetchUserRepos(username)
       .then(setGithubRepos)
       .catch(() => setGithubRepos([]))
@@ -93,20 +94,23 @@ export function AdminPanel({
       })
       const data = await res.json()
       if (res.ok && data.success) {
-        setContent((prev) => ({
+        setContent(prev => ({
           ...prev,
           settings: { ...prev.settings, backgroundImage: data.backgroundImage },
         }))
         setStatus({ type: 'success', text: data.message })
-      } else {
+      }
+ else {
         setStatus({
           type: 'error',
           text: data.message || 'Görsel yüklenemedi.',
         })
       }
-    } catch {
+    }
+ catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+ finally {
       setBackgroundUploading(false)
     }
   }
@@ -118,17 +122,20 @@ export function AdminPanel({
       const res = await fetch('/api/admin/background', { method: 'DELETE' })
       const data = await res.json()
       if (res.ok) {
-        setContent((prev) => ({
+        setContent(prev => ({
           ...prev,
           settings: { ...prev.settings, backgroundImage: '' },
         }))
         setStatus({ type: 'success', text: data.message })
-      } else {
+      }
+ else {
         setStatus({ type: 'error', text: data.message || 'Kaldırılamadı.' })
       }
-    } catch {
+    }
+ catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+ finally {
       setBackgroundUploading(false)
     }
   }
@@ -154,12 +161,15 @@ export function AdminPanel({
           type: 'success',
           text: 'Kaydedildi! Siteyi yenileyerek değişiklikleri görebilirsin.',
         })
-      } else {
+      }
+ else {
         setStatus({ type: 'error', text: data.message || 'Kaydedilemedi.' })
       }
-    } catch {
+    }
+ catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+ finally {
       setSaving(false)
     }
   }
@@ -170,13 +180,13 @@ export function AdminPanel({
   }
 
   const setHero = (field: keyof SiteContent['hero'], value: string) => {
-    setContent((prev) => ({ ...prev, hero: { ...prev.hero, [field]: value } }))
+    setContent(prev => ({ ...prev, hero: { ...prev.hero, [field]: value } }))
   }
   const setNav = (field: keyof SiteContent['nav'], value: string) => {
-    setContent((prev) => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
+    setContent(prev => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
   }
   const setAbout = (field: keyof SiteContent['about'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: { ...prev.about, [field]: value },
     }))
@@ -185,40 +195,40 @@ export function AdminPanel({
     field: 'subtitle' | 'title' | 'description',
     value: string,
   ) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       projects: { ...prev.projects, [field]: value },
     }))
   }
   const setContact = (field: keyof SiteContent['contact'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       contact: { ...prev.contact, [field]: value },
     }))
   }
   const setFooter = (field: keyof SiteContent['footer'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       footer: { ...prev.footer, [field]: value },
     }))
   }
   const setSettings = (field: keyof SiteContent['settings'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       settings: { ...prev.settings, [field]: value },
     }))
   }
   const setGithub = (field: keyof SiteContent['github'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       github: { ...prev.github, [field]: value },
     }))
   }
   const setChat = (field: keyof SiteContent['chat'], value: string) => {
-    setContent((prev) => ({ ...prev, chat: { ...prev.chat, [field]: value } }))
+    setContent(prev => ({ ...prev, chat: { ...prev.chat, [field]: value } }))
   }
   const setProfile = (field: keyof SiteContent['profile'], value: string) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       profile: { ...prev.profile, [field]: value },
     }))
@@ -234,9 +244,11 @@ export function AdminPanel({
       }
       setMessages([])
       setStatus({ type: 'success', text: 'Tüm mesajlar silindi.' })
-    } catch {
+    }
+ catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+ finally {
       setSaving(false)
     }
   }
@@ -255,14 +267,14 @@ export function AdminPanel({
   }
 
   const addNavItem = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       nav: { ...prev.nav, items: [...prev.nav.items, { title: '', href: '' }] },
     }))
   }
 
   const removeNavItem = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       nav: { ...prev.nav, items: prev.nav.items.filter((_, i) => i !== index) },
     }))
@@ -282,7 +294,7 @@ export function AdminPanel({
   }
 
   const addToolbox = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -292,7 +304,7 @@ export function AdminPanel({
   }
 
   const removeToolbox = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -315,7 +327,7 @@ export function AdminPanel({
   }
 
   const addInterest = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -328,7 +340,7 @@ export function AdminPanel({
   }
 
   const removeInterest = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -351,7 +363,7 @@ export function AdminPanel({
   }
 
   const addSecurityTool = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -364,7 +376,7 @@ export function AdminPanel({
   }
 
   const removeSecurityTool = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       about: {
         ...prev.about,
@@ -389,7 +401,8 @@ export function AdminPanel({
   const setProjectDownloadMode = (index: number, mode: 'global' | 'per-os') => {
     setContent((prev) => {
       const items = prev.projects.items.map((item, i) => {
-        if (i !== index) return item
+        if (i !== index)
+return item
         if (mode === 'global') {
           const { downloads: _drop, ...rest } = item
           return { ...rest, downloadMode: 'global' as const }
@@ -411,7 +424,8 @@ export function AdminPanel({
   ) => {
     setContent((prev) => {
       const items = prev.projects.items.map((item, i) => {
-        if (i !== index) return item
+        if (i !== index)
+return item
         const downloads = { ...(item.downloads ?? {}), [os]: value }
         return { ...item, downloads }
       })
@@ -420,7 +434,7 @@ export function AdminPanel({
   }
 
   const addProject = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       projects: {
         ...prev.projects,
@@ -440,7 +454,7 @@ export function AdminPanel({
   }
 
   const removeProject = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       projects: {
         ...prev.projects,
@@ -451,7 +465,8 @@ export function AdminPanel({
 
   const addGithubRepo = (repo: GitHubRepo) => {
     setContent((prev) => {
-      if (prev.projects.items.some((p) => p.title === repo.name)) return prev
+      if (prev.projects.items.some(p => p.title === repo.name))
+return prev
       const [owner, repoName] = repo.fullName.split('/')
       const item: ProjectItem = {
         title: repo.name,
@@ -482,14 +497,14 @@ export function AdminPanel({
   }
 
   const addSocial = () => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       social: [...prev.social, { name: '', href: '', icon: 'mdi:github' }],
     }))
   }
 
   const removeSocial = (index: number) => {
-    setContent((prev) => ({
+    setContent(prev => ({
       ...prev,
       social: prev.social.filter((_, i) => i !== index),
     }))
@@ -547,35 +562,35 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.profile.firstName}
-                  onValueChange={(value) => setProfile('firstName', value)}
+                  onValueChange={value => setProfile('firstName', value)}
                 />
               </Field>
               <Field label="Soyad (Last Name)">
                 <Input
                   variant="faded"
                   value={content.profile.lastName}
-                  onValueChange={(value) => setProfile('lastName', value)}
+                  onValueChange={value => setProfile('lastName', value)}
                 />
               </Field>
               <Field label="Görünen Ad (örn. TARIKELER)">
                 <Input
                   variant="faded"
                   value={content.profile.displayName}
-                  onValueChange={(value) => setProfile('displayName', value)}
+                  onValueChange={value => setProfile('displayName', value)}
                 />
               </Field>
               <Field label="Lakap / Takma Ad (örn. Tarnak)">
                 <Input
                   variant="faded"
                   value={content.profile.nickname}
-                  onValueChange={(value) => setProfile('nickname', value)}
+                  onValueChange={value => setProfile('nickname', value)}
                 />
               </Field>
               <Field label="Ünvan">
                 <Input
                   variant="faded"
                   value={content.profile.title}
-                  onValueChange={(value) => setProfile('title', value)}
+                  onValueChange={value => setProfile('title', value)}
                 />
               </Field>
             </Grid>
@@ -602,35 +617,35 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.hero.name}
-                  onValueChange={(value) => setHero('name', value)}
+                  onValueChange={value => setHero('name', value)}
                 />
               </Field>
               <Field label="Emoji / Logo">
                 <Input
                   variant="faded"
                   value={content.hero.emoji}
-                  onValueChange={(value) => setHero('emoji', value)}
+                  onValueChange={value => setHero('emoji', value)}
                 />
               </Field>
               <Field label="Alt Başlık (Tagline)">
                 <Input
                   variant="faded"
                   value={content.hero.tagline}
-                  onValueChange={(value) => setHero('tagline', value)}
+                  onValueChange={value => setHero('tagline', value)}
                 />
               </Field>
               <Field label="Proje Butonu Yazısı">
                 <Input
                   variant="faded"
                   value={content.hero.exploreLabel}
-                  onValueChange={(value) => setHero('exploreLabel', value)}
+                  onValueChange={value => setHero('exploreLabel', value)}
                 />
               </Field>
               <Field label="İletişim Butonu Yazısı">
                 <Input
                   variant="faded"
                   value={content.hero.connectLabel}
-                  onValueChange={(value) => setHero('connectLabel', value)}
+                  onValueChange={value => setHero('connectLabel', value)}
                 />
               </Field>
             </Grid>
@@ -641,14 +656,14 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.nav.ctaLabel}
-                  onValueChange={(value) => setNav('ctaLabel', value)}
+                  onValueChange={value => setNav('ctaLabel', value)}
                 />
               </Field>
               <Field label="CTA Link (örn. GitHub)">
                 <Input
                   variant="faded"
                   value={content.nav.githubRepo}
-                  onValueChange={(value) => setNav('githubRepo', value)}
+                  onValueChange={value => setNav('githubRepo', value)}
                 />
               </Field>
             </Grid>
@@ -664,18 +679,16 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.title}
-                        onValueChange={(value) =>
-                          setNavItem(index, 'title', value)
-                        }
+                        onValueChange={value =>
+                          setNavItem(index, 'title', value)}
                       />
                     </Field>
                     <Field label="Link (örn. /projects/)">
                       <Input
                         variant="faded"
                         value={item.href}
-                        onValueChange={(value) =>
-                          setNavItem(index, 'href', value)
-                        }
+                        onValueChange={value =>
+                          setNavItem(index, 'href', value)}
                       />
                     </Field>
                   </Grid>
@@ -690,42 +703,42 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.contact.title}
-                  onValueChange={(value) => setContact('title', value)}
+                  onValueChange={value => setContact('title', value)}
                 />
               </Field>
               <Field label="Alt Başlık">
                 <Input
                   variant="faded"
                   value={content.contact.subtitle}
-                  onValueChange={(value) => setContact('subtitle', value)}
+                  onValueChange={value => setContact('subtitle', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.contact.description}
-                  onValueChange={(value) => setContact('description', value)}
+                  onValueChange={value => setContact('description', value)}
                 />
               </Field>
               <Field label="Buton Altı Yazısı">
                 <Input
                   variant="faded"
                   value={content.contact.footerText}
-                  onValueChange={(value) => setContact('footerText', value)}
+                  onValueChange={value => setContact('footerText', value)}
                 />
               </Field>
               <Field label="Başarı Başlığı">
                 <Input
                   variant="faded"
                   value={content.contact.successTitle}
-                  onValueChange={(value) => setContact('successTitle', value)}
+                  onValueChange={value => setContact('successTitle', value)}
                 />
               </Field>
               <Field label="Başarı Metni">
                 <Input
                   variant="faded"
                   value={content.contact.successText}
-                  onValueChange={(value) => setContact('successText', value)}
+                  onValueChange={value => setContact('successText', value)}
                 />
               </Field>
             </Grid>
@@ -735,7 +748,7 @@ export function AdminPanel({
               <Input
                 variant="faded"
                 value={content.footer.copyright}
-                onValueChange={(value) => setFooter('copyright', value)}
+                onValueChange={value => setFooter('copyright', value)}
               />
             </Field>
           </PanelCard>
@@ -745,35 +758,36 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.github.subtitle}
-                  onValueChange={(value) => setGithub('subtitle', value)}
+                  onValueChange={value => setGithub('subtitle', value)}
                 />
               </Field>
               <Field label="Başlık">
                 <Input
                   variant="faded"
                   value={content.github.title}
-                  onValueChange={(value) => setGithub('title', value)}
+                  onValueChange={value => setGithub('title', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.github.description}
-                  onValueChange={(value) => setGithub('description', value)}
+                  onValueChange={value => setGithub('description', value)}
                 />
               </Field>
               <Field label="GitHub Kullanıcı Adı (projeler otomatik çekilir)">
                 <Input
                   variant="faded"
                   value={content.settings.githubUsername}
-                  onValueChange={(value) =>
-                    setSettings('githubUsername', value)
-                  }
+                  onValueChange={value =>
+                    setSettings('githubUsername', value)}
                 />
               </Field>
             </Grid>
             <p className="mt-3 text-xs text-foreground-500">
-              Kullanıcı adı (örn. <span className="font-mono">TARIKTR1099</span>
+              Kullanıcı adı (örn.
+{' '}
+<span className="font-mono">TARIKTR1099</span>
               ) yazarsan sitendeki "GitHub Projects" bölümü bu hesabın public
               repolarını gösterir. Boş bırakırsan bölüm gizlenir.
             </p>
@@ -784,21 +798,21 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.chat.subtitle}
-                  onValueChange={(value) => setChat('subtitle', value)}
+                  onValueChange={value => setChat('subtitle', value)}
                 />
               </Field>
               <Field label="Başlık">
                 <Input
                   variant="faded"
                   value={content.chat.title}
-                  onValueChange={(value) => setChat('title', value)}
+                  onValueChange={value => setChat('title', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.chat.description}
-                  onValueChange={(value) => setChat('description', value)}
+                  onValueChange={value => setChat('description', value)}
                 />
               </Field>
             </Grid>
@@ -850,13 +864,13 @@ export function AdminPanel({
                         color="danger"
                         onPress={removeBackground}
                         isLoading={backgroundUploading}
-                        startContent={
+                        startContent={(
                           <Icon
                             icon="mdi:trash-can-outline"
                             width={18}
                             height={18}
                           />
-                        }
+                        )}
                       >
                         Kaldır
                       </Button>
@@ -918,35 +932,35 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.about.subtitle}
-                  onValueChange={(value) => setAbout('subtitle', value)}
+                  onValueChange={value => setAbout('subtitle', value)}
                 />
               </Field>
               <Field label="Başlık">
                 <Input
                   variant="faded"
                   value={content.about.title}
-                  onValueChange={(value) => setAbout('title', value)}
+                  onValueChange={value => setAbout('title', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.about.description}
-                  onValueChange={(value) => setAbout('description', value)}
+                  onValueChange={value => setAbout('description', value)}
                 />
               </Field>
               <Field label="'Kimim Ben?' Başlığı">
                 <Input
                   variant="faded"
                   value={content.about.whoTitle}
-                  onValueChange={(value) => setAbout('whoTitle', value)}
+                  onValueChange={value => setAbout('whoTitle', value)}
                 />
               </Field>
               <Field label="'Kimim Ben?' Metni">
                 <Textarea
                   variant="faded"
                   value={content.about.whoText}
-                  onValueChange={(value) => setAbout('whoText', value)}
+                  onValueChange={value => setAbout('whoText', value)}
                   minRows={3}
                 />
               </Field>
@@ -958,16 +972,15 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.about.toolboxTitle}
-                  onValueChange={(value) => setAbout('toolboxTitle', value)}
+                  onValueChange={value => setAbout('toolboxTitle', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.about.toolboxDescription}
-                  onValueChange={(value) =>
-                    setAbout('toolboxDescription', value)
-                  }
+                  onValueChange={value =>
+                    setAbout('toolboxDescription', value)}
                 />
               </Field>
             </Grid>
@@ -983,17 +996,15 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.label}
-                        onValueChange={(value) =>
-                          setToolbox(index, 'label', value)
-                        }
+                        onValueChange={value =>
+                          setToolbox(index, 'label', value)}
                       />
                     </Field>
                     <Field label="Tip">
                       <select
                         value={item.type ?? 'link'}
-                        onChange={(e) =>
-                          setToolbox(index, 'type', e.target.value)
-                        }
+                        onChange={e =>
+                          setToolbox(index, 'type', e.target.value)}
                         className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
                       >
                         <option value="link">Link</option>
@@ -1017,9 +1028,8 @@ export function AdminPanel({
                             : 'https://...'
                         }
                         value={item.href ?? ''}
-                        onValueChange={(value) =>
-                          setToolbox(index, 'href', value)
-                        }
+                        onValueChange={value =>
+                          setToolbox(index, 'href', value)}
                       />
                     </Field>
                   </Grid>
@@ -1034,16 +1044,15 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.about.beyondTitle}
-                  onValueChange={(value) => setAbout('beyondTitle', value)}
+                  onValueChange={value => setAbout('beyondTitle', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.about.beyondDescription}
-                  onValueChange={(value) =>
-                    setAbout('beyondDescription', value)
-                  }
+                  onValueChange={value =>
+                    setAbout('beyondDescription', value)}
                 />
               </Field>
             </Grid>
@@ -1059,27 +1068,24 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.label}
-                        onValueChange={(value) =>
-                          setInterest(index, 'label', value)
-                        }
+                        onValueChange={value =>
+                          setInterest(index, 'label', value)}
                       />
                     </Field>
                     <Field label="İkon (iconify)">
                       <Input
                         variant="faded"
                         value={item.icon}
-                        onValueChange={(value) =>
-                          setInterest(index, 'icon', value)
-                        }
+                        onValueChange={value =>
+                          setInterest(index, 'icon', value)}
                       />
                     </Field>
                     <Field label="Açıklama">
                       <Input
                         variant="faded"
                         value={item.content}
-                        onValueChange={(value) =>
-                          setInterest(index, 'content', value)
-                        }
+                        onValueChange={value =>
+                          setInterest(index, 'content', value)}
                       />
                     </Field>
                   </Grid>
@@ -1094,14 +1100,14 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.about.securityTitle}
-                  onValueChange={(value) => setAbout('securityTitle', value)}
+                  onValueChange={value => setAbout('securityTitle', value)}
                 />
               </Field>
               <Field label="Metin">
                 <Input
                   variant="faded"
                   value={content.about.securityText}
-                  onValueChange={(value) => setAbout('securityText', value)}
+                  onValueChange={value => setAbout('securityText', value)}
                 />
               </Field>
             </Grid>
@@ -1117,17 +1123,15 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.label}
-                        onValueChange={(value) =>
-                          setSecurityTool(index, 'label', value)
-                        }
+                        onValueChange={value =>
+                          setSecurityTool(index, 'label', value)}
                       />
                     </Field>
                     <Field label="Tip">
                       <select
                         value={item.type ?? 'link'}
-                        onChange={(e) =>
-                          setSecurityTool(index, 'type', e.target.value)
-                        }
+                        onChange={e =>
+                          setSecurityTool(index, 'type', e.target.value)}
                         className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
                       >
                         <option value="link">Link</option>
@@ -1151,9 +1155,8 @@ export function AdminPanel({
                             : 'https://...'
                         }
                         value={item.href ?? ''}
-                        onValueChange={(value) =>
-                          setSecurityTool(index, 'href', value)
-                        }
+                        onValueChange={value =>
+                          setSecurityTool(index, 'href', value)}
                       />
                     </Field>
                   </Grid>
@@ -1168,12 +1171,11 @@ export function AdminPanel({
                 variant="faded"
                 placeholder="/cv/tarikeler-cv.pdf"
                 value={content.about.cv?.href ?? '/cv/tarikeler-cv.pdf'}
-                onValueChange={(value) =>
+                onValueChange={value =>
                   setAbout('cv', {
                     ...(content.about.cv ?? {}),
                     href: value,
-                  } as any)
-                }
+                  } as any)}
               />
             </Field>
             <Field label="CV Özeti (Summary)">
@@ -1181,16 +1183,17 @@ export function AdminPanel({
                 variant="faded"
                 minRows={3}
                 value={content.about.cv?.summary ?? ''}
-                onValueChange={(value) =>
+                onValueChange={value =>
                   setAbout('cv', {
                     ...(content.about.cv ?? {}),
                     summary: value,
-                  } as any)
-                }
+                  } as any)}
               />
             </Field>
             <p className="mt-3 text-xs text-foreground-500">
-              CV PDF dosyasını <code>public/cv/tarikeler-cv.pdf</code>
+              CV PDF dosyasını
+{' '}
+<code>public/cv/tarikeler-cv.pdf</code>
               konumuna koy; yukarıdaki yolu bu dosyaya göre ayarla. Özgeçmiş
               verisi aşağıdan güncellenir.
             </p>
@@ -1206,15 +1209,14 @@ export function AdminPanel({
                       experience: (content.about.cv?.experience ?? []).filter(
                         (_, i) => i !== index,
                       ),
-                    } as any)
-                  }
+                    } as any)}
                 >
                   <Grid>
                     <Field label="Rol / Görev">
                       <Input
                         variant="faded"
                         value={entry.role}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             experience: (
@@ -1222,15 +1224,14 @@ export function AdminPanel({
                             ).map((e, i) =>
                               i === index ? { ...e, role: value } : e,
                             ),
-                          } as any)
-                        }
+                          } as any)}
                       />
                     </Field>
                     <Field label="Şirket">
                       <Input
                         variant="faded"
                         value={entry.company}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             experience: (
@@ -1238,15 +1239,14 @@ export function AdminPanel({
                             ).map((e, i) =>
                               i === index ? { ...e, company: value } : e,
                             ),
-                          } as any)
-                        }
+                          } as any)}
                       />
                     </Field>
                     <Field label="Dönem">
                       <Input
                         variant="faded"
                         value={entry.period}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             experience: (
@@ -1254,15 +1254,14 @@ export function AdminPanel({
                             ).map((e, i) =>
                               i === index ? { ...e, period: value } : e,
                             ),
-                          } as any)
-                        }
+                          } as any)}
                       />
                     </Field>
                     <Field label="Açıklama">
                       <Input
                         variant="faded"
                         value={entry.description}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             experience: (
@@ -1270,8 +1269,7 @@ export function AdminPanel({
                             ).map((e, i) =>
                               i === index ? { ...e, description: value } : e,
                             ),
-                          } as any)
-                        }
+                          } as any)}
                       />
                     </Field>
                   </Grid>
@@ -1285,8 +1283,7 @@ export function AdminPanel({
                       ...(content.about.cv?.experience ?? []),
                       { role: '', company: '', period: '', description: '' },
                     ],
-                  } as any)
-                }
+                  } as any)}
                 label="Deneyim Ekle"
               />
             </div>
@@ -1302,68 +1299,63 @@ export function AdminPanel({
                       education: (content.about.cv?.education ?? []).filter(
                         (_, i) => i !== index,
                       ),
-                    } as any)
-                  }
+                    } as any)}
                 >
                   <Grid>
                     <Field label="Rol / Bölüm">
                       <Input
                         variant="faded"
                         value={entry.role}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             education: (content.about.cv?.education ?? []).map(
                               (e, i) =>
                                 i === index ? { ...e, role: value } : e,
                             ),
-                          } as any)
-                        }
+                          } as any)}
                       />
                     </Field>
                     <Field label="Kurum">
                       <Input
                         variant="faded"
                         value={entry.company}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             education: (content.about.cv?.education ?? []).map(
                               (e, i) =>
                                 i === index ? { ...e, company: value } : e,
                             ),
-                          } as any)
-                        }
+                          } as any)}
                       />
                     </Field>
                     <Field label="Dönem">
                       <Input
                         variant="faded"
                         value={entry.period}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             education: (content.about.cv?.education ?? []).map(
                               (e, i) =>
                                 i === index ? { ...e, period: value } : e,
                             ),
-                          } as any)
-                        }
+                          } as any)}
                       />
                     </Field>
                     <Field label="Açıklama">
                       <Input
                         variant="faded"
                         value={entry.description}
-                        onValueChange={(value) =>
+                        onValueChange={value =>
                           setAbout('cv', {
                             ...(content.about.cv ?? {}),
                             education: (content.about.cv?.education ?? []).map(
                               (e, i) =>
                                 i === index ? { ...e, description: value } : e,
                             ),
-                          } as any)
-                        }
+                          } as any)}
                       />
                     </Field>
                   </Grid>
@@ -1377,8 +1369,7 @@ export function AdminPanel({
                       ...(content.about.cv?.education ?? []),
                       { role: '', company: '', period: '', description: '' },
                     ],
-                  } as any)
-                }
+                  } as any)}
                 label="Eğitim Ekle"
               />
             </div>
@@ -1409,26 +1400,23 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.name}
-                        onValueChange={(value) =>
-                          setSocial(index, 'name', value)
-                        }
+                        onValueChange={value =>
+                          setSocial(index, 'name', value)}
                       />
                     </Field>
                     <Field label="Link">
                       <Input
                         variant="faded"
                         value={item.href}
-                        onValueChange={(value) =>
-                          setSocial(index, 'href', value)
-                        }
+                        onValueChange={value =>
+                          setSocial(index, 'href', value)}
                       />
                     </Field>
                     <Field label="Platform (SVG)">
                       <select
                         value={item.icon}
-                        onChange={(e) =>
-                          setSocial(index, 'icon', e.target.value)
-                        }
+                        onChange={e =>
+                          setSocial(index, 'icon', e.target.value)}
                         className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
                       >
                         <option value="mdi:github">GitHub</option>
@@ -1467,23 +1455,22 @@ export function AdminPanel({
                 <Input
                   variant="faded"
                   value={content.projects.subtitle}
-                  onValueChange={(value) => setProjectsMeta('subtitle', value)}
+                  onValueChange={value => setProjectsMeta('subtitle', value)}
                 />
               </Field>
               <Field label="Başlık">
                 <Input
                   variant="faded"
                   value={content.projects.title}
-                  onValueChange={(value) => setProjectsMeta('title', value)}
+                  onValueChange={value => setProjectsMeta('title', value)}
                 />
               </Field>
               <Field label="Açıklama">
                 <Input
                   variant="faded"
                   value={content.projects.description}
-                  onValueChange={(value) =>
-                    setProjectsMeta('description', value)
-                  }
+                  onValueChange={value =>
+                    setProjectsMeta('description', value)}
                 />
               </Field>
             </Grid>
@@ -1501,27 +1488,24 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.title}
-                        onValueChange={(value) =>
-                          setProject(index, 'title', value)
-                        }
+                        onValueChange={value =>
+                          setProject(index, 'title', value)}
                       />
                     </Field>
                     <Field label="Rozet (örn. [Under Development])">
                       <Input
                         variant="faded"
                         value={item.notice || ''}
-                        onValueChange={(value) =>
-                          setProject(index, 'notice', value)
-                        }
+                        onValueChange={value =>
+                          setProject(index, 'notice', value)}
                       />
                     </Field>
                     <Field label="Açıklama">
                       <Textarea
                         variant="faded"
                         value={item.description}
-                        onValueChange={(value) =>
-                          setProject(index, 'description', value)
-                        }
+                        onValueChange={value =>
+                          setProject(index, 'description', value)}
                         minRows={2}
                       />
                     </Field>
@@ -1529,27 +1513,24 @@ export function AdminPanel({
                       <Input
                         variant="faded"
                         value={item.projectLink}
-                        onValueChange={(value) =>
-                          setProject(index, 'projectLink', value)
-                        }
+                        onValueChange={value =>
+                          setProject(index, 'projectLink', value)}
                       />
                     </Field>
                     <Field label="Kaynak Kod Linki (opsiyonel)">
                       <Input
                         variant="faded"
                         value={item.srcLink || ''}
-                        onValueChange={(value) =>
-                          setProject(index, 'srcLink', value)
-                        }
+                        onValueChange={value =>
+                          setProject(index, 'srcLink', value)}
                       />
                     </Field>
                     <Field label="Görsel Yolu (örn. /projects/portfolyo.png)">
                       <Input
                         variant="faded"
                         value={item.image}
-                        onValueChange={(value) =>
-                          setProject(index, 'image', value)
-                        }
+                        onValueChange={value =>
+                          setProject(index, 'image', value)}
                       />
                     </Field>
                   </Grid>
@@ -1564,8 +1545,7 @@ export function AdminPanel({
                           name={`downloadMode-${index}`}
                           checked={(item.downloadMode ?? 'global') === 'global'}
                           onChange={() =>
-                            setProjectDownloadMode(index, 'global')
-                          }
+                            setProjectDownloadMode(index, 'global')}
                         />
                         Global (tek link)
                       </label>
@@ -1575,8 +1555,7 @@ export function AdminPanel({
                           name={`downloadMode-${index}`}
                           checked={item.downloadMode === 'per-os'}
                           onChange={() =>
-                            setProjectDownloadMode(index, 'per-os')
-                          }
+                            setProjectDownloadMode(index, 'per-os')}
                         />
                         İşletim sistemine özel (Windows / macOS / Linux / iOS /
                         Android)
@@ -1588,9 +1567,8 @@ export function AdminPanel({
                           variant="faded"
                           placeholder="/downloads/app.zip veya https://..."
                           value={item.downloadUrl || ''}
-                          onValueChange={(value) =>
-                            setProject(index, 'downloadUrl', value)
-                          }
+                          onValueChange={value =>
+                            setProject(index, 'downloadUrl', value)}
                         />
                       </Field>
                     ) : (
@@ -1600,9 +1578,8 @@ export function AdminPanel({
                             variant="faded"
                             placeholder="/downloads/setup.exe"
                             value={item.downloads?.windows || ''}
-                            onValueChange={(value) =>
-                              setProjectDownloadOs(index, 'windows', value)
-                            }
+                            onValueChange={value =>
+                              setProjectDownloadOs(index, 'windows', value)}
                           />
                         </Field>
                         <Field label="macOS">
@@ -1610,9 +1587,8 @@ export function AdminPanel({
                             variant="faded"
                             placeholder="/downloads/app.dmg"
                             value={item.downloads?.macos || ''}
-                            onValueChange={(value) =>
-                              setProjectDownloadOs(index, 'macos', value)
-                            }
+                            onValueChange={value =>
+                              setProjectDownloadOs(index, 'macos', value)}
                           />
                         </Field>
                         <Field label="Linux">
@@ -1620,9 +1596,8 @@ export function AdminPanel({
                             variant="faded"
                             placeholder="/downloads/app.AppImage"
                             value={item.downloads?.linux || ''}
-                            onValueChange={(value) =>
-                              setProjectDownloadOs(index, 'linux', value)
-                            }
+                            onValueChange={value =>
+                              setProjectDownloadOs(index, 'linux', value)}
                           />
                         </Field>
                         <Field label="iOS">
@@ -1630,9 +1605,8 @@ export function AdminPanel({
                             variant="faded"
                             placeholder="https://apps.apple.com/..."
                             value={item.downloads?.ios || ''}
-                            onValueChange={(value) =>
-                              setProjectDownloadOs(index, 'ios', value)
-                            }
+                            onValueChange={value =>
+                              setProjectDownloadOs(index, 'ios', value)}
                           />
                         </Field>
                         <Field label="Android">
@@ -1640,9 +1614,8 @@ export function AdminPanel({
                             variant="faded"
                             placeholder="/downloads/app.apk"
                             value={item.downloads?.android || ''}
-                            onValueChange={(value) =>
-                              setProjectDownloadOs(index, 'android', value)
-                            }
+                            onValueChange={value =>
+                              setProjectDownloadOs(index, 'android', value)}
                           />
                         </Field>
                       </Grid>
@@ -1674,7 +1647,7 @@ export function AdminPanel({
               <div className="flex flex-col gap-2">
                 {githubRepos.map((repo) => {
                   const inSite = content.projects.items.some(
-                    (p) => p.title === repo.name,
+                    p => p.title === repo.name,
                   )
                   return (
                     <div
@@ -1691,7 +1664,16 @@ export function AdminPanel({
                           </p>
                         )}
                         <p className="mt-0.5 text-[10px] text-foreground-600">
-                          ★ {repo.stars} · {repo.forks} fork ·{' '}
+                          ★
+{' '}
+{repo.stars}
+{' '}
+·
+{' '}
+{repo.forks}
+{' '}
+fork ·
+{' '}
                           {repo.language ?? '—'}
                         </p>
                       </div>
@@ -1753,8 +1735,10 @@ export function AdminPanel({
         <div className="space-y-4 pt-4">
           <div className="flex flex-row items-center justify-between">
             <p className="text-sm text-foreground-500">
-              {messages.length} mesaj
-            </p>
+              {messages.length}
+{' '}
+mesaj
+</p>
             {messages.length > 0 && (
               <Button
                 size="sm"
@@ -1787,7 +1771,7 @@ export function AdminPanel({
         <Faz6Editor
           specs={FAZ6_BOLUMLERI}
           value={(content.phase6 ?? {}) as Record<string, unknown>}
-          onChange={(phase6) => setContent((prev) => ({ ...prev, phase6 }))}
+          onChange={phase6 => setContent(prev => ({ ...prev, phase6 }))}
         />
       ),
     },
@@ -1829,12 +1813,14 @@ export function AdminPanel({
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold">Admin Paneli</h1>
           <p className="text-sm text-foreground-500">
-            Giriş yapan:{' '}
+            Giriş yapan:
+{' '}
             <span className="font-semibold text-foreground">{username}</span>
           </p>
           {roleLabel && (
             <p className="text-sm text-foreground-500">
-              Yetki:{' '}
+              Yetki:
+{' '}
               <span className="font-semibold text-foreground">{roleLabel}</span>
             </p>
           )}
@@ -1882,7 +1868,7 @@ export function AdminPanel({
               panel: 'min-w-0',
             }}
             activeKey={tab}
-            onChange={(k) => setTab(String(k))}
+            onChange={k => setTab(String(k))}
             items={tabItems}
           />
         </ScrollableTabs>
@@ -1957,7 +1943,7 @@ function Grid({ children }: { children: ReactNode }) {
   )
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Field({ label, children }: { label: string, children: ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-xs sm:text-sm text-foreground-500">{label}</label>
@@ -1995,7 +1981,7 @@ function ItemCard({
   )
 }
 
-function AddButton({ onPress, label }: { onPress: () => void; label: string }) {
+function AddButton({ onPress, label }: { onPress: () => void, label: string }) {
   return (
     <Button
       variant="bordered"
@@ -2028,15 +2014,18 @@ function PasswordCard() {
         setStatus({ type: 'success', text: 'Şifre güncellendi.' })
         setCurrentPassword('')
         setNewPassword('')
-      } else {
+      }
+ else {
         setStatus({
           type: 'error',
           text: data.message || 'Şifre güncellenemedi.',
         })
       }
-    } catch {
+    }
+ catch {
       setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    } finally {
+    }
+ finally {
       setLoading(false)
     }
   }
@@ -2111,7 +2100,8 @@ function BlogManager({
   const [editing, setEditing] = useState<any | null>(null)
 
   const savePost = async () => {
-    if (!editing?.title?.trim() || !editing?.slug?.trim()) return
+    if (!editing?.title?.trim() || !editing?.slug?.trim())
+return
     onStatus(null)
     const res = await fetch('/api/admin/blog', {
       method: 'POST',
@@ -2124,7 +2114,7 @@ function BlogManager({
       return
     }
     onStatus({ type: 'success', text: 'Yazı kaydedildi' })
-    setPosts((prev) => [
+    setPosts(prev => [
       ...prev.filter((p: any) => p.id !== editing.id),
       { ...editing },
     ])
@@ -2132,7 +2122,8 @@ function BlogManager({
   }
 
   const removePost = async (post: any) => {
-    if (!window.confirm(`"${post.title}" silinsin mi?`)) return
+    if (!window.confirm(`"${post.title}" silinsin mi?`))
+return
     const res = await fetch('/api/admin/blog', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -2143,8 +2134,9 @@ function BlogManager({
       return
     }
     onStatus({ type: 'success', text: 'Yazı silindi' })
-    setPosts((prev) => prev.filter((p: any) => p.id !== post.id))
-    if (editing?.id === post.id) setEditing(null)
+    setPosts(prev => prev.filter((p: any) => p.id !== post.id))
+    if (editing?.id === post.id)
+setEditing(null)
   }
 
   const toSlug = (s: string) =>
@@ -2168,7 +2160,11 @@ function BlogManager({
   return (
     <div className="space-y-4 pt-4">
       <div className="flex flex-row items-center justify-between">
-        <p className="text-sm text-foreground-500">{posts.length} yazı</p>
+        <p className="text-sm text-foreground-500">
+{posts.length}
+{' '}
+yazı
+</p>
         {!editing && (
           <Button
             size="sm"
@@ -2198,7 +2194,8 @@ function BlogManager({
                   value={editing.title || ''}
                   onValueChange={(v) => {
                     const next = { ...editing, title: v }
-                    if (!editing.slug) next.slug = toSlug(v)
+                    if (!editing.slug)
+next.slug = toSlug(v)
                     setEditing(next)
                   }}
                 />
@@ -2208,9 +2205,8 @@ function BlogManager({
                   variant="faded"
                   placeholder="yazi-url"
                   value={editing.slug || ''}
-                  onValueChange={(v) =>
-                    setEditing({ ...editing, slug: toSlug(v) || v })
-                  }
+                  onValueChange={v =>
+                    setEditing({ ...editing, slug: toSlug(v) || v })}
                 />
               </Field>
               <Field label="Tarih">
@@ -2218,7 +2214,7 @@ function BlogManager({
                   variant="faded"
                   type="date"
                   value={editing.date || ''}
-                  onValueChange={(v) => setEditing({ ...editing, date: v })}
+                  onValueChange={v => setEditing({ ...editing, date: v })}
                 />
               </Field>
               <Field label="Rozet (opsiyonel)">
@@ -2226,7 +2222,7 @@ function BlogManager({
                   variant="faded"
                   placeholder="Yeni"
                   value={editing.badge || ''}
-                  onValueChange={(v) => setEditing({ ...editing, badge: v })}
+                  onValueChange={v => setEditing({ ...editing, badge: v })}
                 />
               </Field>
             </Grid>
@@ -2236,7 +2232,7 @@ function BlogManager({
                 minRows={2}
                 placeholder="Listede görünen kısa özet"
                 value={editing.excerpt || ''}
-                onValueChange={(v) => setEditing({ ...editing, excerpt: v })}
+                onValueChange={v => setEditing({ ...editing, excerpt: v })}
               />
             </Field>
             <Field label="İçerik (markdown destekli)">
@@ -2245,7 +2241,7 @@ function BlogManager({
                 minRows={10}
                 placeholder="Yazı içeriği…"
                 value={editing.content || ''}
-                onValueChange={(v) => setEditing({ ...editing, content: v })}
+                onValueChange={v => setEditing({ ...editing, content: v })}
               />
             </Field>
             <div className="flex flex-row gap-2">
@@ -2286,8 +2282,10 @@ function BlogManager({
                   {post.title}
                 </p>
                 <p className="truncate text-xs text-foreground-500">
-                  {post.date} · /blog/
-                  {post.slug}
+                  {post.date}
+{' '}
+· /blog/
+{post.slug}
                 </p>
               </div>
               <Button

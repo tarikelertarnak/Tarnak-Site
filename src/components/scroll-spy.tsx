@@ -28,12 +28,12 @@ export function ScrollSpy({
 
   useEffect(() => {
     let frame = 0
-    let bolumler: Array<{ id: string; el: HTMLElement }> = []
+    let bolumler: Array<{ id: string, el: HTMLElement }> = []
 
     const olustur = () => {
       bolumler = [...document.querySelectorAll<HTMLElement>(selector)]
-        .filter((el) => el.id)
-        .map((el) => ({ id: el.id, el }))
+        .filter(el => el.id)
+        .map(el => ({ id: el.id, el }))
 
       // Eski işaretleri temizle
       for (const b of bolumler) b.el.removeAttribute('data-active')
@@ -41,7 +41,8 @@ export function ScrollSpy({
 
     const hesapla = () => {
       frame = 0
-      if (bolumler.length === 0) return
+      if (bolumler.length === 0)
+return
 
       /*
         "Aktif" = görüş alanının ORTASINA en yakın bölümün başlığı.
@@ -52,30 +53,34 @@ export function ScrollSpy({
       let aktif: string | null = null
 
       for (const b of bolumler) {
-        if (b.el.offsetTop <= isaret) aktif = b.id
+        if (b.el.offsetTop <= isaret)
+aktif = b.id
         else break
       }
 
       // Sayfa sonuna gelindiyse en son bölümü işaretle
       if (
-        window.innerHeight + window.scrollY >=
-        document.body.offsetHeight - 8
+        window.innerHeight + window.scrollY
+        >= document.body.offsetHeight - 8
       ) {
         aktif = bolumler[bolumler.length - 1].id
       }
 
-      if (aktif === aktifId) return
+      if (aktif === aktifId)
+return
       setAktifId(aktif)
 
       // DOM işaretlemesi: CSS bunu okuyor (yeniden render maliyeti yok)
       for (const b of bolumler) {
-        if (b.id === aktif) b.el.setAttribute('data-active', 'true')
+        if (b.id === aktif)
+b.el.setAttribute('data-active', 'true')
         else b.el.removeAttribute('data-active')
       }
     }
 
     const onScroll = () => {
-      if (frame) return
+      if (frame)
+return
       frame = requestAnimationFrame(hesapla)
     }
 
@@ -88,7 +93,8 @@ export function ScrollSpy({
     return () => {
       window.removeEventListener('scroll', onScroll)
       window.removeEventListener('resize', onScroll)
-      if (frame) cancelAnimationFrame(frame)
+      if (frame)
+cancelAnimationFrame(frame)
       for (const b of bolumler) b.el.removeAttribute('data-active')
     }
   }, [selector, aktifId])

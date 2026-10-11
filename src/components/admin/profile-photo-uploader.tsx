@@ -92,12 +92,14 @@ export function ProfilePhotoUploader({
       onUploaded(image, originalUrl)
       onStatus({ type: 'success', text: 'Profil fotoğrafı güncellendi.' })
       closeCropper()
-    } catch (error) {
+    }
+ catch (error) {
       onStatus({
         type: 'error',
         text: error instanceof Error ? error.message : 'Fotoğraf yüklenemedi.',
       })
-    } finally {
+    }
+ finally {
       setUploading(false)
     }
   }
@@ -193,13 +195,13 @@ export function ProfilePhotoUploader({
                   <Button
                     color="danger"
                     onPress={remove}
-                    startContent={
+                    startContent={(
                       <Icon
                         icon="mdi:trash-can-outline"
                         width={16}
                         height={16}
                       />
-                    }
+                    )}
                   >
                     Evet, kaldır
                   </Button>
@@ -225,7 +227,8 @@ export function ProfilePhotoUploader({
             ) : null}
           </div>
           <Hint>
-            JPG, PNG veya WEBP — en fazla 5 MB. Görsel 512×512 kareye kırpılır.{' '}
+            JPG, PNG veya WEBP — en fazla 5 MB. Görsel 512×512 kareye kırpılır.
+{' '}
             Dosyayı buraya sürükleyip bırakabilirsin.
           </Hint>
         </div>

@@ -265,7 +265,8 @@ export function HeroSection({
           aria-label={t('hero.scrollDown')}
           onClick={() => {
             const target = document.getElementById('about')
-            if (!target) return
+            if (!target)
+return
             target.scrollIntoView({
               behavior: window.matchMedia('(prefers-reduced-motion: reduce)')
                 .matches

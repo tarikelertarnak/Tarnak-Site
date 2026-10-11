@@ -96,7 +96,7 @@ interface NavItem {
   key: string
   labelKey: string
   href: string
-  icon: (props: { size?: number; className?: string }) => React.ReactElement
+  icon: (props: { size?: number, className?: string }) => React.ReactElement
 }
 
 const SIDEBAR_WIDTH = 325
@@ -131,7 +131,7 @@ export function Sidebar() {
   const [profileOpen, setProfileOpen] = useState(false)
 
   useEffect(() => {
-    const handler = () => setIsOpen((o) => !o)
+    const handler = () => setIsOpen(o => !o)
     window.addEventListener('sidebar:request-toggle', handler)
     return () => window.removeEventListener('sidebar:request-toggle', handler)
   }, [])
@@ -154,14 +154,16 @@ export function Sidebar() {
   const fetchSession = useCallback(() => {
     let cancelled = false
     fetch('/api/admin/session')
-      .then((r) => r.json())
+      .then(r => r.json())
       .then((data) => {
-        if (cancelled) return
+        if (cancelled)
+return
         setSessionUser(data.user || null)
         setSessionChecked(true)
       })
       .catch(() => {
-        if (!cancelled) setSessionChecked(true)
+        if (!cancelled)
+setSessionChecked(true)
       })
     return () => {
       cancelled = true
@@ -192,9 +194,11 @@ export function Sidebar() {
   }, [isOpen])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen)
+return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false)
+      if (e.key === 'Escape')
+setIsOpen(false)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
@@ -213,13 +217,15 @@ export function Sidebar() {
     try {
       const { createClient } = await import('@/lib/supabase/client')
       await (await createClient()).auth.signOut()
-    } catch {
+    }
+ catch {
       // ignore — sunucu tarafı zaten temizliyor
     }
     // 2) Server-side: cookie'leri (supabase + admin_session) temizle.
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
-    } catch {
+    }
+ catch {
       // ignore
     }
     setSessionUser(null)
@@ -257,8 +263,7 @@ export function Sidebar() {
       <button
         type="button"
         onClick={() =>
-          window.dispatchEvent(new CustomEvent('search:request-open'))
-        }
+          window.dispatchEvent(new CustomEvent('search:request-open'))}
         aria-label={t('common.search')}
         className="flex w-full items-center gap-3 border-b border-white/5 px-5 py-3.5 text-left text-base text-foreground/50 transition-colors hover:bg-white/5 hover:text-foreground"
       >
@@ -366,10 +371,10 @@ export function Sidebar() {
                 )}
               </span>
               <span className="min-w-0 flex-1 truncate text-base font-medium text-foreground/90">
-                {sessionUser.fullName ||
-                  sessionUser.username ||
-                  sessionUser.email ||
-                  'Profil'}
+                {sessionUser.fullName
+                  || sessionUser.username
+                  || sessionUser.email
+                  || 'Profil'}
               </span>
             </button>
             <button

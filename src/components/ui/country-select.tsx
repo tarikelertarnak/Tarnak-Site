@@ -21,7 +21,7 @@ import { COUNTRIES } from '@/lib/countries-data'
  * Emoji yerine SVG: emoji Windows'ta "TR" gibi harf çiftlerine düşüyordu.
  * `<img>` ayrıca `<mask id>` çakışmasını imkânsız kılıyor.
  */
-function CountryFlag({ iso2, size = 18 }: { iso2: string; size?: number }) {
+function CountryFlag({ iso2, size = 18 }: { iso2: string, size?: number }) {
   const h = Math.round(size * 0.75)
   return (
     <img
@@ -138,7 +138,8 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
   }, [open])
 
   useEffect(() => {
-    if (!open) return
+    if (!open)
+return
     const onDown = (e: MouseEvent) => {
       const target = e.target as Node
       /*
@@ -147,10 +148,11 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
         kapanıyor ve seçim hiç uygulanmıyordu. İkisine de bakıyoruz.
       */
       if (
-        rootRef.current?.contains(target) ||
-        panelRef.current?.contains(target)
-      )
+        rootRef.current?.contains(target)
+        || panelRef.current?.contains(target)
+      ) {
         return
+}
       setOpen(false)
     }
     document.addEventListener('mousedown', onDown)
@@ -198,22 +200,24 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
         const iso = r.iso2
         const code = r.callingCode
         // Sıralama: tam eşleşme > ön ek > içinde geçme.
-        if (iso === needle || code === needle) return { r, score: 0 }
+        if (iso === needle || code === needle)
+return { r, score: 0 }
         if (name.startsWith(needle) || enName.startsWith(needle))
           return { r, score: 1 }
         if (iso.startsWith(needle) || code.startsWith(needle))
           return { r, score: 2 }
         if (name.includes(needle) || enName.includes(needle))
           return { r, score: 3 }
-        if (r.haystack.includes(needle)) return { r, score: 4 }
+        if (r.haystack.includes(needle))
+return { r, score: 4 }
         return null
       })
-      .filter((x): x is { r: Row; score: number } => x !== null)
+      .filter((x): x is { r: Row, score: number } => x !== null)
     // Eşit skorda alfabetik (kararlı sıra).
     scored.sort(
       (a, b) => a.score - b.score || a.r.name.localeCompare(b.r.name, 'tr'),
     )
-    return scored.map((x) => x.r)
+    return scored.map(x => x.r)
   }, [q, rows])
 
   // Klavye: ↑ ↓ seç, Enter onayla, Esc kapat.
@@ -232,8 +236,8 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault()
       setActive((prev) => {
-        const next =
-          e.key === 'ArrowDown'
+        const next
+          = e.key === 'ArrowDown'
             ? Math.min(prev + 1, filtered.length - 1)
             : Math.max(prev - 1, 0)
         // Aktif satırı görünür alana getir.
@@ -248,13 +252,14 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
       const row = filtered[active]
       if (row) {
         commit(row.iso2)
-      } else if (filtered.length === 1) {
+      }
+ else if (filtered.length === 1) {
         commit(filtered[0].iso2)
       }
     }
   }
 
-  const selected = rows.find((c) => c.iso2 === value)
+  const selected = rows.find(c => c.iso2 === value)
 
   /*
     Tetikleyici SABİT ve dar. Önceden genişlik en uzun ülke adından türetiliyordu
@@ -267,7 +272,7 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
       <button
         type="button"
         ref={triggerRef}
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => setOpen(o => !o)}
         aria-label={
           selected
             ? `${t('country.select')}: ${selected.name}`
@@ -297,10 +302,10 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
       </button>
 
       {/* Panel: portal ile body'ye basılır (kırpılma/z-index sorunu yok). */}
-      {open &&
-        panelPos &&
-        typeof document !== 'undefined' &&
-        createPortal(
+      {open
+        && panelPos
+        && typeof document !== 'undefined'
+        && createPortal(
           <div
             ref={panelRef}
             style={{
@@ -391,7 +396,8 @@ export function CountrySelect({ value, onChange }: CountrySelectProps) {
                         {c.iso2}
                       </span>
                       <span className="w-[3.75rem] shrink-0 text-right text-[11px] tabular-nums text-foreground/55">
-                        +{c.callingCode}
+                        +
+{c.callingCode}
                       </span>
                       <span className="w-4 shrink-0">
                         <CheckIcon

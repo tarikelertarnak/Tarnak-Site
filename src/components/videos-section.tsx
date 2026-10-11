@@ -27,7 +27,7 @@ export function VideosSection({
         </h2>
       ) : null}
       <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {videolar.map((video) => (
+        {videolar.map(video => (
           <li key={video.id}>
             <a
               href={video.url}

@@ -53,7 +53,7 @@ export function ChatPanel({
 }: {
   initialMessages: ChatMessage[]
   displayName: string
-  onStatus?: (status: { type: 'success' | 'error'; text: string }) => void
+  onStatus?: (status: { type: 'success' | 'error', text: string }) => void
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [search, setSearch] = useState('')
@@ -64,7 +64,7 @@ export function ChatPanel({
   const isEn = locale === 'en'
   const bottomRef = useRef<HTMLDivElement>(null)
   const seen = useRef<Set<string>>(
-    new Set(initialMessages.filter((m) => !m.owner).map((m) => m.name)),
+    new Set(initialMessages.filter(m => !m.owner).map(m => m.name)),
   )
 
   useEffect(() => {
@@ -77,14 +77,15 @@ export function ChatPanel({
             const latest = data.messages as ChatMessage[]
             const merged = [...prev]
             for (const message of latest) {
-              if (!merged.some((m) => m.id === message.id)) {
+              if (!merged.some(m => m.id === message.id)) {
                 merged.push(message)
               }
             }
             return merged
           })
         }
-      } catch {
+      }
+ catch {
         // ignore polling errors
       }
     }
@@ -127,8 +128,8 @@ export function ChatPanel({
     for (const conv of map.values()) {
       conv.thread.sort((a, b) => a.createdAt - b.createdAt)
       const last = conv.thread[conv.thread.length - 1]
-      conv.lastPreview =
-        last?.text || (last?.file ? `📎 ${last.file.name}` : '')
+      conv.lastPreview
+        = last?.text || (last?.file ? `📎 ${last.file.name}` : '')
     }
     return [...map.values()].sort((a, b) => b.lastAt - a.lastAt)
   }, [messages])
@@ -136,7 +137,7 @@ export function ChatPanel({
   useEffect(() => {
     if (activeUser) {
       seen.current.add(activeUser)
-      setMessages((prev) => prev.map((m) => m))
+      setMessages(prev => prev.map(m => m))
     }
   }, [activeUser])
 
@@ -146,14 +147,14 @@ export function ChatPanel({
       return conversations
     }
     return conversations.filter(
-      (conv) =>
-        conv.name.toLowerCase().includes(q) ||
-        conv.lastPreview.toLowerCase().includes(q),
+      conv =>
+        conv.name.toLowerCase().includes(q)
+        || conv.lastPreview.toLowerCase().includes(q),
     )
   }, [conversations, search])
 
   const activeConversation = useMemo(
-    () => conversations.find((conv) => conv.name === activeUser) ?? null,
+    () => conversations.find(conv => conv.name === activeUser) ?? null,
     [conversations, activeUser],
   )
 
@@ -176,25 +177,28 @@ export function ChatPanel({
       const data = await res.json()
       if (res.ok) {
         setReplyText('')
-        setMessages((prev) => (data.data ? [...prev, data.data] : prev))
+        setMessages(prev => (data.data ? [...prev, data.data] : prev))
         onStatus?.({
           type: 'success',
           text: isEn ? 'Reply sent.' : 'Yanıt gönderildi.',
         })
-      } else {
+      }
+ else {
         onStatus?.({
           type: 'error',
           text:
-            data.message ||
-            (isEn ? 'Reply could not be sent.' : 'Yanıt gönderilemedi.'),
+            data.message
+            || (isEn ? 'Reply could not be sent.' : 'Yanıt gönderilemedi.'),
         })
       }
-    } catch {
+    }
+ catch {
       onStatus?.({
         type: 'error',
         text: isEn ? 'An error occurred.' : 'Bir hata oluştu.',
       })
-    } finally {
+    }
+ finally {
       setSending(false)
     }
   }
@@ -205,13 +209,14 @@ export function ChatPanel({
         method: 'DELETE',
       })
       if (res.ok) {
-        setMessages((prev) => prev.filter((m) => m.id !== id))
+        setMessages(prev => prev.filter(m => m.id !== id))
         onStatus?.({
           type: 'success',
           text: isEn ? 'Message deleted.' : 'Mesaj silindi.',
         })
       }
-    } catch {
+    }
+ catch {
       onStatus?.({
         type: 'error',
         text: isEn ? 'Message could not be deleted.' : 'Mesaj silinemedi.',
@@ -252,7 +257,7 @@ export function ChatPanel({
                     : 'Henüz mesaj yok.'}
               </p>
             ) : (
-              filtered.map((conv) => (
+              filtered.map(conv => (
                 <button
                   key={conv.name}
                   type="button"

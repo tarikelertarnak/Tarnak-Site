@@ -28,11 +28,14 @@ export function AnnouncementBanner() {
     // istemci olduğu için ilk render'da gizli başlar (hydration uyumu).
     const el = document.querySelector<HTMLElement>('[data-announcement-text]')
     const ham = el?.textContent?.trim() ?? ''
-    if (!ham) return
+    if (!ham)
+return
 
     try {
-      if (localStorage.getItem(KAPATMA_ANAHTARI) === ham) return
-    } catch {
+      if (localStorage.getItem(KAPATMA_ANAHTARI) === ham)
+return
+    }
+ catch {
       /* localStorage kapalıysa (gizli sekme) — göster, hata verme */
     }
 
@@ -43,13 +46,16 @@ export function AnnouncementBanner() {
   const kapat = () => {
     setGizli(true)
     try {
-      if (mesaj) localStorage.setItem(KAPATMA_ANAHTARI, mesaj)
-    } catch {
+      if (mesaj)
+localStorage.setItem(KAPATMA_ANAHTARI, mesaj)
+    }
+ catch {
       /* yoksay */
     }
   }
 
-  if (gizli || !mesaj) return null
+  if (gizli || !mesaj)
+return null
 
   return (
     <div

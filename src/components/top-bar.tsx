@@ -79,8 +79,8 @@ export function TopBar() {
               href="/"
               onClick={(e) => {
                 if (
-                  typeof window !== 'undefined' &&
-                  window.location.pathname === '/'
+                  typeof window !== 'undefined'
+                  && window.location.pathname === '/'
                 ) {
                   e.preventDefault()
                   window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -125,8 +125,7 @@ export function TopBar() {
             <button
               type="button"
               onClick={() =>
-                window.dispatchEvent(new CustomEvent('search:request-open'))
-              }
+                window.dispatchEvent(new CustomEvent('search:request-open'))}
               aria-label={t('common.search')}
               className={`flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/5 text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground ${
                 scrolled ? 'h-8 px-2.5' : 'h-9 px-3'

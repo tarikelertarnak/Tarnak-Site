@@ -28,9 +28,9 @@ vi.mock('@/components/ui/button', () => ({
     isDisabled,
     'aria-label': ariaLabel,
   }: {
-    children?: React.ReactNode
-    onPress?: () => void
-    isDisabled?: boolean
+    'children'?: React.ReactNode
+    'onPress'?: () => void
+    'isDisabled'?: boolean
     'aria-label'?: string
   }) => (
     <button
@@ -62,7 +62,7 @@ vi.mock('@/components/ui/input', () => ({
       <input
         value={value}
         placeholder={placeholder}
-        onChange={(e) => onValueChange?.(e.target.value)}
+        onChange={e => onValueChange?.(e.target.value)}
       />
     </label>
   ),
@@ -82,7 +82,7 @@ vi.mock('@/components/ui/textarea', () => ({
       {label}
       <textarea
         value={value}
-        onChange={(e) => onValueChange?.(e.target.value)}
+        onChange={e => onValueChange?.(e.target.value)}
       />
     </label>
   ),
@@ -169,7 +169,7 @@ function readBlobBytes(blob: Blob): Promise<Uint8Array> {
 }
 
 function lastListUrl(calls: Call[]): string {
-  const gets = calls.filter((c) => c.method === 'GET')
+  const gets = calls.filter(c => c.method === 'GET')
   return gets.length ? gets[gets.length - 1].url : ''
 }
 
@@ -230,7 +230,7 @@ describe('dataManager', () => {
     fireEvent.click(screen.getByText('Hayır'))
 
     await waitFor(() => {
-      const patch = calls.find((c) => c.method === 'PATCH')
+      const patch = calls.find(c => c.method === 'PATCH')
       expect(patch).toBeTruthy()
       expect(patch!.url).toContain('/api/admin/data/posts/2')
       expect(patch!.body).toEqual({ published: true })
@@ -242,7 +242,7 @@ describe('dataManager', () => {
 
   it('kaynak degistirince yeni kaynagi ceker ve basligi degistirir', async () => {
     const { calls } = installFetch((url) => {
-      if (url.includes('/projects'))
+      if (url.includes('/projects')) {
         return listResponse([
           {
             id: 9,
@@ -252,6 +252,7 @@ describe('dataManager', () => {
             sort_order: 1,
           },
         ])
+}
       return listResponse(POST_ROWS)
     })
     render(<DataManager />)
@@ -303,8 +304,8 @@ describe('dataManager', () => {
     await waitFor(() => expect(screen.getByText('İlk Yazı')).toBeTruthy())
     fireEvent.click(screen.getAllByLabelText('Sil')[0])
 
-    await new Promise((r) => setTimeout(r, 50))
-    expect(calls.some((c) => c.method === 'DELETE')).toBe(false)
+    await new Promise(r => setTimeout(r, 50))
+    expect(calls.some(c => c.method === 'DELETE')).toBe(false)
   })
 
   it('silme onaylanirsa DELETE atar', async () => {
@@ -319,7 +320,7 @@ describe('dataManager', () => {
     fireEvent.click(screen.getAllByLabelText('Sil')[0])
 
     await waitFor(() => {
-      const del = calls.find((c) => c.method === 'DELETE')
+      const del = calls.find(c => c.method === 'DELETE')
       expect(del).toBeTruthy()
       expect(del!.url).toContain('/api/admin/data/posts/1')
     })
@@ -348,7 +349,7 @@ describe('dataManager', () => {
     fireEvent.click(screen.getByText('Kaydet'))
 
     await waitFor(() => {
-      const post = calls.find((c) => c.method === 'POST')
+      const post = calls.find(c => c.method === 'POST')
       expect(post).toBeTruthy()
       expect(post!.url).toContain('/api/admin/data/posts')
       expect(post!.body?.title).toBe('Yepyeni')
@@ -421,7 +422,7 @@ describe('dataManager', () => {
 
   it('tek satirlik kaynakta (İstatistikler) sil butonu cikmaz', async () => {
     installFetch((url) => {
-      if (url.includes('/stats'))
+      if (url.includes('/stats')) {
         return listResponse([
           {
             id: 1,
@@ -431,6 +432,7 @@ describe('dataManager', () => {
             experience_years: 4,
           },
         ])
+}
       return listResponse(POST_ROWS)
     })
     render(<DataManager />)
@@ -472,13 +474,13 @@ describe('dataManager', () => {
     fireEvent.click(screen.getByText('CSV indir'))
 
     await waitFor(() =>
-      expect(calls.some((c) => c.url.includes('all=1'))).toBe(true),
+      expect(calls.some(c => c.url.includes('all=1'))).toBe(true),
     )
     await waitFor(() => expect(blobs.length).toBe(1))
 
     const bytes = await readBlobBytes(blobs[0])
     // BOM'u BAYT seviyesinde dogrula (TextDecoder onu kendiliginden siler).
-    expect([bytes[0], bytes[1], bytes[2]]).toEqual([0xef, 0xbb, 0xbf])
+    expect([bytes[0], bytes[1], bytes[2]]).toEqual([0xEF, 0xBB, 0xBF])
 
     const text = new TextDecoder('utf-8').decode(bytes)
     expect(text).toContain('İlk Yazı')
@@ -511,7 +513,7 @@ describe('dataManager', () => {
     fireEvent.click(screen.getByText('CSV indir'))
 
     await waitFor(() => {
-      const exp = calls.find((c) => c.url.includes('all=1'))
+      const exp = calls.find(c => c.url.includes('all=1'))
       expect(exp).toBeTruthy()
       expect(exp!.url).toContain('q=ilk')
     })
@@ -560,7 +562,7 @@ describe('dataManager', () => {
     // posts icin "Durum" filtresi tanimli (Yayında / Taslak)
     const select = screen.getByLabelText('Durum') as HTMLSelectElement
     expect(select).toBeTruthy()
-    const labels = Array.from(select.options).map((o) => o.textContent)
+    const labels = Array.from(select.options).map(o => o.textContent)
     expect(labels).toEqual(['Tümü', 'Yayında', 'Taslak'])
   })
 
@@ -603,7 +605,7 @@ describe('dataManager', () => {
 
   it('filtresiz kaynakta (Yetenekler) filtre satiri cizilmez', async () => {
     installFetch((url) => {
-      if (url.includes('/skills'))
+      if (url.includes('/skills')) {
         return listResponse([
           {
             id: 1,
@@ -614,6 +616,7 @@ describe('dataManager', () => {
             sort_order: 1,
           },
         ])
+}
       return listResponse(POST_ROWS)
     })
     render(<DataManager />)
@@ -628,7 +631,7 @@ describe('dataManager', () => {
 
   it('kaynak degisince filtre sifirlanir', async () => {
     const { calls } = installFetch((url) => {
-      if (url.includes('/messages'))
+      if (url.includes('/messages')) {
         return listResponse([
           {
             id: 1,
@@ -639,6 +642,7 @@ describe('dataManager', () => {
             created_at: '2026-09-01T10:00:00Z',
           },
         ])
+}
       return listResponse(POST_ROWS)
     })
     render(<DataManager />)
@@ -681,7 +685,7 @@ describe('dataManager', () => {
     fireEvent.click(screen.getByText('CSV indir'))
 
     await waitFor(() => {
-      const exp = calls.find((c) => c.url.includes('all=1'))
+      const exp = calls.find(c => c.url.includes('all=1'))
       expect(exp).toBeTruthy()
       expect(exp!.url).toContain('f_published=true')
     })

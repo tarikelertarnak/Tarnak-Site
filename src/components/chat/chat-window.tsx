@@ -93,8 +93,9 @@ export function ChatWindow({
   */
   const [cooldown, setCooldown] = useState(0)
   useEffect(() => {
-    if (cooldown <= 0) return
-    const t = setTimeout(() => setCooldown((c) => Math.max(0, c - 1)), 1000)
+    if (cooldown <= 0)
+return
+    const t = setTimeout(() => setCooldown(c => Math.max(0, c - 1)), 1000)
     return () => clearTimeout(t)
   }, [cooldown])
 
@@ -122,7 +123,8 @@ export function ChatWindow({
         if (data.success) {
           setAll(data.messages)
         }
-      } catch {
+      }
+ catch {
         // ignore polling errors
       }
     }
@@ -136,12 +138,12 @@ export function ChatWindow({
       return
     }
     fetch('/api/chat/users')
-      .then((res) => (res.ok ? res.json() : { users: [] }))
+      .then(res => (res.ok ? res.json() : { users: [] }))
       .then((data) => {
         const names = ((data.users ?? []) as Array<{ username: string | null }>)
-          .map((u) => u.username)
+          .map(u => u.username)
           .filter((n): n is string => Boolean(n))
-        setOthers(names.filter((n) => n !== userName))
+        setOthers(names.filter(n => n !== userName))
       })
       .catch(() => setOthers([]))
   }, [joined, userName])
@@ -164,7 +166,8 @@ export function ChatWindow({
       if (m.to === userName || m.to === null || m.to === undefined) {
         // Owner of private messages sent to me or of public messages → person
         upsert(m.name, m)
-      } else if (m.name === userName && m.to) {
+      }
+ else if (m.name === userName && m.to) {
         // Recipient of my private messages → person
         upsert(m.to, m)
       }
@@ -176,12 +179,12 @@ export function ChatWindow({
   const visible = useMemo(() => {
     if (contact === null) {
       // Public chat: only public messages
-      return all.filter((m) => !m.to && !m.owner)
+      return all.filter(m => !m.to && !m.owner)
     }
     return all.filter(
-      (m) =>
-        (m.name === userName && (!m.to || m.to === contact)) ||
-        (m.name === contact && (!m.to || m.to === userName)),
+      m =>
+        (m.name === userName && (!m.to || m.to === contact))
+        || (m.name === contact && (!m.to || m.to === userName)),
     )
   }, [all, contact, userName])
 
@@ -196,12 +199,12 @@ export function ChatWindow({
     url: string
   }) => {
     if (
-      !userName ||
-      (!text.trim() && !fileData) ||
-      sending ||
-      uploading ||
-      cooldown > 0 ||
-      Date.now() - lastSentAt.current < DEBOUNCE_MS
+      !userName
+      || (!text.trim() && !fileData)
+      || sending
+      || uploading
+      || cooldown > 0
+      || Date.now() - lastSentAt.current < DEBOUNCE_MS
     ) {
       return
     }
@@ -228,9 +231,9 @@ export function ChatWindow({
           başlatılıyor; buton o süre boyunca `isDisabled`.
         */
         if (res.status === 429) {
-          const retryAfter =
-            Number(res.headers.get('Retry-After') ?? data.retryAfter ?? 60) ||
-            60
+          const retryAfter
+            = Number(res.headers.get('Retry-After') ?? data.retryAfter ?? 60)
+              || 60
           setCooldown(Math.ceil(retryAfter))
           setError(t('chat.rateLimited', { seconds: retryAfter }))
           return
@@ -246,9 +249,11 @@ export function ChatWindow({
       if (refreshed.success) {
         setAll(refreshed.messages)
       }
-    } catch {
+    }
+ catch {
       setError(t('chat.error'))
-    } finally {
+    }
+ finally {
       setSending(false)
     }
   }
@@ -274,9 +279,11 @@ export function ChatWindow({
         return
       }
       await send(data.file)
-    } catch {
+    }
+ catch {
       setError(t('chat.uploadFailed'))
-    } finally {
+    }
+ finally {
       setUploading(false)
     }
   }
@@ -345,7 +352,9 @@ export function ChatWindow({
               {profile.nickname && (
                 <span className="text-foreground-500">
                   {' '}
-                  • {profile.nickname}
+                  •
+{' '}
+{profile.nickname}
                 </span>
               )}
             </p>
@@ -386,7 +395,7 @@ export function ChatWindow({
                 {t('chat.chats')}
               </p>
             )}
-            {contacts.map((c) => (
+            {contacts.map(c => (
               <button
                 key={c.name}
                 type="button"
@@ -418,7 +427,7 @@ export function ChatWindow({
                 <p className="text-foreground-500 px-2 pt-1 pb-0.5 text-[10px] font-bold tracking-wider uppercase">
                   {t('chat.others')}
                 </p>
-                {others.map((name) => (
+                {others.map(name => (
                   <button
                     key={name}
                     type="button"
