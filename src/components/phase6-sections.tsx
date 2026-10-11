@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import type {
   Availability,
   Certificate,
@@ -338,17 +337,5 @@ export function CertificatesSection({
         })}
       </ul>
     </section>
-  )
-}
-
-/** Boş durum — kullanıcı içeriği doldurana kadar gösterilir. */
-export function ContentPlaceholder({ children }: { children: ReactNode }) {
-  return (
-    <div className="mx-auto w-full max-w-3xl rounded-xl border border-dashed border-foreground/15 p-6 text-center">
-      <p className="text-sm text-foreground/55">{children}</p>
-      <p className="mt-1.5 text-xs text-foreground/35">
-        TODO: admin paneli → içerik bölümünden doldur.
-      </p>
-    </div>
   )
 }
