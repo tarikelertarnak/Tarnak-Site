@@ -1189,3 +1189,49 @@ sürükleme testinin BOŞ olmadığını kanıtlar: olay bağı kesilince büyü
 sınır testi (240 alt / 560 üst) birlikte kırıldı.
 
 commit: `5636da8` (yerel; push/deploy yok) + test/kayıt commit'i.
+
+---
+
+## Bu tur (2026-10-12, hero CV odak halkasi — \"CV secilmiyor\")
+
+Kullanici: ana sayfa hero'sunda alti dugmede (Projeler, Iletisim, CV, Blog,
+Hakkımda, Sohbet) klavyeyle ilerlerken **CV'ye gelinince secim gorulmuyordu**.
+
+### Kok neden (olculdu — derlenmis CSS probe)
+
+1. `HERO_BTN_FOCUS` (`hero-button-style.ts`) `group-focus-within:ring-2
+group-focus-within:ring-primary-fg …` kullaniyordu. Tailwind kurali
+   `.group-focus-within\:ring-2:is(:where(.group):focus-within *)` — **yalnizca
+   GRUP'un TORUNLARINI** secer; sinif grubun KENDISINDE olunca **hic eslesmez**
+   (canli CSS dogrulandi).
+2. `ring-primary-fg`: `--color-primary-fg` kopru jetonu YOK (ad
+   `--color-primary-foreground`) → sinif derlenmis CSS'te **hic uretilmiyor**
+   (`ring-primary-fg uretilmis : false`).
+   Sonuc: parçalarda `focus-visible:outline-none` + kabukta olu halka →
+   CV butonunda **odak gostergesi hic yok**.
+
+### Cozum
+
+`HERO_BTN_FOCUS` → `outline-none has-[:focus-visible]:ring-2
+has-[:focus-visible]:ring-primary has-[:focus-visible]:ring-offset-2
+has-[:focus-visible]:ring-offset-background` — halka kabugun KENDISINE
+uygulanir (`:has(:focus-visible)` = komşu butonların `:focus-visible`
+anlamıyla aynı: yalniz klavye odaginda). `split-button.tsx` yorumu guncellendi.
+
+### Dogrulama
+
+- Derlenmis CSS: `.has-\[\:focus-visible\]\:ring-2:has(:focus-visible)` +
+  `--tw-ring-color: var(--tprimary)` uretildi; `group-focus-within` ile
+  eski kalip kalmadi.
+- SSR HTML: kabukta `has-[:focus-visible]:ring-2 … ring-offset-background`
+  mevcut; `group-focus-within:ring-2` yok.
+- Regresyon: `split-button.test.tsx` +3 (kaynak sozlesme: sabit degerinde
+  `group-focus-within`/`ring-primary-fg` YOK + `has-[:focus-visible]:ring-2`
+  var; jeton koprusu: `globals.css` icinde `--color-primary:`; statik cikti
+  kabuk sinifi). Eski \"focus-within:ring-2\" beklentisi yeni kaliba guncellendi.
+- tsc 0 · eslint `--max-warnings 0` (3 dosya) 0 · vitest **615/615** (52 dosya)
+  · playwright **62/62** · dev `/chat` 200.
+- **NEGATIF KONTROL** (`%TEMP%\opencode\negctl-cv.cjs`): sabit eski bozuk
+  varyanta mutasyon → **4 test kirildi** (test bos degil) → byte-exact geri
+  yukleme (sha `32136b7bbb99681e` oncesi = sonrasi) → testler yesil.
+  commit: `0e2526a` (yerel; push/deploy yok).

@@ -1,7 +1,7 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-12T02:15:00+03:00
+updated: 2026-10-12T20:40:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
 branch: faz-1-guvenlik last_commit: 5636da8 (yerel; push/deploy YOK)
@@ -31,9 +31,9 @@ branch: faz-1-guvenlik last_commit: 5636da8 (yerel; push/deploy YOK)
 
 ## Current
 
-phase: TARMAS / SERBEST FAZI — SOHBET ERISIM + YAN YANA YERLESIM + INERT DOSYA step: KAPANDI
+phase: TARMAS / SERBEST FAZI — HERO CV SPLIT ODAK HALKASI ("CV secilmiyor") step: KAPANDI
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 5636da8 (yerel commit; push/deploy ASLA otomatik)
+branch: faz-1-guvenlik last_commit: 0e2526a (yerel commit; push/deploy ASLA otomatik)
 running_processes: next dev (turbopack) :3000 PID 19720
 not: "Sohbet yukleniyor… siyah yaziyordu" + "chat sahte, gercek calissin" kapandi.
 A) TANIMSIZ TEMA JETONU sinifi: `text-foreground-50/-60/-70` (16 yer, hepsi
@@ -146,3 +146,32 @@ tek kişilik listede otomatik açılış.
 - Test: 312/312 (23 dosya) · tsc 0 · negatif kontrol dogrulandi
 - Kapanan: UX-011 (capasiz gezinme, tek buton stili, iki satirlik marka, light gorunurluk)
 - Kayit: `.tarmas/LOG.md` UX-011 blogu
+
+## Bu tur (2026-10-12, hero CV odak halkasi — \"CV secilmiyor\")
+
+Kullanici: _\"Projelerden secmeye basliyom sohbete kadar ama CV secmiyo\"_ — ana
+sayfa hero'sunda Projeler -> Iletisim -> CV -> Blog -> Hakkımda -> Sohbet
+butonlarinda (klavye/Tab) CV'ye gelinince HICBIR odak gostergesi yoktu.
+
+**Olculen kok neden (derlenmis CSS probe, dev sunucusu):**
+
+1. `HERO_BTN_FOCUS` `group-focus-within:*` kullaniyordu; Tailwind kurali
+   `.group-focus-within\:ring-2:is(:where(.group):focus-within *)` — **TORUN**
+   secer; sinif GRUP'un KENDISINDE (WRAP) olunca hic eslesmez.
+2. `ring-primary-fg` jetonu yok (kopru adi `--color-primary-foreground`) —
+   sinif derlenmis CSS'te HIC uretilmiyor (`ring-primary-fg uretilmis: false`).
+   Parcalarda `focus-visible:outline-none` + kabukta olu halka = CV'de odak yok.
+
+**Cozum:** `HERO_BTN_FOCUS = outline-none has-[:focus-visible]:ring-2
+has-[:focus-visible]:ring-primary has-[:focus-visible]:ring-offset-2
+has-[:focus-visible]:ring-offset-background` — halka kabugun KENDISINE,
+yalniz klavye odağında (komşu butonların :focus-visible anlamiyla ayni).
+
+**Kanit:** derlenmis CSS'te `.has-\[\:focus-visible\]\:ring-2:has(:focus-visible)`
+
+- `--tw-ring-color: var(--tprimary)` uretildi; SSR HTML'de kabuk siniflarinda
+  `group-focus-within` kalmadi; split-button.test.tsx +3 regresyon (kaynak
+  sozlesme + jeton koprusu + statik cikti; 613->615 test).
+  tsc 0 · eslint --max-warnings 0 (3 dosya) 0 · vitest 615/615 (52 dosya) ·
+  playwright 62/62 · negatif kontrol: mutasyon (eski varyant) -> **4 test kirildi**
+  -> byte-exact geri (sha `32136b7b…`) -> yesil.
