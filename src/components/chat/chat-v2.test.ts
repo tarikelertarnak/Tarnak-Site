@@ -102,10 +102,12 @@ describe('chat-v2 arayüz sözleşmesi', () => {
     expect(SRC).toMatch(/toLocaleDateString\('tr-TR'/)
   })
 
-  it('önemli kişi işareti (kırmızı vurgu 🔴) API\'ye bildirilir', () => {
-    expect(SRC).toContain('🔴')
-    expect(SRC).toContain('toggleImportant')
-    expect(SRC).toContain('important')
+  it('önemli kişi işareti sağ tık menüsünden API\'ye bildirilir', () => {
+    // 2026-10-13: başlıktaki ⚪/🔴 düğmesi kaldırıldı → işaret hâlâ `important`
+    // bayrağına yazılır, ama karar PeerMenu'de (sağ tık) verilir.
+    expect(SRC).toContain('onToggle(\'important\'')
+    expect(SRC).toContain('runAdmin(action, p, { [action]: next })')
+    expect(SRC).toContain('action === \'favorite\' || action === \'important\' || action === \'block\'')
   })
 
   it('giriş yoksa mesaj gönderilmez (API 401) — UI kilitli', () => {
@@ -191,7 +193,8 @@ describe('chat-v2 arayüz sözleşmesi', () => {
     })
 
     it('sohbet tam ekranı kaplar (eski 760px / 68svh / max-w-3xl sınırı yok)', () => {
-      expect(SRC).toContain('flex h-[calc(100svh-19rem)] min-h-[260px] w-full')
+      // 2026-10-13: başlık bloğu kalktı → ayrılan pay 19rem'den 11rem'e indi.
+      expect(SRC).toContain('flex h-[calc(100svh-11rem)] min-h-[260px] w-full')
       // sınıf listesinde eski sınırlar YOK (yorumda anılmaları serbest)
       expect(SRC).not.toMatch(/className="[^"]*max-h-\[760px\]/)
       expect(SRC).not.toMatch(/className="[^"]*68svh/)
@@ -213,6 +216,37 @@ describe('chat-v2 arayüz sözleşmesi', () => {
       // tek anıldığı yer açıklayıcı yorumdur; kodda böyle bir metin/ekran yok
       expect(SRC).not.toMatch(/'Erişim yok/)
       expect(SRC).toContain('chat.selectPerson')
+    })
+
+    it('"Önemli kişi olarak işaretle" başlıkta DEĞİL, sağ tık menüsünde', () => {
+      // 2026-10-13 kullanıcı isteği: başlıktaki ⚪/🔴 düğmesi + `toggleImportant`
+      // kaldırıldı; karar PeerMenu'de (sağ tık) durur.
+      expect(SRC).not.toContain('toggleImportant')
+      expect(SRC).not.toContain('setImportant')
+      expect(SRC).toContain('onToggle(\'important\'')
+      expect(SRC).toContain('t(\'chat.markImportant\')')
+      expect(SRC).toContain('t(\'chat.unmarkImportant\')')
+    })
+
+    it('küçük ekranda liste açma düğmesi "←" okundan ÖNCE durur', () => {
+      const open = SRC.indexOf('setListOpen(true)')
+      const back = SRC.indexOf('t(\'chat.backToList\')')
+      expect(open).toBeGreaterThan(-1)
+      expect(back).toBeGreaterThan(-1)
+      expect(open, 'açma düğmesi geri okundan önce').toBeLessThan(back)
+      // Kaplama yalnız dar ekran: `md` ve üstünde panel sabit sütun kalır.
+      expect(SRC).toContain('absolute inset-0 z-40 flex')
+      expect(SRC).toContain('md:static')
+    })
+
+    it('yazma alanı: odak halkası kapanır + sarı seçim tek kaynaktan gelir', () => {
+      expect(SRC).toContain('chat-composer-field')
+      const CSS = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8')
+      expect(CSS).toContain('.chat-composer-field:focus-visible')
+      // Input'a ÖZEL seçim rengi kaldırıldı: sitedeki tek `::selection`
+      // (@lobehub/ui ThemeProvider → sarı) geçerli olur. (Yorumda anılması
+      // serbest; KURAL olmadığını doğruluyoruz.)
+      expect(CSS).not.toMatch(/input::selection\s*[,{]/)
     })
   })
 })

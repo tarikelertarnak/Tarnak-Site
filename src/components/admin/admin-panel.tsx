@@ -1812,18 +1812,23 @@ mesaj
       <div className="mb-6 flex min-w-0 flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-bold">Admin Paneli</h1>
-          <p className="text-sm text-foreground-500">
-            Giriş yapan:
-{' '}
-            <span className="font-semibold text-foreground">{username}</span>
-          </p>
-          {roleLabel && (
-            <p className="text-sm text-foreground-500">
-              Yetki:
-{' '}
-              <span className="font-semibold text-foreground">{roleLabel}</span>
-            </p>
-          )}
+          {/* Kimlik bloğu (2026-10-13, kullanıcı isteği): "giriş yapan" + yetki
+              ayrı satırlar yerine TEK gruplu kutuda; rol rozet olarak. */}
+          <div className="mt-1 inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-surface-border bg-surface-1 px-3 py-1.5 text-sm text-foreground-500">
+            <span>
+              Giriş yapan:
+              {' '}
+              <span className="font-semibold text-foreground">{username}</span>
+            </span>
+            {roleLabel && (
+              <span className="inline-flex items-center gap-1.5">
+                Yetki:
+                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-xs font-semibold text-primary">
+                  {roleLabel}
+                </span>
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex min-w-0 flex-row flex-wrap gap-2">
           {/* 2026-10-07 (kullanıcı): "Sayfa Düzenleyici" ve `/admin/puck`
@@ -1909,13 +1914,6 @@ mesaj
     </div>
   )
 }
-
-/**
- * Sekme seridi oku — mavi, kucuk; mevcut "Ekle" butonuyla ayni gorsel.
- * Kaydirma durumu yoksa hic cizilmez.
- * 2026-10-08: `ScrollableTabs` + `TabScrollDots` ayrı dosyalara tasindi; buradaki
- * kopya ve tab başına bir nokta olan gösterge kaldırıldı.
- */
 
 function PanelCard({
   title,

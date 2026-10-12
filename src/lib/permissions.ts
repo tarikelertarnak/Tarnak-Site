@@ -173,8 +173,11 @@ export const ROLE_LABELS: Record<string, { tr: string, en: string }> = {
   'user': { tr: 'Kullanıcı', en: 'User' },
 }
 
-/** profiles.is_owner === true olan hesap — en üst yetki. */
-const SUPER_ADMIN_LABEL = { tr: 'Süper Yönetici', en: 'Super Admin' }
+/**
+ * `profiles.is_owner === true` olan hesap — site sahibi, en üst yetki.
+ * 2026-10-13 (kullanıcı isteği): "Süper Yönetici" → "Site Sahibi".
+ */
+const OWNER_LABEL = { tr: 'Site Sahibi', en: 'Site Owner' }
 
 /**
  * Rolün, mevcut locale'e göre çevrilmiş görünen adı.
@@ -186,7 +189,7 @@ export function roleLabel(
   isOwner = false,
 ): string {
   if (isOwner) {
-    return locale?.startsWith('tr') ? SUPER_ADMIN_LABEL.tr : SUPER_ADMIN_LABEL.en
+    return locale?.startsWith('tr') ? OWNER_LABEL.tr : OWNER_LABEL.en
   }
   const entry = ROLE_LABELS[role ?? '']
   if (!entry) {

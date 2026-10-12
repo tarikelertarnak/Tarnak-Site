@@ -358,7 +358,12 @@ describe('globals.css tema kontrasti', () => {
         for (const m of line.matchAll(/\bborder-white\\?\/\d+/g)) {
           const cls = m[0]
           used.add(cls)
-          const inOverride = css.includes(`html[data-theme="light"] .${cls.replace('/', '\\/')}`)
+          // Seçici tek ya da çift tırnakla yazılmış olabilir: prettier
+          // `globals.css`i biçimlendirince tırnak stili değişebiliyor.
+          const esc = cls.replace('/', '\\/')
+          const inOverride = ['"', '\''].some(q =>
+            css.includes(`html[data-theme=${q}light${q}] .${esc}`),
+          )
           const darkPrefixed = /\bdark:[^"']*border-white\\?\/\d+/.test(line)
           if (!inOverride && !darkPrefixed) {
             missing.push(`${file.replace(`${process.cwd()}\\`, '')}: ${cls}`)

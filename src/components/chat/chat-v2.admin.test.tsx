@@ -79,7 +79,7 @@ afterEach(() => {
 })
 
 describe('admin kullanıcı menüsü', () => {
-  it('sağ tık menüsünü açar: profil, takma ad, favori, sabitle, engelle, temizle, sil', async () => {
+  it('sağ tık menüsünü açar: profil, takma ad, favori, önemli, engelle, temizle, sil', async () => {
     await renderAdminChat()
     fireEvent.contextMenu(screen.getByText('Ayşecik'))
 
@@ -92,7 +92,9 @@ describe('admin kullanıcı menüsü', () => {
       /Profilini incele/,
       /Takma ad koy/,
       /Favorilere ekle/,
-      /Sohbeti sabitle/,
+      // 2026-10-13: "Sohbeti sabitle" → "Önemli kişi olarak işaretle" (aynı
+      // `important` bayrağı; etiket kullanıcının istediği ad oldu).
+      /Önemli kişi olarak işaretle/,
       /Engelle/,
       /Sohbeti temizle/,
       /Sohbeti sil/,

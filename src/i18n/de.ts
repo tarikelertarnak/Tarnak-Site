@@ -95,6 +95,8 @@ const de: Record<string, string> = {
   'chat.unblock': 'Unblock',
   'chat.unfavorite': 'Remove from favorites',
   'chat.unpinConversation': 'Unpin conversation',
+  'chat.unmarkImportant': 'Unmark as important',
+  'chat.openPeopleList': 'Open people list',
   'chat.viewProfile': 'View profile',
   'chat.website': 'Website',
   'chat.online': 'online',

@@ -14,6 +14,7 @@ import {
   StickerIcon,
   TickReadIcon,
   TickSentIcon,
+  UsersIcon,
 } from '@/components/ui/icons'
 import {
   isPresenceState,
@@ -121,7 +122,12 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const [infoMsg, setInfoMsg] = useState<ChatMessageRow | null>(null)
   const [confirmMsg, setConfirmMsg] = useState<ChatMessageRow | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
-  const [important, setImportant] = useState(false)
+  /**
+   * KÜÇÜK EKRANDA kişi listesi (2026-10-13 kullanıcı isteği): sohbet açıkken
+   * liste gizlenir; bu düğmeyle üstte KAPLAMA olarak geri gelir. `md` ve
+   * üstünde etkisi yok — orada liste sabit sütundur (CSS `md:static` sıfırlar).
+   */
+  const [listOpen, setListOpen] = useState(false)
   const [session, setSession] = useState<{ id: string, role?: string } | null>(null)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [schemaMissing, setSchemaMissing] = useState(false)
@@ -352,6 +358,8 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   /** Bir kişiye tıklanınca doğrudan sohbeti açar (idempotent). */
   const openWith = useCallback(async (peerId: string) => {
     setActivePeerId(peerId)
+    // Mobil kaplama liste: kişi seçilince kapanır, sohbet görünür.
+    setListOpen(false)
     setLoading(true)
     setError(null)
     setMessages([])
@@ -644,13 +652,6 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     setMenuMsg(null)
   }
 
-  function toggleImportant() {
-    const next = !important
-    setImportant(next)
-    act('important', { important: next })
-    setMenuMsg(null)
-  }
-
   /* ── durumlar ─────────────────────────────────────────────────────── */
   if (!sessionChecked) {
     // Oturum sorgusu sürerken ekranı kaplayan "Sohbet yükleniyor…" yerine
@@ -738,25 +739,40 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
 
   return (
     <div
-      className="flex h-[calc(100svh-19rem)] min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background"
+      className="relative flex h-[calc(100svh-11rem)] min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background"
       style={{ '--chat-panel-w': `${panelWidth}px` } as CSSProperties}
     >
       {/* ── SOL: kime yazmak istiyorum (kişi listesi) ── */}
       <aside
         className={cn(
-          'min-h-0 w-full shrink-0 flex-col border-r border-foreground/10 md:flex md:w-[var(--chat-panel-w)]',
-          threadOpen ? 'hidden md:flex' : 'flex',
+          'min-h-0 w-full shrink-0 flex-col border-r border-foreground/10 bg-background md:static md:flex md:w-[var(--chat-panel-w)]',
+          // Sohbet açık değilken liste her ekranda görünür.
+          !threadOpen && 'flex',
+          // Sohbet açıkken: md'de sabit sütun, küçükte gizli — "aç" düğmesi
+          // (bkz. başlık) listeyi KAPLAMA olarak getirir.
+          threadOpen && (listOpen ? 'absolute inset-0 z-40 flex' : 'hidden md:flex'),
         )}
       >
-        <div className="border-b border-foreground/10 p-2">
+        <div className="flex items-center gap-2 border-b border-foreground/10 p-2">
           <input
             type="search"
             value={peerQuery}
             onChange={e => setPeerQuery(e.target.value)}
             placeholder={t('chat.searchPeople')}
             aria-label={t('chat.searchPeople')}
-            className="w-full rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
+            className="w-full min-w-0 flex-1 rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
           />
+          {/* Kaplama modunda kapatma (md ve üstünde panel sabittir → gizli). */}
+          {listOpen && (
+            <button
+              type="button"
+              onClick={() => setListOpen(false)}
+              aria-label={t('common.close')}
+              className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-foreground/10 md:hidden"
+            >
+              ✕
+            </button>
+          )}
         </div>
 
         <div
@@ -889,20 +905,33 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
         {/* başlık: seçili kişinin adı + durum noktası */}
         <div className="flex items-center gap-2 border-b border-foreground/10 px-4 py-3">
           {threadOpen && (
-            <button
-              type="button"
-              onClick={() => {
-                setConversationId(null)
-                setActivePeerId(null)
-                setMessages([])
-                setError(null)
-              }}
-              title={t('chat.backToList')}
-              aria-label={t('chat.backToList')}
-              className="cursor-pointer rounded-lg px-2 py-1 text-sm transition-colors hover:bg-foreground/10 md:hidden"
-            >
-              ←
-            </button>
+            <>
+              {/* Küçük ekranda liste gizliyken AÇMA düğmesi: "←" (listeye dön)
+                  okundan ÖNCE durur — panel kapalı olsa da açılabilir. */}
+              <button
+                type="button"
+                onClick={() => setListOpen(true)}
+                title={t('chat.openPeopleList')}
+                aria-label={t('chat.openPeopleList')}
+                className="cursor-pointer rounded-lg px-2 py-1 transition-colors hover:bg-foreground/10 md:hidden"
+              >
+                <UsersIcon size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConversationId(null)
+                  setActivePeerId(null)
+                  setMessages([])
+                  setError(null)
+                }}
+                title={t('chat.backToList')}
+                aria-label={t('chat.backToList')}
+                className="cursor-pointer rounded-lg px-2 py-1 text-sm transition-colors hover:bg-foreground/10 md:hidden"
+              >
+                ←
+              </button>
+            </>
           )}
           {activePeer
             ? (
@@ -919,19 +948,10 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
                 </>
               )
             : <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t('chat.v2Title')}</span>}
-          {threadOpen && (
-            <button
-              type="button"
-              onClick={toggleImportant}
-              title={t('chat.markImportant')}
-              className={cn(
-                'cursor-pointer rounded-lg px-2 py-1 text-lg transition-colors',
-                important ? 'bg-red-500/15' : 'hover:bg-foreground/10',
-              )}
-            >
-              {important ? '🔴' : '⚪'}
-            </button>
-          )}
+          {/*
+            "Önemli kişi olarak işaretle" ARTIK BURADA DEĞİL (2026-10-13 kullanıcı
+            isteği): o kişiye SAĞ TIK menüsünde durur (bkz. PeerMenu).
+          */}
         </div>
         {/*
           HATA ARTIK TAM EKRANI KAPLAMAZ (kullanıcı isteği 2026-10-12:
@@ -1085,7 +1105,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
             }}
             placeholder={t('chat.placeholder')}
             aria-label={t('chat.placeholder')}
-            className="min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-foreground/40"
+            className="chat-composer-field min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-foreground/40"
           />
           <button
             type="button"
@@ -1360,7 +1380,7 @@ function PeerMenu({ peer, t, onClose, onNicknameSave, onProfile, onToggle, onCle
               <button type="button" className={item} onClick={() => onToggle('important', !peer.important)}>
                 📌
 {' '}
-{peer.important ? t('chat.unpinConversation') : t('chat.pinConversation')}
+{peer.important ? t('chat.unmarkImportant') : t('chat.markImportant')}
               </button>
               <button type="button" className={item} onClick={() => onToggle('block', !peer.blocked)}>
                 🚫
