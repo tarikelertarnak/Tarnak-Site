@@ -1111,3 +1111,75 @@ yeşil" testi); (B) `TickReadIcon` çizimi tek tike eşitlendi → `tick-icons.t
 kırıldı; (C) bileşendeki inline SVG tikler eski `✓✓` glifine döndürüldü →
 `chat-v2.test.ts` sözleşmesi kırıldı (1 failed | 14 passed). Üçü de byte-exact
 geri yüklendi; (C)'de sha256 öncesi = sonrası (`b6c0bdd0…`).
+
+---
+
+## 2026-10-12 — [CHAT-005] Erişim modeli + yan yana tek ekran + inert dosya
+
+Kullanıcı isteği: _"erişim yok ekranı diye bişey olmaz"_, _"önce kime yazacağımızı
+seçiyoruz sonra sohbet açılıyor — yanlış; ikisi yan yana tek hâlde, panel
+büyütülüp küçültülebilir, 'Kime yazmak istiyorsun?' yazısı kalksın, sohbet tam
+ekranı kaplasın"_, _"Sohbet yükleniyor öyle olmasın"_, _"bu dosya türü yüklenemez
+gibi sorunlar olmasın; bir kodsa da çalışmaz, sadece var olur"_.
+
+### BASELINE (göz kararı değil — canlı Supabase REST probe)
+
+`%TEMP%\opencode\probe-chat.cjs` (service-role anahtarı `.env.local`'den okunur,
+**sır basılmaz**) ile ölçülen gerçek:
+
+| Ölçüm                         | Değer                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `profiles`                    | `0485551b…` `tarikelertr` (role/user, is_owner **false**) · `9c493862…` `tarikelertarnak` (is_owner **true**, role/admin) |
+| `chat_conversations.dad2e586` | `direct_key = "9c493862…\|9c493862…"` → **kendisiyle sohbet**, `chat_participants`'ta **0 satır**                         |
+| → sonuç                       | `isParticipant` false → mesaj okuma **403 "Erişim yok."** ← kullanıcının gördüğü hata                                     |
+| `chat_conversations.fe761d72` | `0485551b\|9c493862`, 2 katılımcı, mesaj "😀😀😀😀"                                                                       |
+| `user` rolü izin listesi      | **boş** → normal kullanıcı hiç konuşamıyor (chat.send/chat.read yok)                                                      |
+
+İki kök neden: (1) PK çakışması — `a === b` iken iki katılımcı satırı aynı
+`(conversation_id, user_id)` anahtarına düşüyor, INSERT'ün **tamamı** geri
+alınıyor → katılımcısız sohbet; (2) izin preset'i boş.
+
+### Uygulama
+
+1. `src/lib/chat-access.ts` (**yeni**): `canSeeAllPeers()` — `role==='admin' || isOwner`.
+   Liste (`/api/chat/users`) ve sohbet açma (`action:'open'`) **aynı** kuralı
+   kullanır → listeye girip 403'e düşmek yapısal olarak imkânsız.
+2. `src/lib/chat-v2.ts`: `ensureParticipants()` — `Set` ile tekilleştir +
+   `upsert onConflict:'conversation_id,user_id', ignoreDuplicates:true`; hem yeni
+   hem **mevcut** sohbet dalında çağrılır → kırık sohbetler kendini onarır.
+   `resolveChatIdentity()` — sahip `/login` (`admin:<ad>`) ve `/sign` (uuid) ile
+   iki ayrı geçmiş görüyordu; kullanıcı adı eşleşirse uuid'e çözülür. `siteOwnerId()`.
+3. `src/lib/permissions.ts`: `user` → `chat.send` + `chat.read` (dosya yükleme
+   izni **verilmedi**; mevcut güven modeli korunur).
+4. `api/chat/users`: 403 yok, `chatId` döner, kapsam filtresi; `api/chat/v2`:
+   `chatId` + `seeAll` (tüm `user.id` → `chatId`).
+5. `chat-v2.tsx`: **iki panelli tek ekran** — solda kişi listesi
+   (`md:w-[var(--chat-panel-w)]`, 240–560 px, pointer drag + ok tuşları,
+   `role="separator"`, `localStorage: chat-panel-width`), sağda sohbet; başlık
+   yazısı ve eski "önce seç" ekranı kaldırıldı; `h-[calc(100svh-19rem)]`
+   (eski `max-w-3xl` / `max-h-[760px]` / `68svh` sınırları gitti); yükleme →
+   `ChatSkeleton` (`role="status"` + aria-label), hata → `role="alert"` bandı;
+   tek kişilik listede sohbet kendiliğinden açılır (`autoOpened` ref).
+6. `src/lib/chat.ts`: tanınmayan VEYA magic-byte uyuşmayan içerik **hata vermez**
+   → `.bin` + `application/octet-stream`; `/uploads/*` zaten
+   `Content-Disposition: attachment` + `nosniff` (next.config.mjs) → **çalışmaz**.
+7. i18n: `chat.selectPerson` + `chat.resizePanel` (8 dil).
+
+### Doğrulama
+
+`tsc --noEmit` 0 · `eslint --max-warnings 0` (21 dosya) 0 · vitest **605/605**
+(51 dosya; +25) · playwright **62/62** (desktop+mobile) · dev `/chat` 200 ·
+`/api/chat/users` + `/api/chat/v2` girişsiz **401** (rota derleniyor, kapı sağlam).
+
+**NEGATİF KONTROL (4/4, `%TEMP%\opencode\negctl.cjs`):**
+
+| Bozulan                             | Kırılan test                 | sha256 (geri yükleme sonrası) |
+| ----------------------------------- | ---------------------------- | ----------------------------- |
+| `canSeeAllPeers` → yalnız `admin`   | `chat-access.test.ts` 1 test | `a2e775a9…`                   |
+| `[...new Set(ids)]` → `[...ids]`    | `chat-v2.test.ts` 1 test     | `0cbc19da…`                   |
+| geçersiz tür yeniden `throw`        | `chat-upload.test.ts` 1 test | `a9b5ba30…`                   |
+| `role="separator"` → `presentation` | `chat-v2.test.ts` 1 test     | `299ad28b…`                   |
+
+Dördü de **byte-exact** geri yüklendi (sha256 öncesi = sonrası).
+
+commit: `5636da8` (yerel; push/deploy yok).

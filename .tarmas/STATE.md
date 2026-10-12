@@ -4,7 +4,7 @@ status: ACTIVE
 updated: 2026-10-12T02:15:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: 8da2c75 + (bu tur commit edilecek)
+branch: faz-1-guvenlik last_commit: 5636da8 (yerel; push/deploy YOK)
 
 === TARMAS KERNEL (preserve verbatim in any summary/compaction) ===
 
@@ -31,9 +31,9 @@ branch: faz-1-guvenlik last_commit: 8da2c75 + (bu tur commit edilecek)
 
 ## Current
 
-phase: TARMAS / SERBEST FAZI — SOHBET TIKLERI (SARI/YESIL + YUVARLAK IKON) step: commit ediliyor
-deployment: d71b6d48 (https://tarikelertarnak.pages.dev) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 8da2c75 (yerel commit; push/deploy ASLA otomatik)
+phase: TARMAS / SERBEST FAZI — SOHBET ERISIM + YAN YANA YERLESIM + INERT DOSYA step: KAPANDI
+deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
+branch: faz-1-guvenlik last_commit: 5636da8 (yerel commit; push/deploy ASLA otomatik)
 running_processes: next dev (turbopack) :3000 PID 19720
 not: "Sohbet yukleniyor… siyah yaziyordu" + "chat sahte, gercek calissin" kapandi.
 A) TANIMSIZ TEMA JETONU sinifi: `text-foreground-50/-60/-70` (16 yer, hepsi
@@ -56,6 +56,42 @@ Sonrasi: users 200 (2 kisi), mesaj gonderildi ve DB'ye yazildi (kanit).
   `aria-label` + yeni `chat.sentAt` anahtari (8 dil).
 - Balon iki temada da mavi oldugu icin sabit renk dogru; olculen kontrast koda yazildi.
 - **tsc 0 · eslint 0 · vitest 580/580 (49 dosya) · e2e 62/62 · 3/3 negatif kontrol.**
+
+## Bu tur (2026-10-12, erişim + yerleşim + inert dosya) — commit 5636da8
+
+Kullanıcı: _"erişim yok ekranı diye bişey olmaz"_ · _"ikisi yan yana tek hâlde,
+panel büyütülüp küçültülebilir, 'Kime yazmak istiyorsun?' yazısı kalksın, sohbet
+tam ekranı kaplasın"_ · _"Sohbet yükleniyor öyle olmasın"_ · _"bu dosya türü
+yüklenemez gibi sorunlar olmasın; bir kodsa da ÇALIŞMAZ, sadece var olur"_.
+
+**Ölçülen iki kök neden** (canlı Supabase REST probe, sır basılmadı):
+
+1. `chat_conversations.dad2e586` = kendisiyle sohbet (`9c493862|9c493862`) ama
+   `chat_participants`'ta **0 satır** → `isParticipant` false → **403 "Erişim
+   yok."** Sebep: `a === b` iken iki satır aynı PK'ya düşüyor, INSERT'ün tamamı
+   geri alınıyor. → `ensureParticipants()` (Set + `ignoreDuplicates`), hem yeni
+   hem **mevcut** sohbet dalında → kırık sohbetler kendini onarır.
+2. `user` rolünün izin listesi **boştu** → normal kullanıcı hiç konuşamıyordu.
+   → `chat.send` + `chat.read` (dosya yükleme izni verilmedi).
+
+**Karar: erişim tek yerde** — `src/lib/chat-access.ts:canSeeAllPeers()`
+(`admin || isOwner`). Liste ve `action:'open'` aynı kuralı kullanır → listeye
+girip 403'e düşmek yapısal olarak imkânsız; "Erişim yok." tam ekranı kaldırıldı.
+Kimlik birleştirme: `resolveChatIdentity()` (`/login` `admin:<ad>` ↔ `/sign` uuid)
+→ sahip iki ayrı geçmiş görmüyor.
+
+**Yerleşim:** `chat-v2.tsx` iki panelli tek ekran; sol panel 240–560 px
+(sürükle + ok tuşları, `role="separator"`, `localStorage`), sağda sohbet;
+`h-[calc(100svh-19rem)]` (eski `max-w-3xl`/`max-h-[760px]`/`68svh` gitti);
+yükleme → `ChatSkeleton` (`role="status"`), hata → `role="alert"` bandı;
+tek kişilik listede otomatik açılış.
+
+**Dosya:** tanınmayan/uyuşmayan içerik **hata vermez** → `.bin` +
+`application/octet-stream`; `/uploads/*` zaten `attachment` + `nosniff` → çalışmaz.
+
+**Kanıt:** tsc 0 · eslint `--max-warnings 0` (21 dosya) 0 · vitest **605/605**
+(51 dosya; +25) · playwright **62/62** · dev `/chat` 200 · girişsiz uçlar **401** ·
+**4/4 negatif kontrol** byte-exact (sha `a2e775a9`/`0cbc19da`/`a9b5ba30`/`299ad28b`).
 
 ## BEKLEYEN (kullanici eylemi)
 
