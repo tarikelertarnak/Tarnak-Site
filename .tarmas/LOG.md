@@ -1516,3 +1516,139 @@ Sabit 4 oge adimi istenirse `useRowPagination` secenekleri tek yerden degisir.
   → HTTP ile dogrulanamaz; ana sayfada da dugme cikmadi (proje listesi kisa).
 - `theme-contrast` agi: sabit hex zemin + beyaz metin artik "guvenli zemin"
   sayilir; baska bir sabit renk koyu/acik temada belirirse yine yakalanir.
+
+## Bu tur (2026-10-13, sohbet sayfasi + admin sekme seridi + rol etiketi) — commit 76f5020
+
+Kullanici 5 istek verdi. Hepsi uygulandi; her biri icin once KOK NEDEN olculdu,
+sonra duzeltildi, sonra kanit toplandi.
+
+### 1) `/chat`: "Sohbet" baslik blogu kaldirildi
+
+- Istenen: baslik blogu yer israf ediyor ("burda boş yere yer kaplıyor").
+- Yapilan (`src/app/chat/page.tsx`): `SectionTitle` + `ChatIcon` +
+  `getLocalizedContent()` cagrisi KALDIRILDI (sayfa artik `async` degil, `await`
+  yok). Bolum `pt-24 sm:pt-28 lg:pt-32` → tek `pt-20` (pay TEK deger; sm/lg'de
+  16px'lik kayma olusup sayfa kaymasin diye).
+- Kutu yuksekligi (`src/components/chat/chat-v2.tsx`): `calc(100svh - 19rem)` →
+  `calc(100svh - 11rem)` = 100svh eksi TopBar 56 + ust pay 80 + slot paylari 40.
+- Regresyon testi `e2e/chat-layout.spec.ts` YENIDEN YAZILDI: eski surum
+  `main h2`ye bagliydi (baslik kalkinca o locator olur) → yeni surum 5 ekran
+  yuksekliginde (1080/900/768/640/560) kutunun TopBar altinda kaldigini ve
+  ekrandan TASMADIGINI olcer + `main h1, main h2` sayisinin 0 oldugunu dogrular.
+
+### 2) "Onemli kisi olarak isaretle" sag tik menusune tasindi
+
+- Istenen: sag ustte olmasin, kullaniciya sag tiklayinca menude olsun.
+- Yapilan (`chat-v2.tsx`): basliktaki ⚪/🔴 dugmesi, `toggleImportant()` ve
+  `important` state'i SILINDI. Ayni `important` bayragi zaten `PeerMenu`de
+  (sag tik) vardi ama etiketi "Sohbeti sabitle" idi → `chat.markImportant`
+  ("Onemli kisi olarak isaretle") / yeni `chat.unmarkImportant` oldu.
+- i18n: `chat.unmarkImportant` + `chat.openPeopleList` 8 dil dosyasina eklendi
+  (tr/en JSON, de/es/fr/ja/pt/ru `.ts` bloklari).
+- API akisi DEGISMEDI: `onToggle('important', !peer.important)` →
+  `runAdmin(action, p, { [action]: next })` → POST `action:'important'`.
+- Test: `chat-v2.test.ts` eski sozlesme testi (`🔴` bekliyordu) yeni gercege
+  gore yazildi; `chat-v2.admin.test.tsx` menu etiketi guncellendi.
+
+### 3) Kucuk ekranda liste: kaplama + "ok'dan ONCE" acma dugmesi
+
+- Istenen: cok kucuk ekranda da paneli acmanin bir yolu olsun, acma dugmesi
+  okun onunde olsun; gecisli (sliding) panel olmasin.
+- Yapilan: `listOpen` state. Aside `md` altinda: kapali → `hidden md:flex`,
+  acik → `absolute inset-0 z-40 flex bg-background` (kabuk `relative`);
+  `md:static` ile masaustunde ESKI davranis (sabit sutun) aynen korunur.
+  Acma dugmesi (`UsersIcon` — `ui/icons.tsx`e eklendi, lucide `users` stroke
+  diliyle) thread basliginda "←" okundan ONCE; kapatma X panel basliginda.
+  Kisi secilince kaplama kendiliginden kapanir (`openWith` icinde).
+- Test: `chat-v2.test.ts` — acma dugmesinin index'i "←" okundan kucuk olmali.
+
+### 4) Admin sekme seridi: oklar + alttaki 4 daire
+
+- **Olculen kok neden:** `ScrollableTabs`in `children`i (Lobehub `Tabs`) hem
+  sekme seridini HEM panelleri kapsiyor; oklar `absolute top-1/2` +
+  `left-1/right-1` ile bu dev kutunun ortasina/kenarina konumlaniyordu → ekranin
+  ortasinda, "Tablolar" kartlarinin uzerinde duruyorlardi.
+- Yapilan (`scrollable-tabs.tsx`): oklar artik `children`in flex KARDESI
+  (solda bir, sagda bir), sarmalayici yuksekligi seritten olculur
+  (`useScrollState` → `stripHeight` = `clientHeight`) → ok seritle ayni hizada
+  ortalanir; mavi yuvarlak buton stili (h-8 w-8) korundu. Kenar solmalari da
+  serit yuksekligine hizalandi.
+- `ARROW_STEP = 200` (kullanici "200px" dedi; eski `PAGE_RATIO = 0.75` gitti),
+  `behavior:'smooth'`, kenarlarda `disabled` (`canScrollLeft/Right`, `EDGE_EPS`).
+- Aktif sekme ortalanir: `centerScrollLeft(tabStart, tabWidth, clientWidth)` —
+  `scrollIntoView` BILEREK kullanilmadi (atalari/sayfayi yatay kaydiriyordu).
+- Scrollbar gizli: kapsamli kural `.admin-tabs-strip [role='tablist']` +
+  `::-webkit-scrollbar { display:none }` (`globals.css`) — Tailwind arbitrary
+  varyantina guvenmek yerine acik kural.
+- **Silinen:** `tab-scroll-dots.tsx` (alttaki 4 daire) + kullanim, ve hook'taki
+  olu sayfalama API'si (`pageCount`, `activePage`, `scrollToPage`,
+  `scrollToEdge`, `tabPageCount`, `activeTabPage`, `ScrollEdge`) — kullanici
+  "ilgili state/dinleyicileri temizle" dedi.
+- Test: YENI `src/components/admin/scrollable-tabs.test.ts` (7 test: `top-1/2`
+  geri gelmesin, oklar serit yuksekligine hizali, daireler tamamen silinmis,
+  scrollbar gizli, 200px + smooth, kenarda pasif, ortalama var + scrollIntoView
+  yok) + `use-scroll-state.test.ts` `centerScrollLeft` + `ARROW_STEP` icin
+  yeniden yazildi.
+- **Not:** Kaynakta "top-1/2"/"scrollIntoView" gecmesi YASAK degil — yorumlarda
+  aniliyorlar; testler bu yuzden `className=...` baglamina bakan regex ve
+  `.scrollIntoView(` cagrisina bakan kalip kullaniyor.
+
+### 5) Rol etiketi + gruplama
+
+- `src/lib/permissions.ts`: `SUPER_ADMIN_LABEL` → `OWNER_LABEL`, deger
+  "Super Yonetici" → **"Site Sahibi"** (en: "Site Owner"). Eski metni arayan
+  test YOK (grep ile dogrulandi).
+- `admin-panel.tsx` basligi: "Giris yapan: X" ve "Yetki: Y" iki ayri `<p>`
+  yerine TEK gruplu kutu (`border-surface-border bg-surface-1 rounded-lg`),
+  rol `bg-primary/15 text-primary rounded-full` rozet.
+  **Varsayim:** "bu bolume gruplama yap" istegi boyle yorumlandi (kullanici
+  tercihini belirtmediyse tek satir/kutu grubu bekleniyor).
+
+### 6) Yazma alani: odak halkasi + seçim rengi (ek istekler)
+
+- **Mavi odak halkasi kaldirildi:** global `:focus-visible { outline: 2px solid
+#0761d5 }` katmansiz (unlayered) bir kural oldugu icin Tailwind'in
+  `outline-none` unu EZIYORDU. Cozum kapsamli + daha ozgul (0,2,0) kural:
+  `.chat-composer-field:focus, :focus-visible { outline/box-shadow: none;
+border-color: transparent }` + input'a `chat-composer-field` sinifi. Diger
+  sayfalarin odak halkalari DEGISMEDI (a11y korunur); odak geri bildirimi kabin
+  cok hafif `focus-within:bg-foreground/15` zeminiyle (mavi DEGIL).
+- **Seçim rengi (olculen kok neden):** Sitede SARI seçim rengi var — ama bizim
+  CSS'imizde degil: `@lobehub/ui` ThemeProvider (`providers.tsx`) global
+  `::selection { color:#000; background: <yellow9> }` enjekte ediyor. Bizim
+  `input::selection, textarea::selection` kuralimizin ozgullugu (0,1,1) bir fazla
+  oldugu icin (lobun kurali 0,1,0) SADECE input/textarea'da o sariyi eziyordu →
+  aranan fark buydu. Kural SILINDI, `--tprimary` tabanli kopya deger yazilmadi:
+  tek kaynak artik lobun kurali (kullanici "var olan degiskeni kopyalama" dedi).
+
+### Dogrulama (kapilar) — olculmus
+
+- `tsc --noEmit` → **0 hata**.
+- `eslint --max-warnings 0` (21 degisen dosya) → **0 hata / 0 uyari**.
+- `vitest run` → **647/647 test, 57/57 dosya.** Duzeltilen sozlesmeler:
+  `chat-v2.test.ts` (`🔴` yerine sag tik akisi + `100svh-11rem` + yeni 3 test),
+  `chat-v2.admin.test.tsx` (menu etiketi), `theme-contrast.test.ts` (CSS metnini
+  tırnak-bagimsiz esler hale getirildi).
+- `playwright test e2e/chat-layout.spec.ts` → **12/12** (masaustu + mobil,
+  5 ekran yuksekligi). Gercek Chromium — yerlesim iddialarinin tarayici kaniti.
+- HTTP kaniti: `/chat` SSR HTML'inde `<h1>/<h2>` sayisi **0**; servis edilen CSS
+  chunk'inda `.chat-composer-field:focus-visible` ve `.admin-tabs-strip
+[role='tablist'] { scrollbar-width: none }` VAR; `input::selection` kurali YOK.
+- **Flake notu:** tam set 2 kez kosturuldu; bir kosuda `chat-v2.session/admin/
+resize` yardimci `waitFor`i (varsayilan 1 sn) yuk altinda zaman asimi verdi,
+  dosyalar IZOLE edildiginde 17/17 ve 7/7 gecti → degisiklikle ilgisi olmayan,
+  ONCEDEN var olan yuk flake'i (yardimci fonksiyonda ozel timeout yok).
+
+### Notlar / sapmalar
+
+- **lint-staged prettier `globals.css`i commit aninda TUMUYLE yeniden
+  bicimlendirdi** (1952 satir: tirnak stili `"`→`'`, 4→2 girinti, `0.30`→`0.3`).
+  Davranis ayni (derlenen CSS kontrolu edildi), ama diff gurultulu. Bunun
+  sonucu: CSS metnini cift tirnakla string esleyen 2 test kirildi
+  (`theme-contrast.test.ts:361`, `scrollable-tabs.test.ts`) → ikisi de
+  tek/cift tirnak kabul edecek sekilde duzeltildi. (Bir dahaki `globals.css`
+  dokunusunda prettier yine ayni bicimi uygulayacak.)
+- `.tarmas/BACKLOG.md`e islenmis yeni is istemi yok; bu tur dogrudan kullanici
+  rozetindendi.
+- Deploy YOK (canli site eski build; `bash scripts/deploy-pages.sh` kullanici
+  onayinda). Push YOK.

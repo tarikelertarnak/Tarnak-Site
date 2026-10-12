@@ -31,20 +31,75 @@ branch: faz-1-guvenlik last_commit: db92762 (yerel; push/deploy YOK)
 
 ## Current
 
-phase: TARMAS / SERBEST FAZI — UI: SOHBET YAZMA ALANI (WhatsApp) + ABOUT KAYDIRMA + "DAHA FAZLASI" BICIMI step: KAPANDI (bu tur commit)
+phase: TARMAS / SERBEST FAZI — UI ROZETI 2 (sohbet sayfasi + admin sekme seridi + rol etiketi) step: KAPANDI (commit 76f5020)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: bu tur (yerel commit; push/deploy ASLA otomatik)
+branch: faz-1-guvenlik last_commit: 76f5020 (yerel; push/deploy ASLA otomatik)
 running_processes: next dev (turbopack) :3000 PID 19720
-not: "Sohbet yukleniyor… siyah yaziyordu" + "chat sahte, gercek calissin" kapandi.
-A) TANIMSIZ TEMA JETONU sinifi: `text-foreground-50/-60/-70` (16 yer, hepsi
-chat-v2.tsx) → `text-foreground-500`. `-50` HeroUI'den geliyordu (temaya bagli
-olmayan sabit renk), `-60/-70` hic CSS uretmiyordu. Kalici guard testi eklendi.
-B) SOHBET SEMA CANLIYA UYGULANDI (SQL Editor): 3 chat tablosu + profiles 3 kolon.
-Oncesi: `/api/chat/users` 500 → `peers` null → SONSUZ "yukleniyor".
-Sonrasi: users 200 (2 kisi), mesaj gonderildi ve DB'ye yazildi (kanit).
-`peersError` + CHAT_SCHEMA_MISSING → schemaMissing ile sonsuz yukleme sinifi kapandi.
-**tsc 0 · eslint --max-warnings 0 0 · vitest 570/570 (47 dosya) · e2e 62/62 ·
-11/11 negatif kontrol (byte-exact geri yuklendi, sha dogrulandi).**
+not: ROZET 2 kapandi (5 kullanici istegi) →
+A) `/chat`: "Sohbet" baslik blogu SILINDI (yer israfi); kutu `100svh-19rem`
+→ `100svh-11rem`, bosalan alani doldurur.
+B) "Onemli kisi olarak isaretle" sag ustten KALDIRILDI → kisiye sag tik menusunde
+(`chat.markImportant` / yeni `chat.unmarkImportant`, 8 dil).
+C) Kucuk ekranda liste KAPLAMA olarak acilir; acma dugmesi "←" okundan ONCE;
+X ile kapanir (`md` ve ustunde sabit sutun aynen kalir).
+D) Admin sekme oklari: `absolute top-1/2` (Tablolar kartlarinin ustune biniyordu)
+→ seritle ayni flex satirinda, kendi alaninda; `scrollBy` 200px; aktif sekme
+ortalanir; scrollbar gizli. Alttaki 4 daire (`TabScrollDots`) + olu sayfalama
+API'si SILINDI.
+E) Rol etiketi "Super Yonetici" → "Site Sahibi"; panel kimlik blogu gruplandi.
+F) Yazma alani: mavi odak halkasi kapatildi (`.chat-composer-field`);
+`input::selection` ozel kurali SILINDI → sitedeki tek secim kaynagi
+(@lobehub/ui ThemeProvider = SARI) gecerli oldu (kok neden buydu).
+**tsc 0 · eslint --max-warnings 0 (21 dosya) 0 · vitest 647/647 (57 dosya) ·
+e2e chat-layout 12/12 (masaustu + mobil, 5 yukseklik) · /chat SSR h1/h2 = 0 ·
+servis edilen CSS'te `.chat-composer-field` + `.admin-tabs-strip` var.**
+DIKKAT: commit aninda lint-staged prettier `globals.css`i TUMUYLE yeniden
+bicimlendirdi (1952 satir; tirnak stili + girinti, davranis ayni) → CSS metnini
+string ile esleyen 2 test tirnak-bagimsiz hale getirildi (`theme-contrast.test.ts`
+satir ~361, `scrollable-tabs.test.ts`).
+
+## Bu tur (2026-10-13, ROZET 2: sohbet sayfasi + admin sekme seridi + rol etiketi)
+
+Kullanici 5 istek verdi; hepsi kapandi (ayrinti: LOG.md "Bu tur (2026-10-13,
+sohbet sayfasi …)"). Kisa ozet:
+
+1. **`/chat` baslik blogu silindi** (`src/app/chat/page.tsx`): `SectionTitle` +
+   `ChatIcon` + `getLocalizedContent()` cagrisi kaldirildi (sayfa artik `async`
+   degil). Kutu yuksekligi `100svh-19rem` → `100svh-11rem` (TopBar 56 + ust pay
+   80 + slot paylari 40). `e2e/chat-layout.spec.ts` yeniden yazildi (eski test
+   `main h2` ariyordu, o artik yok).
+2. **"Onemli kisi olarak isaretle" sag tikta**: basliktaki ⚪/🔴 dugmesi +
+   `toggleImportant` + `important` state SILINDI. `PeerMenu` girdisi artik
+   `chat.markImportant` / yeni `chat.unmarkImportant` (8 dil dosyasi) yaziyor.
+   API akisi ayni: `onToggle('important')` → `runAdmin` → POST `action:'important'`.
+3. **Kucuk ekranda liste acma dugmesi**: `listOpen` state; aside `md` altinda
+   `absolute inset-0 z-40 flex` kapama olur, kapatinca `hidden md:flex`;
+   acma dugmesi (`UsersIcon`, yeni ikon) "←" okundan ONCE; X dugmesi panel
+   basliginda. `md` ve ustunde davranis degismedi (sabit sutun).
+4. **Admin sekme oklari** (`scrollable-tabs.tsx` kok neden: `children` hem seridi
+   hem panelleri kapsadigi icin `top-1/2` sayfanin ortasina dusuyordu): oklar
+   seritle ayni flex satirinda, yuksekligi olculen seritten (`stripHeight`),
+   `ARROW_STEP = 200`, aktif sekme `centerScrollLeft` ile ortalanir (scrollIntoView
+   YOK), kenar solmalari serit yuksekligine hizali, scrollbar
+   `.admin-tabs-strip [role='tablist']` ile gizli. `tab-scroll-dots.tsx` +
+   `use-scroll-state` sayfalama API'si (`pageCount`/`activePage`/`scrollToPage`/
+   `scrollToEdge`/`tabPageCount`/`activeTabPage`) SILINDI.
+5. **Rol etiketi**: `SUPER_ADMIN_LABEL` → `OWNER_LABEL` = "Site Sahibi"/"Site
+   Owner"; `admin-panel` basliginda kimlik + rol TEK gruplu kutuda (rol rozeti
+   `bg-primary/15 text-primary`). **Varsayim:** "gruplama" bu sekilde yorumlandi.
+6. **Yazma alani odak/seçim**: `.chat-composer-field:focus/:focus-visible` →
+   outline/box-shadow YOK (kapsam sadece bu alan; diger sayfalarin odak halkasi
+   korunur). `input::selection, textarea::selection` kurali SILINDI — **olculen
+   kok neden**: `@lobehub/ui` ThemeProvider global `::selection {color:#000;
+background:yellow9}` enjekte ediyordu; bizim `input::selection` (0,1,1)
+   ozgullugu onu EZIYORDU, o yuzden yazma alani sitenin geri kalanindan farkli
+   gorunuyordu. Artik tek kaynak.
+
+Kapi sonuclari: **tsc 0 · eslint --max-warnings 0 (21 dosya) 0 · vitest 647/647
+(57 dosya) · playwright `e2e/chat-layout.spec.ts` 12/12 · /chat SSR h1/h2 = 0 ·
+servis edilen CSS'te yeni kurallar mevcut.** Yeni regresyon testleri:
+`src/components/admin/scrollable-tabs.test.ts` (7) + `chat-v2.test.ts` (+3) +
+`use-scroll-state.test.ts` (`centerScrollLeft`) + admin menu etiket testi.
 
 ## Bu tur (2026-10-13, sohbet yazma alani + About kaydirma + "Daha Fazlasini Goster")
 
