@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 import { SplitButton } from '@/components/ui/split-button'
@@ -87,8 +89,10 @@ describe('splitButton', () => {
       { onClick: () => {}, iconOnly: true, children: <span>B</span> },
     ])
 
-    // focus-within -> grup halkasi
-    expect(html).toContain('focus-within:ring-2')
+    // :has(:focus-visible) -> tek parcada grup halkasi (2026-10-12: eski
+    // `focus-within:ring-2` kalibi Taiwlind'de `group-focus-within` TORUN
+    // seçtiği için hiç çalışmıyordu; artık kabuğun KENDİSİNDE).
+    expect(html).toContain('has-[:focus-visible]:ring-2')
     // Parcalarda kendi halkasi YOK (iki parcaya iki cizgi olmasin)
     expect(html).not.toContain('focus-visible:ring-2')
   })
@@ -164,5 +168,39 @@ describe('splitButton', () => {
 
   it('bosis parca dizisi hicbir sey basmaz', () => {
     expect(render([])).toBe('')
+  })
+})
+
+describe('splitButton · odak halkası (2026-10-12 "CV seçilmiyor" regresyonu)', () => {
+  // Sözleşme, gerçeğe karşı (derlenmiş CSS + SSR HTML ölçüldü):
+  //   · `group-focus-within:` kuralı `.group:focus-within *` — TORUN seçer;
+  //     sınıf grubun KENDİSİNDE olunca hiç eşleşmez → CV'ye Tab'la gelinince
+  //     halka yoktu, kullanıcı "CV seçilmiyor" diyordu.
+  //   · `ring-primary-fg`: `--color-primary-fg` köprü jetonu YOK → sınıf
+  //     derlenmiş CSS'te hiç yoktu; halka rengi `ring-primary` olmalı.
+  const HBS = readFileSync(join(process.cwd(), 'src/components/ui/hero-button-style.ts'), 'utf8')
+  const CSS = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8')
+  // Sabitin DEĞERİ (yorumlarda eski varyant anılabilir; test koda bakar).
+  const FOCUS = HBS.match(/HERO_BTN_FOCUS[\s\S]*?= '([^']+)'/)?.[1] ?? ''
+
+  it('halka GROUP-UN KENDİSİNE uygulanır (group-focus-within torun ister)', () => {
+    expect(FOCUS, 'kalıcı eski varyant').not.toContain('group-focus-within')
+    expect(FOCUS).toContain('has-[:focus-visible]:ring-2')
+  })
+
+  it('halka rengi DERLENEN bir sınıftan gelir (ring-primary-fg üretilmiyordu)', () => {
+    expect(FOCUS).toContain('has-[:focus-visible]:ring-primary')
+    expect(FOCUS, 'jetonu olmayan renk sınıfı').not.toContain('ring-primary-fg')
+    // `ring-primary` → `--color-primary` → `--tprimary`; köprü var olmalı.
+    expect(CSS).toContain('--color-primary:')
+  })
+
+  it('render edilen kabuk halka sınıflarını taşır (statik çıktı)', () => {
+    const html = render([
+      { href: '/cv.pdf', children: 'CV' },
+      { href: '/cv.pdf', download: true, children: <span>D</span> },
+    ])
+    expect(html).toMatch(/class="[^"]*has-\[:focus-visible\]:ring-2/)
+    expect(html).not.toContain('group-focus-within:ring-2')
   })
 })

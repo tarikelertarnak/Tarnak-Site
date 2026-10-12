@@ -61,7 +61,9 @@ export interface SplitButtonPartProps {
 const ICON_PART_WIDTH = 40
 
 /**
- * Dış sarmalayıcı. `group-focus-within:` ile odak halkası GRUPU çevreler:
+ * Dış sarmalayıcı. `:has(:focus-visible)` ile odak halkası GRUPU çevreler
+ * (2026-10-12: `group-focus-within:` TORUN seçtiği için grubun kendisinde hiç
+ * eşleşmiyordu — "CV seçilmiyor"ydu; bkz. hero-button-style.ts HERO_BTN_FOCUS):
  * her parçaya ayrı halka koymak ikisinin arasında iki çizgi yapıyordu.
  *
  * GÖRSEL DİL DÜZELTMESİ (2026-10-05): canlı ölçüm üç gerçek farkı

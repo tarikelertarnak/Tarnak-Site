@@ -100,13 +100,25 @@ export const HERO_BTN_BODY
 export const HERO_BTN_STATE = 'hover:bg-primary/90 active:bg-primary/80'
 
 /**
- * Odağı Dış KABUĞA taşır.
+ * Odağı dış KABUĞA taşır.
  *
  * İki parçaya ayrı halka koymak ikisinin arasında iki çizgi bırakıyordu.
- * `group-focus-within:` ile halka tek parça hâlinde GRUBU çevreler.
+ * `:has(:focus-visible)` ile halka tek parça hâlinde GRUBU çevreler —
+ * ve YALNIZCA klavye odaklanmasında görünür (tıklamada değil; komşu
+ * butonlarla aynı `:focus-visible` anlamı).
+ *
+ * NEDEN BU YAZIM (2026-10-12, ölçüldü — "CV seçilmiyor" şikâyeti):
+ *   1) `group-focus-within:` KAPSAYICI-olamaz: Tailwind kuralı
+ *      `.group-focus-within\:ring-2:is(:where(.group):focus-within *)` —
+ *      TORUN seçer; sınıf GRUP'un kendisinde olunca hiç eşleşmez (derlenmiş
+ *      CSS doğruladı → halka hiç yok, CV klavyede "seçilmiyor" görünüyordu).
+ *   2) `ring-primary-fg`: `--color-primary-fg` jetonu YOK (köprü
+ *      `--color-primary-foreground`), o yüzden sınıf Tailwind'e atılıyordu.
+ *      `ring-primary` = `--tprimary` (mavi) — komşu butonların `:focus-visible`
+ *      halka rengiyle aynı dil.
  */
 export const HERO_BTN_FOCUS
-  = 'outline-none group-focus-within:ring-2 group-focus-within:ring-primary-fg group-focus-within:ring-offset-2 group-focus-within:ring-offset-background'
+  = 'outline-none has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary has-[:focus-visible]:ring-offset-2 has-[:focus-visible]:ring-offset-background'
 
 /**
  * Ayırıcı çizgi — dış çerçeveyle AYNI renk (kullanıcı isteği).
