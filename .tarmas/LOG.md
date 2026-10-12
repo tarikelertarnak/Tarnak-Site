@@ -1167,19 +1167,25 @@ alınıyor → katılımcısız sohbet; (2) izin preset'i boş.
 
 ### Doğrulama
 
-`tsc --noEmit` 0 · `eslint --max-warnings 0` (21 dosya) 0 · vitest **605/605**
-(51 dosya; +25) · playwright **62/62** (desktop+mobile) · dev `/chat` 200 ·
-`/api/chat/users` + `/api/chat/v2` girişsiz **401** (rota derleniyor, kapı sağlam).
+`tsc --noEmit` 0 · `eslint --max-warnings 0` (22 dosya) 0 · vitest **612/612**
+(52 dosya; +32: `chat-access.test.ts`, `chat-upload.test.ts`,
+`chat-v2.resize.test.tsx` — gerçek pointer olaylarıyla sürükleme —, kimlik/katılımcı
+regresyonları, yerleşim sözleşmesi) · playwright **62/62** (desktop+mobile) ·
+dev `/chat` 200 · `/api/chat/users` + `/api/chat/v2` girişsiz **401** (rota
+derleniyor, kapı sağlam).
 
-**NEGATİF KONTROL (4/4, `%TEMP%\opencode\negctl.cjs`):**
+**NEGATİF KONTROL (5/5, `%TEMP%\opencode\negctl.cjs`):**
 
-| Bozulan                             | Kırılan test                 | sha256 (geri yükleme sonrası) |
-| ----------------------------------- | ---------------------------- | ----------------------------- |
-| `canSeeAllPeers` → yalnız `admin`   | `chat-access.test.ts` 1 test | `a2e775a9…`                   |
-| `[...new Set(ids)]` → `[...ids]`    | `chat-v2.test.ts` 1 test     | `0cbc19da…`                   |
-| geçersiz tür yeniden `throw`        | `chat-upload.test.ts` 1 test | `a9b5ba30…`                   |
-| `role="separator"` → `presentation` | `chat-v2.test.ts` 1 test     | `299ad28b…`                   |
+| Bozulan                                     | Kırılan test                         | sha256 (geri yükleme sonrası) |
+| ------------------------------------------- | ------------------------------------ | ----------------------------- |
+| `canSeeAllPeers` → yalnız `admin`           | `chat-access.test.ts` 1 test         | `a2e775a9…`                   |
+| `[...new Set(ids)]` → `[...ids]`            | `chat-v2.test.ts` 1 test             | `0cbc19da…`                   |
+| geçersiz tür yeniden `throw`                | `chat-upload.test.ts` 1 test         | `a9b5ba30…`                   |
+| `role="separator"` → `presentation`         | `chat-v2.test.ts` 1 test             | `299ad28b…`                   |
+| `onPointerDown={startResize}` → `undefined` | `chat-v2.resize.test.tsx` **3 test** | `299ad28b…`                   |
 
-Dördü de **byte-exact** geri yüklendi (sha256 öncesi = sonrası).
+Beşi de **byte-exact** geri yüklendi (sha256 öncesi = sonrası). Son satır
+sürükleme testinin BOŞ olmadığını kanıtlar: olay bağı kesilince büyütme + iki
+sınır testi (240 alt / 560 üst) birlikte kırıldı.
 
-commit: `5636da8` (yerel; push/deploy yok).
+commit: `5636da8` (yerel; push/deploy yok) + test/kayıt commit'i.

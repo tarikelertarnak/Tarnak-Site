@@ -89,9 +89,10 @@ tek kişilik listede otomatik açılış.
 **Dosya:** tanınmayan/uyuşmayan içerik **hata vermez** → `.bin` +
 `application/octet-stream`; `/uploads/*` zaten `attachment` + `nosniff` → çalışmaz.
 
-**Kanıt:** tsc 0 · eslint `--max-warnings 0` (21 dosya) 0 · vitest **605/605**
-(51 dosya; +25) · playwright **62/62** · dev `/chat` 200 · girişsiz uçlar **401** ·
-**4/4 negatif kontrol** byte-exact (sha `a2e775a9`/`0cbc19da`/`a9b5ba30`/`299ad28b`).
+**Kanıt:** tsc 0 · eslint `--max-warnings 0` (22 dosya) 0 · vitest **612/612**
+(52 dosya; +32) · playwright **62/62** · dev `/chat` 200 · girişsiz uçlar **401** ·
+**5/5 negatif kontrol** byte-exact (sha `a2e775a9`/`0cbc19da`/`a9b5ba30`/`299ad28b`;
+5.'si `onPointerDown` kesildi → sürükleme testinden 3'ü kırıldı).
 
 ## BEKLEYEN (kullanici eylemi)
 
