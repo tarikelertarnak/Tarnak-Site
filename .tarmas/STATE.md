@@ -1,10 +1,10 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-13T22:05:00+03:00
+updated: 2026-10-12T23:45:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: db92762 (yerel; push/deploy YOK)
+branch: faz-1-guvenlik last_commit: 476f456 (yerel; push/deploy YOK)
 
 === TARMAS KERNEL (preserve verbatim in any summary/compaction) ===
 
