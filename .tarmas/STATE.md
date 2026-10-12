@@ -1,10 +1,10 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-12T20:40:00+03:00
+updated: 2026-10-12T21:05:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: 5636da8 (yerel; push/deploy YOK)
+branch: faz-1-guvenlik last_commit: db92762 (yerel; push/deploy YOK)
 
 === TARMAS KERNEL (preserve verbatim in any summary/compaction) ===
 
@@ -31,9 +31,9 @@ branch: faz-1-guvenlik last_commit: 5636da8 (yerel; push/deploy YOK)
 
 ## Current
 
-phase: TARMAS / SERBEST FAZI — ANA SAYFA: HERO SIRA + FARE KAYDIRMA + QR PANEL step: KAPANDI
+phase: TARMAS / SERBEST FAZI — UI: CV SECIMI + FAVICON MAVI + KART HIZASI step: KAPANDI (0d50f07)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 5c9280a (yerel commit; push/deploy ASLA otomatik)
+branch: faz-1-guvenlik last_commit: 0d50f07 (yerel commit; push/deploy ASLA otomatik)
 running_processes: next dev (turbopack) :3000 PID 19720
 not: "Sohbet yukleniyor… siyah yaziyordu" + "chat sahte, gercek calissin" kapandi.
 A) TANIMSIZ TEMA JETONU sinifi: `text-foreground-50/-60/-70` (16 yer, hepsi
@@ -93,6 +93,39 @@ tek kişilik listede otomatik açılış.
 (52 dosya; +32) · playwright **62/62** · dev `/chat` 200 · girişsiz uçlar **401** ·
 **5/5 negatif kontrol** byte-exact (sha `a2e775a9`/`0cbc19da`/`a9b5ba30`/`299ad28b`;
 5.'si `onPointerDown` kesildi → sürükleme testinden 3'ü kırıldı).
+
+## Bu tur (2026-10-12, üç kullanıcı isteği: CV seçimi · favicon mavisi · kart hizası)
+
+Kullanıcı: _"CV yazısını seçemiyorum"_ · _"favicon her temada mavi olsun"_ ·
+_"Kişisel Bilgiler kartını toparla"_.
+
+1. **CV seçimı (UX-001):** kök neden = `split-button.tsx` kabuğunda `select-none`
+   (`user-select` miras alınır → iki parça da kilitli, drag seçiminde atlanıyor;
+   kardeş butonlar `select-text`). Düzeltme: kabuk + PART `select-text`.
+   Canlı kanıt: her iki parça ve kabuk `userSelect: "text"`; kabuğu canlıda
+   `none`'a çevirince parçalar `text` kalıyor (negatif kontrol).
+   2 birim testi. **Sınır:** Playwright headless'ta sürükleme seçimi üretilemedi
+   (A/B klon deneyi de ayrım yapmadı) → davranışsal fare testi kanıt değil;
+   kullanıcı tarayıcıda doğrulamalı.
+2. **Favicon (UX-002):** kök neden = `strokeWidth` (geçersiz yazım → beyaz halka
+   hiç çizilmiyordu, eski dosyada 0 beyaz piksel) + siyah dolgu (koyu temada
+   görünmez). Yeni: sabit mavi `#2563eb` dolgu + halka, `stroke-width="420"`,
+   şeffaf zemin, tema varyantı yok. SVG×2 + 8 PNG + ICO yeniden üretildi
+   (mürekkep %14.5 → %19.1); `layout.tsx` `?v=4` → `?v=5`. `theme-color` siyah
+   bırakıldı (bilinçli). HTTP probe ile 9 link + doğru içerik + sha256 eşitliği.
+   6 birim testi.
+3. **Kart hizası (UX-003):** InfoRow 3 kolonlu grid + `min-h-[44px]` + `py-2`,
+   değer `break-all` (truncate kalktı), e-posta `sm:col-span-2`, avatar
+   `sm:items-start sm:gap-6`, kopyala `justify-self-end`, QR `p-3`.
+   Canlı ölçüm 3 genişlikte: değerler aynı x (2 kolon / mobil 1), ikonlar aynı
+   dikey çizgi, 44px satırlar, kesilen 0, QR merkez farkı 0 ve kenar boşlukları
+   simetrik, avatar/başlık üst çizgisi eşit, yatay taşma yok. 4 birim testi.
+
+**Kapılar:** tsc **0** · eslint `--max-warnings 0` (8 dosya) **0** · vitest
+**637/637** (56 dosya) · playwright **62/62** · negatif kontrol **GEÇERLİ**
+(3 mutasyon → 7 test kırıldı, byte-exact geri yükleme sha256 doğrulandı →
+24/24 yeşil). Kırılan eski sözleşme (`vcard-qr-only.test.ts` InfoRow diliminde
+`justify-between` yasak) yorum yeniden yazılarak düzeltildi.
 
 ## BEKLEYEN (kullanici eylemi)
 

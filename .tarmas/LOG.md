@@ -1303,3 +1303,122 @@ ounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-foreground/20, QR
   | son kosu yesil.                                                                  |
 
 commit: `5c9280a` (yerel; push/deploy yok).
+
+---
+
+## 2026-10-12 — Üç kullanıcı isteği: CV seçimi · favicon mavisi · "Kişisel Bilgiler" hizası
+
+### [UX-001] Hero CV butonu yazısı seçilemiyordu → kök neden: kabukta `select-none`
+
+**Kök neden (kod + canlı ölçüm):** `split-button.tsx` sarmalayıcısında
+`select-none` vardı. `user-select` MİRAS alınan bir özellik olduğu için iki
+parçanın yazısı da seçilemiyor; tarayıcı sürükleme (drag) seçiminde bu alt
+ağacı TAMAMEN atlıyor. Kardeş hero butonları (`HERO_BTN_BODY`) `select-text`
+taşıyor → kullanıcı: "5 buton seçiliyor, CV atlanıyor".
+
+**Düzeltme:** sarmalayıcı `select-none` → `select-text`; PART'a da açık
+`select-text` (savunma: kabuk ileride yeniden kilitlenirse parçalar seçilebilir
+kalır).
+
+**Kanıt:**
+
+- Canlı tarayıcı, `getComputedStyle`: her iki parça VE sarmalayıcı →
+  `userSelect: "text"`; `elementFromPoint` CV metninde CV `<a>`'sını veriyor
+  (üstte engelleyici katman YOK — katman yığını ölçüldü).
+- Negatif kontrol (canlı sayfada kabuk `style.userSelect = 'none'`): kabuk
+  `none`, parçalar `text` kaldı → hem ölçüm gerçek özelliği okuyor hem parça
+  direnci çalışıyor.
+- Birim: `split-button.test.tsx` +2 test → "kabuk `select-none` taşımaz (drag
+  seçiminde atlanmaz)" ve "kabuk ve iki parça da seçimi açar (3 kez select-text)".
+
+⚠️ **SINIR (dürüst kayıt):** Playwright headless'ta fare ile sürükleme seçimi bu
+sayfada ÜRETİLEMEDİ — sentetik fare olayları seçim oluşturmadı (kontrol: aynı
+kurulumda eski ve yeni sınıf klonlarında da seçim çıkmadı → ölçüm ayrım
+yapamıyor). Bu yüzden davranışsal fare testi kanıt olarak KULLANILMADI; yerine
+hesaplanmış stil + canlı negatif kontrol + birim testleri var. Kullanıcı kendi
+tarayıcısında sürükleyerek doğrulamalı.
+
+### [UX-002] Favicon her temada sabit marka mavisi (`#2563eb`)
+
+**Kök neden (sharp + rsvg ile ölçüldü):**
+
+1. `strokeWidth` (camelCase) GEÇERSİZ SVG özniteliği (`stroke-width` olmalı) →
+   "beyaz halka" HİÇ çizilmiyordu (eski dosyada **0 beyaz piksel**, mürekkep
+   %11.4 → halka ölü koddu).
+2. Kalan dolgu `#000000` → koyu sekme çubuğunda kayboluyordu.
+
+**Düzeltme (varyant C):** `fill="#2563eb"` + `stroke="#2563eb"
+stroke-width="420" stroke-linejoin="round"`; arka plan ŞEFFAF; tema
+varyantı/`media`/`currentColor` YOK. Mavi = `--tprimary` (koyu tema değeri).
+16px'te mürekkep %14.5 → **%19.1** (halka glifi kalınlaştırıyor, kanat+el yapısı
+korunuyor); halkasız düz mavi (A) %14.5 kalıyordu, 620 halka detayı kapatıyordu.
+
+**Üretilen set** (idempotent `%TEMP%\opencode\fav-generate.cjs`):
+`public/favicon.svg` + `src/app/icon.svg` (33.932B, ikisi birebir aynı) + 8 PNG
+(16/32/48/96/180/192/512/1024) + `favicon.ico` (16/32/48 PNG girdisi, 1.635B).
+Ölçüm: tüm PNG'lerde mürekkep piksellerinin hepsi mavi (`diger 0`), köşe alfa 0.
+Yedek: `%TEMP%\opencode\fav-backup-20261012` (11 dosya).
+`layout.tsx`: `?v=4` → **`?v=5`** (9 girdi; tarayıcı aynı URL'i 30 gün SWR ile
+tutuyor → sürüm parametresi şart).
+`theme-color` / manifest `theme_color` BİLİNÇLİ olarak `#000` bırakıldı
+(PWA chrome/sayfa zemini rengi; favicon = marka rengi — ayrı karar).
+
+**Kanıt (HTTP probe, dev :3000):** 9 `<link rel="icon|apple-touch-icon">` hepsi
+`?v=5`, `?v=4` kalmadı, `media=` özniteliği yok; `/favicon.svg` 200 +
+`image/svg+xml` + mavi dolgu/halka + geçerli `stroke-width="420"`; `/favicon.ico`
+3 PNG girdisi (geri okundu); 8 PNG'nin servis edilen içeriği yerel dosyayla
+**sha256 aynı**.
+
+### [UX-003] "Kişisel Bilgiler" kartı hizası → InfoRow 3 kolonlu grid
+
+Kullanıcı: "etiketler farklı genişlikte → değerler farklı x'ten başlıyor,
+kopyala ikonları hizada değil, sağ sütunda 3. satır boş, e-posta kesiliyor."
+
+**Düzeltme:** InfoRow =
+`grid-cols-[minmax(90px,auto)_minmax(0,1fr)_auto]` + `items-center` +
+`min-h-[44px]` + `py-2`; değer `break-all` (`truncate` KALKTI → e-posta `...` ile
+kesilmez, gerekirse alta kırılır); e-posta `sm:col-span-2`; avatar satırı
+`sm:items-start sm:gap-6`; grid `mt-2` (`gap-y-0` kalktı); kopyala düğmesi
+`justify-self-end`; QR paneli `p-2.5` → **`p-3`**.
+2026-10-10'daki hataya düşülmedi: SABİT 104px sütun yerine
+`minmax(90px, auto)` + `gap-x-3` → kısa etikette de ("Ad") değer etikete yapışık
+VE satırlar arası hiza korunuyor.
+
+**Ölçüm (canlı tarayıcı, 3 genişlik; ana sayfa `#about` bölümü):**
+
+| Genişlik | satır | değer x                | ikon sağ x    | yükseklik | kesilen | QR merkez farkı / kenar |
+| -------- | ----- | ---------------------- | ------------- | --------- | ------- | ----------------------- |
+| 1440     | 5     | `[440, 898]` (2 kolon) | `[764, 1222]` | 44px      | 0       | 0 · 449=449             |
+| 820      | 5     | 2 kolon                | 2 kolon       | 44px      | 0       | 0 · 267=267             |
+| 375      | 5     | `[152]` (1 kolon)      | 1 kolon       | 44/57px   | 0       | 0 · 69=69               |
+
+- Avatar üst çizgisi = başlık üst çizgisi (1440 → 1314=1314, 820 → 1334=1334);
+  mobilde alt alta (avatar 1092 / başlık 1204) — istenen davranış.
+- Satır top sıralaması: `[Ad|Soyad] → [Takma ad|Telefon] → [E-posta tam genişlik]`
+  (e-posta `sm:col-span-2` → sağ sütunda BOŞ hücre yok).
+- `text-overflow: clip` (üç nokta YOK) · yatay taşma YOK · e-posta tam:
+  `tarikelertarnak@gmail.com` · değerler seçilebilir (`user-select: text`).
+- Ekran görüntüleri: `%TEMP%\opencode\about-{masaustu,tablet,mobil}[-full].png`.
+
+### Doğrulama (kapılar)
+
+- `tsc --noEmit` → **0 hata**.
+- `eslint --max-warnings 0` (8 değişen dosya) → **0 hata / 0 uyarı**
+  (1 otomatik düzeltme: `0x4e` → `0x4E`, `unicorn/number-literal-case`).
+- `vitest run` → **637/637 test, 56/56 dosya** (624 → 637; +13 test: 6 favicon +
+  4 info-grid + 2 split seçimi + 1 düzeltilen eski sözleşme).
+- `playwright test` → **62/62** (desktop + mobile; `reuseExistingServer` ile
+  açık dev sunucusuna bağlandı).
+- **NEGATİF KONTROL GEÇERLİ** (`%TEMP%\opencode\negctl-tur-20261012.cjs`):
+  üç mutasyon — (a) kabuğa `select-none` geri, (b) favicon `fill` mavi → siyah,
+  (c) InfoRow grid → eski flex + `truncate` — → **3 dosya / 7 test KIRILDI**;
+  geri yükleme **byte-exact** (sha256 öncesi = sonrası: split-button
+  `01b04db2a255`, favicon.svg `2a962bf4e826`, about-section `5091a4294587`) →
+  ikinci koşu **24/24 yeşil**.
+- Bu turda AYRICA kırılan eski sözleşme düzeltildi:
+  `vcard-qr-only.test.ts` "InfoRow diliminde `justify-between` YASAK" testi,
+  InfoRow'un yeni AÇIKLAMA yorumum o sınıf adını birebir andığı için kırılmıştı →
+  yorum, sınıf adı geçmeyecek biçimde yeniden yazıldı (kural: açıklama yorumları
+  da kaynak sözleşmesine uyar; test yorumları ayıklamaz).
+
+commit: `0d50f07` (yerel; push/deploy YOK).
