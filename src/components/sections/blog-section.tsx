@@ -140,15 +140,33 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
   */
   const {
     visible: shown,
-    remaining,
     willOpen,
     hasMore,
+    visibleCount,
+    total,
+    canCollapse,
     gridRef,
     loadMore,
+    collapse,
   } = useRowPagination(filtered, {
     initialRows: 2,
     resetKey: `${query}|${sort}|${activeTags.join(',')}`,
   })
+
+  /**
+   * "Daha Az Göster" (2026-10-13): listeyi ilk hâline döndürür ve listenin
+   * başına kaydırır (grid üstünde `scroll-mt-24` var → üst çubuğun altında
+   * kalır). Projeler bölümü ile aynı davranış.
+   */
+  const collapseAndScroll = () => {
+    collapse()
+    gridRef.current?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth',
+      block: 'start',
+    })
+  }
 
   const dateFmt = (date: string) =>
     new Date(date).toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-GB', {
@@ -291,7 +309,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
               <div
                 ref={gridRef}
                 data-paged-grid
-                className="grid w-full max-w-6xl grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
+                className="grid w-full max-w-6xl scroll-mt-24 grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
               >
                 {shown.map(post => (
                   <a key={post.id} href={`/blog/${post.slug}`} className="group">
@@ -345,12 +363,15 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
               </div>
             )}
 
-        {/* "Daha Fazlasını Göster (+N · −M)" — grid ile arasi `--section-gap` */}
-        {hasMore && (
+        {/* "Daha Fazlasını Göster (+N) · görünen/toplam" — grid ile arası
+            `--section-gap`. Tümü açıkken aynı düğme "Daha Az Göster"e döner. */}
+        {(hasMore || canCollapse) && (
           <LoadMoreButton
-            remaining={remaining}
+            visible={visibleCount}
+            total={total}
             opening={willOpen}
-            onClick={loadMore}
+            expanded={!hasMore && canCollapse}
+            onClick={hasMore ? loadMore : collapseAndScroll}
           />
         )}
       </FadeUpSection>

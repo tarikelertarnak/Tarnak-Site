@@ -294,6 +294,9 @@ describe('globals.css tema kontrasti', () => {
    *   · `bg-black/N` → hep-koyu lightbox zemini
    *   · `bg-white/N` (5–20) → koyu medyanın üstünde yarı saydam beyaz katman
    *   · `bg-danger` → kendi rengini taşıyan kırmızı buton (beyaz çifti sabit)
+   *   · `bg-[#rrggbb]` → SABİT marka rengi zemini (2026-10-13: sohbet yazma
+   *     alanının yeşil gönder düğmesi `bg-[#25D366] text-white`); sabit renk
+   *     tema ile değişmediği için beyaz metin her iki temada da doğru.
    *
    * GERÇEK BULUNAN İHLALLER (bu test yazılmadan önce düzeltildi):
    *   · `projects/project-card.tsx` indirme menüsü `text-white` —
@@ -312,6 +315,7 @@ describe('globals.css tema kontrasti', () => {
       { rx: /\bbg-black\/\d+/, why: 'hep-koyu lightbox zemini' },
       { rx: /\bbg-white\/(?:5|10|15|20)\b/, why: 'koyu medya ustunde yari saydam beyaz katman' },
       { rx: /\bbg-danger\b/, why: 'kendi rengini tasiyan kirmizi buton' },
+      { rx: /\bbg-\[#[0-9a-f]{3,8}\]/i, why: 'sabit (tema-bagimsiz) marka rengi zemini' },
     ]
     const offenders: string[] = []
     const HARD = /\btext-(?:white|black)(?:\/\d+)?\b/

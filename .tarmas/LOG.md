@@ -1422,3 +1422,97 @@ VE satırlar arası hiza korunuyor.
   da kaynak sözleşmesine uyar; test yorumları ayıklamaz).
 
 commit: `0d50f07` (yerel; push/deploy YOK).
+
+---
+
+## Bu tur (2026-10-13, sohbet yazma alani + About kaydirma + "Daha Fazlasini Goster")
+
+Kullanici (3 gorev, birebir): (1) sohbet yazma alanini WhatsApp Web tarzina
+cevir — tek "hap" bar, solda atac + cikartma, sagda BOŞKEN mikrofon / yazinca
+yesil gonder; metinli "Gonder" dugmesi kalksin. (2) Hakkımda'ya inen fare/scroll
+dugmesi 12-16px DAHA AZ kaysin, baslik header altinda boslukla dursun, pay TEK
+sabit olsun. (3) "Daha Fazlasini Goster (+4 · -6)" bicimindeki "-6" kalksin →
+"(+{n}) · {gorunen}/{toplam}", tumu acikken "Daha Az Goster · toplam/toplam".
+
+### GOREV 1 — sohbet yazma alani (chat-v2.tsx)
+
+- Tek parca pill: `rounded-full bg-foreground/10 px-3 py-1 min-h-12
+focus-within:bg-foreground/15`; input `bg-transparent outline-none`
+  (kendi kenarligi/odak halkasi YOK) → bar tek kutu gibi.
+- Sira: atac (`PaperclipIcon`, `chat.attach`) → cikartma (`StickerIcon`,
+  `chat.emoji`) → input (`chat.placeholder` = "Bir mesaj yazın") → dinamik dugme.
+- Dinamik dugme TEK bilesen: `h-10 w-10 rounded-full`; karar `hasDraft =
+draft.trim().length > 0` (yalniz bosluk "yazdi" sayilmaz). Iki ikon UST USTE
+  (`absolute`) durur ve 200ms `transition-all` ile fade + scale yapar → yumusak
+  gecis. Dolu: `bg-[#25D366] text-white` (WhatsApp yesili, SABIT marka rengi);
+  bos: notr + `MicIcon`. Mikrofon su an YALNIZ gorsel (`title`/`aria-label` =
+  `chat.voiceSoon` = "Sesli mesaj yakinda").
+- Eski metinli `Button` ("Gonder") ve `Button` import'u KALDIRILDI.
+- Enter gonderir / Shift+Enter yeni satir: mevcut `onKeyDown` AYNEN korundu.
+- i18n: `chat.emoji`, `chat.voiceSoon` 8 dilin HEPSINE eklendi; TR
+  `chat.placeholder` → "Bir mesaj yazın".
+
+### GOREV 2 — kaydirma payi (hero-scroll.ts)
+
+- `HERO_SCROLL_BAR = 80` (ust cubuk + kart dolgusu, 2026-10-12 olcumu) ve
+  `HERO_SCROLL_GAP = 16` (nefes payi) → `HERO_SCROLL_OFFSET = 96` (eski 80).
+  Sayfa **16px DAHA AZ** kayar; baslik header'in altinda boslukla durur.
+- Pay TEK ayar noktasi (kullanici istegi): sabit baska yerde yazilmiyor.
+  Guard: hero-scroll.test.ts +3 (offset = bar + pay, pay 16, offset > 80).
+- Diger scroll davranislari (menu linkleri, yukari cik) DOKUNULMADI.
+
+### GOREV 3 — "Daha Fazlasini Goster" bicimi
+
+- `common.showMore` → "Daha Fazlasini Goster (+{opening})"; gizli sayi ("-N")
+  ve "-" isareti TAMAMEN kaldirildi. Rozet ayri anahtar: `{gorunen}/{toplam}`
+  (buton icinde SOLUK `opacity-70` + `font-normal`; kalin metin degismedi).
+- `common.showLess` + `showLessAria` YENI; tumu acikken dugme
+  "Daha Az Goster · {toplam}/{toplam}" + YUKARI chevron olur.
+- `use-row-pagination`: `visibleCount`, `total`, `canCollapse`, `collapse()`
+  eklendi (collapse → `visibleRows = initialRows`). Projeler + Blog ortak
+  dugmesi kullanir; sayfalama KAPALIYKEN (`/projects/`) `canCollapse` false.
+- Dar ekran: "{gorunen}/{toplam}" butona sigmazsa buton ALTINDA, ortalir,
+  `text-xs` + soluk yazilir (`sm:hidden` yedegi). Buton metni tek satir kalir.
+- "Daha Az Goster" tiklaninca liste ilk haline doner ve grid'in basina
+  yumusak kayar (`scroll-mt-24`; `prefers-reduced-motion` saygili).
+- Toplam oge ilk satirlara sigiyorsa dugme HIC cizilmez.
+
+### KARAR (bilincli sapma) — STEP
+
+Kullanici orneginde adim sabit 4 oge varsayilmis ("(+4) · 4/10 → 8/10 → 10/10").
+Projedeki sayfalama **satir bazli** (2026-10-06 kullanici tasarimi: olculen
+sutun sayisi × 2 satir, bos hucre kurali, 100+ satir test) — sabit 4'e cevirmek
+grid hizasini kirardi. Bu yuzden `+{n}` **satir/sutun hesabindan** gelir ve
+zaten `min(adim, kalan)` davranisini saglar (son adimda kalan kadar yazar).
+Sabit 4 oge adimi istenirse `useRowPagination` secenekleri tek yerden degisir.
+
+### Dogrulama (kapilar)
+
+- `tsc --noEmit` → **0 hata**.
+- `eslint --max-warnings 0` (21 degisen dosya) → **0 hata / 0 uyari**
+  (1 duzeltme: test basligi kucuk harfle baslamali — `test/prefer-lowercase-title`).
+- `vitest run` → **647/647 test, 56/56 dosya** (637 → 647; +10: 7 yeni dugme
+  bicimi, 2 daraltma hook'u, 3 hero payi; 2 sohbet yazma alani testi
+  _chat-v2.session.test.tsx_, 7 dugme testi yeniden yazildi).
+- Yeni sohbet testleri: (a) bos → mikrofon / yazinca gonder / silince mikrofon
+  / yalniz bosluk → mikrofon; (b) Enter istek atar, Shift+Enter ATMaz.
+- Kirilan eski sozlesmeler (test tarafi guncellendi):
+  `chat-v2.test.ts` ikon import kalibi (cok satira bolundu),
+  `chat-v2.session.test.tsx` placeholder `/mesajini yaz/` → `/bir mesaj yazin/`,
+  `theme-contrast.test.ts` guvenli-zemin listesine `bg-[#rrggbb]` (sabit marka
+  rengi) istisnasi eklendi — yesil gonder dugmesi `bg-[#25D366] text-white`
+  sabit renk oldugu icin dogru.
+- Dev sunucu kaniti (Turbopack hot-reload): servis edilen chunk'larda
+  `25D366`, `Bir mesaj yaz` (chat), `Daha Fazlas…` + `Daha Az G…` + `showMoreAria`
+  (home) BULUNDU → yeni kod canlida.
+- **GORSEL DOGRULAMA YOK:** BrowserOS neo bagli degil (tabs/windows →
+  "no link to the browser yet") → gercek tarayicida tiklama/gorunum testi
+  yapilamadi; kural geregi baska tarayici aracina DUSULMEDI. Komutlar jsdom
+  render testleriyle dogrulandi (DOM + siniflar gercek).
+
+### Notlar
+
+- SSR'da sohbet yazma alani yok (oturum istemcide cozulur, `threadOpen` false)
+  → HTTP ile dogrulanamaz; ana sayfada da dugme cikmadi (proje listesi kisa).
+- `theme-contrast` agi: sabit hex zemin + beyaz metin artik "guvenli zemin"
+  sayilir; baska bir sabit renk koyu/acik temada belirirse yine yakalanir.

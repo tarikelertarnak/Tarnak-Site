@@ -29,7 +29,9 @@ describe('chat-v2 arayüz sözleşmesi', () => {
   it('tik: gönderildi/teslim → sarı, okundu → yeşil; inline SVG ikonlar', () => {
     // İkon + renk kararı saf modülde (chat-ticks.test.ts onu tek tek doğrular);
     // bileşenin işi yalnızca o kararı render etmek.
-    expect(SRC).toMatch(/import \{ TickReadIcon, TickSentIcon \} from '@\/components\/ui\/icons'/)
+    // 2026-10-13: ikon importu çok satıra bölündü (Mic/Paperclip/Send/Sticker
+    // eklendi) → kalıp virgül/boşluk değişimine dayanıklı hâle getirildi.
+    expect(SRC).toMatch(/import \{[^}]*TickReadIcon[^}]*TickSentIcon[^}]*\} from '@\/components\/ui\/icons'/)
     expect(SRC).toContain('tickFor(m)')
     expect(SRC).toMatch(/tick\.double \? <TickReadIcon[^>]*\/> : <TickSentIcon/)
     expect(SRC).toMatch(/className=\{cn\('inline-flex shrink-0', tick\.color\)\}/)

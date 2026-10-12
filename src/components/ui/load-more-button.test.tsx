@@ -4,14 +4,15 @@ import { LocaleProvider } from '@/components/locale-provider'
 import { LoadMoreButton } from './load-more-button'
 
 /**
- * "Daha Fazlasını Göster (+açılacak · −gizli)" (2026-10-11 kullanıcı isteği).
+ * "Daha Fazlasını Göster (+açılacak) · görünen/toplam" (2026-10-13 kullanıcı).
  *
- * Kullanıcı: "orada mesela daha fazlasını göster (+10 −278) gibi bişey olmalı
- * yani kaç tane açacağı ve kaç tane kapalı olduğu."
+ * Kullanıcı: "'−6' kısmı kafa karıştırıcı, tamamen kaldır" → gizli sayı YOK.
+ * Yerine `{görünen}/{toplam}` geldi ve tümü açıldığında düğme
+ * "Daha Az Göster · toplam/toplam"a döner.
  *
- * İki sayı da düğmede GÖRÜNMELİ: `+N` bu basışta açılacak kart (`willOpen`),
- * `−M` hâlâ gizli kalan (`remaining`). Sayılar `useRowPagination`ün saf
- * fonksiyonlarından gelir (bkz. use-row-pagination.test.ts).
+ * Sayılar `useRowPagination`ten gelir; burada yalnız biçim sınanır.
+ * Dar ekranda rozet düğmenin ALTINDA yazıldığı için "{görünen}/{toplam}"
+ * metni DOM'da İKİ kez bulunur (biri `sm` üstü, biri altı için).
  */
 
 vi.mock('next/navigation', () => ({
@@ -35,7 +36,12 @@ vi.mock('@/components/ui/button', () => ({
   ),
 }))
 
-function draw(props: { remaining: number, opening: number }) {
+function draw(props: {
+  visible: number
+  total: number
+  opening: number
+  expanded: boolean
+}) {
   return render(
     <LocaleProvider detectedLocale="tr">
       <LoadMoreButton {...props} onClick={() => {}} />
@@ -45,26 +51,48 @@ function draw(props: { remaining: number, opening: number }) {
 
 afterEach(cleanup)
 
-describe('loadMoreButton — "+N · −M" rozeti', () => {
-  it('açılacak ve gizli sayıyı birlikte gösterir', () => {
-    draw({ remaining: 278, opening: 10 })
-    expect(screen.getByText(/\(\+10 · −278\)/)).not.toBeNull()
+describe('loadMoreButton — "+N · görünen/toplam" rozeti', () => {
+  it('açılacak sayıyı ve görünen/toplam oranını birlikte gösterir', () => {
+    draw({ visible: 6, total: 10, opening: 4, expanded: false })
+    expect(screen.getByText(/Daha Fazlasını Göster \(\+4\)/)).not.toBeNull()
+    expect(screen.getAllByText(/6\/10/)).toHaveLength(2)
   })
 
-  it('tek kart kaldıysa "+1 · −1"', () => {
-    draw({ remaining: 1, opening: 1 })
-    expect(screen.getByText(/\(\+1 · −1\)/)).not.toBeNull()
+  it('son adımda kalan kadar yazar (açılacak sayı kalandan büyük olmaz)', () => {
+    draw({ visible: 8, total: 10, opening: 2, expanded: false })
+    expect(screen.getByText(/Daha Fazlasını Göster \(\+2\)/)).not.toBeNull()
   })
 
-  it('aria-label iki sayıyı da söyler (ekran okuyucu)', () => {
-    draw({ remaining: 278, opening: 10 })
+  it('eski "−gizli" biçimi, köşeli parantez ve "kaldı" yazısı kullanılmaz', () => {
+    const { container } = draw({ visible: 6, total: 10, opening: 4, expanded: false })
+    expect(container.textContent).not.toContain('−')
+    expect(container.textContent).not.toContain('[')
+    expect(container.textContent).not.toContain('kaldı')
+  })
+
+  it('tümü açıkken "Daha Az Göster · toplam/toplam"a döner', () => {
+    draw({ visible: 10, total: 10, opening: 0, expanded: true })
+    expect(screen.getByText(/Daha Az Göster/)).not.toBeNull()
+    expect(screen.getAllByText(/10\/10/)).toHaveLength(2)
+    expect(screen.queryByText(/Daha Fazlasını Göster/)).toBeNull()
+  })
+
+  it('aria-label görünen/açılacak/toplam sayıyı birlikte söyler (ekran okuyucu)', () => {
+    draw({ visible: 6, total: 10, opening: 4, expanded: false })
     const label = screen.getByRole('button').getAttribute('aria-label') ?? ''
+    expect(label).toMatch(/4/)
+    expect(label).toMatch(/6/)
     expect(label).toMatch(/10/)
-    expect(label).toMatch(/278/)
   })
 
-  it('gizli kart yoksa düğme HİÇ çizilmez', () => {
-    const { container } = draw({ remaining: 0, opening: 0 })
+  it('açılacak öğe yoksa düğme HİÇ çizilmez', () => {
+    const { container } = draw({ visible: 4, total: 4, opening: 0, expanded: false })
     expect(container.innerHTML).toBe('')
+  })
+
+  it('dar ekran için rozet düğmenin dışında ayrı yazılır', () => {
+    const { container } = draw({ visible: 6, total: 10, opening: 4, expanded: false })
+    // `sm:hidden` = yalnız dar ekranda görünen yedek satır
+    expect(container.querySelector('.sm\\:hidden')?.textContent).toBe('6/10')
   })
 })

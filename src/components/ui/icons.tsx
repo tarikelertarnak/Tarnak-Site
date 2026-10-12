@@ -483,6 +483,31 @@ export function SendIcon({ size = 18, className }: IconProps) {
   )
 }
 
+/** Mikrofon — yazma alanı BOŞKEN gösterilen sesli-mesaj düğmesi (2026-10-13). */
+export function MicIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+      <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+      <path d="M12 18v4" />
+      <path d="M8 22h8" />
+    </svg>
+  )
+}
+
+/** Çıkartma/emoji — sohbet yazma alanındaki emoji seçici düğmesi (2026-10-13). */
+export function StickerIcon({ size = 20, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M15.5 3h-7A5.5 5.5 0 0 0 3 8.5v7A5.5 5.5 0 0 0 8.5 21H13a4 4 0 0 0 2.83-1.17l4-4A4 4 0 0 0 21 13v-4.5A5.5 5.5 0 0 0 15.5 3Z" />
+      <path d="M13 21v-3a3 3 0 0 1 3-3h3" />
+      <path d="M9.5 9.5h.01" />
+      <path d="M14.5 9.5h.01" />
+      <path d="M9.5 13.5a3.5 3.5 0 0 0 5 0" />
+    </svg>
+  )
+}
+
 /** Thumbs-up icon. */
 export function ThumbUpIcon({ size = 16, className }: IconProps) {
   return (

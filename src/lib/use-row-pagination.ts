@@ -99,8 +99,14 @@ export interface UseRowPaginationResult<T> {
   remaining: number
   /** Bu basışta KAÇ kart açılacak (`+N` rozeti) */
   willOpen: number
-  /** Buton görünmeli mi */
+  /** Buton görünmeli mi (daha açılacak kart var) */
   hasMore: boolean
+  /** Görünen kart sayısı (`visible.length` ile aynı; `{görünen}/{toplam}` rozeti) */
+  visibleCount: number
+  /** Toplam kart sayısı (`{görünen}/{toplam}` rozeti) */
+  total: number
+  /** Tümü açık mı — buton "Daha Az Göster"e döner (2026-10-13) */
+  canCollapse: boolean
   /** Ölçülen sütun sayısı (N) */
   columns: number
   /** Kaç satır açık */
@@ -109,6 +115,8 @@ export interface UseRowPaginationResult<T> {
   gridRef: React.RefObject<HTMLDivElement | null>
   /** 2 satır daha aç */
   loadMore: () => void
+  /** Listeyi ilk haline (initialRows) döndür — "Daha Az Göster" (2026-10-13) */
+  collapse: () => void
   /** Yeni kartlar için animasyon anahtarı (her loadMore'da artar) */
   revealKey: number
 }
@@ -188,15 +196,29 @@ export function useRowPagination<T>(
     setRevealKey(k => k + 1)
   }, [columns, total, visibleRows, stepRows])
 
+  /**
+   * "Daha Az Göster" (2026-10-13): listeyi ilk haline döndürür. Satır sayısı
+   * `initialRows`a iner; `{görünen}/{toplam}` yeniden ilk değere döner.
+   */
+  const collapse = useCallback(() => {
+    setVisibleRows(initialRows)
+    setRevealKey(k => k + 1)
+  }, [initialRows])
+
   return {
     visible,
     remaining,
     willOpen,
     hasMore: enabled && remaining > 0,
+    visibleCount,
+    total,
+    // Yalnız sayfalama AÇIKKEN ve başlangıçtan fazla satır açılmışken daraltılır.
+    canCollapse: enabled && visibleRows > initialRows,
     columns,
     visibleRows,
     gridRef,
     loadMore,
+    collapse,
     revealKey,
   }
 }

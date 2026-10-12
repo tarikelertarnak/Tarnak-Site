@@ -6,9 +6,15 @@ import type { ChatMessageRow } from '@/lib/chat-v2'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '@/components/locale-provider'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
-import { TickReadIcon, TickSentIcon } from '@/components/ui/icons'
+import {
+  MicIcon,
+  PaperclipIcon,
+  SendIcon,
+  StickerIcon,
+  TickReadIcon,
+  TickSentIcon,
+} from '@/components/ui/icons'
 import {
   isPresenceState,
   PRESENCE_ACTIVE_MS,
@@ -715,6 +721,20 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   })
   const activePeer = orderedPeers.find(p => p.id === activePeerId) ?? null
   const threadOpen = !!conversationId
+  /**
+   * Yazma alanı doluluk kararı (2026-10-13): yalnız BOŞLUK yazmak "yazdı"
+   * sayılmaz → sağdaki düğme mikrofon olarak kalır. Tek kaynak burasıdır.
+   */
+  const hasDraft = draft.trim().length > 0
+  /**
+   * Sağ uçtaki düğmenin sınıfları (2026-10-13). Dolu → yeşil (WhatsApp
+   * gönder, `#25D366` SABİT marka rengi) zemin + beyaz ikon; boş → nötr
+   * mikrofon. Sabit renk tema ile değişmediği için beyaz ikon her iki temada
+   * da okunur (theme-contrast guard'ının "sabit zemin" istisnası).
+   */
+  const sendBtnClass = hasDraft
+    ? 'bg-[#25D366] text-white hover:brightness-95'
+    : 'text-foreground/60 hover:bg-foreground/10 hover:text-foreground'
 
   return (
     <div
@@ -1013,10 +1033,12 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
             </button>
           </div>
         )}
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => setShowEmoji(v => !v)} className="cursor-pointer text-lg">
-            😀
-          </button>
+        {/* WhatsApp tarzı tek parça "hap" yazma alanı (2026-10-13, kullanıcı).
+            İkonlar ve giriş AYNI kutunun içinde; girişin kendi kenarlığı,
+            odak halkası ve arka planı YOK — bar tek kutu gibi görünür. Sağ
+            uçtaki düğme boşken MİKROFON, yazı varken yeşil GÖNDER olur
+            (karar: `hasDraft`, bkz. yukarısı). */}
+        <div className="flex min-h-12 items-center gap-1 rounded-full bg-foreground/10 px-3 py-1 transition-colors focus-within:bg-foreground/15">
           <input
             ref={fileRef}
             type="file"
@@ -1029,8 +1051,24 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
               e.target.value = ''
             }}
           />
-          <button type="button" onClick={() => fileRef.current?.click()} className="cursor-pointer text-lg">
-            📎
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            aria-label={t('chat.attach')}
+            title={t('chat.attach')}
+            className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            <PaperclipIcon size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowEmoji(v => !v)}
+            aria-label={t('chat.emoji')}
+            title={t('chat.emoji')}
+            aria-expanded={showEmoji}
+            className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            <StickerIcon size={20} />
           </button>
           <input
             value={draft}
@@ -1046,11 +1084,33 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
               }
             }}
             placeholder={t('chat.placeholder')}
-            className="flex-1 rounded-xl border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none"
+            aria-label={t('chat.placeholder')}
+            className="min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-foreground/40"
           />
-          <Button type="button" onClick={send} isDisabled={sending || !draft.trim()} className="h-10">
-            {t('chat.send')}
-          </Button>
+          <button
+            type="button"
+            onClick={() => {
+              if (hasDraft) {
+                send()
+              }
+            }}
+            disabled={sending}
+            aria-label={hasDraft ? t('chat.send') : t('chat.voiceSoon')}
+            title={hasDraft ? t('chat.send') : t('chat.voiceSoon')}
+            className={`grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${sendBtnClass}`}
+          >
+            {/* İki ikon üst üste durur; 200ms fade + scale ile yer değiştirir. */}
+            <span className="relative grid h-5 w-5 place-items-center">
+              <MicIcon
+                size={20}
+                className={`absolute transition-all duration-200 ${hasDraft ? 'scale-50 opacity-0' : 'scale-100 opacity-100'}`}
+              />
+              <SendIcon
+                size={18}
+                className={`absolute transition-all duration-200 ${hasDraft ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
+              />
+            </span>
+          </button>
         </div>
         {showEmoji && (
           <div className="mt-2 flex flex-wrap gap-1">

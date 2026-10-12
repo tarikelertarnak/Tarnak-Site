@@ -1,5 +1,6 @@
+import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { computeNextRows, computeNextVisibleCount, computeVisibleCount } from '@/lib/use-row-pagination'
+import { computeNextRows, computeNextVisibleCount, computeVisibleCount, useRowPagination } from '@/lib/use-row-pagination'
 
 /*
   2026-10-06 — kullanıcının istediği senaryolar.
@@ -127,5 +128,39 @@ describe('computeNextVisibleCount ("+N · −M" rozeti, 2026-10-11 kullanıcı i
 
   it('total 0 → 0', () => {
     expect(computeNextVisibleCount(0, 3, 2)).toBe(0)
+  })
+})
+
+/*
+  2026-10-13 (kullanıcı): düğme tümü açıldığında "Daha Az Göster"e döner ve
+  liste ilk hâline (initialRows) döner. `collapse` bunun için eklendi.
+  jsdom'da sütun ölçülemez (`gridTemplateColumns` yok) → 1 sütun varsayılır.
+*/
+describe('useRowPagination — daraltma (collapse)', () => {
+  const items = Array.from({ length: 10 }, (_, i) => i)
+
+  it('loadMore satır açar; collapse ilk hâle döndürür', () => {
+    const { result } = renderHook(() => useRowPagination(items, { initialRows: 2 }))
+    expect(result.current.total).toBe(10)
+    expect(result.current.visibleCount).toBe(2)
+    expect(result.current.canCollapse).toBe(false)
+
+    act(() => result.current.loadMore())
+    expect(result.current.visibleRows).toBe(4)
+    expect(result.current.visibleCount).toBe(4)
+    expect(result.current.canCollapse).toBe(true)
+
+    act(() => result.current.collapse())
+    expect(result.current.visibleRows).toBe(2)
+    expect(result.current.visibleCount).toBe(2)
+    expect(result.current.canCollapse).toBe(false)
+  })
+
+  it('sayfalama kapalıyken hepsi görünür, daraltma yok', () => {
+    const { result } = renderHook(() => useRowPagination(items, { enabled: false }))
+    expect(result.current.visibleCount).toBe(10)
+    expect(result.current.total).toBe(10)
+    expect(result.current.canCollapse).toBe(false)
+    expect(result.current.hasMore).toBe(false)
   })
 })

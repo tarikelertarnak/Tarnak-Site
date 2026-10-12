@@ -1,7 +1,7 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-12T21:05:00+03:00
+updated: 2026-10-13T22:05:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
 branch: faz-1-guvenlik last_commit: db92762 (yerel; push/deploy YOK)
@@ -31,9 +31,9 @@ branch: faz-1-guvenlik last_commit: db92762 (yerel; push/deploy YOK)
 
 ## Current
 
-phase: TARMAS / SERBEST FAZI — UI: CV SECIMI + FAVICON MAVI + KART HIZASI step: KAPANDI (0d50f07)
+phase: TARMAS / SERBEST FAZI — UI: SOHBET YAZMA ALANI (WhatsApp) + ABOUT KAYDIRMA + "DAHA FAZLASI" BICIMI step: KAPANDI (bu tur commit)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 0d50f07 (yerel commit; push/deploy ASLA otomatik)
+branch: faz-1-guvenlik last_commit: bu tur (yerel commit; push/deploy ASLA otomatik)
 running_processes: next dev (turbopack) :3000 PID 19720
 not: "Sohbet yukleniyor… siyah yaziyordu" + "chat sahte, gercek calissin" kapandi.
 A) TANIMSIZ TEMA JETONU sinifi: `text-foreground-50/-60/-70` (16 yer, hepsi
@@ -45,6 +45,34 @@ Sonrasi: users 200 (2 kisi), mesaj gonderildi ve DB'ye yazildi (kanit).
 `peersError` + CHAT_SCHEMA_MISSING → schemaMissing ile sonsuz yukleme sinifi kapandi.
 **tsc 0 · eslint --max-warnings 0 0 · vitest 570/570 (47 dosya) · e2e 62/62 ·
 11/11 negatif kontrol (byte-exact geri yuklendi, sha dogrulandi).**
+
+## Bu tur (2026-10-13, sohbet yazma alani + About kaydirma + "Daha Fazlasini Goster")
+
+3 gorev, hepsi kapandi (ayrinti: LOG.md "Bu tur (2026-10-13 …)"):
+
+1. **Sohbet yazma alani WhatsApp tarzi** (`chat-v2.tsx`): tek pill bar
+   (`rounded-full bg-foreground/10 min-h-12`), icinde atac → cikartma → input
+   (`bg-transparent outline-none`, kenarlik/odak halkasi YOK) → dinamik dugme.
+   Dugme BOŞKEN mikrofon (`MicIcon`, "Sesli mesaj yakinda"), `draft.trim()`
+   doluyken yesil `#25D366` gonder (`SendIcon`, beyaz); iki ikon ust uste
+   200ms fade+scale. Eski metinli "Gonder" `Button`'u + import'u KALDIRILDI.
+   Enter gonderir / Shift+Enter yeni satir (mevcut handler korundu).
+2. **Kaydirma payi** (`hero-scroll.ts`): `HERO_SCROLL_BAR = 80` +
+   `HERO_SCROLL_GAP = 16` → `HERO_SCROLL_OFFSET = 96` (eski 80) → sayfa 16px
+   daha az kayar, baslik header altinda bosluklu. Pay TEK ayar noktasi.
+3. **"Daha Fazlasini Goster" bicimi**: "-N" kaldirildi →
+   "Daha Fazlasini Goster (+{n}) · {gorunen}/{toplam}"; tumu acikken
+   "Daha Az Goster · toplam/toplam" + yukari chevron, tiklayinca liste ilk
+   haline doner + liste basina yumusak kayar. `use-row-pagination`e
+   `visibleCount`/`total`/`canCollapse`/`collapse()` eklendi. Dar ekranda rozet
+   butonun ALTINDA. Toplam ilk satirlara sigiyorsa dugme YOK.
+   **Bilincli sapma:** adim sabit 4 oge DEGIL, olculen satir×sutun (grid
+   hizasi korunur; `+n` zaten `min(adim, kalan)`).
+
+**tsc 0 · eslint --max-warnings 0 (21 dosya) 0 · vitest 647/647 (56 dosya; +10) ·
+8 dil i18n senkron (chat.emoji, chat.voiceSoon, showLess/showLessAria) ·
+dev chunk probe: yeni kod canlida.** Gorsel/tarayici dogrulamasi YOK
+(BrowserOS neo bagli degil → baska araca dusulmedi).
 
 ## Bu tur (2026-10-12, tikler)
 

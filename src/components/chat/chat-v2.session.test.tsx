@@ -138,7 +138,7 @@ describe('sohbet v2 oturum ekranı', () => {
 
     await renderChat()
 
-    await waitFor(() => expect(screen.getByPlaceholderText(/mesajını yaz/i)).not.toBeNull())
+    await waitFor(() => expect(screen.getByPlaceholderText(/bir mesaj yazın/i)).not.toBeNull())
     // "Önce seç, sonra aç" adımı YOK: tek kişilik listede sohbet otomatik açılır.
     expect(screen.getAllByText('TARIK ELER').length).toBeGreaterThan(0)
     const openCall = spy.mock.calls.find(
@@ -213,7 +213,7 @@ describe('sohbet v2 oturum ekranı', () => {
 
     fireEvent.click(screen.getByText('Ayşe Yılmaz'))
 
-    await waitFor(() => expect(screen.getByPlaceholderText(/mesajını yaz/i)).not.toBeNull())
+    await waitFor(() => expect(screen.getByPlaceholderText(/bir mesaj yazın/i)).not.toBeNull())
     const openWithPeer = spy.mock.calls.find(
       c => String(c[0]).includes('/api/chat/v2')
         && c[1]?.method === 'POST'
@@ -221,5 +221,98 @@ describe('sohbet v2 oturum ekranı', () => {
     )
     expect(openWithPeer).toBeTruthy()
     expect(JSON.parse(String(openWithPeer![1]!.body))).toMatchObject({ action: 'open', peerId: 'u-1' })
+  })
+
+  /*
+    2026-10-13 (kullanıcı): yazma alanı WhatsApp tarzı TEK "hap" oldu. Sağ
+    uçtaki düğme boşken MİKROFON, yazı varken yeşil GÖNDER olur; eski metinli
+    "Gönder" düğmesi kaldırılır. Enter gönderir, Shift+Enter YENİ SATIR.
+
+    Dikkat: "Gönder" adlı düğme artık ikon-only (aria-label taşır) ve
+    mikrofon düğmesinin adı `chat.voiceSoon`.
+  */
+  it('yazma alanı: boşken mikrofon, yazınca gönder, silince tekrar mikrofon', async () => {
+    mockFetch((url, init) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'user-1', role: 'user' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({
+          success: true,
+          chatId: 'user-1',
+          users: [{ id: 'owner-1', username: 'tarikelertarnak', fullName: 'TARIK ELER', avatarUrl: null }],
+        })
+      }
+      if (url.includes('/api/chat/v2')) {
+        // Gönderim denemesi bilerek reddedilir (başarısız yanıt mesaj
+        // gövdesi çizmez) — iddia İSTEĞİN atıldığı üzerinedir.
+        if (String(init?.body).includes('"text"')) {
+          return jsonResponse({ success: false, message: 'test' })
+        }
+        return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
+      }
+      return jsonResponse({ success: true, messages: [] })
+    })
+
+    await renderChat()
+
+    const input = await screen.findByPlaceholderText(/bir mesaj yazın/i)
+    const mic = () => screen.queryByRole('button', { name: 'Sesli mesaj yakında' })
+    const gonder = () => screen.queryByRole('button', { name: 'Gönder' })
+
+    // Boşken: mikrofon var, gönder yok
+    expect(mic()).not.toBeNull()
+    expect(gonder()).toBeNull()
+
+    // Yazınca: gönder çıkar, mikrofon kaybolur
+    fireEvent.change(input, { target: { value: 'merhaba' } })
+    expect(gonder()).not.toBeNull()
+    expect(mic()).toBeNull()
+
+    // YALNIZ boşluk "yazdı" sayılmaz → mikrofon geri gelir
+    fireEvent.change(input, { target: { value: '   ' } })
+    expect(mic()).not.toBeNull()
+
+    // Temizleyince de mikrofon
+    fireEvent.change(input, { target: { value: '' } })
+    expect(mic()).not.toBeNull()
+    expect(gonder()).toBeNull()
+  })
+
+  it('enter gönderir, shift+enter göndermez (yeni satır)', async () => {
+    const spy = mockFetch((url, init) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'user-1', role: 'user' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({
+          success: true,
+          chatId: 'user-1',
+          users: [{ id: 'owner-1', username: 'tarikelertarnak', fullName: 'TARIK ELER', avatarUrl: null }],
+        })
+      }
+      if (url.includes('/api/chat/v2')) {
+        if (String(init?.body).includes('"text"')) {
+          return jsonResponse({ success: false, message: 'test' })
+        }
+        return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
+      }
+      return jsonResponse({ success: true, messages: [] })
+    })
+    const sent = () => spy.mock.calls.some(
+      c => String(c[0]).includes('/api/chat/v2')
+        && c[1]?.method === 'POST'
+        && String(c[1]?.body).includes('"text":"merhaba"'),
+    )
+
+    await renderChat()
+    const input = await screen.findByPlaceholderText(/bir mesaj yazın/i)
+    fireEvent.change(input, { target: { value: 'merhaba' } })
+
+    fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })
+    expect(sent()).toBe(false)
+
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(sent()).toBe(true)
   })
 })

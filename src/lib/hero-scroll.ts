@@ -12,7 +12,25 @@
  * Bunun yerine hedefin gerçek konumu hesaplanıp `window.scrollTo` ile başlık
  * sabit üst çubuğun (48–56px) hemen altına getirilir.
  */
-export const HERO_SCROLL_OFFSET = 80
+
+/**
+ * Sabit üst çubuk (TopBar) yüksekliği + hedef başlığın kart içi üst dolgusu.
+ * Ölçüm (2026-10-12): çubuk 48–56px, About çerçeveli kartın dolgusu 16–32px.
+ */
+export const HERO_SCROLL_BAR = 80
+
+/**
+ * Başlıkla üst çubuk arasında KALAN nefes payı (px).
+ *
+ * 2026-10-13 (kullanıcı: "HAKKIMDA header'ın hemen altına yapışıyor, arada
+ * hiç boşluk kalmıyor"): pay 16px'e çıkarıldı — sayfa eskisinden 16px DAHA AZ
+ * kaydırılır. Bu değer kaydırma boşluğunun TEK ayar noktasıdır; başka yerde
+ * sabit yazma.
+ */
+export const HERO_SCROLL_GAP = 16
+
+/** Kaydırmada hedefin üstünden çıkarılacak toplam mesafe. */
+export const HERO_SCROLL_OFFSET = HERO_SCROLL_BAR + HERO_SCROLL_GAP
 
 export function heroScrollTop(section: HTMLElement | null | undefined): number {
   if (!section)
