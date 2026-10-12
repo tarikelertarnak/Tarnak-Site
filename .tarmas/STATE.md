@@ -31,9 +31,9 @@ branch: faz-1-guvenlik last_commit: 5636da8 (yerel; push/deploy YOK)
 
 ## Current
 
-phase: TARMAS / SERBEST FAZI — HERO CV SPLIT ODAK HALKASI ("CV secilmiyor") step: KAPANDI
+phase: TARMAS / SERBEST FAZI — ANA SAYFA: HERO SIRA + FARE KAYDIRMA + QR PANEL step: KAPANDI
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 0e2526a (yerel commit; push/deploy ASLA otomatik)
+branch: faz-1-guvenlik last_commit: 5c9280a (yerel commit; push/deploy ASLA otomatik)
 running_processes: next dev (turbopack) :3000 PID 19720
 not: "Sohbet yukleniyor… siyah yaziyordu" + "chat sahte, gercek calissin" kapandi.
 A) TANIMSIZ TEMA JETONU sinifi: `text-foreground-50/-60/-70` (16 yer, hepsi
@@ -175,3 +175,37 @@ yalniz klavye odağında (komşu butonların :focus-visible anlamiyla ayni).
   tsc 0 · eslint --max-warnings 0 (3 dosya) 0 · vitest 615/615 (52 dosya) ·
   playwright 62/62 · negatif kontrol: mutasyon (eski varyant) -> **4 test kirildi**
   -> byte-exact geri (sha `32136b7b…`) -> yesil.
+
+## Bu tur (2026-10-12, ana sayfa: sira + fare kaydirma + QR)
+
+Kullanici: _"Projeler İletişim CV Blog Hakkımda Sohbet sırası şu şekil olsun
+Hakkımda, Projeler, Blog, İletişim, Sohbet, CV"_ · _"fare animasyonu varya ana
+sayfada üstte ona basınca hakkındaya gidiyor ama çok az gidiyo üstte siyah boş
+kısım oluyo daha fazla kaydırmalı"_ · _"qr kod kısmı kötü o kısmıda iyileştir"_.
+
+1. **SIRA** (hero-section.tsx): altı buton yeniden dizildi — Hakkımda
+   (/about/) → Projeler (/projects/) → Blog (/blog/) → İletişim
+   (/contact/) → Sohbet (/chat/) → **CV** (CvPicker, en sonda).
+   Guard: hero-section.order.test.ts (kaynak sözleşmesi — href dizisi +
+   CvPicker son sırada).
+2. **FARE (SCROLL)** — ölçülen kök neden: scrollIntoView(#about) üç şeyi üst
+   üste bindiriyordu: (a) Section'ın bsolute -top-20 sm:-top-24 çapa div'i
+   (bölümün 80-96px YUKARISI), (b) [id]{scroll-margin-top:88px}, (c)
+   html,body{overflow-x:hidden} + scrollIntoView'un Chrome/WebKit'te KISA
+   kaydırma davranışı → bölüm ~168px aşağıda, üstte siyah boş şerit.
+   ÇÖZÜM: src/lib/hero-scroll.ts (heroScrollTop, ofset 80px) → başlık (h2)
+   sabit üst çubuğun hemen altına window.scrollTo ile gelir. Guard:
+   hero-scroll.test.ts (5 test).
+3. **QR** (card-qr.tsx): çift kutulu "yüzen kare" → TEK beyaz panel
+   (
+   ounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-foreground/20), QR
+   132→**148px**, marginSize 1→2; metin YOK kuralı korundu. Guard:
+   card-qr-only.test.ts +2 (\"qr panel stili\").
+
+**Kanıt:** tsc 0 · eslint --max-warnings 0 (6 dosya) 0 · vitest **625/625**
+(54 dosya; +10) · playwright **62/62** · SSR probe: hero href sırası
+/about/ → /projects/ → /blog/ → /contact/ → /chat/ → CV, scrollIntoView
+kalmadı, QR yeni panel sınıfları HTML'de. **NEGATIF KONTROL (3/3):**
+(%TEMP%\opencode\negctl-hero.cjs) ofset işareti ters → 4 test; ilk buton
+/x/ → 1 test; QR 148→132 → 1 test = **6 test kırıldı** → üçü de byte-exact
+geri (sha 9cd12b26/761169a9/56910523) → yeşil.

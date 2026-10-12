@@ -1235,3 +1235,71 @@ anlamıyla aynı: yalniz klavye odaginda). `split-button.tsx` yorumu guncellendi
   varyanta mutasyon → **4 test kirildi** (test bos degil) → byte-exact geri
   yukleme (sha `32136b7bbb99681e` oncesi = sonrasi) → testler yesil.
   commit: `0e2526a` (yerel; push/deploy yok).
+
+---
+
+## Bu tur (2026-10-12, ana sayfa: buton sırası + fare kaydırma + QR panel)
+
+Kullanici uc istek verdi:
+
+1. Hero buton sirasi — _"Hakkımda, Projeler, Blog, İletişim, Sohbet, CV"_.
+2. Fare (scroll) ikonu — _"hakkındaya gidiyor ama çok az gidiyo üstte siyah boş
+   kısım oluyo daha fazla kaydırmalı"_.
+3. _"qr kod kısmı kötü o kısmıda iyileştir"_.
+
+### 1. Sira (hero-section.tsx)
+
+Yeni sıra: Hakkımda /about/ → Projeler /projects/ → Blog /blog/ →
+İletişim /contact/ → Sohbet /chat/ → **CV** (CvPicker en sonda).
+Ikonlar degismedi, yalnizca dizilis.
+
+Guard: src/components/sections/hero-section.order.test.ts — buton kabindaki
+href dizisini tam olarak dogrular + CvPicker'in son sirada oldugunu + kaynak
+yorumunu kontrol eder (kaynak sozlesmesi deseni).
+
+### 2. Fare (scroll) — olculen kok neden
+
+document.getElementById('about').scrollIntoView({block:'start'}) uc etkiyi
+ust uste bindiriyordu:
+
+1. Section bileseni id'yi bsolute -top-20 sm:-top-24 bir div'e koyar →
+   capa, bolumun 80-96px YUKARISINDA durur.
+2. globals.css [id] { scroll-margin-top: 88px } → +88px.
+3. html, body { overflow-x: hidden } + scrollIntoView Chrome/WebKit'te
+   pencereyi KISA kaydirir (bilinen davranis).
+   Sonuc: About bolumu gorunumun ~168px ALTINDA → ustte siyah bos serit,
+   "cok az kaydiriyor".
+
+Cozum src/lib/hero-scroll.ts:
+`heroScrollTop(section)` = max(h2.top + scrollY - 80, 0) — baslik, sabit ust
+cubugun (48-56px) hemen altina gelir; tiklamada window.scrollTo. Animasyon
+tercihi (prefers-reduced-motion) korunur. Guard: hero-scroll.test.ts 5 test
+(h2 hedefi, h2 yoksa bolum, scrollY etkisi, null/undefined, negatif sinir).
+
+### 3. QR panel (vcard-qr.tsx)
+
+Eski:
+ounded-2xl border bg-card/40 p-4 dis kutu + ic beyaz panel =
+"yuzen kare". Yeni: TEK beyaz panel
+
+ounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-foreground/20, QR
+132→**148**, marginSize 1→2 (sessiz bolge). Metin YOK kurali korundu
+(card-qr-only.test.ts uzerine +2 test: "qr panel stili").
+
+### Dogrulama
+
+- tsc 0 · eslint --max-warnings 0 (6 dosya) 0 · vitest **625/625** (54 dosya,
+  623→625) · playwright **62/62**.
+- SSR probe (dev :3000): hero buton href sirasi
+  /about/ → /projects/ → /blog/ → /contact/ → /chat/ → CV ✓, HTML'de
+  scrollIntoView YOK ✓, QR yeni panel siniflari ✓.
+- **NEGATIF KONTROL 3/3** (%TEMP%\opencode\negctl-hero.cjs):
+  | Mutasyon                                                                         | Kirilan test                 | sha256 (geri yukleme) |
+  | -------------------------------------------------------------------------------- | ---------------------------- | --------------------- |
+  | heroScrollTop ofset isareti - → +                                                | hero-scroll.test.ts **4**    | 9cd12b26…             |
+  | hero ilk buton /about/ → /x/                                                     | hero-section.order.test.ts 1 | 761169a9…             |
+  | QR size={148} → {132}                                                            | card-qr-only.test.ts 1       | 56910523…             |
+  | Toplam **6 test** kirildi, ucu de byte-exact geri yuklendi (sha oncesi=sonrasi), |
+  | son kosu yesil.                                                                  |
+
+commit: `5c9280a` (yerel; push/deploy yok).
