@@ -139,8 +139,16 @@ export const ROLE_PRESETS: RolePreset[] = [
   {
     id: 'user',
     label: 'User',
-    description: 'Temel üye.',
-    permissions: [],
+    description: 'Temel üye — site sahibiyle sohbet eder.',
+    /*
+      Kullanıcı isteği (2026-10-12): "normal kullanıcılar ise sadece benimle
+      ya da onu eklediğim gruplarda ya da benim ona izin verdiğim kişilerle
+      konuşabilir". Yani sahiple sohbet VARSAYILAN haktır; kiminle
+      konuşulabileceğini API kısıtlar (`/api/chat/users` + `action:'open'`:
+      yalnız site sahibi). Boş izin listesi yüzünden kayıtlı her normal
+      kullanıcı 403 "Sohbet iznin yok." alıyordu.
+    */
+    permissions: ['chat.send', 'chat.read'],
   },
 ]
 

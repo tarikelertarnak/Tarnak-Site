@@ -68,7 +68,7 @@ async function renderAdminChat(extra: (url: string, init?: RequestInit) => Promi
       <ChatV2 />
     </LocaleProvider>,
   )
-  await waitFor(() => expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull())
+  await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
   return spy
 }
 
@@ -235,9 +235,9 @@ describe('admin kullanıcı menüsü', () => {
         <ChatV2 />
       </LocaleProvider>,
     )
-    await waitFor(() => expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull())
+    await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
 
-    expect(screen.getByText('TARIKELER')).not.toBeNull()
+    expect(screen.getAllByText('TARIKELER').length).toBeGreaterThan(0)
     expect(screen.queryByText(/henüz başka kullanıcı yok/i)).toBeNull()
   })
 
@@ -269,7 +269,7 @@ describe('admin kullanıcı menüsü', () => {
         <ChatV2 />
       </LocaleProvider>,
     )
-    await waitFor(() => expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull())
+    await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
 
     expect(screen.getByLabelText('Çevrimiçi')).not.toBeNull()
     expect(screen.getByLabelText('Çevrimdışı')).not.toBeNull()
@@ -311,7 +311,7 @@ describe('admin kullanıcı menüsü', () => {
         <ChatV2 />
       </LocaleProvider>,
     )
-    await waitFor(() => expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull())
+    await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
 
     // Sabitlenen (Büşra) ve sarı (Cem) listenin ilk iki satırı olmalı.
     const rows = screen.getAllByRole('button')
@@ -346,7 +346,7 @@ describe('admin kullanıcı menüsü', () => {
     )
 
     await waitFor(() => expect(screen.getByText('Bir hata oluştu.')).not.toBeNull())
-    expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull()
+    expect(document.querySelector('[role="status"]')).toBeNull()
   })
 
   /*
@@ -373,6 +373,6 @@ describe('admin kullanıcı menüsü', () => {
     )
 
     await waitFor(() => expect(screen.getByText(/supabase\/chat\.sql/)).not.toBeNull())
-    expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull()
+    expect(document.querySelector('[role="status"]')).toBeNull()
   })
 })

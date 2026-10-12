@@ -156,4 +156,61 @@ describe('chat-v2 arayüz sözleşmesi', () => {
       }
     })
   })
+
+  /*
+    YERLEŞİM SÖZLEŞMESİ (2026-10-12 kullanıcı isteği):
+    "önce kime yazacağımızı seçiyoruz sonra onunla sohbet açılıyor — yanlış;
+     ikisi yan yana tek bir hâlde olacak. Yan panel gibi duracak, büyütüp
+     küçültebileceğim. 'Kime yazmak istiyorsun?' yazısını kaldır, sohbet tam
+     ekranı kaplasın." "Sohbet yükleniyor" ekranı da kalktı (iskelet oldu).
+  */
+  describe('tek ekran: solda kişi paneli (yeniden boyutlandırılabilir) + sağda sohbet', () => {
+    it('"Kime yazmak istiyorsun?" başlığı ve eski seçim ekranı KALKTI', () => {
+      expect(SRC).not.toContain('pickRecipient')
+      expect(SRC).not.toMatch(/isAdmin && !conversationId/)
+    })
+
+    it('kişi paneli ve sohbet AYNI ekranda durur', () => {
+      expect(SRC).toContain('<aside')
+      expect(SRC).toContain('<section')
+      // birden fazla kişi varsa sağ panel "soldan bir kişi seç" der
+      expect(SRC).toContain('chat.selectPerson')
+    })
+
+    it('yan panel sürükleyerek VE klavyeyle yeniden boyutlandırılır', () => {
+      expect(SRC).toContain('role="separator"')
+      expect(SRC).toContain('startResize')
+      expect(SRC).toContain('resizeByKey')
+      expect(SRC).toContain('CHAT_PANEL_MIN')
+      expect(SRC).toContain('CHAT_PANEL_MAX')
+      expect(SRC).toMatch(/aria-orientation="vertical"/)
+      // genişlik CSS değişkeniyle panele geçer
+      expect(SRC).toContain('md:w-[var(--chat-panel-w)]')
+    })
+
+    it('sohbet tam ekranı kaplar (eski 760px / 68svh / max-w-3xl sınırı yok)', () => {
+      expect(SRC).toContain('flex h-[calc(100svh-19rem)] min-h-[260px] w-full')
+      // sınıf listesinde eski sınırlar YOK (yorumda anılmaları serbest)
+      expect(SRC).not.toMatch(/className="[^"]*max-h-\[760px\]/)
+      expect(SRC).not.toMatch(/className="[^"]*68svh/)
+    })
+
+    it('yükleme ekranı iskelet: "Sohbet yükleniyor" metni basılmaz', () => {
+      expect(SRC).toContain('ChatSkeleton')
+      expect(SRC).toMatch(/role="status"/)
+      // metin yalnız aria-label ile duyurulur, ekrana yazılmaz
+      expect(SRC).not.toMatch(/>\s*\{t\('chat\.loading'\)\}\s*</)
+    })
+
+    it('hata TAM EKRANI KAPLAMAZ: sohbetin içinde uyarı bandı olur', () => {
+      expect(SRC).toMatch(/role="alert"/)
+      expect(SRC).not.toMatch(/<ChatNotice icon="❌"/)
+    })
+
+    it('"erişim yok" tam ekranı YOK (sunucu görünmeyeni listelemez)', () => {
+      // tek anıldığı yer açıklayıcı yorumdur; kodda böyle bir metin/ekran yok
+      expect(SRC).not.toMatch(/'Erişim yok/)
+      expect(SRC).toContain('chat.selectPerson')
+    })
+  })
 })

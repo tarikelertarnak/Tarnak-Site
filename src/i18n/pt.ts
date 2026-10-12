@@ -64,6 +64,8 @@ const pt: Record<string, string> = {
   'chat.loginRequired': 'Entrada necessária.',
   'chat.backToList': 'Back to conversations',
   'chat.pickRecipient': 'Who do you want to write to?',
+  'chat.selectPerson': 'Escolhe uma pessoa à esquerda',
+  'chat.resizePanel': 'Redimensionar o painel',
   'chat.block': 'Block',
   'chat.clearConversation': 'Clear conversation',
   'chat.deleteConversation': 'Delete conversation',

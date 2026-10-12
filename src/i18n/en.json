@@ -492,6 +492,8 @@
   "chat.notDelivered": "Not delivered",
   "chat.backToList": "Back to conversations",
   "chat.pickRecipient": "Who do you want to write to?",
+  "chat.selectPerson": "Pick a person on the left",
+  "chat.resizePanel": "Resize the panel",
   "chat.block": "Block",
   "chat.clearConversation": "Clear conversation",
   "chat.deleteConversation": "Delete conversation",

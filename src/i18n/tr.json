@@ -492,6 +492,8 @@
   "chat.notDelivered": "Teslim edilmedi",
   "chat.backToList": "Sohbet listesine dön",
   "chat.pickRecipient": "Kime yazmak istiyorsun?",
+  "chat.selectPerson": "Soldan bir kişi seç",
+  "chat.resizePanel": "Paneli genişlet veya daralt",
   "chat.block": "Engelle",
   "chat.clearConversation": "Sohbeti temizle",
   "chat.deleteConversation": "Sohbeti sil",

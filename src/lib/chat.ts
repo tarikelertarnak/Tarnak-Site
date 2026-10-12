@@ -185,13 +185,21 @@ export async function saveUploadedFile(
   mimeType: string,
 ): Promise<ChatFile> {
   const rawExt = path.extname(originalName).toLowerCase().slice(0, 12) || '.bin'
-  const ext = ALLOWED_EXTENSIONS.has(rawExt) ? rawExt : '.bin'
-  if (ext === '.bin') {
-    throw new Error('Bu dosya türü yüklenemez.')
-  }
-  if (!matchesMagicBytes(data, ext)) {
-    throw new Error('Dosya içeriği uzantısıyla eşleşmiyor.')
-  }
+  /*
+    DESTEKLENMEYEN TÜR HATASI YOK (kullanıcı isteği 2026-10-12): "Bu dosya türü
+    yüklenemez" gibi engeller olmasın; bir kod dosyasıysa da ÇALIŞMASIN, yalnız
+    var olsun.
+
+    Kural: uzantı beyaz listede değilse VEYA içerik uzantısıyla uyuşmuyorsa
+    dosya `.bin` olarak — yani opak, çalıştırılamaz bir eklenti olarak —
+    saklanır ve türü `application/octet-stream` yapılır. `/uploads/*` hem
+    `Content-Disposition: attachment` hem `X-Content-Type-Options: nosniff` ile
+    sunulur (next.config.mjs): tarayıcı bunu ASLA çalıştırmaz, yalnız indirir.
+    Böylece .html/.svg/.js gibi çalışabilen içerik yüklense bile etkisiz kalır.
+  */
+  const known = ALLOWED_EXTENSIONS.has(rawExt) && matchesMagicBytes(data, rawExt)
+  const ext = known ? rawExt : '.bin'
+  const type = known ? (mimeType || 'application/octet-stream') : 'application/octet-stream'
   const safeName = originalName.replace(/[^\w.\- ]+/g, '_').slice(0, 80)
   const filename = `${Date.now()}-${randomUUID().slice(0, 8)}${ext}`
   try {
@@ -205,7 +213,7 @@ export async function saveUploadedFile(
   }
   return {
     name: safeName,
-    type: mimeType || 'application/octet-stream',
+    type,
     size: data.length,
     url: `/uploads/chat/${filename}`,
   }

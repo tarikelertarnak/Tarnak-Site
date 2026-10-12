@@ -64,6 +64,8 @@ const ru: Record<string, string> = {
   'chat.loginRequired': 'Требуется вход.',
   'chat.backToList': 'Back to conversations',
   'chat.pickRecipient': 'Who do you want to write to?',
+  'chat.selectPerson': 'Выберите человека слева',
+  'chat.resizePanel': 'Изменить ширину панели',
   'chat.block': 'Block',
   'chat.clearConversation': 'Clear conversation',
   'chat.deleteConversation': 'Delete conversation',

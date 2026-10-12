@@ -112,6 +112,15 @@ export async function getOrCreateDirectConversation(
     throw existing.error
   }
   if (existing.data) {
+    /*
+      Var olan sohbette katılım satırları EKSİK olabilir. 2026-10-12 canlı
+      ölçümü: `direct_key = "<aynı id>|<aynı id>"` (kişinin KENDİSİYLE sohbet
+      açması) sohbetinde iki katılımcı aynı birincil anahtarla eklendiği için
+      INSERT çakışmış ve HİÇ satır yazılmamıştı → sohbet açılıyor, ardından
+      mesaj okuma "Erişim yok." (403) dönüyordu. Katılım artık her açılışta
+      garanti edilir (idempotent) → eski kırık sohbet de kendini onarır.
+    */
+    await ensureParticipants(client, existing.data.id as string, [a, b])
     return existing.data as ChatConversationRow
   }
 
@@ -140,11 +149,66 @@ export async function getOrCreateDirectConversation(
   }
 
   const conv = created.data as ChatConversationRow
-  await client.from('chat_participants').insert([
-    { conversation_id: conv.id, user_id: a, role: 'member' },
-    { conversation_id: conv.id, user_id: b, role: 'member' },
-  ])
+  await ensureParticipants(client, conv.id, [a, b])
   return conv
+}
+
+/**
+ * Katılımcı satırlarını garanti eder (idempotent, yarış güvenli).
+ *
+ * `a === b` olabilir (kendisiyle sohbet): iki satır aynı birincil anahtara
+ * `(conversation_id, user_id)` düşer, çakışır ve INSERT'ün TAMAMI geri
+ * alınır. Bu yüzden kimlikler tekilleştirilir.
+ */
+async function ensureParticipants(
+  client: SupabaseClient,
+  conversationId: string,
+  ids: string[],
+): Promise<void> {
+  const rows = [...new Set(ids)]
+    .filter(id => !!id)
+    .map(user_id => ({ conversation_id: conversationId, user_id }))
+  if (rows.length === 0) {
+    return
+  }
+  await client
+    .from('chat_participants')
+    .upsert(rows, { onConflict: 'conversation_id,user_id', ignoreDuplicates: true })
+}
+
+/**
+ * SOHBET KİMLİĞİ (2026-10-12) — site sahibi iki farklı yolla giriş yapabiliyor:
+ * `/login` (admin.json → id `admin:<kullanıcı adı>`) ve `/sign` (Supabase → uuid).
+ * İki kimlik İKİ AYRI sohbet geçmişi demekti: sahip bir yolla konuştuğunu
+ * diğerinde göremiyordu ("kimse yok, kendim bile"). Kullanıcı adı `profiles`
+ * tablosunda varsa sohbet kimliği o profilin UUID'idir; eşleşme yoksa id
+ * aynen döner (davranış değişmez).
+ *
+ * Eşleşme büyük/küçük harf duyarsız ve TAM ad üzerinden yapılır (ILIKE joker
+ * karakteri `_` yüzünden yanlış kişiye bağlanmamak için JS tarafında).
+ */
+export async function resolveChatIdentity(
+  id: string,
+  username: string | null,
+): Promise<string> {
+  if (!id.startsWith('admin:') || !username) {
+    return id
+  }
+  const { data } = await db().from('profiles').select('id, username').limit(500)
+  const rows = (data ?? []) as Array<{ id: string, username: string | null }>
+  const target = username.trim().toLowerCase()
+  return rows.find(p => (p.username ?? '').trim().toLowerCase() === target)?.id ?? id
+}
+
+/** Sitenin sahibinin user id'si (normal kullanıcılar SADECE sahiple konuşur). */
+export async function siteOwnerId(): Promise<string> {
+  const { data } = await db()
+    .from('profiles')
+    .select('id')
+    .eq('is_owner', true)
+    .limit(1)
+    .maybeSingle()
+  return (data as { id?: string } | null)?.id ?? ''
 }
 
 /** Kullanıcının katıldığı tüm sohbetler (en son mesaja göre sıralı). */

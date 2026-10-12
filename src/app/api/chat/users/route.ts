@@ -1,22 +1,37 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { canSeeAllPeers } from '@/lib/chat-access'
+import { resolveChatIdentity, siteOwnerId } from '@/lib/chat-v2'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser } from '@/lib/supabase/session'
 
+const COLUMNS = 'id, username, full_name, nickname, avatar_url, last_seen_at, presence_state'
+
 /**
- * Kayıtlı kullanıcı listesi — YÖNETİCİ sohbet paneli için.
+ * Sohbet kişi listesi — "kime yazmak istiyorum" paneli (2026-10-11; 2026-10-12
+ * yenilendi).
  *
- * 2026-10-11 (kullanıcı isteği): "Henüz başka kullanıcı yok" yazısı
- * olmayacak — "kendim bile her kim kayıtlıysa herkez orada gözüksün". Bu
- * yüzden:
- *   · `username is not null` filtresi KALDIRILDI (henüz kullanıcı adı
- *     seçmemiş kayıtlar da listede çıkar),
- *   · admin'in KENDİ profili de döner (gizleme istemcide yapılmaz).
- * Ayrıca çevrimiçi nabzı (`last_seen_at` / `presence_state`) döner; yeşil /
- * sarı / kırmızı nokta istemcide `lib/chat-peers.ts` ile hesaplanır.
+ * YETKİ (kullanıcı isteği 2026-10-12): "Erişim yok ekranı diye bişey olmaz —
+ * sonuçta sadece konuşabileceklerini görecek. Ben bütün grup ve kişileri
+ * görürüm."
+ *   · site sahibi / admin → kayıtlı HERKES (kendi satırı dahil, gizleme yok),
+ *   · normal kullanıcı    → yalnızca konuşabileceği kişiler: site sahibi
+ *     (ileride: eklendiği gruplar ve kendisine izin verilen kişiler).
  *
- * YETKİ: yalnızca admin. Normal kullanıcı listeyi görmez (sohbeti site
- * sahibiyle kendiliğinden açılır) — aksi hâlde kayıtlı herkesin adı,
- * fotoğrafı ve çevrimiçi durumu her giriş yapmış kullanıcıya açık olurdu.
+ * Eski sürüm normal kullanıcıya 403 "Yetki yok." dönüyordu; liste
+ * yüklenemediği için ekranda "erişim yok / kimse yok" hissi oluşuyordu.
+ * Artık liste HERKESE döner; görünmeyen kişi listede olmadığı için 403'e
+ * düşüp "Erişim yok." görmek mümkün değildir.
+ *
+ * `chatId`: isteği yapanın SOHBET kimliği. `/login` ile giren sahip
+ * `admin:<ad>` kimliğini taşır ama sohbetler profil uuid'i ile tutulur
+ * (bkz. `lib/chat-v2.ts:resolveChatIdentity`). İstemci `direct_key`i bu id ile
+ * ayrıştırdığı için sunucu çözülmüş kimliği de döner — yoksa iki taraf farklı
+ * kişiyi "karşı taraf" sanır.
+ *
+ * Okuma service-role ile: `profiles` tablosunun satır düzeyi güvenliği
+ * oturum istemcisinde satır döndürmeyebiliyor (canlıda admin listesi boş
+ * kalabiliyordu). Sızıntı yok — yanıt yalnız herkese açık alanları ve
+ * YETKİSİ OLAN satır(lar)ı içerir.
  */
 export async function GET() {
   const sessionUser = await getSessionUser()
@@ -26,21 +41,15 @@ export async function GET() {
       { status: 401 },
     )
   }
-  if (sessionUser.role !== 'admin') {
-    return NextResponse.json(
-      { success: false, message: 'Yetki yok.' },
-      { status: 403 },
-    )
-  }
 
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('profiles')
-    // `id` şart: sohbet açmak için `action:'open'` peerId bekliyor (kullanıcı
-    // adı değil, uuid). 2026-10-11: admin "kime yazayım?" listesini görüyordu.
-    .select('id, username, full_name, nickname, avatar_url, last_seen_at, presence_state')
-    .order('full_name', { ascending: true })
+  const chatId = await resolveChatIdentity(sessionUser.id, sessionUser.username)
+  const base = createAdminClient().from('profiles').select(COLUMNS)
+  const scoped = canSeeAllPeers(sessionUser)
+    ? base.order('full_name', { ascending: true })
+    // Sahip profili yoksa `id = ''` hiçbir satırı döndürmez (boş liste, 403 değil).
+    : base.eq('id', await siteOwnerId())
 
+  const { data, error } = await scoped
   if (error) {
     return NextResponse.json(
       { success: false, message: 'Kullanıcılar alınamadı.' },
@@ -50,6 +59,7 @@ export async function GET() {
 
   return NextResponse.json({
     success: true,
+    chatId,
     users: (data ?? []).map(p => ({
       id: p.id,
       username: p.username,

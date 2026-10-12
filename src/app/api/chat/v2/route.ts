@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { canSeeAllPeers } from '@/lib/chat-access'
 import { isPresenceState } from '@/lib/chat-peers'
 import {
   ChatSchemaMissing,
@@ -12,11 +13,13 @@ import {
   listMessages,
   markDelivered,
   markRead,
+  resolveChatIdentity,
   setBlocked,
   setFavorite,
   setImportant,
   setNickname,
   setPinned,
+  siteOwnerId,
   touchPresence,
 } from '@/lib/chat-v2'
 import { BODY_LIMITS, checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
@@ -56,16 +59,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: false, message: 'Sohbet iznin yok.' }, { status: 403 })
   }
 
+  // Sohbet kimliği (2026-10-12): `/login` sahibi ile Supabase profili TEK
+  // geçmiş paylaşır; okuma/katılım bu kimlikle yapılır.
+  const chatId = await resolveChatIdentity(user.id, user.username)
+
   const { searchParams } = new URL(req.url)
   const conversationId = searchParams.get('conversationId')
 
   try {
     if (!conversationId) {
-      const conversations = await listForUser(user.id)
+      const conversations = await listForUser(chatId)
       return NextResponse.json({ success: true, conversations })
     }
 
-    if (!(await isParticipant(conversationId, user.id))) {
+    if (!(await isParticipant(conversationId, chatId))) {
       return NextResponse.json({ success: false, message: 'Erişim yok.' }, { status: 403 })
     }
     const admin = user.role === 'admin'
@@ -96,6 +103,10 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null)
   const action = typeof body?.action === 'string' ? body.action : ''
   const admin = user.role === 'admin'
+  // Kim kimi görür: sahip/admin HERKESİ, normal kullanıcı yalnız site sahibini.
+  const seeAll = canSeeAllPeers(user)
+  // Sohbet kimliği (2026-10-12): `/login` sahibi → profil uuid'i (tek geçmiş).
+  const chatId = await resolveChatIdentity(user.id, user.username)
 
   /*
     YÖNETİCİ EYLEMLERİ (2026-10-11 kullanıcı isteği: sağ tık menüsü).
@@ -107,29 +118,30 @@ export async function POST(req: Request) {
   }
 
   try {
-    // ADMIN herhangi biriyle sohbet açabilir; NORMAL KULLANICI yalnızca site
-    // sahibiyle (kullanıcı isteği: "kullanıcılar sadece benle konuşabilir").
+    // SİTE SAHİBİ / ADMIN herkesle sohbet açabilir (kendi listesinden seçer).
+    // NORMAL KULLANICI yalnızca site sahibiyle (kullanıcı isteği: "kullanıcılar
+    // sadece benle konuşabilir"; listede başkası zaten görünmez).
     if (action === 'open') {
       const peerId = typeof body?.peerId === 'string' ? body.peerId : ''
-      if (admin) {
+      if (seeAll) {
         if (!peerId) {
           return NextResponse.json({ success: false, message: 'Karşı taraf gerekli.' }, { status: 400 })
         }
         return NextResponse.json({
           success: true,
-          conversation: await getOrCreateDirectConversation(user.id, peerId),
+          conversation: await getOrCreateDirectConversation(chatId, peerId),
         })
       }
       const ownerId = await siteOwnerId()
       if (!ownerId) {
         return NextResponse.json({ success: false, message: 'Sohbet sahibi bulunamadı.' }, { status: 503 })
       }
-      if (ownerId === user.id) {
+      if (ownerId === chatId) {
         return NextResponse.json({ success: false, message: 'Sahip kendi sohbetini açamaz.' }, { status: 400 })
       }
       return NextResponse.json({
         success: true,
-        conversation: await getOrCreateDirectConversation(user.id, ownerId),
+        conversation: await getOrCreateDirectConversation(chatId, ownerId),
       })
     }
 
@@ -139,7 +151,7 @@ export async function POST(req: Request) {
     */
     if (action === 'presence') {
       const raw = body?.state
-      await touchPresence(user.id, isPresenceState(raw) ? raw : null)
+      await touchPresence(chatId, isPresenceState(raw) ? raw : null)
       return NextResponse.json({ success: true })
     }
 
@@ -173,7 +185,7 @@ export async function POST(req: Request) {
     if (!conversationId) {
       return NextResponse.json({ success: false, message: 'Sohbet gerekli.' }, { status: 400 })
     }
-    if (!(await isParticipant(conversationId, user.id)) && action !== 'clear' && action !== 'deleteConversation') {
+    if (!(await isParticipant(conversationId, chatId)) && action !== 'clear' && action !== 'deleteConversation') {
       return NextResponse.json({ success: false, message: 'Erişim yok.' }, { status: 403 })
     }
 
@@ -199,7 +211,7 @@ export async function POST(req: Request) {
       if (!messageId || !conversationId) {
         return NextResponse.json({ success: false, message: 'Eksik parametre.' }, { status: 400 })
       }
-      if (!(await isParticipant(conversationId, user.id))) {
+      if (!(await isParticipant(conversationId, chatId))) {
         return NextResponse.json({ success: false, message: 'Erişim yok.' }, { status: 403 })
       }
       await setPinned(messageId, body?.pinned === true)
@@ -210,7 +222,7 @@ export async function POST(req: Request) {
       if (!conversationId) {
         return NextResponse.json({ success: false, message: 'Eksik parametre.' }, { status: 400 })
       }
-      if (!(await isParticipant(conversationId, user.id))) {
+      if (!(await isParticipant(conversationId, chatId))) {
         return NextResponse.json({ success: false, message: 'Erişim yok.' }, { status: 403 })
       }
       await setImportant(conversationId, body?.important === true)
@@ -251,7 +263,7 @@ export async function POST(req: Request) {
     if (file && !file.url.startsWith('/uploads/chat/')) {
       return NextResponse.json({ success: false, message: 'Geçersiz dosya.' }, { status: 400 })
     }
-    if (!(await isParticipant(conversationId, user.id))) {
+    if (!(await isParticipant(conversationId, chatId))) {
       return NextResponse.json({ success: false, message: 'Erişim yok.' }, { status: 403 })
     }
 
@@ -266,7 +278,7 @@ export async function POST(req: Request) {
     const senderName = sessionUserName(user) ?? 'bilinmeyen'
     const message = await sendMessage({
       conversationId,
-      senderId: user.id,
+      senderId: chatId,
       senderName,
       text,
       kind: file ? kind : 'text',
@@ -296,17 +308,19 @@ export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url)
   const messageId = searchParams.get('messageId')
   const mode = searchParams.get('mode') === 'all' ? 'all' : 'me'
+  // Sohbet kimliği (2026-10-12): `/login` sahibi → profil uuid'i.
+  const chatId = await resolveChatIdentity(user.id, user.username)
   if (!messageId) {
     return NextResponse.json({ success: false, message: 'Mesaj gerekli.' }, { status: 400 })
   }
   try {
     if (mode === 'all') {
       // yumuşak silme: herkesten gider, admin retention boyunca görebilir
-      await deleteForAll(messageId, user.id)
+      await deleteForAll(messageId, chatId)
     }
     else {
       // "benden sil": normal kullanıcı da kendi mesajını silebilir
-      await deleteForAll(messageId, user.id) // fiziksel silme chat-v2'de yok; aynı yumuşak yol
+      await deleteForAll(messageId, chatId) // fiziksel silme chat-v2'de yok; aynı yumuşak yol
     }
     return NextResponse.json({ success: true, message: mode === 'all' ? 'Herkesten silindi.' : 'Silindi.' })
   }
@@ -318,14 +332,7 @@ export async function DELETE(req: Request) {
   }
 }
 
-/** Sitenin sahibinin user id'si (kullanıcılar SADECE sahiple konuşur). */
-async function siteOwnerId(): Promise<string> {
-  const { createAdminClient } = await import('@/lib/supabase/admin')
-  const { data } = await createAdminClient()
-    .from('profiles')
-    .select('id')
-    .eq('is_owner', true)
-    .limit(1)
-    .maybeSingle()
-  return data?.id ?? ''
-}
+/*
+  `siteOwnerId()` 2026-10-12'de `lib/chat-v2.ts`e taşındı: kişi listesi
+  (`/api/chat/users`) de aynı sahibi bulmak zorunda.
+*/

@@ -1,5 +1,6 @@
 'use client'
 
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react'
 import type { Presence, PresenceState } from '@/lib/chat-peers'
 import type { ChatMessageRow } from '@/lib/chat-v2'
 import Link from 'next/link'
@@ -21,6 +22,12 @@ import { tickFor } from '@/lib/chat-ticks'
 /**
  * Sohbet v2 arayüzü (kullanıcı tarafı) — 2026-10-11.
  *
+ * YERLEŞİM (2026-10-12 kullanıcı isteği): TEK EKRAN — solda "kime yazmak
+ * istiyorum" paneli (sürükleyerek genişlet/daralt), sağda tıklanan kişiyle
+ * sohbet. Eski "önce kişiyi seç, sonra sohbet açılsın" iki adımlı ekranı ve
+ * "Kime yazmak istiyorsun?" başlığı kaldırıldı; yükleme/hata tam ekranı
+ * kaplamaz.
+ *
  * Kapsam (WhatsApp benzeri, tek sohbet = kullanıcı ↔ site sahibi):
  *  · Tikler (karar: `lib/chat-ticks.ts`): tek tik + SARI = gönderildi,
  *    çift tik + SARI = teslim edildi, çift tik + YEŞİL = okundu
@@ -40,6 +47,15 @@ interface ChatV2Props {
 }
 
 const EMOJIS = ['😀', '😂', '😊', '😍', '😎', '🤔', '👍', '🙏', '🔥', '💯', '🎉', '❤️', '✅', '⚡', '📌', '🤝']
+
+/**
+ * Yan panel (kişi listesi) genişliği — sürükleyerek veya ok tuşlarıyla değişir,
+ * `localStorage`ta hatırlanır (desen: `components/sidebar.tsx`).
+ */
+const CHAT_PANEL_MIN = 240
+const CHAT_PANEL_MAX = 560
+const CHAT_PANEL_DEFAULT = 288
+const CHAT_PANEL_KEY = 'chat-panel-width'
 
 /** Sohbete yazılacak kişi (admin için liste). */
 interface Peer {
@@ -111,6 +127,18 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
    * verdiğinde ekran sonsuza kadar "Sohbet yükleniyor…" gösteriyordu.
    */
   const [peersError, setPeersError] = useState(false)
+  /**
+   * `/api/chat/users`ın döndüğü SOHBET KİMLİĞİ (2026-10-12). `/login` ile giren
+   * site sahibinin id'si `admin:<ad>`tır ama sohbetler profil uuid'i ile
+   * tutulur. `direct_key` ayrıştırması ve "bu mesaj benim mi?" kararı bu
+   * kimlikle yapılmalı; sunucu ile istemci aynı kişiyi "karşı taraf" saysın
+   * diye sunucudan gelir.
+   */
+  const [selfId, setSelfId] = useState('')
+  /** Sağ panelde açık olan kişi (panelde vurgu + başlıkta ad/durum). */
+  const [activePeerId, setActivePeerId] = useState<string | null>(null)
+  /** Yan panel genişliği (px). */
+  const [panelWidth, setPanelWidth] = useState(CHAT_PANEL_DEFAULT)
   const [peerQuery, setPeerQuery] = useState('')
   const [menuPeer, setMenuPeer] = useState<Peer | null>(null)
   const [profilePeer, setProfilePeer] = useState<Peer | null>(null)
@@ -124,15 +152,17 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const isAdmin = session?.role === 'admin'
 
   /**
-   * YÖNETİCİ KİŞİ LİSTESİ (2026-10-11 kullanıcı isteği).
+   * KİŞİ LİSTESİ (2026-10-11; yetki 2026-10-12'de herkese açıldı).
    *
-   *  · "Henüz başka kullanıcı yok" yazısı YOK — kayıtlı herkes, admin'in
-   *    KENDİSİ DAHİL listelenir (kendini filtreleme kaldırıldı).
+   * Sunucu listeyi YETKİYE GÖRE süzer: site sahibi/admin → kayıtlı herkes
+   * (admin'in KENDİSİ DAHİL; kendini filtreleme yok), normal kullanıcı → yalnız
+   * konuşabileceği kişiler (site sahibi). "Erişim yok" ekranı bu yüzden imkânsız:
+   * konuşulamayacak kişi listeye hiç girmez.
+   *
    *  · Her satıra sohbet işaretleri (sabitlenen/favori/engelli + son mesaj)
    *    ve çevrimiçi nabzı işlenir; nokta rengi `lib/chat-peers`te hesaplanır.
-   *
-   * Sohbetler `direct_key = "<id>|<id>"` ile kişiye bağlanır: admin'in id'si
-   * OLMAYAN parça karşı tarafın id'sidir.
+   *  · Sohbetler `direct_key = "<id>|<id>"` ile kişiye bağlanır: BENİM
+   *    sohbet kimliğim (`chatId`) olmayan parça karşı tarafın id'sidir.
    */
   const loadPeers = useCallback(async (): Promise<Peer[] | null> => {
     const [usersRes, convsRes] = await Promise.all([
@@ -147,17 +177,24 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       setSchemaMissing(true)
     }
     if (!usersJson?.success) {
+      // Liste gelmedi: hata panelin İÇİNDE gösterilir, tam ekran "erişim yok"
+      // ekranı yok (kullanıcı isteği 2026-10-12).
       return null
     }
+    // Sohbet kimliği sunucudan gelir (`admin:<ad>` → profil uuid'i).
+    const me = typeof usersJson.chatId === 'string' && usersJson.chatId
+      ? usersJson.chatId
+      : currentUserId
+    setSelfId(me)
     const convs: ConversationLite[] = convsJson?.success ? convsJson.conversations ?? [] : []
     const byPeer = new Map<string, ConversationLite>()
     for (const c of convs) {
-      const other = c.direct_key?.split('|').find(part => part !== currentUserId)
+      const other = c.direct_key?.split('|').find(part => part !== me)
       if (other) {
         byPeer.set(other, c)
       }
     }
-    return (usersJson.users as Peer[]).map((u): Peer => {
+    return ((usersJson.users ?? []) as Peer[]).map((u): Peer => {
       const conv = byPeer.get(u.id)
       return {
         ...u,
@@ -207,11 +244,10 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   }, [beat])
 
   /*
-    1) Oturumu oku. 2) Rolüne göre yol:
-       · NORMAL KULLANICI → site sahibiyle sohbet kendiliğinden açılır
-         ("kullanıcılar sadece benimle konuşur"; "Henüz bir sohbet yok"
-          ekranı kullanıcıya anlamsız geliyordu — o yüzden kaldırıldı).
-       · ADMIN → kiminle konuşacağını SEÇER; herkese yazabilir.
+    OTURUM İSTEMCİDE çözülür (`force-static` layout tuzağı — 2026-10-11).
+    Kime yazılacağı BURADA seçilmez: kişi listesi effect'i hem listeyi getirir
+    hem (tek kişi varsa) sohbeti kendiliğinden açar. Eski "önce seç, sonra aç"
+    iki adımlı akış kullanıcı isteğiyle kaldırıldı (2026-10-12).
   */
   useEffect(() => {
     let cancelled = false
@@ -227,31 +263,6 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
           return
         }
         setSession({ id: json.user.id, role: json.user.role })
-
-        if (json.user.role === 'admin') {
-          // Admin'in tek bir "sohbeti" yoktur — kime yazacağını seçer. Kişi
-          // listesi ayrı effect'te yüklenir (nabızla birlikte tazelenir).
-          return
-        }
-
-        const open = await fetch('/api/chat/v2', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'open' }),
-        })
-        const openJson = await open.json()
-        if (cancelled) {
-          return
-        }
-        if (openJson?.code === 'CHAT_SCHEMA_MISSING') {
-          setSchemaMissing(true)
-        }
-        else if (openJson?.conversation?.id) {
-          setConversationId(openJson.conversation.id)
-        }
-        else {
-          setError(openJson?.message ?? t('chat.error'))
-        }
       }
       catch {
         if (!cancelled) {
@@ -276,11 +287,13 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   }, [])
 
   /*
-    Yönetici kişi listesi: ilk yükleme + 20 sn'de bir tazeleme. Tazeleme yeni
-    sohbeti, son mesaj özetini ve karşı tarafın çevrimiçi nabzını getirir.
+    KİŞİ LİSTESİ: giriş yapmış HERKES için ilk yükleme + 20 sn'de bir tazeleme
+    (yeni sohbet, son mesaj özeti, karşı tarafın çevrimiçi nabzı). Sunucu listeyi
+    yetkiye göre süzer; istemcide rol kapısı YOK — normal kullanıcı da
+    konuşabileceklerini görür (kullanıcı isteği 2026-10-12).
   */
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isAuthenticated) {
       return
     }
     let cancelled = false
@@ -298,7 +311,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       cancelled = true
       clearInterval(id)
     }
-  }, [isAdmin, loadPeers])
+  }, [isAuthenticated, loadPeers])
 
   /* Nabız: sohbet sayfası açıkken 20 sn'de bir "buradayım" (yeşil nokta). */
   useEffect(() => {
@@ -330,8 +343,9 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     )
   }, [peers, now, locale])
 
-  /** Admin bir kişiye tıkladığında doğrudan sohbeti açar (idempotent). */
-  async function openWith(peerId: string) {
+  /** Bir kişiye tıklanınca doğrudan sohbeti açar (idempotent). */
+  const openWith = useCallback(async (peerId: string) => {
+    setActivePeerId(peerId)
     setLoading(true)
     setError(null)
     setMessages([])
@@ -359,6 +373,71 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     finally {
       setLoading(false)
     }
+  }, [t])
+
+  /*
+    TEK KİŞİ VARSA SOHBET KENDİLİĞİNDEN AÇILIR (2026-10-12): normal kullanıcının
+    listesinde yalnız site sahibi vardır — "listeden seç" adımı gereksiz olurdu.
+    Sahip birden fazla kişi görür, seçim onda kalır (sağ panel "soldan bir kişi
+    seç" der). `autoOpened`: kullanıcı geri dönerse bir daha zorla açma.
+  */
+  const autoOpened = useRef(false)
+  useEffect(() => {
+    if (autoOpened.current || conversationId || !peers || peers.length !== 1) {
+      return
+    }
+    autoOpened.current = true
+    void openWith(peers[0].id)
+  }, [peers, conversationId, openWith])
+
+  /* Yan panel genişliği hatırlanır (SSR uyumu: önce varsayılan, sonra oku). */
+  useEffect(() => {
+    try {
+      const saved = Number(localStorage.getItem(CHAT_PANEL_KEY))
+      if (Number.isFinite(saved) && saved >= CHAT_PANEL_MIN) {
+        setPanelWidth(Math.min(CHAT_PANEL_MAX, saved))
+      }
+    }
+    catch {
+      // Depolama kapalı (gizli sekme / test ortamı): varsayılan genişlik yeter.
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHAT_PANEL_KEY, String(panelWidth))
+    }
+    catch {
+      // Yazamıyorsa sessizce geç — genişlik yalnız bu oturumda yaşar.
+    }
+  }, [panelWidth])
+
+  /** Panel sürüklemesi (pointer) — desen: `components/sidebar.tsx`. */
+  const startResize = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const startX = e.clientX
+    const startWidth = panelWidth
+    const move = (ev: PointerEvent) => {
+      setPanelWidth(
+        Math.min(CHAT_PANEL_MAX, Math.max(CHAT_PANEL_MIN, startWidth + ev.clientX - startX)),
+      )
+    }
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }, [panelWidth])
+
+  /** Klavye erişimi: ayraç odaklıyken ok tuşları ±16 px. */
+  function resizeByKey(e: ReactKeyboardEvent<HTMLDivElement>) {
+    const step = e.key === 'ArrowLeft' ? -16 : e.key === 'ArrowRight' ? 16 : 0
+    if (!step) {
+      return
+    }
+    e.preventDefault()
+    setPanelWidth(w => Math.min(CHAT_PANEL_MAX, Math.max(CHAT_PANEL_MIN, w + step)))
   }
 
   /*
@@ -495,9 +574,17 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
         setError(upJson.message ?? 'Dosya yüklenemedi.')
         return
       }
-      const isAudio = file.type.startsWith('audio/')
-      const isImage = file.type.startsWith('image/')
-      const isVideo = file.type.startsWith('video/')
+      /*
+        Tür kararı SUNUCUNUN döndürdüğü türe göre verilir (istemcideki dosya
+        adına göre DEĞİL): desteklenmeyen veya içeriği uzantısıyla uyuşmayan
+        dosya sunucuda `.bin` olarak saklanır ve `application/octet-stream`
+        döner → sohbet onu görsel/ses diye RENDER ETMEZ, indirilebilir dosya
+        olarak gösterir (dosya "yalnız var olur", çalışmaz).
+      */
+      const savedType = String(upJson.file?.type ?? '')
+      const isAudio = savedType.startsWith('audio/')
+      const isImage = savedType.startsWith('image/')
+      const isVideo = savedType.startsWith('video/')
       const res = await fetch('/api/chat/v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -510,6 +597,10 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       const json = await res.json()
       if (res.ok && json.success) {
         setMessages(prev => [...prev, json.data])
+      }
+      else {
+        // Hata BANT olarak görünür (sohbet kapanmaz) — 2026-10-12.
+        setError(json.message ?? t('chat.error'))
       }
     }
     finally {
@@ -556,7 +647,13 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
 
   /* ── durumlar ─────────────────────────────────────────────────────── */
   if (!sessionChecked) {
-    return <ChatNotice icon="⏳" text={t('chat.loading')} />
+    // Oturum sorgusu sürerken ekranı kaplayan "Sohbet yükleniyor…" yerine
+    // iskelet (kullanıcı isteği 2026-10-12: "Sohbet yükleniyor öyle olmasın").
+    return (
+      <div className="w-full rounded-2xl border border-foreground/10 bg-background p-6">
+        <ChatSkeleton label={t('chat.loading')} />
+      </div>
+    )
   }
   if (schemaMissing) {
     return <ChatNotice icon="⚠️" text={t('chat.schemaMissingHint')} />
@@ -588,60 +685,85 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       </div>
     )
   }
+
   /*
-    "Henüz bir sohbet yok" ekranı KALDIRILDI (kullanıcı isteği 2026-10-11):
-    anlamsız geliyordu. Artık:
-      · normal kullanıcı → sahibiyle sohbet kendiliğinden açılır,
-      · admin → kime yazacağını seçer (aşağıdaki liste).
+    TEK EKRANDA YAN PANEL + SOHBET (kullanıcı isteği 2026-10-12).
+      "önce kime yazcamızı seçiyoruz sonra onunla olduğumuz sohbet açılıyor ama
+       yanlış — ikisi yan yana tek bir hâlde olacak, yan panel gibi duracak; kime
+       yazmak istiyorum bölümü ve büyütüp küçülte bileceğim. Diğer kısımda
+       tıkladığım kişiyle sohbetim olacak. 'Kime yazmak istiyorsun?' yazısını
+       kaldır, tam ekranı kaplasın."
+    · SOL: kişi listesi — başlık yazısı YOK, sürükleyerek veya ok tuşlarıyla
+      genişlet/daralt (`md` altında sohbet açıkken gizlenir),
+    · SAĞ: seçili kişiyle sohbet; hiç seçim yoksa "soldan bir kişi seç" der.
+    Genişlik sayfanın tamamı, yükseklik üst bar + başlık altındaki alan (eski
+    `max-w-3xl` / `max-h-[760px]` / `68svh` sınırları kaldırıldı).
+    Yükleme ve hata artık TAM EKRANI KAPLAMAZ: sohbetin içinde gösterilir —
+    "erişim yok" gibi bir yanıt sohbeti kapatmaz.
   */
-  if (isAdmin && !conversationId) {
-    const q = peerQuery.trim().toLocaleLowerCase('tr')
-    // "Henüz başka kullanıcı yok" YOK (kullanıcı isteği 2026-10-11): kendim
-    // dahil HER KAYITLI kişi burada listelenir; kendini filtreleme kaldırıldı.
-    const visible = orderedPeers.filter((p) => {
-      if (!q) {
-        return true
-      }
-      // Takma ad, kullanıcı adı VE gerçek ad birlikte aranır — takma ad
-      // konulsa bile gerçek ad kaybolmaz (kullanıcı isteği).
-      return [p.nickname, p.username, p.fullName].some(
-        v => !!v && v.toLocaleLowerCase('tr').includes(q),
-      )
-    })
-    return (
-      <div className="flex h-[min(68svh,100svh-19rem)] max-h-[760px] min-h-[260px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background">
-        <div className="border-b border-foreground/10 px-4 py-3">
-          <p className="text-sm font-semibold">{t('chat.pickRecipient')}</p>
+  const q = peerQuery.trim().toLocaleLowerCase('tr')
+  // "Henüz başka kullanıcı yok" YOK (2026-10-11): kayıtlı herkes listelenir.
+  // Takma ad, kullanıcı adı VE gerçek ad birlikte aranır — takma ad konulsa
+  // bile gerçek ad kaybolmaz (kullanıcı isteği).
+  const visiblePeers = orderedPeers.filter((p) => {
+    if (!q) {
+      return true
+    }
+    return [p.nickname, p.username, p.fullName].some(
+      v => !!v && v.toLocaleLowerCase('tr').includes(q),
+    )
+  })
+  const activePeer = orderedPeers.find(p => p.id === activePeerId) ?? null
+  const threadOpen = !!conversationId
+
+  return (
+    <div
+      className="flex h-[calc(100svh-19rem)] min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background"
+      style={{ '--chat-panel-w': `${panelWidth}px` } as CSSProperties}
+    >
+      {/* ── SOL: kime yazmak istiyorum (kişi listesi) ── */}
+      <aside
+        className={cn(
+          'min-h-0 w-full shrink-0 flex-col border-r border-foreground/10 md:flex md:w-[var(--chat-panel-w)]',
+          threadOpen ? 'hidden md:flex' : 'flex',
+        )}
+      >
+        <div className="border-b border-foreground/10 p-2">
           <input
             type="search"
             value={peerQuery}
             onChange={e => setPeerQuery(e.target.value)}
             placeholder={t('chat.searchPeople')}
             aria-label={t('chat.searchPeople')}
-            className="mt-2 w-full rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
+            className="w-full rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
           />
         </div>
 
         <div
-          className="relative flex-1 overflow-y-auto p-2"
+          className="relative min-h-0 flex-1 overflow-y-auto p-2"
           onClick={() => setMenuPeer(null)}
           onContextMenu={e => e.preventDefault()}
         >
-          {peers === null && !peersError && <p className="p-4 text-sm text-foreground-500">{t('chat.loading')}</p>}
+          {peers === null && !peersError && <ChatSkeleton label={t('chat.loading')} />}
           {peers === null && peersError && <p className="p-4 text-sm text-danger">{t('chat.error')}</p>}
-          {peers !== null && visible.length === 0 && (
+          {peers !== null && visiblePeers.length === 0 && (
             <p className="p-4 text-sm text-foreground-500">{t('chat.noMatch')}</p>
           )}
-          {visible.map(p => (
+          {visiblePeers.map(p => (
             <div key={p.id} className="relative">
               <button
                 type="button"
                 onClick={() => openWith(p.id)}
-                onContextMenu={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  setMenuPeer(p)
-                }}
+                onContextMenu={isAdmin
+                  ? (e) => {
+                      // Sağ tık menüsü (favori/takma ad/profil/engelle...) yalnız
+                      // yöneticiye açık; normal kullanıcıya "Yetki yok." hatası
+                      // göstermenin anlamı yok.
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setMenuPeer(p)
+                    }
+                  : undefined}
                 className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-foreground/5"
               >
                 {/* profil fotoğrafı + durum noktası (yeşil/kırmızı/sarı) */}
@@ -724,58 +846,95 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
         {profilePeer && (
           <ProfileSheet peer={profilePeer} t={t} onClose={() => setProfilePeer(null)} />
         )}
-      </div>
-    )
-  }
-  if (loading) {
-    return <ChatNotice icon="⏳" text={t('chat.loading')} />
-  }
-  if (error) {
-    return <ChatNotice icon="❌" text={error} />
-  }
+      </aside>
 
-  return (
-    <div className="flex h-[min(68svh,100svh-19rem)] max-h-[760px] min-h-[260px] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background">
-      {/* başlık + önemli kişi */}
-      <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3">
-        <div className="flex min-w-0 items-center gap-2">
-          {isAdmin && (
+      {/* ── SÜRÜKLEME TUTAMAĞI: panel genişliği (fare + ok tuşları) ── */}
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        aria-label={t('chat.resizePanel')}
+        tabIndex={0}
+        onPointerDown={startResize}
+        onKeyDown={resizeByKey}
+        className="hidden w-1 shrink-0 cursor-ew-resize bg-foreground/10 transition-colors hover:bg-primary/40 md:block"
+      />
+
+      {/* ── SAĞ: seçili kişiyle sohbet ── */}
+      <section
+        className={cn(
+          'min-h-0 min-w-0 flex-1 flex-col',
+          threadOpen ? 'flex' : 'hidden md:flex',
+        )}
+      >
+        {/* başlık: seçili kişinin adı + durum noktası */}
+        <div className="flex items-center gap-2 border-b border-foreground/10 px-4 py-3">
+          {threadOpen && (
             <button
               type="button"
               onClick={() => {
                 setConversationId(null)
+                setActivePeerId(null)
                 setMessages([])
                 setError(null)
               }}
               title={t('chat.backToList')}
               aria-label={t('chat.backToList')}
-              className="cursor-pointer rounded-lg px-2 py-1 text-sm transition-colors hover:bg-foreground/10"
+              className="cursor-pointer rounded-lg px-2 py-1 text-sm transition-colors hover:bg-foreground/10 md:hidden"
             >
               ←
             </button>
           )}
-          <span className="truncate text-sm font-semibold">{t('chat.v2Title')}</span>
-        </div>
-        <button
-          type="button"
-          onClick={toggleImportant}
-          title={t('chat.markImportant')}
-          className={cn(
-            'cursor-pointer rounded-lg px-2 py-1 text-lg transition-colors',
-            important ? 'bg-red-500/15' : 'hover:bg-foreground/10',
+          {activePeer
+            ? (
+                <>
+                  <span className="relative size-8 shrink-0">
+                    <span className="flex size-8 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-[10px] font-semibold text-primary">
+                      {activePeer.avatarUrl
+                        ? <img src={activePeer.avatarUrl} alt="" className="size-full object-cover" />
+                        : activePeer.name.slice(0, 2).toUpperCase()}
+                    </span>
+                    <PresenceDot presence={activePeer.presence} state={activePeer.presenceState} t={t} />
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{activePeer.name}</span>
+                </>
+              )
+            : <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t('chat.v2Title')}</span>}
+          {threadOpen && (
+            <button
+              type="button"
+              onClick={toggleImportant}
+              title={t('chat.markImportant')}
+              className={cn(
+                'cursor-pointer rounded-lg px-2 py-1 text-lg transition-colors',
+                important ? 'bg-red-500/15' : 'hover:bg-foreground/10',
+              )}
+            >
+              {important ? '🔴' : '⚪'}
+            </button>
           )}
-        >
-          {important ? '🔴' : '⚪'}
-        </button>
-      </div>
-
-      {/* mesajlar */}
-      <div className="flex-1 space-y-2 overflow-y-auto px-4 py-4">
-        {messages.length === 0 && (
-          <p className="pt-8 text-center text-sm text-foreground-500">{t('chat.emptyThread')}</p>
+        </div>
+        {/*
+          HATA ARTIK TAM EKRANI KAPLAMAZ (kullanıcı isteği 2026-10-12:
+          "erişim yok ekranı diye bişey olmaz") — sohbetin üstünde bant olur.
+        */}
+        {error && (
+          <p role="alert" className="border-b border-foreground/10 bg-red-500/10 px-4 py-2 text-xs text-danger">
+            {error}
+          </p>
         )}
-        {messages.map((m) => {
-          const mine = m.sender_id === currentUserId
+
+        {/* mesajlar */}
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4">
+          {!threadOpen && (
+            <p className="pt-10 text-center text-sm text-foreground-500">{t('chat.selectPerson')}</p>
+          )}
+          {/* Yüklenirken iskelet — ekranı kaplayan "Sohbet yükleniyor…" yok */}
+          {threadOpen && loading && <ChatSkeleton label={t('chat.loading')} />}
+          {threadOpen && !loading && messages.length === 0 && (
+            <p className="pt-8 text-center text-sm text-foreground-500">{t('chat.emptyThread')}</p>
+          )}
+          {threadOpen && messages.map((m) => {
+            const mine = m.sender_id === (selfId || currentUserId)
           const replied = replyTo?.id === m.id
           const tick = mine ? tickFor(m) : null
           return (
@@ -835,12 +994,13 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
               </div>
             </div>
           )
-        })}
-        <div ref={endRef} />
-      </div>
+          })}
+          <div ref={endRef} />
+        </div>
 
-      {/* yazma alanı */}
-      <div className="border-t border-foreground/10 p-3">
+        {/* yazma alanı — kişi seçilmeden gösterilmez */}
+        {threadOpen && (
+          <div className="border-t border-foreground/10 p-3">
         {replyTo && (
           <div className="mb-2 flex items-center justify-between rounded-lg bg-foreground/10 px-3 py-1.5 text-xs">
             <span className="truncate">
@@ -901,7 +1061,8 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
             ))}
           </div>
         )}
-      </div>
+          </div>
+        )}
 
       {/* Mesaj Bilgisi paneli: Okundu · Teslim edildi · Tarih (GG.AA.YYYY) */}
       {infoMsg && (
@@ -952,6 +1113,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
           }}
         />
       )}
+      </section>
     </div>
   )
 }
@@ -961,6 +1123,27 @@ function ChatNotice({ icon, text }: { icon: string, text: string }) {
     <div className="flex w-full max-w-3xl flex-col items-center gap-3 rounded-2xl border border-foreground/10 bg-background p-10 text-center">
       <span className="text-3xl">{icon}</span>
       <p className="text-sm text-foreground-500">{text}</p>
+    </div>
+  )
+}
+
+/**
+ * İskelet (yükleme) — ekranı kaplayan "Sohbet yükleniyor…" yerine (kullanıcı
+ * isteği 2026-10-12: "Sohbet yükleniyor… değiştir, öyle olmasın o").
+ * `role="status"` + `aria-label`: ekran okuyucu yüklemeyi duyurur.
+ */
+function ChatSkeleton({ label }: { label: string }) {
+  return (
+    <div role="status" aria-label={label} className="space-y-2">
+      {[0, 1, 2].map(i => (
+        <div
+          key={i}
+          className={cn(
+            'h-10 animate-pulse rounded-2xl bg-foreground/10',
+            i % 2 === 1 ? 'ml-auto w-1/2' : 'w-2/3',
+          )}
+        />
+      ))}
     </div>
   )
 }
@@ -1225,7 +1408,8 @@ function ProfileSheet({ peer, t, onClose }: {
         </div>
 
         {error && <p className="mt-4 text-sm text-foreground-500">{t('chat.profileFailed')}</p>}
-        {!error && !profile && <p className="mt-4 text-sm text-foreground-500">{t('chat.loading')}</p>}
+        {/* Yükleme metni yerine iskelet (2026-10-12): "Sohbet yükleniyor" ekranda YAZI olarak görünmez. */}
+        {!error && !profile && <div className="mt-4"><ChatSkeleton label={t('chat.loading')} /></div>}
 
         {profile && (
           <>

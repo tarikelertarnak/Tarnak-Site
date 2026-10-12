@@ -69,7 +69,7 @@ async function renderChat() {
     </LocaleProvider>,
   )
   // oturum sorgusu bitene kadar bekle
-  await waitFor(() => expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull())
+  await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
   return result
 }
 
@@ -117,13 +117,21 @@ describe('sohbet v2 oturum ekranı', () => {
     expect(screen.getByText(/supabase\/chat\.sql/)).not.toBeNull()
   })
 
-  it('normal kullanıcı: sohbet sahibiyle otomatik açılır, "sohbet yok" ekranı yok', async () => {
+  it('normal kullanıcı: listesinde yalnız site sahibi vardır ve sohbet kendiliğinden açılır', async () => {
     const spy = mockFetch((url) => {
       if (url.includes('/api/admin/session')) {
         return jsonResponse({ success: true, user: { id: 'user-1', role: 'user' } })
       }
+      if (url.includes('/api/chat/users')) {
+        // Sunucu normal kullanıcıya YALNIZ site sahibini döner (2026-10-12).
+        return jsonResponse({
+          success: true,
+          chatId: 'user-1',
+          users: [{ id: 'owner-1', username: 'tarikelertarnak', fullName: 'TARIK ELER', avatarUrl: null }],
+        })
+      }
       if (url.includes('/api/chat/v2')) {
-        return jsonResponse({ success: true, conversation: { id: 'conv-1' } })
+        return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
       }
       return jsonResponse({ success: true, messages: [] })
     })
@@ -131,35 +139,49 @@ describe('sohbet v2 oturum ekranı', () => {
     await renderChat()
 
     await waitFor(() => expect(screen.getByPlaceholderText(/mesajını yaz/i)).not.toBeNull())
-    const openCall = spy.mock.calls.find(c => String(c[0]).includes('/api/chat/v2') && c[1]?.method === 'POST')
+    // "Önce seç, sonra aç" adımı YOK: tek kişilik listede sohbet otomatik açılır.
+    expect(screen.getAllByText('TARIK ELER').length).toBeGreaterThan(0)
+    const openCall = spy.mock.calls.find(
+      c => String(c[0]).includes('/api/chat/v2')
+        && c[1]?.method === 'POST'
+        && String(c[1]?.body).includes('"open"'),
+    )
     expect(openCall).toBeTruthy()
-    expect(JSON.parse(String(openCall![1]!.body))).toMatchObject({ action: 'open' })
+    expect(JSON.parse(String(openCall![1]!.body))).toMatchObject({ action: 'open', peerId: 'owner-1' })
+    // Eski "kime yazmak istiyorsun?" ekranı hiç yok.
+    expect(screen.queryByText(/kime yazmak istiyorsun/i)).toBeNull()
   })
 
   /*
-    Kullanıcı isteği (2026-10-11): "Henüs bir sohbet yok saçma — giren adminse
-    herkeze yazacağı alanı görmeli." Admin'in tek bir sohbeti yoktur; kime
-    yazacağını seçer.
+    Kullanıcı isteği (2026-10-12): "Kime yazmak istiyorsun? yazısını kaldır;
+    ikisi yan yana tek bir hâlde olacak." Yani başlık yazısı YOK, kişi listesi
+    (sol panel) ve sohbet (sağ panel) aynı ekranda.
   */
-  it('admin: "kime yazmak istiyorsun?" listesi görür, sohbet yok ekranı yok', async () => {
+  it('admin: kişi listesi solda durur, sağ panel "soldan bir kişi seç" der', async () => {
     mockFetch((url) => {
       if (url.includes('/api/admin/session')) {
         return jsonResponse({ success: true, user: { id: 'admin:TARIKELERTARNAK', role: 'admin' } })
       }
-      return jsonResponse({
-        success: true,
-        users: [
-          { id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', avatarUrl: null },
-          { id: 'u-2', username: 'mehmet', fullName: null, avatarUrl: null },
-        ],
-      })
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({
+          success: true,
+          chatId: 'admin:TARIKELERTARNAK',
+          users: [
+            { id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', avatarUrl: null },
+            { id: 'u-2', username: 'mehmet', fullName: null, avatarUrl: null },
+          ],
+        })
+      }
+      return jsonResponse({ success: true })
     })
 
     await renderChat()
 
-    expect(screen.getByText(/kime yazmak istiyorsun/i)).not.toBeNull()
+    expect(screen.queryByText(/kime yazmak istiyorsun/i)).toBeNull()
     expect(screen.getByText('Ayşe Yılmaz')).not.toBeNull()
     expect(screen.getByText('mehmet')).not.toBeNull()
+    // Birden çok kişi varken seçim kullanıcıda kalır → sağ panel ipucu gösterir.
+    expect(screen.getByText(/soldan bir kişi seç/i)).not.toBeNull()
     // kullanıcının istediği: o saçma ekran ARTIK YOK
     expect(screen.queryByText(/henüz bir sohbet yok/i)).toBeNull()
   })
@@ -170,9 +192,15 @@ describe('sohbet v2 oturum ekranı', () => {
         return jsonResponse({ success: true, user: { id: 'admin:TARIKELERTARNAK', role: 'admin' } })
       }
       if (url.includes('/api/chat/users')) {
+        // İki kişi: otomatik açılma devreye girmez (tek kişilik liste kuralı),
+        // iddia bu yüzden TIKLAMA yolunu kanıtlar.
         return jsonResponse({
           success: true,
-          users: [{ id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', avatarUrl: null }],
+          chatId: 'admin:TARIKELERTARNAK',
+          users: [
+            { id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', avatarUrl: null },
+            { id: 'u-2', username: 'mehmet', fullName: 'Mehmet Demir', avatarUrl: null },
+          ],
         })
       }
       if (url.includes('/api/chat/v2')) {

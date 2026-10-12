@@ -33,6 +33,7 @@ const calls = {
   eq: [] as unknown[][],
   lt: [] as unknown[][],
   select: [] as unknown[][],
+  upsert: [] as unknown[][],
 }
 
 function makeQuery() {
@@ -43,6 +44,10 @@ function makeQuery() {
     return q
   }
   q.insert = () => q
+  q.upsert = (...a: unknown[]) => {
+    calls.upsert.push(a)
+    return q
+  }
   q.update = (...a: unknown[]) => {
     calls.update.push(a)
     return q
@@ -56,6 +61,7 @@ function makeQuery() {
     return q
   }
   q.order = () => q
+  q.limit = () => q
   q.is = (...a: unknown[]) => {
     calls.is.push(a)
     return q
@@ -80,12 +86,15 @@ const {
   ChatSchemaMissing,
   deleteForAll,
   directKey,
+  getOrCreateDirectConversation,
   listMessages,
   markDelivered,
   markRead,
   purgeExpiredDeleted,
+  resolveChatIdentity,
   setImportant,
   setPinned,
+  siteOwnerId,
 } = await import('@/lib/chat-v2')
 
 function reset(...r: Array<{ data?: unknown, error?: unknown, count?: number | null }>) {
@@ -96,6 +105,7 @@ function reset(...r: Array<{ data?: unknown, error?: unknown, count?: number | n
   calls.eq = []
   calls.lt = []
   calls.select = []
+  calls.upsert = []
 }
 
 describe('chat-v2 · doğrudan sohbet anahtarı', () => {
@@ -226,5 +236,75 @@ describe('chat-v2 · retention', () => {
     const removed = await purgeExpiredDeleted()
     expect(removed).toBe(0)
     expect(calls.delete).toHaveLength(0)
+  })
+})
+
+/**
+ * KÖK NEDEN (2026-10-12 canlı ölçüm).
+ *
+ * `chat_conversations`ta `direct_key = "<aynı id>|<aynı id>"` (kişinin
+ * KENDİSİYLE sohbeti) bir satır vardı ama `chat_participants`ta HİÇ satırı
+ * yoktu → sohbet açılıyor, mesaj okuma `isParticipant` false olduğu için
+ * "Erişim yok." (403) dönüyordu. Sebep: iki katılımcı aynı birincil anahtara
+ * `(conversation_id, user_id)` düşüyor, INSERT çakışıp TAMAMEN geri alınıyordu.
+ */
+describe('chat-v2 · kendisiyle sohbet + eksik katılımı onarma', () => {
+  it('aynı id iki kez gelse bile katılımcı TEK satır yazılır', async () => {
+    reset({ data: null }, { data: { id: 'c1', kind: 'direct', direct_key: 'u1|u1' } })
+    const conv = await getOrCreateDirectConversation('u1', 'u1')
+    expect(conv.id).toBe('c1')
+    expect(calls.upsert).toHaveLength(1)
+    const [rows, opts] = calls.upsert[0] as [Array<{ user_id: string }>, Record<string, unknown>]
+    expect(rows).toHaveLength(1)
+    expect(rows[0].user_id).toBe('u1')
+    expect(opts.onConflict).toBe('conversation_id,user_id')
+    expect(opts.ignoreDuplicates).toBe(true)
+  })
+
+  it('var olan sohbette katılım EKSİKSE onarılır (Erişim yok. regresyonu)', async () => {
+    reset({ data: { id: 'c1', kind: 'direct', direct_key: 'u1|u2' } })
+    const conv = await getOrCreateDirectConversation('u1', 'u2')
+    expect(conv.id).toBe('c1')
+    expect(calls.upsert).toHaveLength(1)
+    const [rows] = calls.upsert[0] as [Array<{ user_id: string }>]
+    expect(rows.map(r => r.user_id)).toEqual(['u1', 'u2'])
+  })
+})
+
+/**
+ * SOHBET KİMLİĞİ (2026-10-12): site sahibi `/login` (id `admin:<ad>`) ve
+ * `/sign` (uuid) ile girebiliyor. İki kimlik iki AYRI geçmiş demekti; sahip
+ * bir yolla konuştuğunu diğerinde göremiyordu ("kimse yok, kendim bile").
+ */
+describe('chat-v2 · sohbet kimliği çözümü', () => {
+  it('kullanıcı adı profilde varsa sohbet kimliği o profilin uuid\'idir', async () => {
+    reset({ data: [{ id: 'uuid-1', username: 'tarikelertarnak' }] })
+    await expect(resolveChatIdentity('admin:TARIKELERTARNAK', 'TARIKELERTARNAK'))
+      .resolves
+.toBe('uuid-1')
+  })
+
+  it('eşleşme yoksa id aynen kalır (davranış değişmez)', async () => {
+    reset({ data: [{ id: 'uuid-2', username: 'baskasi' }] })
+    await expect(resolveChatIdentity('admin:YOK', 'YOK')).resolves.toBe('admin:YOK')
+  })
+
+  it('admin olmayan kimlik için sorgu bile yapılmaz', async () => {
+    reset()
+    await expect(resolveChatIdentity('uuid-9', 'tarikelertarnak')).resolves.toBe('uuid-9')
+    expect(calls.select).toHaveLength(0)
+  })
+})
+
+describe('chat-v2 · site sahibi', () => {
+  it('is_owner=true olan profili bulur', async () => {
+    reset({ data: { id: 'owner-1' } })
+    await expect(siteOwnerId()).resolves.toBe('owner-1')
+    expect(calls.eq).toContainEqual(['is_owner', true])
+  })
+
+  it('sahip yoksa boş string döner (uç 503 verir, çökmez)', async () => {
+    reset({ data: null })
+    await expect(siteOwnerId()).resolves.toBe('')
   })
 })

@@ -64,6 +64,8 @@ const ja: Record<string, string> = {
   'chat.loginRequired': 'ログインが必要です。',
   'chat.backToList': 'Back to conversations',
   'chat.pickRecipient': 'Who do you want to write to?',
+  'chat.selectPerson': '左から相手を選んでください',
+  'chat.resizePanel': 'パネル幅を変更',
   'chat.block': 'Block',
   'chat.clearConversation': 'Clear conversation',
   'chat.deleteConversation': 'Delete conversation',
