@@ -204,3 +204,25 @@ describe('splitButton · odak halkası (2026-10-12 "CV seçilmiyor" regresyonu)'
     expect(html).not.toContain('group-focus-within:ring-2')
   })
 })
+
+describe('splitButton · metin seçimi (2026-10-12 "CV yazısı seçilmiyor" regresyonu)', () => {
+  /*
+    KÖK NEDEN (ölçüldü): kabukta `select-none` vardı. `user-select` MİRAS
+    alınan bir özellik olduğu için iki parçanın yazısı da seçilemiyordu —
+    tarayıcı sürükleme (drag) seçiminde bu alt ağacı TAMAMEN atlıyor, kullanıcı
+    "Projeler'den CV'ye sürüklüyorum ama CV atlanıyor" diyordu. Kardeş hero
+    butonları (`HERO_BTN_BODY`) `select-text` taşıyor; split de aynı olmalı.
+  */
+  const html = render([
+    { href: '/cv.pdf', children: 'CV' },
+    { href: '/cv.pdf', download: true, iconOnly: true, children: <span>D</span> },
+  ])
+
+  it('kabuk `select-none` taşımaz (drag seçiminde atlanmaz)', () => {
+    expect(html).not.toContain('select-none')
+  })
+
+  it('kabuk ve iki parça da seçimi açar (3 kez select-text)', () => {
+    expect(html.match(/select-text/g)?.length).toBe(3)
+  })
+})

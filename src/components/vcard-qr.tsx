@@ -33,7 +33,7 @@ export function VCardQr({ vcardText }: { /** RFC 6350 vCard 3.0 metni (`src/lib/
         sabiti), ince ring + yumuşak gölge ile karttan net ayrışır. Metin
         YOK — "sadece QR Code olsun" kuralı korunur (vcard-qr-only.test.ts).
       */}
-      <div className="shrink-0 rounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-foreground/20">
+      <div className="shrink-0 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-foreground/20">
         <QRCodeSVG
           value={vcardText}
           size={148}

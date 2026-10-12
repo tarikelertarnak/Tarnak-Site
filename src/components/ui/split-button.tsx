@@ -74,8 +74,14 @@ const ICON_PART_WIDTH = 40
  *   3. ikon `currentColor` yerine inherited gri tonunu alıyordu
  * Üçü de `hero-button-style.ts`ten gelen sabitlerle kapandı; artık
  * normal butonla (LobeButton) aynı değişkenlerden besleniyoruz.
+ *
+ * SEÇİM (2026-10-12, kullanıcı: "sürükleyerek seçince CV atlanıyor"):
+ * burada `select-none` vardı — `user-select` MİRAS alındığı için iki parçanın
+ * yazısı da seçilemiyordu; tarayıcı sürükleme seçiminde bu alt ağacı
+ * TAMAMEN atlıyordu (kardeş butonlarda `HERO_BTN_BODY` → `select-text`).
+ * Artık `select-text`: "CV" yazısı da diğerleriyle aynı şekilde seçilir.
  */
-const WRAP = `${HERO_BTN_SHELL} ${HERO_BTN_EDGE} ${HERO_BTN_FG} align-middle select-none group ${HERO_BTN_FOCUS}`
+const WRAP = `${HERO_BTN_SHELL} ${HERO_BTN_EDGE} ${HERO_BTN_FG} align-middle select-text group ${HERO_BTN_FOCUS}`
 
 /**
  * Her yari: geometrisiz. Yuvarlatma yok, esnemez.
@@ -92,7 +98,7 @@ const WRAP = `${HERO_BTN_SHELL} ${HERO_BTN_EDGE} ${HERO_BTN_FG} align-middle sel
  * Parçaya `bg-primary` eklenince `a.bg-primary` kuralı işe yarıyor ve
  * `color: var(--tprimary-fg)` uygulanıyor: light siyah, dark beyaz.
  */
-const PART = `inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border-0 bg-primary text-[13px] font-medium no-underline transition-colors ${HERO_BTN_STATE} ${HERO_BTN_FG} focus-visible:outline-none`
+const PART = `inline-flex h-10 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-none border-0 bg-primary text-[13px] font-medium no-underline select-text transition-colors ${HERO_BTN_STATE} ${HERO_BTN_FG} focus-visible:outline-none`
 
 /** Sag yari: sabit kare + ince ayirici (dış çerçeveyle aynı renk). */
 const ICON_PART = HERO_BTN_DIVIDER

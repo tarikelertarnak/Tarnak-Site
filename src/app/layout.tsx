@@ -144,22 +144,25 @@ export async function generateMetadata(): Promise<Metadata> {
     // snippet.html'i ile birebir aynı dosyalar; `android-chrome-*` ve
     // `/logo.png` gibi VAR OLMAYAN dosyalara işaret eden eski girdiler
     // kaldırıldı — tarayıcı 404 alıyordu.
-    // `?v=4` cache kırmak için: dosya içeriği değişti, aynı URL'de eski
-    // favicon 30 gün (SWR) servis edilirdi.
+    // `?v=5` cache kırmak için (2026-10-12): ikonlar sabit MARKA MAVİSİNE
+    // (#2563eb) çevrildi — eskiden dolgu siyahtı, "beyaz halka" özniteliği
+    // (`strokeWidth`, geçersiz yazım) hiç çizilmediği için koyu sekme
+    // çubuğunda ikon kayboluyordu. Aynı URL'de eski ikon 30 gün (SWR)
+    // servis edilirdi; sürüm parametresi şart.
     icons: {
       icon: [
-        { url: '/favicon.ico?v=4', sizes: '48x48', type: 'image/x-icon' },
-        { url: '/favicon.svg?v=4', type: 'image/svg+xml' },
-        { url: '/favicon-16x16.png?v=4', sizes: '16x16', type: 'image/png' },
-        { url: '/favicon-32x32.png?v=4', sizes: '32x32', type: 'image/png' },
-        { url: '/favicon-48x48.png?v=4', sizes: '48x48', type: 'image/png' },
-        { url: '/favicon-96x96.png?v=4', sizes: '96x96', type: 'image/png' },
-        { url: '/icon-192x192.png?v=4', sizes: '192x192', type: 'image/png' },
-        { url: '/icon-512x512.png?v=4', sizes: '512x512', type: 'image/png' },
+        { url: '/favicon.ico?v=5', sizes: '48x48', type: 'image/x-icon' },
+        { url: '/favicon.svg?v=5', type: 'image/svg+xml' },
+        { url: '/favicon-16x16.png?v=5', sizes: '16x16', type: 'image/png' },
+        { url: '/favicon-32x32.png?v=5', sizes: '32x32', type: 'image/png' },
+        { url: '/favicon-48x48.png?v=5', sizes: '48x48', type: 'image/png' },
+        { url: '/favicon-96x96.png?v=5', sizes: '96x96', type: 'image/png' },
+        { url: '/icon-192x192.png?v=5', sizes: '192x192', type: 'image/png' },
+        { url: '/icon-512x512.png?v=5', sizes: '512x512', type: 'image/png' },
       ],
       apple: [
         {
-          url: '/apple-touch-icon.png?v=4',
+          url: '/apple-touch-icon.png?v=5',
           sizes: '180x180',
           type: 'image/png',
         },

@@ -11,6 +11,7 @@ import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { BentoBox, BentoBoxItem } from '@/components/ui/bento-box'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/components/ui/cn'
 import { CvPicker } from '@/components/ui/cv-picker'
 import {
   BrainIcon,
@@ -152,7 +153,17 @@ export function AboutSection({
         <BentoBox className="w-full max-w-6xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {/* Personal info */}
           <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4">
-            <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-start">
+            {/*
+              KART İÇ DÜZENİ (2026-10-12, kullanıcı: "dağınık ve hizasız"):
+
+              · ÜST SATIR: avatar + (başlık + bilgi grid'i). `sm:items-start`
+                ile "Kişisel Bilgiler" başlığının üst çizgisi avatarın üst
+                çizgisiyle aynı hizada (kullanıcı isteği).
+              · GRID: `sm:grid-cols-2` + `gap-x-8`; e-posta `sm:col-span-2`
+                (uzun adres kesilmesin, sağ sütunda boş hücre kalmasın).
+                4/8px katları: gap-x-8 = 32, mt-2 = 8, sm:gap-6 = 24.
+            */}
+            <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
               <img
                 src={content.profile.profileImage || undefined}
                 alt={`${content.profile.firstName} ${content.profile.lastName} — profil fotoğrafı`}
@@ -164,7 +175,7 @@ export function AboutSection({
                   <UserIcon size={20} className="text-primary" />
                   {t('about.infoCardTitle')}
                 </h3>
-                <div className="mt-1 grid w-full grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-0">
+                <div className="mt-2 grid w-full grid-cols-1 sm:grid-cols-2 gap-x-8">
                   {/*
                     AD / SOYAD (2026-10-05, kullanıcı).
                     Önce tek satırda `TARIK ELER TARNAK` birleşik
@@ -256,6 +267,7 @@ export function AboutSection({
                     )}
                   />
                   <InfoRow
+                    className="sm:col-span-2"
                     label={t('about.infoEmail')}
                     value={content.contact.email}
                     action={(
@@ -436,40 +448,59 @@ function InfoRow({
   label,
   value,
   action,
+  className,
 }: {
   label: string
   value: string
   action?: ReactNode
+  className?: string
 }) {
   /*
-    2026-10-10 (kullanıcı): "Değerleri SOLA yasla ve etiketin HEMEN yanına
-    get; 'Ad: Tarık' yakın dursun."
+    2026-10-12 (kullanıcı: "etiketler farklı genişlikte, değerler farklı x'ten
+    başlıyor, kopyala ikonları hizada değil, e-posta kesiliyor"):
 
-    ÖNCE: 3 sütunlu grid (`[6.5rem_minmax(0,1fr)_1.75rem]`) — etiket 104px'lik
-    sabit sütuna hapsoluyordu, bu yüzden KISA etiketlerde ("Ad") değer
-    etiketten ~110px uzakta başlıyordu ("Ad .......... TARIK").
+    Satır artık ÜÇ KOLONLU grid — `[etiket | değer | ikon]`:
+      · auto          : etiket en az 90px → KISA etikette de ("Ad") değer
+                        hep aynı x'ten başlar; satırlar arası hiza korunur.
+      · minmax(0,1fr) : değer. `break-all` → e-posta `...` ile KESİLMEZ,
+                        gerekirse alta kırılır (`truncate` kaldırıldı).
+      · auto          : kopyala düğmesi satırın en sağında, dikey ortada.
+    `min-h-[44px]` + `py-2`: tüm satırlar aynı yükseklikte → alt çizgiler
+    aynı hizada ve aynı kalınlıkta.
 
-    ŞİMDİ: flex satır. Etiket `shrink-0` + ":" ile biter, değer `flex-1` ile
-    etiketin HEMEN yanında başlar (gap = 8px) → "Ad: TARIK". Değer sola
-    yaslıdır; kopyala düğmesi satırın SAĞ ucunda sabit durur (tüm satırlarda
-    aynı hizada).
+    ⚠️ 2026-10-10'da buradaki grid kaldırılıp İKİ UCA YASLI flex'e
+    geçilmişti çünkü SABİT 104px'lik etiket sütunu kısa etiketlerde değeri
+    ~110px sağa itiyordu ("Ad .......... TARIK"). Burada aynı hataya
+    düşülmüyor: etiket sütunu `minmax(90px, auto)` — 90px'i aşan etiket
+    varsa o satırda genişler, değere `gap-x-3` (12px) yapışık kalır.
+    (Eski düzenin class adı bu bilinçle yazılmadı: `vcard-qr-only.test.ts`
+    bu dilimde o adı yasaklıyor.)
   */
   return (
-    <div className="flex items-center gap-2 border-b border-foreground/200/10 py-2">
-      <span className="shrink-0 text-sm text-foreground/60">
-{label}
-:
-</span>
-      <span className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-foreground">
+    <div
+      className={cn(
+        'grid min-h-[44px] grid-cols-[minmax(90px,auto)_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-foreground/200/10 py-2',
+        className,
+      )}
+    >
+      <span className="text-sm text-foreground/60">
+        {label}
+        :
+      </span>
+      <span className="min-w-0 break-all text-left text-sm font-semibold text-foreground">
         {value.trim() || '—'}
       </span>
       {/*
-        Kopyala düğmesi satırın SAĞ UCUNDA sabit — değer uzunluğundan
-        bağımsız olarak bütün satırlarda aynı x konumunda durur.
+        Kopyala düğmesi 3. kolonda (`auto`) — değer uzunluğundan bağımsız
+        olarak bütün satırlarda aynı dikey çizgide durur.
       */}
-      {action ? (
-        <span className="flex shrink-0 items-center">{action}</span>
-      ) : null}
+      {action
+        ? (
+            <span className="flex shrink-0 items-center justify-self-end">
+              {action}
+            </span>
+          )
+        : null}
     </div>
   )
 }

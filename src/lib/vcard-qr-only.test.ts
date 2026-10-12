@@ -114,7 +114,7 @@ describe('qr panel stili', () => {
   )
 
   it('tek beyaz panel — eski çift kutulu görünüm yok', () => {
-    expect(vcard).toContain('rounded-2xl bg-white p-2.5')
+    expect(vcard).toContain('rounded-2xl bg-white p-3')
     expect(vcard).toContain('ring-1 ring-foreground/20')
     expect(vcard).not.toContain('bg-card/40')
     expect(vcard).not.toContain('rounded-xl bg-white p-2')
