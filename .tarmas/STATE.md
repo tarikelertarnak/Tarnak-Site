@@ -4,7 +4,7 @@ status: ACTIVE
 updated: 2026-10-12T02:15:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: 7b76b13 + (bu tur commit edilecek)
+branch: faz-1-guvenlik last_commit: 8da2c75 + (bu tur commit edilecek)
 
 === TARMAS KERNEL (preserve verbatim in any summary/compaction) ===
 
@@ -31,10 +31,10 @@ branch: faz-1-guvenlik last_commit: 7b76b13 + (bu tur commit edilecek)
 
 ## Current
 
-phase: TARMAS / SERBEST FAZI — SOHBET CANLIYA ALINDI step: commit ediliyor
+phase: TARMAS / SERBEST FAZI — SOHBET TIKLERI (SARI/YESIL + YUVARLAK IKON) step: commit ediliyor
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 7b76b13 (yerel commit; push/deploy ASLA otomatik)
-running_processes: next dev (turbopack) :3000 PID 29844
+branch: faz-1-guvenlik last_commit: 8da2c75 (yerel commit; push/deploy ASLA otomatik)
+running_processes: next dev (turbopack) :3000 PID 19720
 not: "Sohbet yukleniyor… siyah yaziyordu" + "chat sahte, gercek calissin" kapandi.
 A) TANIMSIZ TEMA JETONU sinifi: `text-foreground-50/-60/-70` (16 yer, hepsi
 chat-v2.tsx) → `text-foreground-500`. `-50` HeroUI'den geliyordu (temaya bagli
@@ -45,6 +45,17 @@ Sonrasi: users 200 (2 kisi), mesaj gonderildi ve DB'ye yazildi (kanit).
 `peersError` + CHAT_SCHEMA_MISSING → schemaMissing ile sonsuz yukleme sinifi kapandi.
 **tsc 0 · eslint --max-warnings 0 0 · vitest 570/570 (47 dosya) · e2e 62/62 ·
 11/11 negatif kontrol (byte-exact geri yuklendi, sha dogrulandi).**
+
+## Bu tur (2026-10-12, tikler)
+
+- Tikler metin glifi (`✓`/`✓✓`) yerine **yuvarlak inline SVG** (Material Symbols
+  Rounded: `TickSentIcon` / `TickReadIcon` — `ui/icons.tsx`; Iconify CDN yok).
+- Renk kurali: **SARI = gorulmedi** (gonderildi veya teslim edildi),
+  **YESIL = okundu**. Tik sayisi: tek = gonderildi, cift = teslim/okundu.
+- Karar saf modulde: `src/lib/chat-ticks.ts` (`tickFor`) → `{ double, color, labelKey }`;
+  `aria-label` + yeni `chat.sentAt` anahtari (8 dil).
+- Balon iki temada da mavi oldugu icin sabit renk dogru; olculen kontrast koda yazildi.
+- **tsc 0 · eslint 0 · vitest 580/580 (49 dosya) · e2e 62/62 · 3/3 negatif kontrol.**
 
 ## BEKLEYEN (kullanici eylemi)
 

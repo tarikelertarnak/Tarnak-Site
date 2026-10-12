@@ -485,6 +485,7 @@
   "chat.deleteForMe": "Benden sil",
   "chat.cancel": "İptal",
   "chat.markImportant": "Önemli kişi olarak işaretle",
+  "chat.sentAt": "Gönderildi",
   "chat.readAt": "Okundu",
   "chat.deliveredAt": "Teslim edildi",
   "chat.notRead": "Okunmadı",

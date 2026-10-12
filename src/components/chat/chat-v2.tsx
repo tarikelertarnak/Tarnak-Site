@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
+import { TickReadIcon, TickSentIcon } from '@/components/ui/icons'
 import {
   isPresenceState,
   PRESENCE_ACTIVE_MS,
@@ -15,12 +16,14 @@ import {
   presenceOf,
   sortPeers,
 } from '@/lib/chat-peers'
+import { tickFor } from '@/lib/chat-ticks'
 
 /**
  * Sohbet v2 arayüzü (kullanıcı tarafı) — 2026-10-11.
  *
  * Kapsam (WhatsApp benzeri, tek sohbet = kullanıcı ↔ site sahibi):
- *  · ✓ teslim (çift tik), ✓ okundu (tek tik) — renk duruma göre
+ *  · Tikler (karar: `lib/chat-ticks.ts`): tek tik + SARI = gönderildi,
+ *    çift tik + SARI = teslim edildi, çift tik + YEŞİL = okundu
  *  · Mesaja sağ tık → bilgi / sabitle / kopyala / sil
  *  · "Mesaj silinsin mi?" → Herkesten sil · Benden sil · İptal
  *  · Yanıt (tıkla → kaynak mesaja git)
@@ -774,6 +777,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
         {messages.map((m) => {
           const mine = m.sender_id === currentUserId
           const replied = replyTo?.id === m.id
+          const tick = mine ? tickFor(m) : null
           return (
             <div
               key={m.id}
@@ -819,12 +823,12 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
                         <span>{m.text}</span>
                       </>
                     )}
-                {/* tikler */}
+                {/* tikler — ikon/renk kararı `lib/chat-ticks.ts`te (saf + testli) */}
                 <span className="ml-2 inline-flex items-center gap-0.5 align-middle text-[10px]">
                   <span>{new Date(m.created_at).toLocaleTimeString('tr', { hour: '2-digit', minute: '2-digit' })}</span>
-                  {mine && (
-                    <span className={cn(m.read_at ? 'text-primary-fg' : 'opacity-70')}>
-                      {m.read_at ? '✓✓' : m.delivered_at ? '✓✓' : '✓'}
+                  {tick && (
+                    <span className={cn('inline-flex shrink-0', tick.color)} role="img" aria-label={t(tick.labelKey)}>
+                      {tick.double ? <TickReadIcon size={14} /> : <TickSentIcon size={14} />}
                     </span>
                   )}
                 </span>
@@ -989,8 +993,8 @@ function PresenceDot({ presence, state, t }: {
 
 /**
  * Mesaj Bilgisi (kullanıcı isteği): "Okundu", "Teslim edildi" ve tarih
- * (GG.AA.YYYY biçiminde, Türkçe gün/ay). Okundu ✓ = m.read_at,
- * Teslim ✓✓ = m.delivered_at doluysa.
+ * (GG.AA.YYYY biçiminde, Türkçe gün/ay).
+ * "Okundu" = `m.read_at` dolu; "Teslim edildi" = `m.delivered_at` dolu.
  */
 function MessageInfo({ message, onClose, labels }: {
   message: ChatMessageRow

@@ -401,6 +401,7 @@ const es: Record<string, string> = {
   'chat.deleteForMe': 'Delete for me',
   'chat.cancel': 'Cancel',
   'chat.markImportant': 'Mark as important',
+  'chat.sentAt': 'Enviado',
   'chat.readAt': 'Read',
   'chat.deliveredAt': 'Delivered',
   'chat.notRead': 'Not read',

@@ -1060,3 +1060,54 @@ testi KIRILDI; `peersError` bloğu eski hâline döndürüldü → regresyon tes
   `data/content.json`tan geliyor; ayrı karar.
 - `CLAUDE.md` + `.claude/` (ekip sistemi, 00:42) commit'e DAHİL EDİLMEDİ — benim
   değişikliğim değil, çalışma ağacında untracked kalıyor.
+
+## [2026-10-12] TİKLER: METİN GLİFİ → YUVARLAK INLINE SVG (SARI / YEŞİL)
+
+Kullanıcı: "tik ler iconu çok kötü başkasını bul daha yuvarlak güzel ve yeşil olsun
+eğer sadece gönderildiyse sarı görüldüyse yeşil olur."
+
+### Değişen
+
+1. **Sarı/yeşil kuralı.** Renk artık tek soruyu yanıtlıyor: "karşı taraf GÖRDÜ mü?"
+   · sarı = gönderildi veya teslim edildi (henüz okunmadı)
+   · yeşil = okundu
+   Tik SAYISI ikinci bilgiyi taşır: tek tik = gönderildi, çift tik = teslim/okundu.
+   (Eski hâl: `read_at ? '✓✓' : delivered_at ? '✓✓' : '✓'`, renk
+   `text-primary-fg` / `opacity-70` — yani sarı/yeşil ayrımı HİÇ yoktu.)
+2. **İkonlar.** `✓`/`✓✓` metin glifi yerine Material Symbols **Rounded**
+   (`check-rounded` / `done-all-rounded` — yuvarlak uçlu, dolu; 14 px'te metin
+   glifinden çok daha okunur). Iconify CDN yerine `components/ui/icons.tsx` içine
+   INLINE SVG konuldu (`TickSentIcon`, `TickReadIcon`): o dosya tam olarak
+   "Iconify boş/gecikmeli ikon" sorununa karşı var (bkz. dosya başı) + tik her
+   mesajda ağdan çekilmiyor. Path'ler upstream `api.iconify.design` ile
+   **byte-karşılaştırıldı** (134 ve 405 karakter birebir).
+3. **Karar saf modülde.** `src/lib/chat-ticks.ts` → `tickFor(mesaj)` →
+   `{ double, color, labelKey }`; React/Iconify'dan bağımsız ve testli. Bileşen
+   yalnızca render eder.
+4. **Erişilebilirlik.** Tik artık `role="img"` + `aria-label` taşıyor
+   ("Gönderildi" / "Teslim edildi" / "Okundu"). Yeni anahtar `chat.sentAt` 8 dile
+   eklendi.
+5. **Yanlış/ölü yorumlar düzeltildi:** `chat-v2.tsx` başlığı ("✓ teslim çift tik,
+   ✓ okundu tek tik" — koda uymuyordu) ve `MessageInfo` yorumu.
+
+### Ölçüm (göz kararı değil)
+
+- Derlenmiş dev CSS'te (162 KB) `.text-amber-400` + `.text-green-400`
+  **üretiliyor** → geçen turun "tanımsız tema jetonu" hata sınıfı burada YOK.
+- Balon iki temada da mavi (`--tprimary`: light `#3b82f6`, dark `#2563eb`), yani
+  sabit renk doğrudur. Kontrast: amber-400 `#fcbb00` 2.14:1 / 3.01:1;
+  green-400 `#05df72` 2.07:1 / 2.91:1. Açık temadaki daha parlak mavi yüzünden
+  doygun yeşille 3:1'e ulaşmak imkânsız (neredeyse beyaz gerekir) — bilinçli
+  tercih, gerekçesi `chat-ticks.ts` yorumunda.
+
+### Doğrulama
+
+`tsc` 0 · `eslint --max-warnings 0` 0 · vitest **580/580** (49 dosya; +10) ·
+**playwright e2e 62/62** · dev `/chat` 200.
+
+**NEGATİF KONTROL (3/3):** (A) okundu rengi yeşil→sarı bozuldu → `chat-ticks.test.ts`
+2 test kırıldı (beklenen `'text-green-400'`, gelen `'text-amber-400'` ve "sarı ≠
+yeşil" testi); (B) `TickReadIcon` çizimi tek tike eşitlendi → `tick-icons.test.tsx`
+kırıldı; (C) bileşendeki inline SVG tikler eski `✓✓` glifine döndürüldü →
+`chat-v2.test.ts` sözleşmesi kırıldı (1 failed | 14 passed). Üçü de byte-exact
+geri yüklendi; (C)'de sha256 öncesi = sonrası (`b6c0bdd0…`).

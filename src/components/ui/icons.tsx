@@ -943,3 +943,26 @@ export function DiscordIcon({ size = 16, className }: IconProps) {
     </svg>
   )
 }
+/**
+ * Mesaj tikleri (2026-10-12, kullanıcı isteği: "daha yuvarlak güzel").
+ *
+ * Material Symbols **Rounded** setinden: `check-rounded` / `done-all-rounded`
+ * (Apache-2.0). Iconify yerine inline — CDN bekleyen boş ikon sorununa karşı
+ * (bkz. dosya başı) ve sohbet tikleri anında çizilsin diye. Dolu (fill)
+ * oldukları için 14 px'te ince konturlu tiklere göre daha okunur.
+ */
+export function TickSentIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg {...fillBase(size, className)}>
+      <path d="m9.55 15.15l8.475-8.475q.3-.3.7-.3t.7.3t.3.713t-.3.712l-9.175 9.2q-.3.3-.7.3t-.7-.3L4.55 13q-.3-.3-.288-.712t.313-.713t.713-.3t.712.3z" />
+    </svg>
+  )
+}
+
+export function TickReadIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg {...fillBase(size, className)}>
+      <path d="M1.75 13.05q-.3-.3-.288-.7t.313-.7q.3-.275.7-.288t.7.288l3.55 3.55l.35.35l.35.35q.3.3.288.7t-.313.7q-.3.275-.7.288T6 17.3zm10.6 2.125l8.5-8.5q.3-.3.7-.287t.7.312q.275.3.288.7t-.288.7l-9.2 9.2q-.3.3-.7.3t-.7-.3L7.4 13.05q-.275-.275-.275-.687t.275-.713q.3-.3.713-.3t.712.3zm4.225-7.05L13.05 11.65q-.275.275-.687.275t-.713-.275q-.3-.3-.3-.712t.3-.713L15.175 6.7q.275-.275.688-.275t.712.275q.3.3.3.712t-.3.713" />
+    </svg>
+  )
+}

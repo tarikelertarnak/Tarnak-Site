@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest'
  * Kullanıcı isteği çok geniş (WhatsApp benzeri). Bu test, istendiği halde
  * kolayca sessizce kaybolabilecek kritik davranışların KAYNAKTA bulunduğunu
  * garanti eder:
- *   · çift tik (teslim) / tek tik (okundu) gösterimi
+ *   · tikler: sarı = görülmedi (gönderildi/teslim), yeşil = okundu —
+ *     ikon + renk kararı `lib/chat-ticks.ts` (Material Symbols Rounded)
  *   · sağ tık → bilgi / sabitle / kopyala / sil menüsü
  *   · "Mesaj silinsin mi?" → Herkesten sil · Benden sil · İptal
  *   · yanıt (reply) akışı
@@ -25,10 +26,29 @@ const SRC = readFileSync(
 )
 
 describe('chat-v2 arayüz sözleşmesi', () => {
-  it('okundu (tek tik) ve teslim (çift tik) bilgisini gösterir', () => {
-    // ✓ okundu → çift tik, ✓ teslim → çift/tek tik mantığı
-    expect(SRC).toMatch(/m\.read_at \? '✓✓'/)
-    expect(SRC).toContain('✓')
+  it('tik: gönderildi/teslim → sarı, okundu → yeşil; inline SVG ikonlar', () => {
+    // İkon + renk kararı saf modülde (chat-ticks.test.ts onu tek tek doğrular);
+    // bileşenin işi yalnızca o kararı render etmek.
+    expect(SRC).toMatch(/import \{ TickReadIcon, TickSentIcon \} from '@\/components\/ui\/icons'/)
+    expect(SRC).toContain('tickFor(m)')
+    expect(SRC).toMatch(/tick\.double \? <TickReadIcon[^>]*\/> : <TickSentIcon/)
+    expect(SRC).toMatch(/className=\{cn\('inline-flex shrink-0', tick\.color\)\}/)
+    // Renk bileşende SABİT yazılmaz (tek kaynak lib/chat-ticks.ts).
+    expect(SRC).not.toMatch(/text-(amber|green)-\d/)
+    // Iconify'a dönüş yok: tikler inline SVG (boş ikon sorununa karşı) ve
+    // her mesajda ağdan çekilmez.
+    expect(SRC).not.toContain('@iconify/react')
+    // Eski metin glifi kalmadı (kullanıcı "çok kötü" dedi).
+    expect(SRC).not.toContain('✓✓')
+  })
+
+  it('tik ikonları `components/ui/icons.tsx`te inline tanımlı', () => {
+    const ICONS = readFileSync(
+      join(process.cwd(), 'src/components/ui/icons.tsx'),
+      'utf8',
+    )
+    expect(ICONS).toContain('export function TickSentIcon')
+    expect(ICONS).toContain('export function TickReadIcon')
   })
 
   it('mesaja sağ tık menüsü açılır (onContextMenu)', () => {
