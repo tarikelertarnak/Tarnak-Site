@@ -25,16 +25,23 @@ export function VCardQr({ vcardText }: { /** RFC 6350 vCard 3.0 metni (`src/lib/
   }
 
   return (
-    <div className="flex justify-center rounded-2xl border border-foreground/10 bg-card/40 p-4">
-      <div className="shrink-0 rounded-xl bg-white p-2">
+    <div className="flex justify-center">
+      {/*
+        2026-10-12 (kullanıcı: "qr kod kısmı kötü"): çift kutulu (bordered
+        wrapper + white panel) "yüzen kare" görünümü gitti. Artık TEK beyaz
+        panel: QR her temada beyaz zeminde + koyu mürekkep (taranabilirlik
+        sabiti), ince ring + yumuşak gölge ile karttan net ayrışır. Metin
+        YOK — "sadece QR Code olsun" kuralı korunur (vcard-qr-only.test.ts).
+      */}
+      <div className="shrink-0 rounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-foreground/20">
         <QRCodeSVG
           value={vcardText}
-          size={132}
+          size={148}
           level="M"
           // Site paleti: koyu mürekkep, beyaz zemin — yüksek kontrast.
           fgColor="#0a0a0b"
           bgColor="#ffffff"
-          marginSize={1}
+          marginSize={2}
         />
       </div>
     </div>

@@ -20,6 +20,7 @@ import {
   UserPlusIcon,
 } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
+import { heroScrollTop } from '@/lib/hero-scroll'
 import { parsePhase6 } from '@/lib/phase6'
 import { SITE_URL } from '@/lib/site-url'
 
@@ -67,8 +68,9 @@ export function HeroSection({
          kullanıcı "çok küçük" dedi). Hâlâ her ekran boyutunda görünür,
          asla `hidden` olmaz.
 
-      3) BÖLÜM DÜĞMELERİ: altı düğme (Projeler / İletişim / CV / Blog /
-         Hakkımda / Sohbet) `flex-wrap` — dar ekranda alt satıra kayar, hiçbiri
+      3) BÖLÜM DÜĞMELERİ: altı düğme (2026-10-12 kullanıcı sırası:
+         Hakkımda / Projeler / Blog / İletişim / Sohbet / CV) `flex-wrap` —
+         dar ekranda alt satıra kayar, hiçbiri
          görünmez olmaz. Sol/sağ ok YOK (oklar admin panelindeki sekme
          şeridinde; 2026-10-07 kullanıcı düzeltmesi).
 
@@ -203,31 +205,11 @@ export function HeroSection({
             variants={item}
             className="mt-7 flex w-full flex-wrap items-center justify-center gap-3 sm:mt-8"
           >
-            <Button
-              color="primary"
-              className={HERO_BTN_BODY}
-              startContent={<BriefcaseIcon size={16} />}
-              href="/projects/"
-            >
-              {t('hero.projects')}
-            </Button>
-            <Button
-              color="primary"
-              className={HERO_BTN_BODY}
-              startContent={<SendIcon size={16} />}
-              href="/contact/"
-            >
-              {t('hero.feedback')}
-            </Button>
-            <CvPicker cvs={cvs} color="primary" className={HERO_BTN_BODY} />
-            <Button
-              color="primary"
-              className={HERO_BTN_BODY}
-              startContent={<FileIcon size={16} />}
-              href="/blog/"
-            >
-              {t('nav.blog')}
-            </Button>
+            {/*
+              SIRA (2026-10-12 kullanıcı): Hakkımda, Projeler, Blog,
+              İletişim, Sohbet, CV — `hero-section.order.test.ts` bunu
+              kaynak sözleşmesi olarak doğrular.
+            */}
             <Button
               color="primary"
               className={HERO_BTN_BODY}
@@ -239,11 +221,36 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
+              startContent={<BriefcaseIcon size={16} />}
+              href="/projects/"
+            >
+              {t('hero.projects')}
+            </Button>
+            <Button
+              color="primary"
+              className={HERO_BTN_BODY}
+              startContent={<FileIcon size={16} />}
+              href="/blog/"
+            >
+              {t('nav.blog')}
+            </Button>
+            <Button
+              color="primary"
+              className={HERO_BTN_BODY}
+              startContent={<SendIcon size={16} />}
+              href="/contact/"
+            >
+              {t('hero.feedback')}
+            </Button>
+            <Button
+              color="primary"
+              className={HERO_BTN_BODY}
               startContent={<ChatIcon size={16} />}
               href="/chat/"
             >
               {t('nav.chat')}
             </Button>
+            <CvPicker cvs={cvs} color="primary" className={HERO_BTN_BODY} />
           </motion.div>
         </motion.div>
 
@@ -253,26 +260,31 @@ export function HeroSection({
           Çapa bağlantısı DEĞİL, `<button>`: projede `no-hash-links`
           testi gezinme linklerinde çapa yasaklıyor (2026-10-04 kullanıcı
           kararı — çapalar Search Console'da bozuk doğrulamaya yol açmıştı).
-          Aynı işi `scrollIntoView` ile yapıyoruz: URL değişmez, geçmişe
-          çapa girdi yazılmaz.
+          URL değişmez, geçmişe çapa girdi yazılmaz.
 
           Tıklayınca `id="about"` bölümüne kaydırır (kullanıcı: "basınca
           projects'e gitmesin, hakkımda kısmına kaydırmaya yarasın").
-          `prefers-reduced-motion` açıksa düz kaydırma yapılır.
+
+          2026-10-12 (kullanıcı: "çok az gidiyo, üstte siyah boş kısım
+          oluyo, daha fazla kaydırmalı"): `scrollIntoView` YERİNE
+          `heroScrollTop` hesabı — çapa div'inin `-top-20` konumu +
+          `scroll-margin-top:88px` + `overflow-x:hidden` üçlüsü kısa/yüksek
+          kaydırıyordu (bkz. src/lib/hero-scroll.ts). Artık About başlığı
+          sabit üst çubuğun hemen altına getirilir.
         */}
         <motion.button
           type="button"
           aria-label={t('hero.scrollDown')}
           onClick={() => {
-            const target = document.getElementById('about')
-            if (!target)
-return
-            target.scrollIntoView({
+            const section = document.getElementById('about')?.closest('section')
+            if (!section)
+              return
+            window.scrollTo({
+              top: heroScrollTop(section),
               behavior: window.matchMedia('(prefers-reduced-motion: reduce)')
                 .matches
                 ? 'auto'
                 : 'smooth',
-              block: 'start',
             })
           }}
           variants={item}

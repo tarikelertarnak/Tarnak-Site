@@ -103,6 +103,30 @@ describe('qr kartinda metin yok — sadece qr kodu', () => {
 })
 
 /**
+ * 2026-10-12 (kullanıcı: "qr kod kısmı kötü"): çift kutulu "yüzen kare"
+ * görünümü → TEK beyaz panel (ring + gölge), daha büyük QR, sessiz bölge.
+ * Metin yine YOK (yukarıdaki "sadece QR" kuralı korunur).
+ */
+describe('qr panel stili', () => {
+  const vcard = readFileSync(
+    join(process.cwd(), 'src/components/vcard-qr.tsx'),
+    'utf8',
+  )
+
+  it('tek beyaz panel — eski çift kutulu görünüm yok', () => {
+    expect(vcard).toContain('rounded-2xl bg-white p-2.5')
+    expect(vcard).toContain('ring-1 ring-foreground/20')
+    expect(vcard).not.toContain('bg-card/40')
+    expect(vcard).not.toContain('rounded-xl bg-white p-2')
+  })
+
+  it('qR büyütüldü ve sessiz bölgeli (taranabilirlik)', () => {
+    expect(vcard).toContain('size={148}')
+    expect(vcard).toContain('marginSize={2}')
+  })
+})
+
+/**
  * 2026-10-10 — "Kişisel Bilgiler" kartı düzeni (kullanıcı isteği):
  *   1) Discord satırı karttan ÇIKTI → "İletişim Bilgileri" menüsüne taşındı.
  *   2) InfoRow değerleri SOLA yaslı ve etiketin HEMEN yanında ("Ad: TARIK");
