@@ -762,7 +762,7 @@ async function getDefaultContent(): Promise<SiteContent> {
   return {
     hero: {
       name: 'TARIK ELER',
-      tagline: 'Yazılımcı & Sistem Mimarisi',
+      tagline: 'Yazılımcı & Sistem Mimarı',
       badge: '',
       // Sabit bio metni kaldırıldı; admin `hero.description` alanına yazınca
       // hero içinde kendiliğinden görünür (hero-section.tsx koşullu render).
@@ -922,7 +922,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       displayName: 'TARIKELER',
       nickname: 'Tarnak',
       title: '',
-      profileImage: 'https://avatars.githubusercontent.com/u/184168415?v=4',
+      profileImage: '/uploads/profile.png',
       experience: '',
       firstLanguage: 'Turkish',
       otherLanguages: 'English (A2), German (A1)',

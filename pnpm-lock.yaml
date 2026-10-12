@@ -59,6 +59,9 @@ importers:
       cmdk:
         specifier: ^1.1.1
         version: 1.1.1(@types/react-dom@19.1.7(@types/react@19.1.10))(@types/react@19.1.10)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      emoji-picker-element:
+        specifier: ^1.29.1
+        version: 1.29.1
       libphonenumber-js:
         specifier: ^1.13.13
         version: 1.13.13
@@ -7730,6 +7733,12 @@ packages:
     resolution:
       {
         integrity: sha512-eJp3QRe79pjwa+duv+n7+5YsNhRcMl812EcFVwrnRvYKoNPoQb5qxU8DG6Bgwji0akHdp6D4Ln6tYLG58MFSow==,
+      }
+
+  emoji-picker-element@1.29.1:
+    resolution:
+      {
+        integrity: sha512-TOiHzu9Dqib3x4MwcAi3wi3RdyT4SoeB4b15AvH1ks4SBwTl7DeebhZ0d3x6dNi4XfNU7IGRZ7NBQllj0RqwrQ==,
       }
 
   emoji-regex@10.6.0:
@@ -19169,6 +19178,8 @@ snapshots:
   elkjs@0.11.1: {}
 
   emoji-mart@5.6.0: {}
+
+  emoji-picker-element@1.29.1: {}
 
   emoji-regex@10.6.0: {}
 

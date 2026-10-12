@@ -1,10 +1,8 @@
 import type { Metadata } from 'next'
-import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
 import { Navigation } from '@/components/navigation'
 import { RememberListPath } from '@/components/remember-list-path'
 import { BlogSection } from '@/components/sections/blog-section'
 import { getPosts } from '@/lib/blog'
-import { CRUMBS } from '@/lib/breadcrumb'
 import { getStaticLocale } from '@/lib/i18n-server'
 import { siteUrl } from '@/lib/site-url'
 
@@ -40,12 +38,16 @@ export default async function BlogPage() {
       <Navigation />
       <RememberListPath path="/blog" />
       <main id="main" className="contents">
-        {/* Breadcrumb (Faz 2 · SEO 2) */}
-        <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">
-          <Breadcrumb items={CRUMBS['/blog']} />
-          <BreadcrumbJsonLd items={CRUMBS['/blog']} />
+        {/*
+          ÜST BOŞLUK (2026-10-13, breadcrumb kaldırıldı): BlogSection'ın
+          kendi `pt-16 sm:pt-24 lg:pt-32`'si + `framed` iç dolgusu
+          /projects ve /about'tan farklı düşüyor (header→h1 ölçümü
+          blog 105/145/193 px, diğerleri 112/128/128 px). Sarmalayıcı,
+          farkı kapatır → üç sayfa da 113/129/129 px.
+        */}
+        <div className="mt-2 sm:-mt-4 lg:-mt-16">
+          <BlogSection posts={posts} />
         </div>
-        <BlogSection posts={posts} />
       </main>
     </div>
   )

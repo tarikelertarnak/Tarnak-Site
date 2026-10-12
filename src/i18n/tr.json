@@ -526,8 +526,8 @@
   "chat.website": "Web sitesi",
   "chat.presenceOnline": "Çevrimiçi",
   "chat.presenceOffline": "Çevrimdışı",
-  "chat.presenceActive": "Şu an bir şey gönderiyor",
   "chat.presenceTyping": "yazıyor…",
+  "chat.typingMany": "Birkaç kişi yazıyor…",
   "chat.presenceUploading": "dosya yüklüyor…",
   "chat.presenceRecording": "ses gönderiyor…"
 }

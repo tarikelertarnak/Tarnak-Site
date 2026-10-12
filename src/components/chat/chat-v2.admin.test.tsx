@@ -72,7 +72,12 @@ async function renderAdminChat(extra: (url: string, init?: RequestInit) => Promi
   return spy
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  // jsdom'da `Element.prototype.scrollIntoView` YOK; mesaj eklenince sohbet
+  // sonuna kaydırma denenir → ortam eksikliğini tamamla.
+  Element.prototype.scrollIntoView = vi.fn()
+})
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
@@ -244,11 +249,11 @@ describe('admin kullanıcı menüsü', () => {
   })
 
   /*
-    Nokta renkleri: yeşil = çevrimiçi, kırmızı = çevrimdışı, sarı = "bana bir
-    şey gönderecek" (yazıyor / dosya yüklüyor / ses gönderiyor). İpucu metni
-    (`aria-label`) tam durumu söyler.
+    Nokta renkleri (2026-10-12'de SADELEŞTİ): yeşil = çevrimiçi, kırmızı =
+    çevrimdışı. Sarı nokta TAMAMEN KALDIRILDI — "yazıyor" artık listede mavi
+    "@kullanıcı yazıyor…" METNİ olarak görünür.
   */
-  it('avatarsız da olsa her kişide durum noktası var: yeşil / kırmızı / sarı', async () => {
+  it('avatarsız da olsa durum noktası var (yeşil/kırmızı); yazan kişide mavi yazıyor metni', async () => {
     const iso = (ms: number) => new Date(Date.now() - ms).toISOString()
     mockFetch((url) => {
       if (url.includes('/api/admin/session')) {
@@ -273,17 +278,20 @@ describe('admin kullanıcı menüsü', () => {
     )
     await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
 
-    expect(screen.getByLabelText('Çevrimiçi')).not.toBeNull()
-    expect(screen.getByLabelText('Çevrimdışı')).not.toBeNull()
-    expect(screen.getByLabelText(/yazıyor/)).not.toBeNull()
+    // Ayşe + Zeynep çevrimiçi (yazan kişi de çevrimiçidir), Mehmet çevrimdışı.
+    expect(screen.getAllByLabelText('Çevrimiçi').length).toBe(2)
+    expect(screen.getAllByLabelText('Çevrimdışı').length).toBe(1)
+    // Sarı nokta KALDIRILDI: yazan kişi artık mavi metinle anılır.
+    expect(screen.getByText('@zeynep yazıyor…')).not.toBeNull()
+    expect(screen.queryByLabelText(/yazıyor/)).toBeNull()
   })
 
   /*
-    Hiyerarşi: sabitlenen en üstte, sarı (şu an gönderiyor) konuşmaların
-    üstünde, konuşulanlar kendi içinde en yeni önce. Sıralamanın saf mantığı
-    `lib/chat-peers.test.ts`te; burada LİSTEDE göründüğü kanıtlanır.
+    Hiyerarşi: sabitlenen en üstte, YAZAN kişi (eski "sarı nokta" kovası)
+    konuşmaların üstünde, konuşulanlar kendi içinde en yeni önce. Sıralamanın
+    saf mantığı `lib/chat-peers.test.ts`te; burada LİSTEDE göründüğü kanıtlanır.
   */
-  it('liste hiyerarşisi: sabitlenen → sarı → en son konuşulan', async () => {
+  it('liste hiyerarşisi: sabitlenen → yazan → en son konuşulan', async () => {
     mockFetch((url, init) => {
       if (url.includes('/api/admin/session')) {
         return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
@@ -293,7 +301,7 @@ describe('admin kullanıcı menüsü', () => {
           success: true,
           users: [
             { id: 'u-1', username: 'busra', fullName: 'Büşra', avatarUrl: null },
-            { id: 'u-2', username: 'cem', fullName: 'Cem', avatarUrl: null, lastSeenAt: new Date().toISOString(), presenceState: 'uploading' },
+            { id: 'u-2', username: 'cem', fullName: 'Cem', avatarUrl: null, lastSeenAt: new Date().toISOString(), presenceState: 'typing' },
             { id: 'u-3', username: 'deniz', fullName: 'Deniz', avatarUrl: null },
           ],
         })
@@ -315,7 +323,7 @@ describe('admin kullanıcı menüsü', () => {
     )
     await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
 
-    // Sabitlenen (Büşra) ve sarı (Cem) listenin ilk iki satırı olmalı.
+    // Sabitlenen (Büşra) ve YAZAN (Cem) listenin ilk iki satırı olmalı.
     const rows = screen.getAllByRole('button')
       .map(b => b.textContent ?? '')
       .filter(text => /Büşra|Cem|Deniz/.test(text))
@@ -376,5 +384,82 @@ describe('admin kullanıcı menüsü', () => {
 
     await waitFor(() => expect(screen.getByText(/supabase\/chat\.sql/)).not.toBeNull())
     expect(document.querySelector('[role="status"]')).toBeNull()
+  })
+})
+
+/**
+ * YAZMA DURUMU + BOŞ SOHBET (2026-10-12 kullanıcı isteği).
+ *
+ *  · "gecikme çok uzun" → ilk tuşta sinyal gider (sarı nokta beklemesi yok),
+ *  · kendi yazdığımız karşı tarafta METİN olarak görünür (nokta değil),
+ *  · boş sohbetteki "Merhaba de!" TIKLANABİLİR ve dil uygun selamlamayı yollar,
+ *  · gönderim sürerken düğme kilitlenir → çift tıklamada iki mesaj gitmez.
+ */
+describe('yazma sinyali ve boş sohbet', () => {
+  it('ilk tuşta "typing" sinyali gider, yazma durunca "durdu" (null) gider', async () => {
+    const spy = await renderAdminChat()
+    fireEvent.click(screen.getByText('Ayşecik'))
+    const box = await screen.findByRole('textbox')
+
+    fireEvent.change(box, { target: { value: 'merhaba' } })
+
+    // Throttle ilk sinyali GEÇİRİR: gecikme yok.
+    await waitFor(() => {
+      expect(spy.mock.calls.some(([, init]) => init?.method === 'POST'
+        && String(init.body).includes('"state":"typing"'))).toBe(true)
+    })
+
+    // Debounce (2.5 sn) sonra "durdu": karşı taraf sonsuz "yazıyor" görmez.
+    await waitFor(() => {
+      expect(spy.mock.calls.some(([, init]) => init?.method === 'POST'
+        && String(init.body).includes('"state":null'))).toBe(true)
+    }, { timeout: 6_000 })
+  })
+
+  it('boş sohbetteki "Merhaba de!" tıklanınca selamlama gönderir ve gönderim sırasında kilitlenir', async () => {
+    const deferred: { resolve?: (r: Response) => void } = {}
+    const hung = new Promise<Response>((resolve) => {
+      deferred.resolve = resolve
+    })
+    const spy = await renderAdminChat((url, init) => {
+      // Mesaj gönderimi (POST + conversationId) yanıtı ASILI kalır: düğmenin
+      // gönderim sırasındaki kilitli hâlini ölçebilmek için.
+      if (url.includes('/api/chat/v2') && init?.method === 'POST' && String(init.body).includes('conversationId')) {
+        return hung
+      }
+      return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
+    })
+
+    fireEvent.click(screen.getByText('Ayşecik'))
+    const button = await screen.findByRole('button', { name: /Merhaba de/ })
+    // Tıklanabilir görünüm: mavi + el imleci (kullanıcı isteği).
+    expect(button.className).toContain('text-primary')
+    expect(button.className).toContain('cursor-pointer')
+
+    fireEvent.click(button)
+    await waitFor(() => expect(button.hasAttribute('disabled')).toBe(true))
+
+    deferred.resolve?.({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({
+        success: true,
+        data: {
+          id: 'm-1',
+          sender_id: 'admin:OWNER',
+          text: 'Merhaba 👋',
+          kind: 'text',
+          created_at: new Date().toISOString(),
+        },
+      }),
+    } as Response)
+
+    await waitFor(() => {
+      const sent = spy.mock.calls.find(([, init]) => init?.method === 'POST'
+        && String(init.body).includes('conversationId'))
+      expect(sent).toBeTruthy()
+      // DİL: tr sözlüğü → "Merhaba 👋" (ayrı gönderme mantığı yok, `send` kullanılır).
+      expect(JSON.parse(String(sent?.[1]?.body)).text).toBe('Merhaba 👋')
+    })
   })
 })

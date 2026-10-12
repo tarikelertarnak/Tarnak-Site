@@ -1,7 +1,7 @@
 {
   "hero": {
     "name": "TARIK ELER",
-    "tagline": "Yazılımcı & Sistem Mimarisi",
+    "tagline": "Yazılımcı & Sistem Mimarı",
     "badge": "",
     "description": "",
     "exploreLabel": "Projeleri Keşfet",
@@ -62,7 +62,7 @@
     },
     {
       "name": "Tarnak",
-      "href": "https://discord.gg/s5B53SgMM",
+      "href": "https://discord.gg/Fp8WbUw4KB",
       "icon": "mdi:discord",
       "label": "Discord Grubu",
       "value": "Tarnak"
@@ -194,7 +194,7 @@
     "lastName": "ELER",
     "displayName": "TARIKELER",
     "nickname": "Tarnak",
-    "title": "",
+    "title": "Yazılımcı & Sistem Mimarı",
     "profileImage": "/uploads/profile.png",
     "experience": "",
     "firstLanguage": "Türkçe",

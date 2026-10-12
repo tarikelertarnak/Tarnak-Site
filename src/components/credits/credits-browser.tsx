@@ -528,7 +528,11 @@ setLeaderboard([])
           {teamEmptyCard ? (
             <EmptyRow text={t('credits.teamComingSoon')} />
           ) : (
-            shownTeam.map((e, i) => e.render(i + 1))
+            shownTeam.map((e, i) => (
+              <Fragment key={e.key ?? `${e.name}-${i}`}>
+                {e.render(i + 1)}
+              </Fragment>
+            ))
           )}
         </CreditGroup>
       )}
@@ -563,7 +567,11 @@ setLeaderboard([])
             ) : sponsorsEmptyCard ? (
               <EmptyRow text={t('credits.sponsorsEmpty')} />
             ) : (
-              shownSponsors.map((e, i) => e.render(i + 1))
+              shownSponsors.map((e, i) => (
+                <Fragment key={e.key ?? `${e.name}-${i}`}>
+                  {e.render(i + 1)}
+                </Fragment>
+              ))
             )}
           </CreditGroup>
         )}

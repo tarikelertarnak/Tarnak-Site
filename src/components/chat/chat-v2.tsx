@@ -5,6 +5,7 @@ import type { Presence, PresenceState } from '@/lib/chat-peers'
 import type { ChatMessageRow } from '@/lib/chat-v2'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { EmojiPicker } from '@/components/chat/emoji-picker'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import {
@@ -17,14 +18,15 @@ import {
   UsersIcon,
 } from '@/components/ui/icons'
 import {
-  isPresenceState,
-  PRESENCE_ACTIVE_MS,
-  PRESENCE_STATE_LABEL_KEY,
+  isTyping,
   PRESENCE_UI,
   presenceOf,
   sortPeers,
+  TYPING_TTL_MS,
+  typingLabel,
 } from '@/lib/chat-peers'
 import { tickFor } from '@/lib/chat-ticks'
+import { helloMessage } from '@/lib/greeting'
 
 /**
  * Sohbet v2 arayüzü (kullanıcı tarafı) — 2026-10-11.
@@ -53,8 +55,6 @@ interface ChatV2Props {
   nextPath?: string
 }
 
-const EMOJIS = ['😀', '😂', '😊', '😍', '😎', '🤔', '👍', '🙏', '🔥', '💯', '🎉', '❤️', '✅', '⚡', '📌', '🤝']
-
 /**
  * Yan panel (kişi listesi) genişliği — sürükleyerek veya ok tuşlarıyla değişir,
  * `localStorage`ta hatırlanır (desen: `components/sidebar.tsx`).
@@ -63,6 +63,17 @@ const CHAT_PANEL_MIN = 240
 const CHAT_PANEL_MAX = 560
 const CHAT_PANEL_DEFAULT = 288
 const CHAT_PANEL_KEY = 'chat-panel-width'
+
+/**
+ * YAZMA SİNYALİ (2026-10-12 kullanıcı isteği: "gecikme çok uzun").
+ *  · yazarken sinyal en fazla ~2 sn'de bir tekrarlanır (throttle),
+ *  · yazmayı bırakınca ~2.5 sn sonra "durdu" gider (debounce),
+ *  · sunucudaki durum `TYPING_TTL_MS` (5 sn) yaşar — sinyal kesilirse söner.
+ */
+const TYPING_THROTTLE_MS = 2_000
+const TYPING_IDLE_MS = 2_500
+/** Kişi listesi + mesaj yoklama aralığı: yazma durumu ~2 sn içinde görünür. */
+const POLL_MS = 2_000
 
 /** Sohbete yazılacak kişi (admin için liste). */
 interface Peer {
@@ -97,10 +108,15 @@ interface ConversationLite {
   last_sender_name: string | null
 }
 
-/** Liste için türetilmiş satır: ad + nokta rengi (saf `lib/chat-peers` ile). */
+/**
+ * Liste için türetilmiş satır: ad + nokta rengi + "yazıyor" (saf `lib/chat-peers`).
+ * Nokta artık SARI OLMAZ (2026-10-12): yeşil/kırmızı çevrimiçi durumu kalır,
+ * "yazıyor" bilgisi `typing` bayrağıyla mavi METİN olarak gösterilir.
+ */
 interface PeerRow extends Peer {
   name: string
   presence: Presence
+  typing: boolean
 }
 
 /**
@@ -155,6 +171,8 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const [menuPeer, setMenuPeer] = useState<Peer | null>(null)
   const [profilePeer, setProfilePeer] = useState<Peer | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  /** Metin alanı: emoji imlecin olduğu yere eklensin diye ref gerekir. */
+  const inputRef = useRef<HTMLInputElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
   /** Liste saatini tazele — nokta rengi yeni veri gelmeden de eskisin (yeşil → kırmızı). */
   const [now, setNow] = useState(() => Date.now())
@@ -221,13 +239,17 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   }, [currentUserId])
 
   /*
-    ÇEVRİMİÇİ NABZI. Sohbet sayfası açıkken 20 sn'de bir `presence` gider →
-    karşı taraf YEŞİL nokta görür. Yazarken/dosya seçerken durum bildirilir →
-    karşı tarafta SARI nokta ("bana bir şey gönderecek"). Durum `null`a
-    dönünce veya tazelenmeyince sarı kendiliğinden söner.
+    ÇEVRİMİÇİ NABZI + YAZMA SİNYALİ. Sohbet sayfası açıkken 20 sn'de bir nabız
+    gider → karşı taraf YEŞİL nokta görür. Yazarken durum `typing` yazılır →
+    karşı tarafta MAVİ "@kullanıcı yazıyor…" satırı görünür (nokta DEĞİL,
+    2026-10-12 kullanıcı isteği). Durum sinyalle tazelenmezse `TYPING_TTL_MS`
+    sonunda kendiliğinden söner (ağ/sleep durumunda sonsuz "yazıyor" kalmaz).
   */
   const presenceRef = useRef<PresenceState | null>(null)
   const presenceClear = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Yazma sinyalinin son gönderim zamanı (throttle) + "durdu" zamanlayıcısı. */
+  const typingSentAt = useRef(0)
+  const typingIdle = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const beat = useCallback(() => {
     void fetch('/api/chat/v2', {
@@ -251,9 +273,39 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       presenceClear.current = setTimeout(() => {
         presenceRef.current = null
         beat()
-      }, PRESENCE_ACTIVE_MS)
+      }, TYPING_TTL_MS)
     }
   }, [beat])
+
+  /**
+   * Yazı yazıldı: sinyal en fazla `TYPING_THROTTLE_MS`'de bir gider (throttle),
+   * yazma durunca `TYPING_IDLE_MS` sonra "durdu" bildirilir (debounce).
+   */
+  const signalTyping = useCallback(() => {
+    const at = Date.now()
+    if (at - typingSentAt.current >= TYPING_THROTTLE_MS) {
+      typingSentAt.current = at
+      signalPresence('typing')
+    }
+    if (typingIdle.current) {
+      clearTimeout(typingIdle.current)
+    }
+    typingIdle.current = setTimeout(() => {
+      typingIdle.current = null
+      typingSentAt.current = 0
+      signalPresence(null)
+    }, TYPING_IDLE_MS)
+  }, [signalPresence])
+
+  /** Yazma bitti (mesaj gönderildi / sohbet kapandı): durum HEMEN temizlenir. */
+  const stopTyping = useCallback(() => {
+    if (typingIdle.current) {
+      clearTimeout(typingIdle.current)
+      typingIdle.current = null
+    }
+    typingSentAt.current = 0
+    signalPresence(null)
+  }, [signalPresence])
 
   /*
     OTURUM İSTEMCİDE çözülür (`force-static` layout tuzağı — 2026-10-11).
@@ -292,17 +344,22 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     }
   }, [t])
 
-  /** Nokta rengi yeni veri gelmeden de eskisin diye listenin saatini tazele. */
+  /**
+   * Nokta rengi ve "yazıyor" METNİ yeni veri gelmeden de eskisin diye listenin
+   * saatini tazele. Aralık `POLL_MS`: `TYPING_TTL_MS` (5 sn) dolduğunda satır
+   * gecikmeden son mesaja döner.
+   */
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 10_000)
+    const id = setInterval(() => setNow(Date.now()), POLL_MS)
     return () => clearInterval(id)
   }, [])
 
   /*
-    KİŞİ LİSTESİ: giriş yapmış HERKES için ilk yükleme + 20 sn'de bir tazeleme
-    (yeni sohbet, son mesaj özeti, karşı tarafın çevrimiçi nabzı). Sunucu listeyi
-    yetkiye göre süzer; istemcide rol kapısı YOK — normal kullanıcı da
-    konuşabileceklerini görür (kullanıcı isteği 2026-10-12).
+    KİŞİ LİSTESİ: giriş yapmış HERKES için ilk yükleme + `POLL_MS`'de bir
+    tazeleme (yeni sohbet, son mesaj özeti, karşı tarafın çevrimiçi nabzı VE
+    yazma durumu). Aralık 20 sn'den 2 sn'ye indirildi: yazma durumu o kadar
+    gecikmeyle görünüyordu (2026-10-12 kullanıcı: "gecikme çok uzun"). Sunucu
+    listeyi yetkiye göre süzer; istemcide rol kapısı YOK.
   */
   useEffect(() => {
     if (!isAuthenticated) {
@@ -318,7 +375,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       }
     }
     void run()
-    const id = setInterval(run, 20_000)
+    const id = setInterval(run, POLL_MS)
     return () => {
       cancelled = true
       clearInterval(id)
@@ -336,7 +393,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   }, [isAuthenticated, beat])
 
   /**
-   * Kişi listesi HİYERARŞİSİ: sabitlenen → sarı (şu an bana gönderiyor) →
+   * Kişi listesi HİYERARŞİSİ: sabitlenen → YAZAN (şu an bana yazıyor) →
    * konuşulanlar (en yeni önce) → favoriler → çevrimiçiler → diğerleri →
    * engellenenler. Sıralama mantığı `lib/chat-peers.ts`te (saf + testli).
    */
@@ -345,11 +402,8 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       (peers ?? []).map((p): PeerRow => ({
         ...p,
         name: p.nickname || p.fullName || p.username,
-        presence: presenceOf(
-          p.lastSeenAt,
-          isPresenceState(p.presenceState) ? p.presenceState : null,
-          now,
-        ),
+        presence: presenceOf(p.lastSeenAt, now),
+        typing: isTyping(p.lastSeenAt, p.presenceState, now),
       })),
       locale,
     )
@@ -530,12 +584,13 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     load()
   }, [load])
 
-  // basit yoklama: yeni mesajda ✓ durumu güncellensin (okundu bilgisi)
+  // basit yoklama: yeni mesajda ✓ durumu güncellensin (okundu bilgisi).
+  // `POLL_MS`: karşı tarafın mesajı ~2 sn içinde düşsün (eskiden 5 sn).
   useEffect(() => {
     if (!conversationId || !isAuthenticated) {
       return
     }
-    const id = setInterval(load, 5000)
+    const id = setInterval(load, POLL_MS)
     return () => clearInterval(id)
   }, [conversationId, isAuthenticated, load])
 
@@ -543,8 +598,34 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages.length])
 
-  async function send() {
-    const text = draft.trim()
+  /**
+   * Emojiyi metin alanında İMLECİN bulunduğu yere ekler, odak alanda kalır
+   * (2026-10-12 kullanıcı isteği). Taslağın sonuna eklemek imleci bozardı.
+   */
+  function insertEmoji(unicode: string) {
+    const el = inputRef.current
+    if (!el) {
+      setDraft(d => d + unicode)
+      return
+    }
+    const start = el.selectionStart ?? el.value.length
+    const end = el.selectionEnd ?? start
+    setDraft(el.value.slice(0, start) + unicode + el.value.slice(end))
+    const caret = start + unicode.length
+    // Kontrollü alan: yeni değer bir sonraki karede yazılır → imleç o zaman konur.
+    requestAnimationFrame(() => {
+      el.focus()
+      el.setSelectionRange(caret, caret)
+    })
+  }
+
+  /**
+   * Mesaj gönderir. `override` verilirse taslak yerine o metin gider (boş
+   * sohbetteki "Merhaba de!" düğmesi bunu kullanır — AYRI gönderme mantığı
+   * yazılmaz). Gönderim başarılı olunca yazma durumu HEMEN temizlenir.
+   */
+  async function send(override?: string) {
+    const text = (override ?? draft).trim()
     if ((!text && !replyTo) || sending || !conversationId) {
       return
     }
@@ -558,8 +639,11 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       const json = await res.json()
       if (res.ok && json.success) {
         setMessages(prev => [...prev, json.data])
-        setDraft('')
+        if (!override) {
+          setDraft('')
+        }
         setReplyTo(null)
+        stopTyping()
       }
       else {
         setError(json.message ?? 'Gönderilemedi.')
@@ -728,6 +812,12 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
    */
   const hasDraft = draft.trim().length > 0
   /**
+   * Selamlama dili: sitenin seçili dili; yoksa tarayıcı dili (SSR'da
+   * `navigator` yok → boş dize, saf fonksiyon İngilizce'ye düşer).
+   */
+  const helloLocale = locale
+    || (typeof navigator === 'undefined' ? '' : navigator.language)
+  /**
    * Sağ uçtaki düğmenin sınıfları (2026-10-13). Dolu → yeşil (WhatsApp
    * gönder, `#25D366` SABİT marka rengi) zemin + beyaz ikon; boş → nötr
    * mikrofon. Sabit renk tema ile değişmediği için beyaz ikon her iki temada
@@ -809,25 +899,36 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
                       ? <img src={p.avatarUrl} alt="" className="size-full object-cover" />
                       : (p.nickname || p.fullName || p.username).slice(0, 2).toUpperCase()}
                   </span>
-                  <PresenceDot presence={p.presence} state={p.presenceState} t={t} />
+                  <PresenceDot presence={p.presence} t={t} />
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">
                     {p.nickname || p.fullName || p.username}
                   </span>
-                  <span className="block truncate text-xs text-foreground-500">
-                    {p.nickname && p.fullName
-                      ? `${p.fullName} · @${p.username}`
-                      : `@${p.username}`}
-                    {p.preview && (
-                      <>
-                        {' '}
-                        ·
-                        {' '}
-                        {p.preview}
-                      </>
-                    )}
-                  </span>
+                  {/* Yazan kişide son mesaj satırı yerine MAVİ "@kullanıcı
+                      yazıyor…" görünür (2026-10-12 kullanıcı isteği). Kendi
+                      satırımızda gösterilmez — insan kendi yazdığını görmez. */}
+                  {p.typing && p.id !== selfId
+                    ? (
+                        <span className="block truncate text-xs text-primary">
+                          {typingLabel([p.username], t)}
+                        </span>
+                      )
+                    : (
+                        <span className="block truncate text-xs text-foreground-500">
+                          {p.nickname && p.fullName
+                            ? `${p.fullName} · @${p.username}`
+                            : `@${p.username}`}
+                          {p.preview && (
+                            <>
+                              {' '}
+                              ·
+                              {' '}
+                              {p.preview}
+                            </>
+                          )}
+                        </span>
+                      )}
                 </span>
                 {(p.important || p.favorite || p.blocked) && (
                   <span className="ml-auto shrink-0 text-xs" aria-hidden="true">
@@ -942,9 +1043,17 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
                         ? <img src={activePeer.avatarUrl} alt="" className="size-full object-cover" />
                         : activePeer.name.slice(0, 2).toUpperCase()}
                     </span>
-                    <PresenceDot presence={activePeer.presence} state={activePeer.presenceState} t={t} />
+                    <PresenceDot presence={activePeer.presence} t={t} />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold">{activePeer.name}</span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-semibold">{activePeer.name}</span>
+                    {/* Adın ALTINDA aynı mavi "yazıyor…" satırı (2026-10-12). */}
+                    {activePeer.typing && activePeer.id !== selfId && (
+                      <span className="truncate text-xs text-primary">
+                        {typingLabel([activePeer.username], t)}
+                      </span>
+                    )}
+                  </span>
                 </>
               )
             : <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t('chat.v2Title')}</span>}
@@ -970,8 +1079,22 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
           )}
           {/* Yüklenirken iskelet — ekranı kaplayan "Sohbet yükleniyor…" yok */}
           {threadOpen && loading && <ChatSkeleton label={t('chat.loading')} />}
+          {/* Boş sohbet: metin TIKLANABİLİR (2026-10-12 kullanıcı isteği) —
+              kullanıcının dilinde "Merhaba 👋" gönderilir. Gönderim sürerken
+              devre dışı: çift tıklamada iki mesaj gitmez. */}
           {threadOpen && !loading && messages.length === 0 && (
-            <p className="pt-8 text-center text-sm text-foreground-500">{t('chat.emptyThread')}</p>
+            <div className="pt-8 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  void send(helloMessage(helloLocale))
+                }}
+                disabled={sending}
+                className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t('chat.emptyThread')}
+              </button>
+            </div>
           )}
           {threadOpen && messages.map((m) => {
             const mine = m.sender_id === (selfId || currentUserId)
@@ -1091,11 +1214,12 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
             <StickerIcon size={20} />
           </button>
           <input
+            ref={inputRef}
             value={draft}
             onChange={(e) => {
               setDraft(e.target.value)
-              // yazıyor → karşı tarafta SARI nokta ("bana bir şey gönderecek")
-              signalPresence('typing')
+              // "yazıyor" → karşı tarafta MAVİ satır (en fazla ~2 sn'de bir sinyal)
+              signalTyping()
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -1132,14 +1256,14 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
             </span>
           </button>
         </div>
+        {/* Emoji seçici (2026-10-12): aramalı, kaydırılabilir, koyu tema —
+            `emoji-picker-element`. Eski 16 emojili şerit kaldırıldı. */}
         {showEmoji && (
-          <div className="mt-2 flex flex-wrap gap-1">
-            {EMOJIS.map(e => (
-              <button key={e} type="button" onClick={() => setDraft(d => d + e)} className="cursor-pointer text-xl">
-                {e}
-              </button>
-            ))}
-          </div>
+          <EmojiPicker
+            locale={locale}
+            onPick={insertEmoji}
+            onClose={() => setShowEmoji(false)}
+          />
         )}
           </div>
         )}
@@ -1229,22 +1353,19 @@ function ChatSkeleton({ label }: { label: string }) {
 }
 
 /**
- * Durum noktası (2026-10-11 kullanıcı isteği): profil fotoğrafının köşesinde
+ * Durum noktası (2026-10-11; SARİ 2026-10-12'de KALDIRILDI): profil
+ * fotoğrafının köşesinde
  *   · yeşil → çevrimiçi (nabız taze),
- *   · kırmızı → çevrimdışı (nabız eski / hiç yok),
- *   · sarı  → "bana bir şey gönderecek": yazıyor, dosya yüklüyor veya ses
- *     gönderiyor. İpucu metni tam durumu söyler.
- * Karar `lib/chat-peers.ts:presenceOf`te; bu bileşen yalnızca RENDER eder.
+ *   · kırmızı → çevrimdışı (nabız eski / hiç yok).
+ * "Yazıyor" artık nokta DEĞİL: listede ve başlıkta mavi metin (bkz.
+ * `lib/chat-peers.ts:typingLabel`). Karar `presenceOf`te; bileşen yalnız RENDER eder.
  */
-function PresenceDot({ presence, state, t }: {
+function PresenceDot({ presence, t }: {
   presence: Presence
-  state: unknown
   t: (key: string) => string
 }) {
   const ui = PRESENCE_UI[presence]
-  const tip = presence === 'active'
-    ? t(PRESENCE_STATE_LABEL_KEY[isPresenceState(state) ? state : 'typing'])
-    : t(ui.labelKey)
+  const tip = t(ui.labelKey)
   return (
     <span
       title={tip}

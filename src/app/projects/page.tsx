@@ -1,11 +1,9 @@
 import type { Metadata } from 'next'
-import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
 import { Navigation } from '@/components/navigation'
 import { ProjectsGrid } from '@/components/projects/projects-grid'
 import { RememberListPath } from '@/components/remember-list-path'
 import { FolderIcon, GithubIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
-import { CRUMBS } from '@/lib/breadcrumb'
 import { getStaticLocalizedContent } from '@/lib/i18n-server'
 
 // 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
@@ -33,11 +31,6 @@ export default async function ProjectsPage() {
       <Navigation />
       <RememberListPath path="/projects" />
       <main id="main" className="w-full">
-        {/* Breadcrumb (Faz 2 · SEO 2) */}
-        <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">
-          <Breadcrumb items={CRUMBS['/projects']} />
-          <BreadcrumbJsonLd items={CRUMBS['/projects']} />
-        </div>
         {/*
             BOŞLUK DENGESİ (2026-10-06, kullanıcı: "üstteki yazılarla
             alttaki kısımın boşlukları eşit ve ortalanmış olsun").
@@ -54,8 +47,9 @@ export default async function ProjectsPage() {
             `framed` Section'da — `/about/` ile ana sayfanın yaptığı gibi.
             İki boşluk artık bağımsız ayarlanabiliyor.
           */}
-        {/* `pb-16 sm:pb-24 lg:pb-24`: ölçümle ayarlandı — navbar→başlık 148px,
-            başlık→çerçeve 136px. `/about/` ile birebir aynı (148/136). */}
+        {/* `pb-16 sm:pb-24 lg:pb-24`: ölçümle ayarlandı — navbar→başlık
+            128px (2026-10-13, breadcrumb kaldırılınca), başlık→çerçeve 136px.
+            `/about/` ile birebir aynı (128/136). */}
         <Section className="flex-col pt-28 sm:pt-32 pb-16 sm:pb-24 lg:pb-24">
           <SectionTitle
             title=""

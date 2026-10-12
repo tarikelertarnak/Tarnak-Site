@@ -42,6 +42,7 @@
     "antd-style": "latest",
     "bcryptjs": "^3.0.3",
     "cmdk": "^1.1.1",
+    "emoji-picker-element": "^1.29.1",
     "libphonenumber-js": "^1.13.13",
     "marked": "^18.0.7",
     "motion": "^12.43.0",

@@ -16,11 +16,11 @@ import { EMPTY_PHONE, parsePhone, PhoneInput } from '@/components/ui/phone-input
  * Profil düzenleme — sağdan açılan drawer.
  * Alanlar: profil fotoğrafı (link), ad, telefon, iletişim bilgileri
  * (e-posta / konum / Discord), meslek/rol combobox ("iş veren" gibi
- * seçenekler + "Site Sahibi" + en sonda "Diğer" → seçilince serbest textbox).
+ * seçenekler + "Diğer" → seçilince serbest textbox).
  * Altta şifre değiştirme + "Hesap değiştir".
  */
 const OCCUPATION_OPTIONS = [
-  'Site Sahibi',
+  'Yazılımcı & Sistem Mimarı',
   'İş veren',
   'İş arayan',
   'Öğrenci',

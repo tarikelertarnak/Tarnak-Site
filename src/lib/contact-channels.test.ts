@@ -152,7 +152,7 @@ describe('buildContactChannels — sosyal label/value override', () => {
     social: [
       {
         name: 'Tarnak',
-        href: 'https://discord.gg/s5B53SgMM',
+        href: 'https://discord.gg/Fp8WbUw4KB',
         icon: 'mdi:discord',
         label: 'Discord Grubu',
         value: 'Tarnak',
@@ -168,8 +168,8 @@ describe('buildContactChannels — sosyal label/value override', () => {
 
   it('baglanti ve kopyalanan deger YINE gercek adres kalir', () => {
     const c = buildContactChannels(discord, t)[0]
-    expect(c.href).toBe('https://discord.gg/s5B53SgMM')
-    expect(c.copyValue).toBe('https://discord.gg/s5B53SgMM')
+    expect(c.href).toBe('https://discord.gg/Fp8WbUw4KB')
+    expect(c.copyValue).toBe('https://discord.gg/Fp8WbUw4KB')
   })
 
   it('id kararli: `name`den turetilir (label`dan degil)', () => {

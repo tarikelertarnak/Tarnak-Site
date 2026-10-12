@@ -1652,3 +1652,125 @@ resize` yardimci `waitFor`i (varsayilan 1 sn) yuk altinda zaman asimi verdi,
   rozetindendi.
 - Deploy YOK (canli site eski build; `bash scripts/deploy-pages.sh` kullanici
   onayinda). Push YOK.
+
+---
+
+## 2026-10-12 (aksam, 2) — 6 islik toplu batch (breadcrumb · key · profil · yazma · selam · emoji)
+
+Kullanici tek turda 6 is verdi. 1-3 numarali isler birbirine dokunmayan
+dosyalarda oldugu icin 3 arka plan `fixer` alt ajanina dagitildi; 4-5-6
+(`chat-v2.tsx`e birlikte dokunuyordu) sirayla ben uyguladim.
+
+### IS 1 — Breadcrumb kaldirildi (/projects, /blog, /about)
+
+- Uc sayfadan breadcrumb kabu + `Breadcrumb`/`BreadcrumbJsonLd` + `CRUMBS`
+  importlari silindi. Bilesen ve `lib/breadcrumb.ts` DOKUNULMADI
+  (`/contact`, `/github/[owner]/[repo]`, `proxy.ts` 301 haritasi hala kullaniyor).
+- Bosluk OLCULDU (gercek tarayici, gap = ilk baslik y − TopBar spacer alt
+  kenari): /projects 260→128, /blog 325→129, /about 260→128 (masaustu);
+  mobil 224/217/224 → 112/113/112. Uc sayfa arasi fark ≤1px.
+- Blog'un ust dolgusu `blog-section.tsx` icinde (kapsam disi) → negatif margin
+  ile hizalandi; kalici cozum (padding prop'u) raporda not.
+
+### IS 2 — React "unique key" uyarisi (/credits)
+
+- Kok neden: `credits-browser.tsx`te `shownTeam.map((e,i) => e.render(i+1))` ve
+  `shownSponsors.map(...)` `render()` ciktisini (bir `<CreditRow>` elemani)
+  dogrudan `<CreditGroup>` children dizisine key'siz koyuyordu. Uyari birebir
+  uretildi. Cozum: `<Fragment key={e.key ?? `${e.name}-${i}`}>` (index key
+  DEGIL). Diger 9 map taramasi temiz (cogu veri uretimi; 3'unde zaten Fragment).
+- Kanit: jsdom gercek React render'i ile console.error'daki key uyarisi 1→0;
+  yeni `credits-browser.test.tsx` (render + kaynak sozlesmesi). Tarayici konsolu
+  ayirt edici DEGIL (dev sunucusunda hidrasyon yok + canli veri bos).
+
+### IS 3 — Profil verisi + goreli foto + Discord
+
+- `content.json`: `profile.title` '' → **"Yazilimci & Sistem Mimari"** (ayni deger
+  `hero.tagline` ve `i18n-content-tr.ts`te; ana sayfa alt basligi ile AYNI metin),
+  Discord daveti `discord.gg/s5B53SgMM` → **`https://discord.gg/Fp8WbUw4KB`**
+  (grup adi "Tarnak"; `grep s5B53SgMM` → 0 eslesme).
+- **"Site Sahibi" meslek secenegi kaldirildi**: `profile-edit-drawer.tsx`
+  `OCCUPATION_OPTIONS[0]` → "Yazilimci & Sistem Mimari". (Admin panelindeki
+  "Yetki: Site Sahibi" rozeti DOGRU — dokunulmadi.)
+- **Goreli foto**: `i18n-content-tr.ts`, `i18n-content-en.ts`, `content.ts`
+  varsayilanlarindaki `https://avatars.githubusercontent.com/...` →
+  `/uploads/profile.png` (dosya diskte var, 55 KB). `<img>` goreli yolu ayni
+  origin'den cozer → `NEXT_PUBLIC_SITE_URL` birlestirmesi GEREKMIYOR (vCard da
+  foto alani tasimiyor).
+- **Yapisal veri**: `layout.tsx` JSON-LD `jobTitle` 'Web Developer' →
+  "Yazilimci & Sistem Mimari" (profil rolu ile tek deger).
+- **Supabase (canli) sahip profili yazildi** (service-role, kuru calisma →
+  uygula → geri oku): `profiles` full_name "TARIK ELER TARNAK"→"TARIK ELER",
+  nickname null→"Tarnak", avatar_url `http://localhost:3000/uploads/profile.png`
+  → **`/uploads/profile.png`**, bio null→`about.whoText`; user_metadata
+  phone ''→'+905518957215', occupation "Site Sahibi"→"Yazilimci & Sistem
+  Mimari", location ''→"Konya, Turkiye", discord ''→grup daveti, avatar_url
+  goreli. Mevcut anahtarlar korundu (birlestirme); role/roles/is_owner
+  dokunulmadi. Kalicilik: ayni betik geri okuyup basti.
+- **Bos kalanlar (raporda da var)**: `profile.displayName`/`nickname` degismedi
+  ('TARIKELER' marka sozcugu = footer telif + panel ornegi; gorunen ad zaten
+  `nickname` = 'Tarnak'), `contact` (serbest "Iletisim bilgileri") bos —
+  uydurulmadi, sosyal linkler `content.json social[]`ten geliyor.
+- Ikinci hesap (`tarikelertr@...`) kullanici istemedigi icin dokunulmadi.
+
+### IS 4 — Yazma gostergesi (sari nokta kaldirildi, mavi metin)
+
+- `lib/chat-peers.ts`: `Presence` yalniz `'online' | 'offline'` (amber/`active`
+  silindi), `TYPING_TTL_MS = 5000` + `isTyping()` + `typingLabel(usernames, t)`;
+  siralama `typing` bayragina gore (eski "sari kova"). Kaldirilanlar:
+  `PRESENCE_ACTIVE_MS`, `PRESENCE_STATE_LABEL_KEY`, i18n `chat.presenceActive`
+  (8 sozluk) → yeni `chat.typingMany` (8 sozluk, tr: "Birkac kisi yaziyor…").
+- `chat-v2.tsx`: ilk tusda sinyal (throttle 2 sn), yazma durunca 2.5 sn debounce
+  ile `null`, TTL 5 sn (karsi taraf sonsuz "yaziyor" gormez), gonderimde aninda
+  temizlenir; list satirinda ve sohbet basliginda mavi (`text-primary`)
+  "@kullanici yaziyor…" (2 kisi "@a, @b yaziyor…", 3+ "Birkac kisi yaziyor…");
+  kullanici kendi yazisini gormez; liste nabzi/mesaj yoklamasi 2 sn (SSE/WS yok
+  — mevcut polling altyapisi bozulmadi).
+- Testler: `chat-peers.test.ts` yeniden yazildi (+nokta stilleri: yalniz
+  yesil/kirmizi, amber YOK), `chat-v2.test.ts` + `chat-v2.admin.test.tsx`
+  yeni davranisa guncellendi (yesil nokta sayisi 2, mavi metin, sari nokta yok).
+
+### IS 5 — Bos sohbetteki "Merhaba de!" tiklanabilir
+
+- Yeni `lib/greeting.ts`: `helloFor(locale)` (tr Merhaba, en Hello … 14 dil,
+  bilinmeyen → Hello) + `helloMessage()` = "{selam} 👋"; dil site dilinden,
+  yoksa `navigator.language`.
+- Mesaj yoksa metin artik mavi + `cursor-pointer` bir DUGME; tiklayinca mevcut
+  `send()` yolu (`send(override)`) kullanilir — YENI gonderim mantigi yok;
+  gonderim surerken `disabled` (cift tiklama iki mesaj atmaz). Bos durum metni
+  de sozlukten (yeni i18n anahtari ACILMADI).
+
+### IS 6 — Emoji secici `emoji-picker-element` (1.29.1)
+
+- `EMOJIS` seridi tamamen kaldirildi; yeni `chat/emoji-picker.tsx` ozel elementi
+  YALNIZ istemcide (`await import('emoji-picker-element')`) olusturur.
+- Kutu: arama + kaydirma + kategori kutuphane icinde; yukseklik
+  `min(350px, 45svh)` (mobilde tasmaz, genislik `max-w-[350px] w-full`);
+  koyu tema `class="dark"` + `globals.css`te site degiskenleriyle eslenen
+  `--background/--border-color/--indicator-color…` blogu.
+- Veri: `emoji-picker-element-data@^1` (CDN; CSP `connect-src https:` izinli).
+  Upstream'de tr verisi YOK → `en` verisi + Turkce ARAYUZ etiketleri
+  (`emoji-picker-element/i18n/*` tembel import haritasi).
+- Emoji IMLEGIN oldugu yere eklenir ve odak korunur (`inputRef` + `selectionStart`);
+  disa tiklama ve Esc kapatir.
+- Kanit: `emoji-picker.test.tsx` (3 test) — jsdom'da IndexedDB olmadigi icin
+  element sade div ile degistirilip BIZIM ayarlarimiz olculdu (dark, dataSource
+  → `/en/emojibase/data.json`, `min(350px, 45svh)`, `emoji-click` → `onPick`,
+  Esc, disa tiklama). Kutuphane icu arama/kaydirma davranisi jsdom'da olculemez
+  → tarayici kontrolu borclu (dev sunucusunda hidrasyon yok).
+
+### Kapilar (bu tur, tamami tekrar kosuldu)
+
+- `vitest run` → **670/670 test, 60/60 dosya**.
+- `tsc --noEmit` → **0 hata**.
+- `eslint <27 degisen dosya> --max-warnings 0` → **0 hata / 0 uyari**.
+- Commit YEREL (branch `faz-1-guvenlik`), push/deploy YOK.
+
+### Acik kalan / risk
+
+- **Tarayici dogrulamasi yapilamadi**: dev sunucusunda hidrasyon calismiyor
+  (`_next/hmr` ws `ERR_INVALID_HTTP_RESPONSE`), `/chat` ve `/admin` oturum
+  istiyor, admin parolasi bilinmiyor → IS 4/5/6'nin TIKLAMALI kontrolu jsdom
+  testleri + kaynak sozlesmesiyle yapildi. Gercek tarayici + canli veri ile
+  (WSL build veya oturum acikken) tekrar olculmesi gerekiyor.
+- Deploy YOK (canli site eski build), push YOK.

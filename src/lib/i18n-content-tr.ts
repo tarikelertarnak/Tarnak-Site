@@ -12,7 +12,7 @@ type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]>
 export const trContentOverlay: DeepPartial<SiteContent> = {
   hero: {
     name: 'TARIK ELER',
-    tagline: 'Yazılımcı & Sistem Mimarisi',
+    tagline: 'Yazılımcı & Sistem Mimarı',
     badge: '',
     description: '',
     exploreLabel: 'Projeleri Keşfet',
@@ -96,8 +96,8 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
     lastName: 'ELER',
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
-    title: '',
-    profileImage: 'https://avatars.githubusercontent.com/u/184168415?v=4',
+    title: 'Yazılımcı & Sistem Mimarı',
+    profileImage: '/uploads/profile.png',
     experience: '',
     firstLanguage: 'Türkçe',
     otherLanguages: 'İngilizce (A2), Almanca (A1)',

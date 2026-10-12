@@ -1,4 +1,3 @@
-import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { Navigation } from '@/components/navigation'
 import {
@@ -17,7 +16,6 @@ import {
   UserIcon,
 } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
-import { CRUMBS } from '@/lib/breadcrumb'
 import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
 import { parsePhase6 } from '@/lib/phase6'
 
@@ -221,11 +219,6 @@ export default async function AboutPage() {
     <div className="min-h-screen w-full relative">
       <Navigation />
       <main id="main" className="w-full">
-        {/* Breadcrumb (Faz 2 · SEO 2): görünür navigasyon + BreadcrumbList */}
-        <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">
-          <Breadcrumb items={CRUMBS['/about']} />
-          <BreadcrumbJsonLd items={CRUMBS['/about']} />
-        </div>
         {/* Hero */}
         {/*
           Hero / eylem satırı. `pb-0`: alt boşluk artık içerideki

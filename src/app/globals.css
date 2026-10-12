@@ -596,6 +596,27 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb {
   display: none;
 }
 
+/* Emoji seçici (emoji-picker-element, 2026-10-12): kütüphanenin `:host`
+   değişkenleri sitenin tasarım jetonlarına bağlanır — koyu zemin, kenarlık ve
+   mavi vurgu. Değerler tek kaynaktan (`--tsurface-*`, `--tfg-*`, `--tprimary`),
+   böylece tema değişince seçici de değişir. */
+.emoji-picker-host emoji-picker {
+  --background: var(--tsurface-1);
+  --border-color: var(--tsurface-border);
+  --border-radius: var(--radius-lg);
+  --indicator-color: var(--tprimary);
+  --input-border-color: var(--tsurface-border);
+  --input-font-color: var(--tfg-900);
+  --input-placeholder-color: var(--tfg-500);
+  --category-font-color: var(--tfg-900);
+  --button-hover-background: color-mix(
+    in srgb,
+    var(--tprimary) 18%,
+    transparent
+  );
+  --outline-color: var(--tprimary);
+}
+
 /* ---------- Marquee ---------- */
 .marquee-track {
   animation: var(--animation-marquee);

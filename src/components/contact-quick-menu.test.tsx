@@ -489,7 +489,7 @@ const DISCORD_CONTENT = {
   social: [
     {
       name: 'Tarnak',
-      href: 'https://discord.gg/s5B53SgMM',
+      href: 'https://discord.gg/Fp8WbUw4KB',
       icon: 'mdi:discord',
       label: 'Discord Grubu',
       value: 'Tarnak',
@@ -516,10 +516,10 @@ describe('contactQuickMenu — discord kanalı', () => {
     const link = within(screen.getByRole('menu'))
       .getByText('Tarnak')
       .closest('a')!
-    expect(link.getAttribute('href')).toBe('https://discord.gg/s5B53SgMM')
+    expect(link.getAttribute('href')).toBe('https://discord.gg/Fp8WbUw4KB')
     fireEvent.click(link)
     expect(spy).toHaveBeenCalledWith(
-      'https://discord.gg/s5B53SgMM',
+      'https://discord.gg/Fp8WbUw4KB',
       '_blank',
       'noopener,noreferrer',
     )

@@ -291,7 +291,9 @@ export default async function RootLayout({
                 'url': SITE_URL,
                 'image': `${SITE_URL}/opengraph-image`,
                 'logo': `${SITE_URL}/icon-512x512.png`,
-                'jobTitle': 'Web Developer',
+                // Profil "Meslek / Rol" ile TEK değer (2026-10-12 kullanıcı isteği):
+                // ana sayfa alt başlığı, `profile.title` ve yapısal veri aynı metni söyler.
+                'jobTitle': 'Yazılımcı & Sistem Mimarı',
                 /*
                  * sameAs (Faz 2 · SEO 3, kullanıcı isteği): "sosyal linkleri
                  * content dosyasından oku, bilmediğin linki uydurma".

@@ -526,8 +526,8 @@
   "chat.website": "Website",
   "chat.presenceOnline": "Online",
   "chat.presenceOffline": "Offline",
-  "chat.presenceActive": "About to send something",
   "chat.presenceTyping": "typing…",
+  "chat.typingMany": "Several people are typing…",
   "chat.presenceUploading": "uploading a file…",
   "chat.presenceRecording": "sending a voice message…"
 }

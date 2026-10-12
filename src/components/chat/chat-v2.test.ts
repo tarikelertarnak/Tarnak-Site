@@ -86,12 +86,50 @@ describe('chat-v2 arayüz sözleşmesi', () => {
   })
 
   it('emoji seçici ve dosya/görsel/ses/video gönderimi', () => {
-    expect(SRC).toContain('EMOJIS')
+    // 2026-10-12: 16 emojili şerit yerine `emoji-picker-element` (aramalı,
+    // kaydırılabilir, koyu tema). Emoji İMLECİN olduğu yere eklenir.
+    expect(SRC).toContain('<EmojiPicker')
+    expect(SRC).toContain('insertEmoji')
+    expect(SRC).not.toContain('EMOJIS')
     expect(SRC).toContain('uploadFile')
     // tür bazlı render
     expect(SRC).toMatch(/kind === 'image'/)
     expect(SRC).toMatch(/kind === 'audio'/)
     expect(SRC).toMatch(/kind === 'video'/)
+  })
+
+  it('emoji seçici sitenin dilini ve koyu temayı alır, dışa tıklama/Esc kapatır', () => {
+    const PICKER = readFileSync(
+      join(process.cwd(), 'src/components/chat/emoji-picker.tsx'),
+      'utf8',
+    )
+    // Kütüphane YALNIZ istemcide: customElements sunucuda yok.
+    expect(PICKER).toMatch(/await import\('emoji-picker-element'\)/)
+    expect(PICKER).toContain('dataSource')
+    expect(PICKER).toContain('emoji-picker-element-data')
+    expect(PICKER).toMatch(/setAttribute\('class', 'dark'\)/)
+    // Sabit yükseklik + odağın/imlecin korunması çağıranda.
+    expect(PICKER).toContain('svh')
+    expect(PICKER).toContain('emoji-click')
+    expect(PICKER).toContain('Escape')
+  })
+
+  it('yazma durumu: sarı nokta yok, mavi "@kullanıcı yazıyor…" metni var', () => {
+    // Nokta yalnız yeşil/kırmızı (saf mantık `lib/chat-peers.ts`).
+    expect(SRC).toContain('typingLabel')
+    expect(SRC).toContain('isTyping')
+    expect(SRC).toMatch(/text-primary">\s*\{typingLabel/)
+    // Yazma sinyali: throttle (2 sn) + debounce (2.5 sn) + TTL.
+    expect(SRC).toContain('TYPING_THROTTLE_MS')
+    expect(SRC).toContain('TYPING_IDLE_MS')
+    expect(SRC).toContain('signalTyping')
+  })
+
+  it('boş sohbetteki "Merhaba de!" TIKLANABİLİR ve selamlama dile göre', () => {
+    expect(SRC).toContain('helloMessage')
+    // Gönderim SÜRERKEN kilit: çift tıklamada iki mesaj gitmez.
+    expect(SRC).toMatch(/disabled=\{sending\}/)
+    expect(SRC).not.toMatch(/text-amber/)
   })
 
   it('mesaj bilgisi paneli: Okundu · Teslim edildi · Tarih', () => {

@@ -136,7 +136,7 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
     title: 'Developer & Systems Architecture',
-    profileImage: 'https://avatars.githubusercontent.com/u/184168415?v=4',
+    profileImage: '/uploads/profile.png',
     experience: '',
     firstLanguage: 'Turkish',
     otherLanguages: 'English (A2), German (A1)',
