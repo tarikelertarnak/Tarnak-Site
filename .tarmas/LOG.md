@@ -2052,3 +2052,105 @@ conversationId:'e2e-conv'}`.
 2. Canliya deploy icin onay.
 3. (Bu turda gerekmedi: 3000'deki `next dev` degisiklikleri servis etti —
    olcumler uygulamayi dogruladi, bayat modul grafigi belirtisi yok.)
+
+## 2026-10-13 (sohbet duzeltmeleri #2 — kullanicinin 8 maddesi)
+
+Kullanici `/chat` icin 8 madde verdi: yan panel her zaman durup kapanabilsin,
+kendisiyle konusamasin / sadece kendisiyle konusabilen kayit gorunmesin,
+"kisi listesini ac" dugmesi yerine yan panel dugmesi, sayfa kaymasin, kendi adi
+gorunsun, bos alana ve sohbet basligina sag tik menusu, secili satir belirgin.
+
+### [CHAT-006] Yan panel her zaman erisilebilir + tek dugmeyle kapanir
+
+- **once:** `<768`de liste kaplama olarak vardi ama panel KAPATILAMIYORDU; iki
+  ayri dugme vardi ("👥 kisi listesini ac" / "← sohbet listesine don") ve "←"
+  SECILI sohbeti siliyordu (`setConversationId(null)`).
+- **after:** tek dugme (`data-testid="chat-panel-toggle"`, `MenuIcon`,
+  `title=chat.togglePanel`): `>=768` → `panelOpen` (sutun katlanir/acilir),
+  `<768` → kaplama. Sohbet acikken de kapaliyken de durur → panel hicbir
+  genislikte kaybolmaz.
+- **kanit:** probe 1440 → `aside display: flex → none → flex`;
+  e2e "yan panel dugmesi masaustunde sutunu katlar ve geri acar" (kapaliyken
+  sohbet genisligi >100px fark, geri acilista ±2px).
+
+### [CHAT-007] Kendi satirim VE sohbetsiz kayit listelenmez (kendimle sohbet yok)
+
+- **OLCULDU (onceki tur):** kendi satirim (`tarikelertarnak`, takma ad "Tarnak")
+  listede duruyordu; tiklayinca `<id>|<id>` anahtarli, kimsenin gormedigi bos
+  sohbet aciliyordu.
+- **after:** `p.id !== selfId && (!isAdmin || !!p.hasConversation)` — sart
+  "mesaj var" DEGIL "sohbet var" (sabitlenmis/bos sohbet satiri kaybolmasin).
+  Ikinci savunma: `openWith` icinde `if (peerId === selfId) return`.
+  Kullanici paneli bir sohbeti silerek de kuratorleyebilir (satir duser).
+- **kanit:** probe `rows: 1` (yalniz `tarikelertr`), `innerText` icinde "Tarnak"
+  YOK; e2e `button[data-peer-id="<me>"]` sayisi 0 + `panelPeers` sayisiyla esit.
+
+### [CHAT-008] Sohbet SAYFASI kaymaz: kaydirma mesaj alaninda kalir
+
+- **OLCULEN KOK NEDEN:** kart sarmalayicisindaki `min-h-screen` 56px'lik TopBar
+  payinin ALTINA tam bir ekran daha ekliyordu → belge 1440/1024/900/390/360
+  boyutlarinin HEPSINDE 56px tasiyordu (docH 956 / winH 900). Sonuc: sayfa
+  kaydirilabiliyordu ve yeni mesajda `endRef.scrollIntoView()` ATALARIN HEPSINI
+  (sayfayi da) kaydiriyordu.
+- **after:** `min-h-screen` kaldirildi (sebep yorum olarak dosyada);
+  kaydirma yalniz mesaj kabinda (`listRef.scrollTo({top: scrollHeight})`);
+  `scrollIntoView` chat.tsx'ten tamamen cikti (yanit "kaynak mesaja git" de
+  `scrollToMessage` ile ALAN icinde).
+- **kanit:** probe 6 boyutun tamaminda `overflowY: 0`; e2e 2 test — (a) 6
+  boyutta `docH === winH` ve `scrollY === 0`, (b) 30 mesajla otomatik kaydirma
+  (`scrollHeight - scrollTop - clientHeight <= 4`) + `window.scrollY === 0`.
+
+### [CHAT-009] Bos alana ve sohbet basligina sag tik menusu
+
+- **once:** sag tik menuleri yalniz kisi satirinda ve mesaj balonunda vardi;
+  bos alan ve baslik olu.
+- **after:** `onAreaContextMenu` → alan menusu: "Kisi ara" (arama alanina odak),
+  "Sohbeti yenile" (`refresh`), "En sona git" (YALNIZ sohbet acikken);
+  baslik seridinde `data-peer-id={activePeer?.id}` + `contextmenu` → kisi
+  menusu (admin). Balon/satir tiklama menuleri `stopPropagation` ile alan
+  menusunu ezmiyor.
+- **"Grup olustur" YOK:** sunucuda grup ucu yok (`chat_conversations.kind='group'`
+  hic olusturulmuyor, `api/chat`ta grup aksiyonu yok) → uydurma madde
+  konulmadi; calisan maddeler konuldu.
+- **kanit:** e2e 2 test (liste bos alani + mesaj alani dolgu seridi + baslik);
+  negatif iddialar: "Sohbeti sil" alan menusunde YOK, "Kisi ara" kisi
+  menusunde YOK.
+
+### [CHAT-010] Secili satir belirgin (bir tik daha koyu)
+
+- **after:** secili satir `bg-primary/15 hover:bg-primary/20` (jeton mavisi);
+  secimsiz satir yalniz `hover:bg-foreground/10`. Yeni renk uydurulmadi —
+  sitedeki `bg-primary/NN` dili kullanildi.
+- **kanit:** e2e "secili kisi satiri vurgulanir; secimden once vurgu yok" —
+  tiklamadan once sinifta `bg-primary/15` YOK, sonra VAR; computed renk seffaf
+  degil ve kart zemininden farkli.
+
+### Olcum / kanit (ozet)
+
+- `tsc --noEmit` **0** · `eslint src/components/chat src/app/chat e2e/chat-fixes.spec.ts --max-warnings 0` **0**.
+- `vitest run` **722/722 (63 dosya)** — 4 chat test dosyasi yeni kurala gore
+  guncellendi: fiksturlere SOHBET eklendi (satir gorunurlugu sohbete bagli;
+  yoksa liste bos kalir), "kendim dahil herkes listelenir" testi yeni kurala
+  cevrildi ("kendi satirim + sohbetsiz kayit listelenmez"), `scrollIntoView`
+  sozlesmesi `scrollToMessage`e tasindi, 5 yeni kaynak sozlesmesi eklendi.
+- `playwright e2e/chat-fixes.spec.ts --project=desktop` **14/14** (6 yeni test).
+- **Tum e2e suite: 86 gecti / 2 kirmizi / 14 atlandi.** Iki kirmizi da AYNI ve
+  ILGISIZ test: `e2e/personal-pages.spec.ts` "footer baglantisi hedef sayfaya
+  goturuyor" (masaustu + mobil). **Kanit: bu degisiklikle ilgisi yok** — spec
+  HEAD'e byte-ayni geri alinip (git checkout) tekrar kosuldu, YINE kirmizi.
+  Onceki turda "zamanlama kirilgani" diye not edilmisti; bu turda olculdu ve
+  neden daha net: probe (dosya sirasi taklit edilerek) tiklama ANINDA
+  `elementFromPoint`in `<ul>` dondugunu (`closest('a')` = null) ve tiklamadan
+  sonra sayfanin ~784px BUYUDUGUNU gosterdi (belge altı 4434 → 5218) — yani
+  tiklama, soz konusu `<a>` yerine footer listesine dusuyor (yerlesim kaymasi).
+  Tek basina kosulunca geciyor, dosya sirasinda kosulunca sürekli kirmizi.
+  Simdilik spec DEGISTIRILMEDI (ILGISIZ testi zayiflatip "yesil" gostermemek
+  icin); kullanici isterse ayrica ele alinir.
+- 4 yeni i18n anahtari (`chat.togglePanel|findPerson|refresh|scrollBottom`)
+  yalniz tr+en; diger 6 dil fallback ile Turkce gosterir (`src/lib/i18n.ts`).
+
+### Kullanici eylemi (degismedi)
+
+1. SQL Editor'de `scripts/schema-languages.sql` + `scripts/schema-fixes.sql`.
+2. Canliya deploy icin onay.
+3. `git push` istenirse (yerel commit bu turda yeterli).

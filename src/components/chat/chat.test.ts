@@ -80,8 +80,9 @@ describe('chat arayüz sözleşmesi', () => {
   it('yanıt (reply) akışı: kaynak mesaja gitme', () => {
     expect(SRC).toContain('setReplyTo')
     expect(SRC).toContain('replyToId')
-    // kaynak mesaja kaydırma
-    expect(SRC).toMatch(/scrollIntoView/)
+    // kaynak mesaja kaydırma — MESAJ ALANI içinde (`scrollIntoView` ataları
+    // (sayfayı da) kaydırdığı için 2026-10-13'te kaldırıldı)
+    expect(SRC).toMatch(/scrollToMessage/)
   })
 
   it('sabitlenen mesaj 📌 ile işaretlenir; herkes sabitleyebilir', () => {
@@ -297,12 +298,20 @@ describe('chat arayüz sözleşmesi', () => {
       expect(SRC).toContain('md:w-[var(--chat-panel-w)]')
     })
 
-    it('"←" ve "👥" listeyi açar, SEÇİLİ sohbeti SİLMEZ (geri dönüşte korunur)', () => {
+    it('yan panel düğmesi listeyi açar, SEÇİLİ sohbeti SİLMEZ (geri dönüşte korunur)', () => {
       // Eski hâlde "←" sohbeti sıfırlıyordu (`setConversationId(null)`), yani
       // listeden geri dönüldüğünde seçim ve kaydırma konumu kayboluyordu.
-      expect(CODE).toMatch(
-        /onClick=\{\(\) => setListOpen\(true\)\}\s*\n\s*title=\{t\('chat\.backToList'\)\}/,
+      // 2026-10-13 (kullanıcı isteği): "👥 kişi listesini aç" ve "←" düğmeleri
+      // kaldırıldı; yerine TEK "yan panel" düğmesi (`togglePanel`) geldi.
+      const toggle = CODE.slice(
+        CODE.indexOf('function togglePanel()'),
+        CODE.indexOf('function focusSearch()'),
       )
+      expect(toggle).toContain('setListOpen(true)')
+      expect(toggle, 'seçili sohbet korunur').not.toContain('setConversationId')
+      expect(toggle, 'seçili kişi korunur').not.toContain('setActivePeerId')
+      expect(CODE).not.toContain('chat.openPeopleList')
+      expect(CODE).not.toContain('chat.backToList')
     })
 
     it('kişi önizlemesi GÖNDERENİ gösterir; mesaj yoksa boş durum metni', () => {
@@ -386,15 +395,59 @@ describe('chat arayüz sözleşmesi', () => {
       expect(SRC).toContain('t(\'chat.unmarkImportant\')')
     })
 
-    it('küçük ekranda liste açma düğmesi "←" okundan ÖNCE durur', () => {
-      const open = SRC.indexOf('setListOpen(true)')
-      const back = SRC.indexOf('t(\'chat.backToList\')')
-      expect(open).toBeGreaterThan(-1)
-      expect(back).toBeGreaterThan(-1)
-      expect(open, 'açma düğmesi geri okundan önce').toBeLessThan(back)
-      // Kaplama yalnız dar ekran: `md` ve üstünde panel sabit sütun kalır.
+    it('yan panel düğmesi başlıkta durur: dar ekranda kaplamayı açar, md\'de sütunu katlar', () => {
+      // 2026-10-13 kullanıcı isteği: "kişi listesini aç butonunu kaldır,
+      // küçükkenkinin yerine yan paneli açma ekle; yan panel açılıp kapanabilsin".
+      expect(CODE).toContain('data-testid="chat-panel-toggle"')
+      expect(CODE).toContain('t(\'chat.togglePanel\')')
+      expect(CODE).toContain('isWideScreen()')
+      // Panel kapalıyken de düğme durur (geri açılabilir).
+      expect(CODE).toMatch(/!threadOpen && 'hidden md:grid'/)
+      // Dar ekranda kaplama, `md` ve üstünde panel sabit sütun kalır.
       expect(SRC).toContain('absolute inset-0 z-40 flex')
       expect(SRC).toContain('md:static')
+    })
+
+    it('kendi satırım listelenmez; sohbetsiz kayıt yönetici listesinde görünmez', () => {
+      // Kullanıcı isteği (2026-10-13): "kullanıcı kendisiyle de konuşamasın",
+      // "bir grupta yer almayıp sadece benimle konuşabilen kişi gözükmesin".
+      expect(CODE).toMatch(/p\.id !== selfId && \(!isAdmin \|\| !!p\.hasConversation\)/)
+      // İkinci savunma: satır bir yoldan yine gelirse kendimle sohbet açılmaz.
+      expect(CODE).toMatch(/if \(peerId === selfId\) \{\s*\n\s*return/)
+    })
+
+    it('boş alana sağ tık menüsü: "Kişi ara · Sohbeti yenile · En sona git"', () => {
+      // Kullanıcı isteği: "boş bir yere sağ tıkladığımda da bir şeyler çıksın".
+      expect(CODE).toContain('kind: \'area\'')
+      for (const key of ['findPerson', 'refresh', 'scrollBottom']) {
+        expect(CODE, `t('chat.${key}')`).toContain(`t('chat.${key}')`)
+      }
+      // Menü yine panelin DIŞINDA (kırpılmaz) ve imlecin konumunda açılır.
+      expect(CODE.indexOf('menu?.kind === \'area\'')).toBeGreaterThan(CODE.indexOf('</aside>'))
+      expect(CODE).toContain('onAreaContextMenu')
+    })
+
+    it('sohbet başlığına (isme) de sağ tık yapılabilir', () => {
+      // Kullanıcı isteği: "bir sohbet açtık, üstte ismi oluyor ya — ordaki
+      // kısma da sağ tıklayabilelim".
+      expect(CODE).toMatch(/data-peer-id=\{activePeer\?\.id\}/)
+      expect(CODE).toMatch(/setMenu\(\{ kind: 'peer', peer: activePeer, \.\.\.menuPoint\(e\) \}\)/)
+    })
+
+    it('kaydırma MESAJ ALANINDA kalır: sayfayı kaydıran scrollIntoView YOK', () => {
+      // Kullanıcı isteği: "sohbet sayfasında kayma var, düzelt; kaydırma grubun
+      // içinde olsun ama o sayfada olmasın". `scrollIntoView` belge
+      // kaydırılabilirse ATALARIN HEPSİNİ kaydırır → sayfa da kayıyordu.
+      expect(CODE).not.toContain('scrollIntoView')
+      expect(CODE).toContain('box.scrollTo({ top: box.scrollHeight')
+      expect(CODE).toContain('ref={listRef}')
+      expect(CODE).toContain('function scrollToMessage(')
+    })
+
+    it('seçili kişi satırı belli olur (mavi jeton tonu)', () => {
+      // Kullanıcı isteği: "seçili kişinin arka planı bi tık daha koyu olsun /
+      // seçili olduğu anlaşılmalı" — sitedeki `bg-primary/15` diliyle aynı.
+      expect(CODE).toMatch(/p\.id === activePeerId && 'bg-primary\/15 hover:bg-primary\/20'/)
     })
 
     it('yazma alanı: odak halkası kapanır + sarı seçim tek kaynaktan gelir', () => {

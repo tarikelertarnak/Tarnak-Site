@@ -172,7 +172,16 @@ describe('sohbet v2 oturum ekranı', () => {
           ],
         })
       }
-      return jsonResponse({ success: true })
+      // SATIR GÖRÜNÜRLÜĞÜ sohbete bağlı (2026-10-13 kullanıcı isteği: kendi
+      // satırım + hiç sohbeti olmayan kayıt listelenmez) → iki kişi için de
+      // sohbet dönülür.
+      return jsonResponse({
+        success: true,
+        conversations: [
+          { id: 'c-1', direct_key: 'admin:TARIKELERTARNAK|u-1', updated_at: null, last_preview: null, last_sender_name: null },
+          { id: 'c-2', direct_key: 'admin:TARIKELERTARNAK|u-2', updated_at: null, last_preview: null, last_sender_name: null },
+        ],
+      })
     })
 
     await renderChat()
@@ -187,7 +196,7 @@ describe('sohbet v2 oturum ekranı', () => {
   })
 
   it('admin: bir kişiye tıklayınca o sohbet açılır (peerId gönderilir)', async () => {
-    const spy = mockFetch((url) => {
+    const spy = mockFetch((url, init) => {
       if (url.includes('/api/admin/session')) {
         return jsonResponse({ success: true, user: { id: 'admin:TARIKELERTARNAK', role: 'admin' } })
       }
@@ -204,6 +213,16 @@ describe('sohbet v2 oturum ekranı', () => {
         })
       }
       if (url.includes('/api/chat')) {
+        // GET = liste (satır için sohbet şart), POST = sohbeti aç.
+        if (!init?.method) {
+          return jsonResponse({
+            success: true,
+            conversations: [
+              { id: 'c-1', direct_key: 'admin:TARIKELERTARNAK|u-1', updated_at: null, last_preview: null, last_sender_name: null },
+              { id: 'c-2', direct_key: 'admin:TARIKELERTARNAK|u-2', updated_at: null, last_preview: null, last_sender_name: null },
+            ],
+          })
+        }
         return jsonResponse({ success: true, conversation: { id: 'conv-9' } })
       }
       return jsonResponse({ success: true, messages: [] })

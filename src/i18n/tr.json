@@ -531,5 +531,9 @@
   "chat.presenceTyping": "yazıyor…",
   "chat.typingMany": "Birkaç kişi yazıyor…",
   "chat.presenceUploading": "dosya yüklüyor…",
-  "chat.presenceRecording": "ses gönderiyor…"
+  "chat.presenceRecording": "ses gönderiyor…",
+  "chat.togglePanel": "Yan paneli aç/kapat",
+  "chat.findPerson": "Kişi ara",
+  "chat.refresh": "Sohbeti yenile",
+  "chat.scrollBottom": "En sona git"
 }

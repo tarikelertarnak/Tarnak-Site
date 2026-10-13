@@ -52,14 +52,41 @@ function mockFetch(handler: (url: string, init?: RequestInit) => Promise<Respons
   return spy
 }
 
-async function renderAdminChat(extra: (url: string, init?: RequestInit) => Promise<Response> = () =>
-  jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })) {
+/**
+ * SOHBET FİKSTÜRÜ (2026-10-13). Satırların GÖRÜNMESİ artık sohbetin varlığına
+ * bağlı: yönetici listesinde kendi satırım VE hiç sohbeti olmayan kayıt
+ * görünmez (kullanıcı isteği). Bu yüzden bir testin beklediği her satır için
+ * bir sohbet de dönülür — yoksa liste boş kalır.
+ */
+function conv(peerId: string, extra: Record<string, unknown> = {}) {
+  return {
+    id: `c-${peerId}`,
+    direct_key: `me-1|${peerId}`,
+    important: null,
+    favorite: null,
+    blocked: null,
+    updated_at: null,
+    last_preview: null,
+    last_sender_name: null,
+    ...extra,
+  }
+}
+
+async function renderAdminChat(
+  extra: (url: string, init?: RequestInit) => Promise<Response> = () =>
+    jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] }),
+  conversations: unknown[] = [conv('u-1'), conv('u-2')],
+) {
   const spy = mockFetch((url, init) => {
     if (url.includes('/api/admin/session')) {
       return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
     }
     if (url.includes('/api/chat/users')) {
-      return jsonResponse({ success: true, users: PEERS })
+      return jsonResponse({ success: true, chatId: 'me-1', users: PEERS })
+    }
+    // Liste sorgusu: yalnız tam yol (`/api/chat/messages?…` buraya düşmez).
+    if (url === '/api/chat' && !init?.method) {
+      return jsonResponse({ success: true, conversations })
     }
     return extra(url, init)
   })
@@ -220,20 +247,33 @@ describe('admin kullanıcı menüsü', () => {
   })
 
   /*
-    2026-10-11 (kullanıcı): "Henüz başka kullanıcı yok bu yazı olmasın kendim
-    bile her kim kayıtlıysa herkez orada gözüksün". Yani admin'in KENDİ profili
-    de listede olmalı ve o yazı hiçbir yerde görünmemeli.
+    2026-10-13 (kullanıcı): 2026-10-11'deki "kendim dahil herkes görünsün"
+    isteği DEĞİŞTİ. Yeni istek: "kullanıcı kendisiyle de konuşamasın" +
+    "bir grupta yer almayıp sadece benimle konuşabilen kişi gözükmesin".
+    Ölçülen hâl: kendi satırım takma adımla ("Tarnak") duruyordu; tıklanınca
+    `<id>|<id>` anahtarlı, kimsenin görmediği boş bir sohbet açıyordu.
   */
-  it('kendim dahil her kayıtlı kişi listelenir — "Henüz başka kullanıcı yok" YOK', async () => {
-    mockFetch((url) => {
+  it('kendi satırım ve hiç sohbeti olmayan kayıt listelenmez; sohbetli kişi görünür', async () => {
+    mockFetch((url, init) => {
       if (url.includes('/api/admin/session')) {
         return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
       }
       if (url.includes('/api/chat/users')) {
         return jsonResponse({
           success: true,
-          users: [{ id: 'admin:OWNER', username: 'tarnak', fullName: 'TARIKELER', avatarUrl: null }],
+          chatId: 'me-1',
+          users: [
+            // kendi satırım: chatId ile AYNI id → listelenmez
+            { id: 'me-1', username: 'tarnak', fullName: 'TARIK ELER TARNAK', nickname: 'Tarnak', avatarUrl: null },
+            // kayıtlı ama hiç sohbeti yok → listelenmez
+            { id: 'u-9', username: 'yenikayit', fullName: 'Yeni Kayıt', avatarUrl: null },
+            // sohbeti var → listelenir
+            { id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', nickname: 'Ayşecik', avatarUrl: null },
+          ],
         })
+      }
+      if (url === '/api/chat' && !init?.method) {
+        return jsonResponse({ success: true, conversations: [conv('u-1')] })
       }
       return jsonResponse({ success: true })
     })
@@ -244,7 +284,9 @@ describe('admin kullanıcı menüsü', () => {
     )
     await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
 
-    expect(screen.getAllByText('TARIKELER').length).toBeGreaterThan(0)
+    expect(screen.getByText('Ayşecik')).not.toBeNull()
+    expect(screen.queryByText('Tarnak'), 'kendi satırım görünmemeli').toBeNull()
+    expect(screen.queryByText('Yeni Kayıt'), 'sohbetsiz kayıt görünmemeli').toBeNull()
     expect(screen.queryByText(/henüz başka kullanıcı yok/i)).toBeNull()
   })
 
@@ -255,19 +297,24 @@ describe('admin kullanıcı menüsü', () => {
   */
   it('avatarsız da olsa durum noktası var (yeşil/kırmızı); yazan kişide mavi yazıyor metni', async () => {
     const iso = (ms: number) => new Date(Date.now() - ms).toISOString()
-    mockFetch((url) => {
+    mockFetch((url, init) => {
       if (url.includes('/api/admin/session')) {
         return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
       }
       if (url.includes('/api/chat/users')) {
         return jsonResponse({
           success: true,
+          chatId: 'me-1',
           users: [
             { id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', avatarUrl: null, lastSeenAt: iso(3_000), presenceState: null },
             { id: 'u-2', username: 'mehmet', fullName: 'Mehmet Demir', avatarUrl: null, lastSeenAt: iso(5 * 60_000), presenceState: null },
             { id: 'u-3', username: 'zeynep', fullName: 'Zeynep Ak', avatarUrl: null, lastSeenAt: iso(2_000), presenceState: 'typing' },
           ],
         })
+      }
+      // Üç satırın da görünmesi için üç sohbet şart (bkz. `conv` notu).
+      if (url === '/api/chat' && !init?.method) {
+        return jsonResponse({ success: true, conversations: [conv('u-1'), conv('u-2'), conv('u-3')] })
       }
       return jsonResponse({ success: true })
     })
@@ -299,6 +346,7 @@ describe('admin kullanıcı menüsü', () => {
       if (url.includes('/api/chat/users')) {
         return jsonResponse({
           success: true,
+          chatId: 'me-1',
           users: [
             { id: 'u-1', username: 'busra', fullName: 'Büşra', avatarUrl: null },
             { id: 'u-2', username: 'cem', fullName: 'Cem', avatarUrl: null, lastSeenAt: new Date().toISOString(), presenceState: 'typing' },
@@ -306,12 +354,10 @@ describe('admin kullanıcı menüsü', () => {
           ],
         })
       }
-      if (url.includes('/api/chat') && !init?.method) {
+      if (url === '/api/chat' && !init?.method) {
         return jsonResponse({
           success: true,
-          conversations: [
-            { id: 'c-1', direct_key: 'admin:OWNER|u-1', important: true, favorite: false, blocked: false, updated_at: null, last_preview: null, last_sender_name: null },
-          ],
+          conversations: [conv('u-1', { important: true }), conv('u-2'), conv('u-3')],
         })
       }
       return jsonResponse({ success: true })
@@ -472,34 +518,17 @@ describe('yazma sinyali ve boş sohbet', () => {
  * Önizleme `chat_conversations.last_sender_name`den (gönderen kişi) gelmeli.
  */
 describe('kişi listesi önizlemesi', () => {
-  const conversation = (lastSender: string | null, preview: string | null) => ({
-    success: true,
-    conversations: [
-      {
-        id: 'conv-1',
-        direct_key: 'admin:OWNER|u-1',
-        important: null,
-        favorite: null,
-        blocked: null,
-        updated_at: null,
-        last_preview: preview,
-        last_sender_name: lastSender,
-      },
-    ],
-  })
-
-  const conversationsHandler = (
-    body: unknown,
-  ): ((url: string, init?: RequestInit) => Promise<Response>) => (url, init) => {
-    // GET /api/chat → sohbet listesi (POST'lar `method` taşır).
-    if (url === '/api/chat' && !init?.method) {
-      return jsonResponse(body)
-    }
-    return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
-  }
+  /**
+   * Önizleme satırın sohbet kaydından gelir. u-1 önizlemeyi taşır, u-2 boş
+   * kalır (`getByText` tekil çalışır; aynı metin iki satırda olmamalı).
+   */
+  const withPreview = (lastSender: string | null, preview: string | null) => [
+    conv('u-1', { last_preview: preview, last_sender_name: lastSender }),
+    conv('u-2'),
+  ]
 
   it('son mesajı BEN yazdıysam benim adım görünür (karşı tarafınki değil)', async () => {
-    await renderAdminChat(conversationsHandler(conversation('tarikelertarnak', 'Merhaba 👋')))
+    await renderAdminChat(undefined, withPreview('tarikelertarnak', 'Merhaba 👋'))
 
     await waitFor(() => {
       expect(screen.getByText('@tarikelertarnak · Merhaba 👋')).not.toBeNull()
@@ -509,7 +538,7 @@ describe('kişi listesi önizlemesi', () => {
   })
 
   it('son mesajı karşı taraf yazdıysa onun adı görünür', async () => {
-    await renderAdminChat(conversationsHandler(conversation('ayse', 'Merhaba 👋')))
+    await renderAdminChat(undefined, withPreview('ayse', 'Merhaba 👋'))
 
     await waitFor(() => {
       expect(screen.getByText('@ayse · Merhaba 👋')).not.toBeNull()
@@ -517,7 +546,7 @@ describe('kişi listesi önizlemesi', () => {
   })
 
   it('hiç mesaj yoksa boş durum metni gösterilir', async () => {
-    await renderAdminChat(conversationsHandler(conversation(null, null)))
+    await renderAdminChat(undefined, [conv('u-1'), conv('u-2')])
 
     // İki kişi de mesajsız → iki satırda aynı boş durum metni.
     await waitFor(() => {
@@ -564,7 +593,7 @@ describe('mesaj gönderen satırı', () => {
           messages: [
             msg('m-1', 'u-1', 'ayse', 'birinci'),
             msg('m-2', 'u-1', 'ayse', 'ikinci'),
-            msg('m-3', 'admin:OWNER', 'tarikelertarnak', 'benim'),
+            msg('m-3', 'me-1', 'tarikelertarnak', 'benim'),
           ],
         })
       }

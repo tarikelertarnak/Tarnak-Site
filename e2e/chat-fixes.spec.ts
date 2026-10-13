@@ -103,6 +103,18 @@ function peerLabel(peer: PeerLite): string {
   return peer.nickname || peer.fullName || peer.username
 }
 
+/**
+ * PANELDE GÖRÜNEN satırlar (2026-10-13 kullanıcı kuralı): kendi satırım VE hiç
+ * sohbeti olmayan kayıt listelenmez. Testler satır seçerken `data.users`
+ * yerine bunu kullanır — yoksa tıklanacak düğme bulunamaz.
+ */
+function panelPeers(data: ChatData): PeerLite[] {
+  return data.users.filter(u =>
+    u.id !== data.chatId
+    && data.conversations.some(c => (c.direct_key ?? '').split('|').includes(u.id)),
+  )
+}
+
 function card(page: Page) {
   return page.locator('[data-testid="chat-slot"] > div')
 }
@@ -154,14 +166,22 @@ test('kişi listesi önizlemesi göndereni gösterir; mesajsız satırda boş du
   // Eski hata: satır KARŞI TARAFIN adını yazıyordu.
   await expect(row).not.toContainText(`@${peer!.username} ·`)
 
-  // Mesajsız kişi → "@ad" yerine boş durum metni.
+  /*
+    HİÇ SOHBETİ OLMAYAN KAYIT LİSTELENMEZ (2026-10-13 kullanıcı isteği:
+    "grupta yer almayıp sadece benimle konuşabilen kişi gözükmesin") ve KENDİ
+    SATIRIM da yok ("kullanıcı kendisiyle de konuşamasın"). Eski hâlde satır
+    vardı ve "Henüz mesaj yok…" yazıyordu.
+  */
   const withoutConv = data.users.filter(
     u => u.id !== me && !data.conversations.some(c => (c.direct_key ?? '').split('|').includes(u.id)),
   )
-  if (withoutConv.length > 0) {
-    await expect(page.locator(`button[data-peer-id="${withoutConv[0].id}"]`))
-      .toContainText('Henüz mesaj yok. İlk mesajı sen yaz!')
+  for (const u of withoutConv) {
+    await expect(page.locator(`button[data-peer-id="${u.id}"]`)).toHaveCount(0)
   }
+  // Kendi satırım hiçbir koşulda listelenmez.
+  await expect(page.locator(`button[data-peer-id="${me}"]`)).toHaveCount(0)
+  // Panelde tam olarak sohbeti olan kişiler var.
+  await expect(page.locator('button[data-peer-id]')).toHaveCount(panelPeers(data).length)
 })
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -211,7 +231,7 @@ test('tablet 900px: iki panel yan yana kalır', async ({ page }) => {
 test('mobil 390px: kart tam ekran + 8px kenar; liste ↔ sohbet geçişi', async ({ page, context }) => {
   await openChat(page, 390, 780)
   const data = await chatData(context.request)
-  const peer = data.users[0]
+  const peer = panelPeers(data)[0]
 
   const before = (await card(page).boundingBox())!
   // Tam genişlik/yükseklik, kenar boşluğu 8px (istenen üst sınır 8–12px).
@@ -243,8 +263,10 @@ test('mobil 390px: kart tam ekran + 8px kenar; liste ↔ sohbet geçişi', async
   expect(composer.y + composer.height).toBeLessThanOrEqual(after.y + after.height)
   expect(composer.y + composer.height).toBeLessThanOrEqual(780)
 
-  // 👥 → liste KAPLAMA olarak açılır ve kart alanını kaplar.
-  await page.getByRole('button', { name: 'Kişi listesini aç' }).click()
+  // YAN PANEL düğmesi → liste KAPLAMA olarak açılır ve kart alanını kaplar.
+  // (2026-10-13 kullanıcı isteği: eski "👥 kişi listesini aç" ve "←" düğmeleri
+  // kaldırıldı; tek düğme paneli açar/kapatır.)
+  await page.locator('[data-testid="chat-panel-toggle"]').click()
   await expect(listPanel(page)).toBeVisible()
   const overlay = (await listPanel(page).boundingBox())!
   // `absolute inset-0` kartın DOLGU kutusuna göre konumlanır → 1px çerçeve dışta
@@ -258,8 +280,8 @@ test('mobil 390px: kart tam ekran + 8px kenar; liste ↔ sohbet geçişi', async
   await expect(listPanel(page)).toBeHidden()
   await expect(threadPanel(page).locator('div').first()).toContainText(peerLabel(peer))
 
-  // ← → listeyi açar; geri dönünce AYNI sohbet durur (eski hâlde siliniyordu).
-  await page.getByRole('button', { name: 'Sohbet listesine dön' }).click()
+  // Düğme → listeyi açar; geri dönünce AYNI sohbet durur (eski hâlde siliniyordu).
+  await page.locator('[data-testid="chat-panel-toggle"]').click()
   await expect(listPanel(page)).toBeVisible()
   await page.locator(`button[data-peer-id="${peer.id}"]`).click()
   await expect(threadPanel(page).locator('div').first()).toContainText(peerLabel(peer))
@@ -271,7 +293,7 @@ test('mobil 390px: kart tam ekran + 8px kenar; liste ↔ sohbet geçişi', async
 test('boyut değişimi: seçili sohbet ve mesaj alanı korunur', async ({ page, context }) => {
   await openChat(page, 390, 780)
   const data = await chatData(context.request)
-  const peer = data.users[0]
+  const peer = panelPeers(data)[0]
 
   await page.locator(`button[data-peer-id="${peer.id}"]`).click()
   await expect(threadPanel(page).locator('div').first()).toContainText(peerLabel(peer))
@@ -398,7 +420,7 @@ test('mobilde uzun basma kişi menüsünü açar (sohbeti açmadan)', async ({ p
 test('mesaj menüsü imleçte; gönderen satırı gruplanır; İlet hedefe gönderir', async ({ page, context }) => {
   const data = await chatData(context.request)
   const me = data.chatId
-  const peer = data.users.find(u => u.id !== me)
+  const peer = panelPeers(data)[0]
   expect(peer, 'karşı taraf bulunamadı').toBeTruthy()
   const peerId = peer!.id
 
@@ -534,4 +556,204 @@ test('mesaj menüsü imleçte; gönderen satırı gruplanır; İlet hedefe gönd
   const s2 = await sc.evaluate(el => el.scrollTop)
   expect(Math.abs(s1 - s0)).toBeLessThanOrEqual(2)
   expect(Math.abs(s2 - s0)).toBeLessThanOrEqual(2)
+})
+
+/* ────────────────────────────────────────────────────────────────────────────
+   MADDE 4 — "sohbet sayfasında kayma var, düzelt; grubun içinde olsun ama o
+   sayfada olmasın": belge tam ekrana oturur, kaydırma MESAJ ALANINDA kalır.
+   ──────────────────────────────────────────────────────────────────────────── */
+test('sohbet sayfası kaymaz: belge tam ekrana oturur (her genişlikte)', async ({ page }) => {
+  for (const [w, h] of [[1440, 900], [1024, 800], [900, 700], [768, 800], [390, 780], [360, 640]] as const) {
+    await openChat(page, w, h)
+    const m = await page.evaluate(() => ({
+      docH: document.documentElement.scrollHeight,
+      winH: window.innerHeight,
+      docW: document.documentElement.scrollWidth,
+      winW: window.innerWidth,
+      scrollY: window.scrollY,
+    }))
+    /*
+      ÖLÇÜLDÜ (düzeltmeden önce): kart sarmalayıcısındaki `min-h-screen` 56px'lik
+      TopBar payının ALTINA tam bir ekran daha ekliyordu → belge her boyutta
+      56px taşıyor ve sohbet sayfası kaydırılabiliyordu.
+    */
+    expect(m.docH, `${w}x${h} dikey taşma`).toBe(m.winH)
+    expect(m.docW, `${w}x${h} yatay taşma`).toBe(m.winW)
+    expect(m.scrollY, `${w}x${h} kaydırma konumu`).toBe(0)
+  }
+})
+
+test('yeni mesaj SAYFAYI kaydırmaz: kaydırma mesaj alanının İÇİNDE kalır', async ({ page, context }) => {
+  const data = await chatData(context.request)
+  const peer = panelPeers(data)[0]
+  expect(peer, 'karşı taraf bulunamadı').toBeTruthy()
+  const me = data.chatId
+
+  // Mesajlar ve POST'lar TESTTE karşılanır → Supabase'e yazılmaz.
+  const FIXTURE = Array.from({ length: 30 }, (_, i) => ({
+    id: `s-${i}`,
+    conversation_id: 'e2e-scroll',
+    sender_id: i % 2 === 0 ? peer!.id : me,
+    sender_name: i % 2 === 0 ? 'e2e-karsi' : 'e2e-ben',
+    text: `kaydirma ${i}`,
+    kind: 'text',
+    file_url: null,
+    file_name: null,
+    file_type: null,
+    file_size: null,
+    audio_duration: null,
+    reply_to_id: null,
+    delivered_at: new Date().toISOString(),
+    read_at: null,
+    pinned: false,
+    pinned_at: null,
+    deleted_for_all: false,
+    deleted_by: null,
+    deleted_at: null,
+    created_at: new Date(Date.now() - (30 - i) * 60_000).toISOString(),
+  }))
+
+  await page.route(
+    url => url.pathname === '/api/chat',
+    async (route) => {
+      const req = route.request()
+      if (req.method() === 'POST') {
+        await route.fulfill({ json: { success: true, conversation: { id: 'e2e-scroll' } } })
+        return
+      }
+      if (req.url().includes('conversationId=')) {
+        await route.fulfill({ json: { success: true, messages: FIXTURE } })
+        return
+      }
+      await route.continue()
+    },
+  )
+
+  await openChat(page, 1440, 900)
+  await page.locator(`button[data-peer-id="${peer!.id}"]`).click()
+  await expect(page.locator('[data-message-id]')).toHaveCount(30)
+  await page.waitForTimeout(600) // otomatik kaydırma otursun
+
+  // Mesaj alanı SONA kaydırılmış (otomatik kaydırma çalışıyor)...
+  const sc = scroller(page)
+  const gap = await sc.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight)
+  expect(gap, 'mesaj alanı sona kaydırılmadı').toBeLessThanOrEqual(4)
+  // ...ama SAYFA oynamamış.
+  expect(await page.evaluate(() => window.scrollY)).toBe(0)
+  const m = await page.evaluate(() => ({
+    docH: document.documentElement.scrollHeight,
+    winH: window.innerHeight,
+  }))
+  expect(m.docH).toBe(m.winH)
+})
+
+/* ────────────────────────────────────────────────────────────────────────────
+   MADDE 3 — tek "yan panel" düğmesi (eski "👥 kişi listesini aç" ve "←" gitti)
+   ──────────────────────────────────────────────────────────────────────────── */
+test('yan panel düğmesi masaüstünde sütunu katlar ve geri açar', async ({ page }) => {
+  await openChat(page, 1440, 900)
+  const toggle = page.locator('[data-testid="chat-panel-toggle"]')
+  await expect(toggle).toBeVisible()
+  await expect(listPanel(page)).toBeVisible()
+
+  const openW = (await threadPanel(page).boundingBox())!.width
+  await toggle.click()
+  await expect(listPanel(page)).toBeHidden()
+  // Düğme KAPALIYKEN de durur → panel geri getirilebilir (kilitli kalma yok).
+  await expect(toggle).toBeVisible()
+  const closedW = (await threadPanel(page).boundingBox())!.width
+  expect(closedW, 'kapalıyken sohbet tam genişlik olmalı').toBeGreaterThan(openW + 100)
+
+  await toggle.click()
+  await expect(listPanel(page)).toBeVisible()
+  const backW = (await threadPanel(page).boundingBox())!.width
+  expect(Math.abs(backW - openW)).toBeLessThanOrEqual(2)
+})
+
+/* ────────────────────────────────────────────────────────────────────────────
+   MADDE 7 — seçili kişi satırı belli olur ("arka planı bir tık daha koyu")
+   ──────────────────────────────────────────────────────────────────────────── */
+test('seçili kişi satırı vurgulanır; seçimden önce vurgu yok', async ({ page, context }) => {
+  await openChat(page, 1440, 900)
+  const data = await chatData(context.request)
+  const peer = panelPeers(data)[0]
+  expect(peer, 'karşı taraf bulunamadı').toBeTruthy()
+  const row = page.locator(`button[data-peer-id="${peer!.id}"]`)
+
+  /*
+    Otomatik açılma YOK: kural "yalnız kayıtlı TEK kişi varsa otomatik aç"
+    (`peers.length !== 1` → çık). Bu veri kümesinde 2 kayıt var (ben + karşı
+    taraf), yani satır seçimsiz başlar.
+  */
+  expect(data.users.length).toBeGreaterThan(1)
+  expect(await row.getAttribute('class')).not.toContain('bg-primary/15')
+
+  await row.click()
+  await expect(threadPanel(page)).toBeVisible()
+  const cls = (await row.getAttribute('class'))!
+  expect(cls, 'seçili satır vurgusu').toContain('bg-primary/15')
+
+  // Renk GERÇEKTEN uygulanıyor (şeffaf değil) ve kart zemininden farklı.
+  const bg = await row.evaluate(el => getComputedStyle(el).backgroundColor)
+  const cardBg = await card(page).evaluate(el => getComputedStyle(el).backgroundColor)
+  expect(bg).not.toBe('rgba(0, 0, 0, 0)')
+  expect(bg).not.toBe(cardBg)
+})
+
+/* ────────────────────────────────────────────────────────────────────────────
+   MADDE 6 — boş alana sağ tık menüsü + sohbet başlığına sağ tık
+   ──────────────────────────────────────────────────────────────────────────── */
+test('boş alana sağ tık: "Kişi ara / Sohbeti yenile / En sona git"', async ({ page, context }) => {
+  await openChat(page, 1440, 900)
+  const data = await chatData(context.request)
+  const peer = panelPeers(data)[0]
+  expect(peer, 'karşı taraf bulunamadı').toBeTruthy()
+
+  // (1) KİŞİ LİSTESİNİN satırların ALTINDA kalan boş alanı.
+  const list = (await listPanel(page).boundingBox())!
+  await page.mouse.click(Math.round(list.x + 40), Math.round(list.y + list.height - 24), { button: 'right' })
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+  await expect(menu.getByText('Kişi ara', { exact: true })).toBeVisible()
+  await expect(menu.getByText('Sohbeti yenile', { exact: true })).toBeVisible()
+  // Sohbet açık değilken "En sona git" anlamsız → gösterilmez.
+  await expect(menu.getByText('En sona git', { exact: true })).toHaveCount(0)
+  // Kişi menüsü DEĞİL (satıra sağ tık ile karışmıyor).
+  await expect(menu.getByText('Sohbeti sil', { exact: true })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeHidden()
+
+  // (2) MESAJ ALANININ üst dolgu şeridi (balonların üstünde kalan boşluk).
+  await page.locator(`button[data-peer-id="${peer!.id}"]`).click()
+  await expect(threadPanel(page)).toBeVisible()
+  const sc = (await scroller(page).boundingBox())!
+  await page.mouse.click(Math.round(sc.x + 40), Math.round(sc.y + 6), { button: 'right' })
+  await expect(menu).toBeVisible()
+  await expect(menu.getByText('Kişi ara', { exact: true })).toBeVisible()
+  await expect(menu.getByText('En sona git', { exact: true })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeHidden()
+})
+
+test('sohbet başlığına (isme) sağ tık kişi menüsünü açar', async ({ page, context }) => {
+  await openChat(page, 1440, 900)
+  const data = await chatData(context.request)
+  const peer = panelPeers(data)[0]
+  expect(peer, 'karşı taraf bulunamadı').toBeTruthy()
+  await page.locator(`button[data-peer-id="${peer!.id}"]`).click()
+  await expect(threadPanel(page)).toBeVisible()
+
+  // Başlık şeridi: `data-peer-id` taşıyan üst blok (ismin olduğu kısım).
+  const header = threadPanel(page).locator('div[data-peer-id]').first()
+  await expect(header).toBeVisible()
+  await header.click({ button: 'right', position: { x: 140, y: 18 } })
+  const menu = page.getByRole('menu')
+  await expect(menu).toBeVisible()
+  // KİŞİ menüsü (boş alan menüsü değil).
+  for (const label of ['Profilini incele', 'Takma ad koy', 'Sohbeti sil']) {
+    await expect(menu.getByText(label, { exact: true })).toBeVisible()
+  }
+  await expect(menu.getByText('Kişi ara', { exact: true })).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(menu).toBeHidden()
 })

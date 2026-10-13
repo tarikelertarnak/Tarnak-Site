@@ -37,7 +37,18 @@ export const metadata: Metadata = {
 
 export default function ChatPage() {
   return (
-    <div className="min-h-screen w-full relative">
+    /*
+      SAYFA YÜKSEKLİĞİ (2026-10-13 kullanıcı isteği #3: "sohbet sayfasında kayma
+      var, düzelt; kaydırma grubun içinde olsun ama o sayfada olmasın").
+      `min-h-screen` KALDIRILDI. ÖLÇÜLDÜ: üstteki Akış TopBar'ı için `h-14`
+      (56px) yer tutucu AKIŞTA duruyor; sarmalayıcı `min-h-screen` (100vh)
+      olduğu için belge her yükseklikte tam 56px taşıyordu (1440x900 → docH
+      956, 390x844 → 900) → sayfa kaydırılabiliyor, mesaj gönderildiğinde
+      sayfa da kayıyordu. Yüksekliği artık yalnız `main` → `Section` verir
+      (`calc(100dvh - 3.5rem)`); belge tam ekrana oturur, kaydırma yalnız
+      mesaj alanında olur (bkz. `chat.tsx` → `scrollToBottom`).
+    */
+    <div className="w-full relative">
       <Navigation />
       <main id="main" className="">
         {/*

@@ -1,6 +1,6 @@
 'use client'
 
-import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react'
+import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import type { ChatMessageRow } from '@/lib/chat-db'
 import type { Presence, PresenceState } from '@/lib/chat-peers'
 import Link from 'next/link'
@@ -9,13 +9,13 @@ import { EmojiPicker } from '@/components/chat/emoji-picker'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import {
+  MenuIcon,
   MicIcon,
   PaperclipIcon,
   SendIcon,
   StickerIcon,
   TickReadIcon,
   TickSentIcon,
-  UsersIcon,
 } from '@/components/ui/icons'
 import {
   isTyping,
@@ -76,6 +76,20 @@ const TYPING_IDLE_MS = 2_500
 /** Kişi listesi + mesaj yoklama aralığı: yazma durumu ~2 sn içinde görünür. */
 const POLL_MS = 2_000
 
+/**
+ * `md` kırılma noktası (768px) JS tarafı — panel düğmesi davranışını seçer.
+ * `matchMedia` jsdom'da YOK: optional chaining ile false'a düşer (test kırılmaz).
+ */
+function isWideScreen() {
+  return typeof window !== 'undefined'
+    && window.matchMedia?.('(min-width: 768px)').matches === true
+}
+
+/** Boş alan menüsü hedefi — sağ tık ve uzun basma aynı menüyü açar. */
+function areaMenuAt(x: number, y: number) {
+  return { kind: 'area' as const, x, y }
+}
+
 /** Sohbete yazılacak kişi (admin için liste). */
 interface Peer {
   id: string
@@ -92,6 +106,11 @@ interface Peer {
   blocked?: boolean
   /** Son mesaj zamanı (sohbetin `updated_at`i) — "konuştumuz zamana göre". */
   lastMessageAt?: string | null
+  /**
+   * Kişiyle bir SOBET var mı (2026-10-13). Yoksa yönetici listesinde satır
+   * çıkmaz: kayıt olup hiç yazmayan kişi paneli doldurmaz (kullanıcı isteği).
+   */
+  hasConversation?: boolean
   /** Liste öğesindeki son mesaj özeti. */
   preview?: string | null
   previewSender?: string | null
@@ -144,6 +163,8 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   const [menu, setMenu] = useState<
     | { kind: 'peer', peer: Peer, x: number, y: number }
     | { kind: 'message', message: ChatMessageRow, x: number, y: number }
+    /** Boş alana sağ tık / uzun basma (2026-10-13 kullanıcı isteği). */
+    | { kind: 'area', x: number, y: number }
     | null
   >(null)
   /** "İlet" (forward) hedef seçimi — mesajı başka bir kişiye gönderir. */
@@ -152,11 +173,17 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   const [confirmMsg, setConfirmMsg] = useState<ChatMessageRow | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
   /**
-   * KÜÇÜK EKRANDA kişi listesi (2026-10-13 kullanıcı isteği): sohbet açıkken
-   * liste gizlenir; bu düğmeyle üstte KAPLAMA olarak geri gelir. `md` ve
-   * üstünde etkisi yok — orada liste sabit sütundur (CSS `md:static` sıfırlar).
+   * DAR EKRANDA kişi listesi KAPLAMASI (2026-10-13). Sohbet açıkken liste
+   * gizlenir; düğmeyle üstte kaplama olarak geri gelir. `md` ve üstünde etkisi
+   * yok — orada liste sabit sütundur (CSS `md:static` sıfırlar).
    */
   const [listOpen, setListOpen] = useState(false)
+  /**
+   * GENİŞ EKRANDA panel katlanmış mı (2026-10-13 kullanıcı isteği: "yan panel
+   * açılıp kapanabilsin"). Varsayılan AÇIK; kapatan kullanıcı başlıktaki aynı
+   * düğmeyle geri açar. Dar ekranda bu bayrak kullanılmaz (orada kaplama var).
+   */
+  const [panelOpen, setPanelOpen] = useState(true)
   const [session, setSession] = useState<{ id: string, role?: string } | null>(null)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [schemaMissing, setSchemaMissing] = useState(false)
@@ -185,7 +212,10 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   /** Metin alanı: emoji imlecin olduğu yere eklensin diye ref gerekir. */
   const inputRef = useRef<HTMLInputElement>(null)
-  const endRef = useRef<HTMLDivElement>(null)
+  /** Mesaj alanı: kaydırma BURADA olur, sayfada değil (bkz. `scrollToBottom`). */
+  const listRef = useRef<HTMLDivElement>(null)
+  /** Kişi arama alanı — "Kişi ara" menü maddesi odağı buraya verir. */
+  const searchRef = useRef<HTMLInputElement>(null)
   /** Liste saatini tazele — nokta rengi yeni veri gelmeden de eskisin (yeşil → kırmızı). */
   const [now, setNow] = useState(() => Date.now())
 
@@ -240,6 +270,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       const conv = byPeer.get(u.id)
       return {
         ...u,
+        hasConversation: !!conv,
         important: !!conv?.important,
         favorite: !!conv?.favorite,
         blocked: !!conv?.blocked,
@@ -429,25 +460,98 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
    * etkilemez: `pointerType === 'mouse'` erken çıkar.
    */
   const peerLongPress = useLongPress((x, y, target) => {
-    if (!isAdmin) {
+    const id = target?.closest<HTMLElement>('[data-peer-id]')?.dataset.peerId
+    if (id) {
+      // Satır üstünde: kişi menüsü (sağ tık gibi, yalnız yöneticiye açık).
+      // Boş alan menüsü satırın üstünde AÇILMAZ — kullanıcı satırı hedefledi.
+      const peer = (peers ?? []).find(p => p.id === id)
+      if (peer && isAdmin) {
+        setMenu({ kind: 'peer', peer, x, y })
+      }
       return
     }
-    const id = target?.closest<HTMLElement>('[data-peer-id]')?.dataset.peerId
-    const peer = (peers ?? []).find(p => p.id === id)
-    if (peer) {
-      setMenu({ kind: 'peer', peer, x, y })
-    }
+    // Boş alan (liste zemini / başlık): "mantıklı" maddeler (kişi ara, yenile…).
+    setMenu(areaMenuAt(x, y))
   })
   const messageLongPress = useLongPress((x, y, target) => {
     const id = target?.closest<HTMLElement>('[data-message-id]')?.dataset.messageId
     const message = messages.find(m => m.id === id)
     if (message) {
       setMenu({ kind: 'message', message, x, y })
+      return
     }
+    setMenu(areaMenuAt(x, y))
   })
+
+  /**
+   * YAN PANEL DÜĞMESİ (2026-10-13 kullanıcı isteği: "kişi listesini aç düğmesini
+   * kaldır, onun yerine yan paneli açma ekle; panel açılıp kapanabilsin").
+   *   · `<md` (dar): liste sohbet açıkken gizli → düğme onu KAPLAMA olarak açar.
+   *   · `≥md` (geniş): sütunu katlar/açar (`panelOpen`).
+   * Panel hiçbir genişlikte kaybolmaz; kapalıyken de aynı düğme geri getirir.
+   */
+  function togglePanel() {
+    if (isWideScreen()) {
+      setPanelOpen(v => !v)
+    }
+    else {
+      setListOpen(true)
+    }
+  }
+
+  /** "Kişi ara": panel (gerekirse kaplama) açılır ve arama alanı odaklanır. */
+  function focusSearch() {
+    setPanelOpen(true)
+    if (!isWideScreen()) {
+      setListOpen(true)
+    }
+    requestAnimationFrame(() => searchRef.current?.focus())
+  }
+
+  /**
+   * Boş alana sağ tık → menü İMLECİN konumunda (kişi/mesaj menüleriyle aynı
+   * yüzey). Satır ve balonların kendi `onContextMenu`'sü olayı durdurur.
+   */
+  function onAreaContextMenu(e: ReactMouseEvent<HTMLElement>) {
+    e.preventDefault()
+    setMenu({ kind: 'area', ...menuPoint(e) })
+  }
+
+  /**
+   * KAYDIRMA MESAJ ALANINDA KALIR — sayfa DEĞİL (2026-10-13 kullanıcı isteği:
+   * "sohbet sayfasında kayma var, düzelt; [kaydırma] grubun içinde olsun ama o
+   * sayfada olmasın"). Öncesinde `endRef.scrollIntoView` kullanılıyordu:
+   * `scrollIntoView` belge kaydırılabilirse ATALARIN HEPSİNİ kaydırır → yeni
+   * mesaj gelince sayfa da kayıyordu.
+   */
+  function scrollToBottom(smooth = false) {
+    const box = listRef.current
+    if (!box) {
+      return
+    }
+    box.scrollTo({ top: box.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })
+  }
+
+  /** Yanıtlanan mesaja git — kaydırma yine yalnız mesaj alanında. */
+  function scrollToMessage(id: string) {
+    const el = document.getElementById(`m-${id}`)
+    const box = listRef.current
+    if (!el || !box) {
+      return
+    }
+    const delta = el.getBoundingClientRect().top - box.getBoundingClientRect().top
+    box.scrollTo({ top: box.scrollTop + delta - 40, behavior: 'smooth' })
+  }
 
   /** Bir kişiye tıklanınca doğrudan sohbeti açar (idempotent). */
   const openWith = useCallback(async (peerId: string) => {
+    // KENDİMLE SOHBET AÇILMAZ (2026-10-13 kullanıcı isteği). ÖLÇÜLDÜ: kendi
+    // satırım listede duruyordu ("Tarnak") ve tıklayınca `<id>|<id>` anahtarlı,
+    // kimsenin görmediği boş bir sohbet açıyordu. Satır artık listelenmiyor;
+    // bu kapı ikinci savunma (satır bir yoldan gelirse de açılmaz).
+    if (peerId === selfId) {
+      return
+    }
     setActivePeerId(peerId)
     // Mobil kaplama liste: kişi seçilince kapanır, sohbet görünür.
     setListOpen(false)
@@ -478,7 +582,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     finally {
       setLoading(false)
     }
-  }, [t])
+  }, [t, selfId])
 
   /*
     TEK KİŞİ VARSA SOHBET KENDİLİĞİNDEN AÇILIR (2026-10-12): normal kullanıcının
@@ -621,6 +725,17 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     load()
   }, [load])
 
+  /**
+   * "Sohbeti yenile" (boş alan menüsü): liste 2 sn'de bir kendiliğinden
+   * tazelenir; bu madde anında tazeleme isteyen kullanıcı içindir.
+   */
+  async function refresh() {
+    const list = await loadPeers()
+    setPeers(list)
+    setPeersError(list === null)
+    await load()
+  }
+
   // basit yoklama: yeni mesajda ✓ durumu güncellensin (okundu bilgisi).
   // `POLL_MS`: karşı tarafın mesajı ~2 sn içinde düşsün (eskiden 5 sn).
   useEffect(() => {
@@ -632,7 +747,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   }, [conversationId, isAuthenticated, load])
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth' })
+    scrollToBottom(true)
   }, [messages.length])
 
   /**
@@ -882,17 +997,32 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     "erişim yok" gibi bir yanıt sohbeti kapatmaz.
   */
   const q = peerQuery.trim().toLocaleLowerCase('tr')
-  // "Henüz başka kullanıcı yok" YOK (2026-10-11): kayıtlı herkes listelenir.
-  // Takma ad, kullanıcı adı VE gerçek ad birlikte aranır — takma ad konulsa
-  // bile gerçek ad kaybolmaz (kullanıcı isteği).
-  const visiblePeers = orderedPeers.filter((p) => {
-    if (!q) {
-      return true
-    }
-    return [p.nickname, p.username, p.fullName].some(
-      v => !!v && v.toLocaleLowerCase('tr').includes(q),
-    )
-  })
+  /*
+    "Henüz başka kullanıcı yok" YOK (2026-10-11): kayıtlı herkes listelenir.
+    Takma ad, kullanıcı adı VE gerçek ad birlikte aranır — takma ad konulsa
+    bile gerçek ad kaybolmaz (kullanıcı isteği).
+
+    PANEL SÜZGECİ (2026-10-13 kullanıcı isteği): "kullanıcı kendisiyle de
+    konuşamasın" + "bir grupta yer almayıp sadece benimle konuşabilen kişi
+    görünmesin".
+      · KENDİ SATIRIM hiç görünmez. ÖLÇÜLDÜ: satır takma adımla ("Tarnak")
+        duruyordu ve tıklanınca `<id>|<id>` anahtarlı, kimsenin görmediği boş
+        bir sohbet açıyordu.
+      · YÖNETİCİ listesinde, henüz SOBETİ olmayan kayıtlar da görünmez: satır ilk
+        mesajla (ileride grupla) belirir. Kayıt olup hiç yazmayan kişi paneli
+        doldurmaz. Normal kullanıcıda bu kural UYGULANMAZ — onun listesindeki tek
+        satır site sahibidir; gizlenirse kimseye yazamazdı.
+  */
+  const visiblePeers = orderedPeers
+    .filter(p => p.id !== selfId && (!isAdmin || !!p.hasConversation))
+    .filter((p) => {
+      if (!q) {
+        return true
+      }
+      return [p.nickname, p.username, p.fullName].some(
+        v => !!v && v.toLocaleLowerCase('tr').includes(q),
+      )
+    })
   const activePeer = orderedPeers.find(p => p.id === activePeerId) ?? null
   const threadOpen = !!conversationId
   /**
@@ -940,16 +1070,20 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       {/* ── SOL: kime yazmak istiyorum (kişi listesi) ── */}
       <aside
         className={cn(
-          'min-h-0 w-full shrink-0 flex-col border-r border-foreground/10 bg-background md:static md:flex md:w-[var(--chat-panel-w)]',
+          'min-h-0 w-full shrink-0 flex-col border-r border-foreground/10 bg-background md:static md:w-[var(--chat-panel-w)]',
+          // Geniş ekranda kullanıcı paneli KAPATTI (2026-10-13: "açılıp
+          // kapanabilsin") → başlıktaki düğme geri getirir.
+          !panelOpen && 'hidden',
           // Sohbet açık değilken liste her ekranda görünür.
-          !threadOpen && 'flex',
-          // Sohbet açıkken: md'de sabit sütun, küçükte gizli — "aç" düğmesi
-          // (bkz. başlık) listeyi KAPLAMA olarak getirir.
-          threadOpen && (listOpen ? 'absolute inset-0 z-40 flex' : 'hidden md:flex'),
+          panelOpen && !threadOpen && 'flex',
+          // Sohbet açıkken: md'de sabit sütun, küçükte gizli — düğme (bkz.
+          // başlık) listeyi KAPLAMA olarak getirir.
+          panelOpen && threadOpen && (listOpen ? 'absolute inset-0 z-40 flex' : 'hidden md:flex'),
         )}
       >
         <div className="flex items-center gap-2 border-b border-foreground/10 p-2">
           <input
+            ref={searchRef}
             type="search"
             value={peerQuery}
             onChange={e => setPeerQuery(e.target.value)}
@@ -973,7 +1107,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         <div
           className="relative min-h-0 flex-1 overflow-y-auto p-2"
           onClick={() => setMenu(null)}
-          onContextMenu={e => e.preventDefault()}
+          onContextMenu={onAreaContextMenu}
           {...peerLongPress}
         >
           {peers === null && !peersError && <ChatSkeleton label={t('chat.loading')} />}
@@ -997,7 +1131,14 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                       setMenu({ kind: 'peer', peer: p, ...menuPoint(e) })
                     }
                   : undefined}
-                className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-foreground/5"
+                className={cn(
+                  'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-foreground/5',
+                  // SEÇİLİ satır (2026-10-13 kullanıcı isteği: "seçili kişinin
+                  // arka planı bi tık daha koyu olsun / seçili olduğu
+                  // anlaşılmalı"): mavi jeton tonu — sitedeki `bg-primary/15`
+                  // diliyle aynı, koyu temada da okunur.
+                  p.id === activePeerId && 'bg-primary/15 hover:bg-primary/20',
+                )}
               >
                 {/* profil fotoğrafı + durum noktası (yeşil/kırmızı/sarı) */}
                 <span className="relative size-9 shrink-0">
@@ -1060,7 +1201,12 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         tabIndex={0}
         onPointerDown={startResize}
         onKeyDown={resizeByKey}
-        className="hidden w-1 shrink-0 cursor-ew-resize bg-foreground/10 transition-colors hover:bg-primary/40 md:block"
+        className={cn(
+          'w-1 shrink-0 cursor-ew-resize bg-foreground/10 transition-colors hover:bg-primary/40',
+          // Panel katlanmışsa tutamak da yok (yoksa sürüklenip görünmez
+          // genişlik değiştirirdi).
+          panelOpen ? 'hidden md:block' : 'hidden',
+        )}
       />
 
       {/* ── SAĞ: seçili kişiyle sohbet ── */}
@@ -1070,32 +1216,42 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           threadOpen ? 'flex' : 'hidden md:flex',
         )}
       >
-        {/* başlık: seçili kişinin adı + durum noktası */}
-        <div className="flex items-center gap-2 border-b border-foreground/10 px-4 py-3">
-          {threadOpen && (
-            <>
-              {/* Küçük ekranda liste gizliyken AÇMA düğmesi: "←" (listeye dön)
-                  okundan ÖNCE durur — panel kapalı olsa da açılabilir. */}
-              <button
-                type="button"
-                onClick={() => setListOpen(true)}
-                title={t('chat.openPeopleList')}
-                aria-label={t('chat.openPeopleList')}
-                className="cursor-pointer rounded-lg px-2 py-1 transition-colors hover:bg-foreground/10 md:hidden"
-              >
-                <UsersIcon size={18} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setListOpen(true)}
-                title={t('chat.backToList')}
-                aria-label={t('chat.backToList')}
-                className="cursor-pointer rounded-lg px-2 py-1 text-sm transition-colors hover:bg-foreground/10 md:hidden"
-              >
-                ←
-              </button>
-            </>
-          )}
+        {/* başlık: seçili kişinin adı + durum noktası. Sağ tık / uzun basma →
+            KİŞİ menüsü (kullanıcı isteği: "üstte ismi oluyor ya, ordaki kısma
+            da sağ tıklayabilelim"); seçili kişi yoksa boş alan menüsü. */}
+        <div
+          data-peer-id={activePeer?.id}
+          onContextMenu={(e) => {
+            if (activePeer && isAdmin) {
+              // Satırdakiyle AYNI menü (profil/takma ad/favori/engelle/…).
+              e.preventDefault()
+              e.stopPropagation()
+              setMenu({ kind: 'peer', peer: activePeer, ...menuPoint(e) })
+              return
+            }
+            onAreaContextMenu(e)
+          }}
+          {...peerLongPress}
+          className="flex items-center gap-2 border-b border-foreground/10 px-4 py-3"
+        >
+          {/* YAN PANEL düğmesi (2026-10-13 kullanıcı isteği): eski
+              "👥 kişi listesini aç" ve "←" düğmelerinin yerine TEK düğme —
+              dar ekranda listeyi KAPLAMA olarak açar, geniş ekranda sütunu
+              katlar/açar. Panel hiçbir genişlikte kaybolmaz. Kişi seçilmeden
+              (`md` altı) gösterilmez: orada liste zaten tüm ekrandır. */}
+          <button
+            type="button"
+            data-testid="chat-panel-toggle"
+            onClick={togglePanel}
+            title={t('chat.togglePanel')}
+            aria-label={t('chat.togglePanel')}
+            className={cn(
+              'grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-foreground/10',
+              !threadOpen && 'hidden md:grid',
+            )}
+          >
+            <MenuIcon size={20} />
+          </button>
           {activePeer
             ? (
                 <>
@@ -1134,10 +1290,11 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           </p>
         )}
 
-        {/* mesajlar */}
+        {/* mesajlar — kaydırma BURADA olur, sayfada değil (bkz. scrollToBottom) */}
         <div
+          ref={listRef}
           className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4"
-          onContextMenu={e => e.preventDefault()}
+          onContextMenu={onAreaContextMenu}
           {...messageLongPress}
         >
           {!threadOpen && (
@@ -1190,10 +1347,12 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                 data-message-id={m.id}
                 onContextMenu={(e) => {
                   // Menü İMLECİN konumunda (eskiden tam ekran ortalanmış diyalogdu).
+                  // `stopPropagation`: kapsayıcının BOŞ ALAN menüsü üzerine yazmasın.
                   e.preventDefault()
+                  e.stopPropagation()
                   setMenu({ kind: 'message', message: m, ...menuPoint(e) })
                 }}
-                onClick={() => replied && document.getElementById(`m-${m.id}`)?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={() => replied && scrollToMessage(m.id)}
                 className={cn(
                   'max-w-[80%] cursor-default rounded-2xl px-3 py-2 text-sm',
                   mine ? 'bg-primary text-primary-fg' : 'bg-foreground/10 text-foreground',
@@ -1240,7 +1399,6 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
             </div>
           )
           })}
-          <div ref={endRef} />
         </div>
 
         {/* yazma alanı — kişi seçilmeden gösterilmez.
@@ -1440,6 +1598,43 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
             close: t('common.close'),
           }}
         />
+      )}
+
+      {/*
+        BOŞ ALAN MENÜSÜ (2026-10-13 kullanıcı isteği: "boş bir yere sağ
+        tıkladığımda da bir şeyler çıksın — mantıklı konulabilecek şeyler").
+        Bugün ÇALIŞAN maddeler konuldu; "grup oluştur" sunucuda karşılığı
+        olmadığı için yok (grup ucu gelince buraya eklenir).
+      */}
+      {menu?.kind === 'area' && (
+        <MenuSurface x={menu.x} y={menu.y} onClose={() => setMenu(null)} label={t('chat.chats')}>
+          <MenuItem
+            icon="🔎"
+            label={t('chat.findPerson')}
+            onSelect={() => {
+              setMenu(null)
+              focusSearch()
+            }}
+          />
+          <MenuItem
+            icon="🔄"
+            label={t('chat.refresh')}
+            onSelect={() => {
+              setMenu(null)
+              void refresh()
+            }}
+          />
+          {threadOpen && (
+            <MenuItem
+              icon="⬇️"
+              label={t('chat.scrollBottom')}
+              onSelect={() => {
+                setMenu(null)
+                scrollToBottom(true)
+              }}
+            />
+          )}
+        </MenuSurface>
       )}
 
       {/* "İLET": mesajı başka bir kişiye gönder (yeni sunucu ucu gerekmez) */}

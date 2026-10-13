@@ -65,7 +65,16 @@ function mockFetch() {
         ],
       })
     }
-    return jsonResponse({ success: true, conversations: [], messages: [] })
+    // SATIR GÖRÜNÜRLÜĞÜ sohbete bağlı (2026-10-13 kullanıcı isteği: kendi
+    // satırım ve hiç sohbeti olmayan kayıt listelenmez).
+    return jsonResponse({
+      success: true,
+      conversations: [
+        { id: 'c-1', direct_key: 'admin:OWNER|u-1', updated_at: null, last_preview: null, last_sender_name: null },
+        { id: 'c-2', direct_key: 'admin:OWNER|u-2', updated_at: null, last_preview: null, last_sender_name: null },
+      ],
+      messages: [],
+    })
   }))
 }
 
