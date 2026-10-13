@@ -391,7 +391,7 @@ const es: Record<string, string> = {
   'common.showMoreAria': 'Ver más, se abrirán {opening} elementos más, mostrando {visible} de {total}',
   'form.errRateLimited': 'Vas demasiado rápido. Inténtalo de nuevo en {seconds} segundos.',
   'form.infoRateLimited': 'Has enviado demasiados mensajes. Inténtalo de nuevo en {seconds} segundos.',
-  'chat.v2Title': 'Chat',
+  'chat.pageTitle': 'Chat',
   'chat.schemaMissing': 'Chat schema is not set up.',
   'chat.schemaMissingHint': 'Run `supabase/chat.sql` in the Supabase SQL Editor.',
   'chat.loading': 'Loading chat…',

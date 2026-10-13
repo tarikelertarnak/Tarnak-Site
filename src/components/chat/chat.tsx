@@ -1,8 +1,8 @@
 'use client'
 
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react'
+import type { ChatMessageRow } from '@/lib/chat-db'
 import type { Presence, PresenceState } from '@/lib/chat-peers'
-import type { ChatMessageRow } from '@/lib/chat-v2'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { EmojiPicker } from '@/components/chat/emoji-picker'
@@ -29,7 +29,7 @@ import { tickFor } from '@/lib/chat-ticks'
 import { helloMessage } from '@/lib/greeting'
 
 /**
- * Sohbet v2 arayüzü (kullanıcı tarafı) — 2026-10-11.
+ * Sohbet arayüzü (kullanıcı tarafı) — 2026-10-11.
  *
  * YERLEŞİM (2026-10-12 kullanıcı isteği): TEK EKRAN — solda "kime yazmak
  * istiyorum" paneli (sürükleyerek genişlet/daralt), sağda tıklanan kişiyle
@@ -50,7 +50,7 @@ import { helloMessage } from '@/lib/greeting'
  * gösterilir. Admin retention boyunca gerçek içeriği görür (sunucu karar verir).
  */
 
-interface ChatV2Props {
+interface ChatProps {
   /** Geri dönülecek adres (giriş/kayıt sonrası). Varsayılan `/chat`. */
   nextPath?: string
 }
@@ -96,7 +96,7 @@ interface Peer {
   previewSender?: string | null
 }
 
-/** `GET /api/chat/v2`nin sohbet satırından ihtiyaç duyduğumuz alanlar. */
+/** `GET /api/chat`nin sohbet satırından ihtiyaç duyduğumuz alanlar. */
 interface ConversationLite {
   id: string
   direct_key: string | null
@@ -126,7 +126,7 @@ interface PeerRow extends Peer {
  * `/api/admin/session` route handler'ı layout DIŞINDA olduğu için aynı çerezi
  * doğru okuyor. Güvenlik aynı: her API çağrısı yine yetkiyi sunucuda doğrular.
  */
-export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
+export function Chat({ nextPath = '/chat' }: ChatProps) {
   const { t, locale } = useT()
   const [messages, setMessages] = useState<ChatMessageRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -197,7 +197,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const loadPeers = useCallback(async (): Promise<Peer[] | null> => {
     const [usersRes, convsRes] = await Promise.all([
       fetch('/api/chat/users'),
-      fetch('/api/chat/v2'),
+      fetch('/api/chat'),
     ])
     const usersJson = await usersRes.json().catch(() => null)
     const convsJson = await convsRes.json().catch(() => null)
@@ -252,7 +252,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
   const typingIdle = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const beat = useCallback(() => {
-    void fetch('/api/chat/v2', {
+    void fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'presence', state: presenceRef.current }),
@@ -419,7 +419,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     setMessages([])
     setConversationId(null)
     try {
-      const res = await fetch('/api/chat/v2', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'open', peerId }),
@@ -521,7 +521,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     try {
       let conversationId = ''
       if (action !== 'nickname' && action !== 'profile') {
-        const open = await fetch('/api/chat/v2', {
+        const open = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'open', peerId: peer.id }),
@@ -537,7 +537,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
           return
         }
       }
-      const res = await fetch('/api/chat/v2', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, conversationId, userId: peer.id, ...extra }),
@@ -558,7 +558,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       return
     }
     try {
-      const res = await fetch(`/api/chat/v2?conversationId=${encodeURIComponent(conversationId)}`)
+      const res = await fetch(`/api/chat?conversationId=${encodeURIComponent(conversationId)}`)
       const json = await res.json()
       if (json.code === 'CHAT_SCHEMA_MISSING') {
         setError(t('chat.schemaMissing'))
@@ -631,7 +631,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     }
     setSending(true)
     try {
-      const res = await fetch('/api/chat/v2', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversationId, text, replyToId: replyTo?.id }),
@@ -683,7 +683,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
       const isAudio = savedType.startsWith('audio/')
       const isImage = savedType.startsWith('image/')
       const isVideo = savedType.startsWith('video/')
-      const res = await fetch('/api/chat/v2', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -711,7 +711,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     if (!conversationId) {
       return
     }
-    await fetch('/api/chat/v2', {
+    await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, conversationId, ...extra }),
@@ -722,7 +722,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
     if (!confirmMsg) {
       return
     }
-    const res = await fetch(`/api/chat/v2?messageId=${confirmMsg.id}&mode=${mode}`, { method: 'DELETE' })
+    const res = await fetch(`/api/chat?messageId=${confirmMsg.id}&mode=${mode}`, { method: 'DELETE' })
     const json = await res.json()
     if (json.success) {
       setMessages(prev => prev.filter(m => m.id !== confirmMsg.id))
@@ -1056,7 +1056,7 @@ export function ChatV2({ nextPath = '/chat' }: ChatV2Props) {
                   </span>
                 </>
               )
-            : <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t('chat.v2Title')}</span>}
+            : <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t('chat.pageTitle')}</span>}
           {/*
             "Önemli kişi olarak işaretle" ARTIK BURADA DEĞİL (2026-10-13 kullanıcı
             isteği): o kişiye SAĞ TIK menüsünde durur (bkz. PeerMenu).
@@ -1551,7 +1551,7 @@ function ProfileSheet({ peer, t, onClose }: {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const res = await fetch('/api/chat/v2', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'profile', userId: peer.id }),

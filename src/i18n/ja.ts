@@ -391,7 +391,7 @@ const ja: Record<string, string> = {
   'common.showMoreAria': 'さらに表示、{opening} 件が追加で開きます、{total} 件中 {visible} 件を表示中',
   'form.errRateLimited': '少し速すぎます。{seconds} 秒後に再試行してください。',
   'form.infoRateLimited': 'メッセージが多すぎます。{seconds} 秒後に再試行してください。',
-  'chat.v2Title': 'Chat',
+  'chat.pageTitle': 'Chat',
   'chat.schemaMissing': 'Chat schema is not set up.',
   'chat.schemaMissingHint': 'Run `supabase/chat.sql` in the Supabase SQL Editor.',
   'chat.loading': 'Loading chat…',

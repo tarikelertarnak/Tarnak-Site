@@ -471,7 +471,7 @@
   "nav.privacy": "Gizlilik Politikası",
   "nav.kvkk": "KVKK Aydınlatma Metni",
   "nav.legal": "Hukuki",
-  "chat.v2Title": "Sohbet",
+  "chat.pageTitle": "Sohbet",
   "chat.schemaMissing": "Sohbet şeması kurulmamış.",
   "chat.schemaMissingHint": "Sohbet sistemi için `supabase/chat.sql` dosyasını Supabase SQL Editor'da çalıştır.",
   "chat.loading": "Sohbet yükleniyor…",

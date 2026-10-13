@@ -1,5 +1,5 @@
 -- ============================================================================
--- Chat v2 — konuşma tabanlı mesajlaşma (2026-10-11)
+-- Chat — konuşma tabanlı mesajlaşma (2026-10-11)
 --
 -- Neden: eski model `data/chat/messages.json` dosyasına yazıyordu. Cloudflare
 -- Workers'ta dosya sistemi YOK → yazma sessizce başarısız, mesajlar KAYBOLUYORDU.

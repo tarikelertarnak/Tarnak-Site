@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 
 /**
- * Chat v2 veri katmanı — davranış testleri.
+ * Chat veri katmanı — davranış testleri.
  *
  * Gerçek `supabase-js` PostgREST builder'ı thenable bir zincirdir:
  *   client.from(t).select(...).eq(...).lt(...)  → Promise<{data,error,count}>
@@ -95,7 +95,7 @@ const {
   setImportant,
   setPinned,
   siteOwnerId,
-} = await import('@/lib/chat-v2')
+} = await import('@/lib/chat-db')
 
 function reset(...r: Array<{ data?: unknown, error?: unknown, count?: number | null }>) {
   push(...(r.length ? r : [{ data: null, error: null }]))
@@ -108,21 +108,21 @@ function reset(...r: Array<{ data?: unknown, error?: unknown, count?: number | n
   calls.upsert = []
 }
 
-describe('chat-v2 · doğrudan sohbet anahtarı', () => {
+describe('chat · doğrudan sohbet anahtarı', () => {
   it('iki kullanıcı arasındaki anahtar sırasız (a|b === b|a)', () => {
     expect(directKey('u1', 'u2')).toBe(directKey('u2', 'u1'))
     expect(directKey('u1', 'u2')).toContain('|')
   })
 })
 
-describe('chat-v2 · tablo yoksa çökmez', () => {
+describe('chat · tablo yoksa çökmez', () => {
   it('listMessages "does not exist" → ChatSchemaMissing', async () => {
     reset({ data: null, error: { code: '42P01', message: 'relation does not exist' } })
     await expect(listMessages('c1', false)).rejects.toBeInstanceOf(ChatSchemaMissing)
   })
 })
 
-describe('chat-v2 · teslim / okundu', () => {
+describe('chat · teslim / okundu', () => {
   it('markDelivered yalnızca teslim edilmemişleri hedefler', async () => {
     reset()
     await markDelivered('c1')
@@ -137,7 +137,7 @@ describe('chat-v2 · teslim / okundu', () => {
   })
 })
 
-describe('chat-v2 · silme onayı (yumuşak silme)', () => {
+describe('chat · silme onayı (yumuşak silme)', () => {
   it('deleteForAll fiziksel silmez; deleted_for_all işaretler', async () => {
     reset()
     await deleteForAll('m1', 'me')
@@ -161,7 +161,7 @@ describe('chat-v2 · silme onayı (yumuşak silme)', () => {
   })
 })
 
-describe('chat-v2 · silinen mesaj içeriği sızmaz', () => {
+describe('chat · silinen mesaj içeriği sızmaz', () => {
   const deleted = {
     id: 'm1',
     conversation_id: 'c1',
@@ -202,7 +202,7 @@ describe('chat-v2 · silinen mesaj içeriği sızmaz', () => {
   })
 })
 
-describe('chat-v2 · retention', () => {
+describe('chat · retention', () => {
   it('"forever"/"off" → hiç fiziksel silme yapılmaz', async () => {
     reset({
       data: [
@@ -248,7 +248,7 @@ describe('chat-v2 · retention', () => {
  * "Erişim yok." (403) dönüyordu. Sebep: iki katılımcı aynı birincil anahtara
  * `(conversation_id, user_id)` düşüyor, INSERT çakışıp TAMAMEN geri alınıyordu.
  */
-describe('chat-v2 · kendisiyle sohbet + eksik katılımı onarma', () => {
+describe('chat · kendisiyle sohbet + eksik katılımı onarma', () => {
   it('aynı id iki kez gelse bile katılımcı TEK satır yazılır', async () => {
     reset({ data: null }, { data: { id: 'c1', kind: 'direct', direct_key: 'u1|u1' } })
     const conv = await getOrCreateDirectConversation('u1', 'u1')
@@ -276,7 +276,7 @@ describe('chat-v2 · kendisiyle sohbet + eksik katılımı onarma', () => {
  * `/sign` (uuid) ile girebiliyor. İki kimlik iki AYRI geçmiş demekti; sahip
  * bir yolla konuştuğunu diğerinde göremiyordu ("kimse yok, kendim bile").
  */
-describe('chat-v2 · sohbet kimliği çözümü', () => {
+describe('chat · sohbet kimliği çözümü', () => {
   it('kullanıcı adı profilde varsa sohbet kimliği o profilin uuid\'idir', async () => {
     reset({ data: [{ id: 'uuid-1', username: 'tarikelertarnak' }] })
     await expect(resolveChatIdentity('admin:TARIKELERTARNAK', 'TARIKELERTARNAK'))
@@ -296,7 +296,7 @@ describe('chat-v2 · sohbet kimliği çözümü', () => {
   })
 })
 
-describe('chat-v2 · site sahibi', () => {
+describe('chat · site sahibi', () => {
   it('is_owner=true olan profili bulur', async () => {
     reset({ data: { id: 'owner-1' } })
     await expect(siteOwnerId()).resolves.toBe('owner-1')

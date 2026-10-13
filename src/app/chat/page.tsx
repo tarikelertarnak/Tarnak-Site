@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { ChatV2 } from '@/components/chat/chat-v2'
+import { Chat } from '@/components/chat/chat'
 import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
 import { siteUrl } from '@/lib/site-url'
@@ -55,7 +55,7 @@ export default function ChatPage() {
             data-testid="chat-slot"
             className="flex w-full flex-1 items-center justify-center px-4 pt-2 pb-8"
           >
-            <ChatV2 />
+            <Chat />
           </div>
         </Section>
       </main>

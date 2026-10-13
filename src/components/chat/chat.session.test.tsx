@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LocaleProvider } from '@/components/locale-provider'
-import { ChatV2 } from './chat-v2'
+import { Chat } from './chat'
 
 // LocaleProvider `useRouter` kullanıyor (repo deseni: locale-provider.test.tsx).
 vi.mock('next/navigation', () => ({
@@ -65,7 +65,7 @@ async function renderChat() {
     // detectedLocale: jsdom varsayılanı 'en' idi; iddialarımız Türkçe metin
     // üzerine kurulu (kullanıcının gördüğü dil).
     <LocaleProvider detectedLocale="tr">
-      <ChatV2 />
+      <Chat />
     </LocaleProvider>,
   )
   // oturum sorgusu bitene kadar bekle
@@ -130,7 +130,7 @@ describe('sohbet v2 oturum ekranı', () => {
           users: [{ id: 'owner-1', username: 'tarikelertarnak', fullName: 'TARIK ELER', avatarUrl: null }],
         })
       }
-      if (url.includes('/api/chat/v2')) {
+      if (url.includes('/api/chat')) {
         return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
       }
       return jsonResponse({ success: true, messages: [] })
@@ -142,7 +142,7 @@ describe('sohbet v2 oturum ekranı', () => {
     // "Önce seç, sonra aç" adımı YOK: tek kişilik listede sohbet otomatik açılır.
     expect(screen.getAllByText('TARIK ELER').length).toBeGreaterThan(0)
     const openCall = spy.mock.calls.find(
-      c => String(c[0]).includes('/api/chat/v2')
+      c => String(c[0]).includes('/api/chat')
         && c[1]?.method === 'POST'
         && String(c[1]?.body).includes('"open"'),
     )
@@ -203,7 +203,7 @@ describe('sohbet v2 oturum ekranı', () => {
           ],
         })
       }
-      if (url.includes('/api/chat/v2')) {
+      if (url.includes('/api/chat')) {
         return jsonResponse({ success: true, conversation: { id: 'conv-9' } })
       }
       return jsonResponse({ success: true, messages: [] })
@@ -215,7 +215,7 @@ describe('sohbet v2 oturum ekranı', () => {
 
     await waitFor(() => expect(screen.getByPlaceholderText(/bir mesaj yazın/i)).not.toBeNull())
     const openWithPeer = spy.mock.calls.find(
-      c => String(c[0]).includes('/api/chat/v2')
+      c => String(c[0]).includes('/api/chat')
         && c[1]?.method === 'POST'
         && String(c[1]?.body).includes('peerId'),
     )
@@ -243,7 +243,7 @@ describe('sohbet v2 oturum ekranı', () => {
           users: [{ id: 'owner-1', username: 'tarikelertarnak', fullName: 'TARIK ELER', avatarUrl: null }],
         })
       }
-      if (url.includes('/api/chat/v2')) {
+      if (url.includes('/api/chat')) {
         // Gönderim denemesi bilerek reddedilir (başarısız yanıt mesaj
         // gövdesi çizmez) — iddia İSTEĞİN atıldığı üzerinedir.
         if (String(init?.body).includes('"text"')) {
@@ -291,7 +291,7 @@ describe('sohbet v2 oturum ekranı', () => {
           users: [{ id: 'owner-1', username: 'tarikelertarnak', fullName: 'TARIK ELER', avatarUrl: null }],
         })
       }
-      if (url.includes('/api/chat/v2')) {
+      if (url.includes('/api/chat')) {
         if (String(init?.body).includes('"text"')) {
           return jsonResponse({ success: false, message: 'test' })
         }
@@ -300,7 +300,7 @@ describe('sohbet v2 oturum ekranı', () => {
       return jsonResponse({ success: true, messages: [] })
     })
     const sent = () => spy.mock.calls.some(
-      c => String(c[0]).includes('/api/chat/v2')
+      c => String(c[0]).includes('/api/chat')
         && c[1]?.method === 'POST'
         && String(c[1]?.body).includes('"text":"merhaba"'),
     )

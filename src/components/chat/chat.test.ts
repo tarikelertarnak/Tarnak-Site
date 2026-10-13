@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 /**
- * Chat v2 arayüz kaynak-sözleşmesi (2026-10-11).
+ * Chat arayüz kaynak-sözleşmesi (2026-10-11).
  *
  * Kullanıcı isteği çok geniş (WhatsApp benzeri). Bu test, istendiği halde
  * kolayca sessizce kaybolabilecek kritik davranışların KAYNAKTA bulunduğunu
@@ -21,11 +21,11 @@ import { describe, expect, it } from 'vitest'
  * (Repo deseni: no-hash-links.test.ts, vcard-qr-only.test.ts.)
  */
 const SRC = readFileSync(
-  join(process.cwd(), 'src/components/chat/chat-v2.tsx'),
+  join(process.cwd(), 'src/components/chat/chat.tsx'),
   'utf8',
 )
 
-describe('chat-v2 arayüz sözleşmesi', () => {
+describe('chat arayüz sözleşmesi', () => {
   it('tik: gönderildi/teslim → sarı, okundu → yeşil; inline SVG ikonlar', () => {
     // İkon + renk kararı saf modülde (chat-ticks.test.ts onu tek tek doğrular);
     // bileşenin işi yalnızca o kararı render etmek.

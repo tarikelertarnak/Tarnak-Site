@@ -9,12 +9,12 @@ import { describe, expect, it } from 'vitest'
  * bunlar gizlenir, gmail değil telefon değil şifre gibi çok önemli olanlar."
  *
  * Bu test, hassas alanların **sunucuda hiç SEÇİLMEDİĞINI** sabitler. Arayüz
- * testi (chat-v2.admin.test.tsx) yalnız render edilen DOM'u denetler; asıl
+ * testi (chat.admin.test.tsx) yalnız render edilen DOM'u denetler; asıl
  * kapı burada: yeni bir gizli sütun eklendiğinde `select` listesi genişletilirse
  * bu test KIRILIR.
  */
-const LIB = readFileSync(join(process.cwd(), 'src/lib/chat-v2.ts'), 'utf8')
-const ROUTE = readFileSync(join(process.cwd(), 'src/app/api/chat/v2/route.ts'), 'utf8')
+const LIB = readFileSync(join(process.cwd(), 'src/lib/chat-db.ts'), 'utf8')
+const ROUTE = readFileSync(join(process.cwd(), 'src/app/api/chat/route.ts'), 'utf8')
 
 function profileViewBody(): string {
   const start = LIB.indexOf('export async function getAdminProfileView')

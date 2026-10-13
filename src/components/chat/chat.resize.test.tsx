@@ -1,9 +1,9 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LocaleProvider } from '@/components/locale-provider'
-import { ChatV2 } from './chat-v2'
+import { Chat } from './chat'
 
-// LocaleProvider `useRouter` kullanıyor (repo deseni: chat-v2.session.test.tsx).
+// LocaleProvider `useRouter` kullanıyor (repo deseni: chat.session.test.tsx).
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: vi.fn(), push: vi.fn(), replace: vi.fn() }),
 }))
@@ -81,7 +81,7 @@ function nativePointer(type: string, clientX: number) {
 async function renderChat() {
   const result = render(
     <LocaleProvider detectedLocale="tr">
-      <ChatV2 />
+      <Chat />
     </LocaleProvider>,
   )
   await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())

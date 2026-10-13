@@ -11,7 +11,7 @@ import type { SessionUser } from '@/lib/supabase/session'
  *   · normal kullanıcı    → yalnız site sahibi
  *     (ileride: eklendiği gruplar ve kendisine izin verilen kişiler).
  *
- * Kural TEK yerde durur; hem `/api/chat/users` (liste) hem `/api/chat/v2`
+ * Kural TEK yerde durur; hem `/api/chat/users` (liste) hem `/api/chat`
  * (sohbet açma) bunu kullanır ki liste ile açma birbiriyle çelişmesin.
  */
 export function canSeeAllPeers(user: Pick<SessionUser, 'role' | 'isOwner'>): boolean {

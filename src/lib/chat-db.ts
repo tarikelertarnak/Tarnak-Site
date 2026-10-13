@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
- * Chat v2 — kalıcı veri katmanı (Supabase).
+ * Chat — kalıcı veri katmanı (Supabase).
  *
  * Neden: `lib/chat.ts` `data/chat/messages.json` DOSYASINA yazıyordu. Cloudflare
  * Workers'ta dosya sistemi yok → yazma sessizce başarısız, mesajlar kayboluyordu.

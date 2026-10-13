@@ -70,7 +70,7 @@ export const LIMITS = {
   chat: { limit: 10, windowMs: 60_000 },
   chatHourly: { limit: 60, windowMs: 3_600_000 },
   /**
-   * GÜNLÜK pencere (2026-10-07, Faz 1 · chat güvenliği: "IP/oturum başına
+   * GÜNLÜK pencere (2026-10-07, chat güvenliği: "IP/oturum başına
    * günlük limit"). Dakika + saat pencereleri toplamda günde teorik
    * 1440 mesaja izin veriyordu (birisi dakikada 10 kez istek atarak). Günlük
    * pencere spam'ı ve kötüye kullanımı keser.

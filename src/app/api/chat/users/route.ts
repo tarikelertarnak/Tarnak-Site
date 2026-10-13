@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { canSeeAllPeers } from '@/lib/chat-access'
-import { resolveChatIdentity, siteOwnerId } from '@/lib/chat-v2'
+import { resolveChatIdentity, siteOwnerId } from '@/lib/chat-db'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser } from '@/lib/supabase/session'
 
@@ -24,7 +24,7 @@ const COLUMNS = 'id, username, full_name, nickname, avatar_url, last_seen_at, pr
  *
  * `chatId`: isteği yapanın SOHBET kimliği. `/login` ile giren sahip
  * `admin:<ad>` kimliğini taşır ama sohbetler profil uuid'i ile tutulur
- * (bkz. `lib/chat-v2.ts:resolveChatIdentity`). İstemci `direct_key`i bu id ile
+ * (bkz. `lib/chat-db.ts:resolveChatIdentity`). İstemci `direct_key`i bu id ile
  * ayrıştırdığı için sunucu çözülmüş kimliği de döner — yoksa iki taraf farklı
  * kişiyi "karşı taraf" sanır.
  *

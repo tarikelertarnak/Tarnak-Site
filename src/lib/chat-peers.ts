@@ -12,7 +12,7 @@
  *   · kırmızı → çevrimdışı.
  *
  * ⚠️ Bu dosya İSTEMCİDE çalışır: Supabase/service-role importu YOKTUR. Veri
- * katmanı `lib/chat-v2.ts` içindedir ve oraya yalnız sunucu dokunur.
+ * katmanı `lib/chat-db.ts` içindedir ve oraya yalnız sunucu dokunur.
  */
 
 /** Kişinin ŞU AN ne yaptığı (sunucudaki `profiles.presence_state`). */
@@ -36,7 +36,7 @@ export const TYPING_TTL_MS = 5_000
 
 /**
  * Dış girdi doğrulaması: `profiles.presence_state` yalnız bu üç değeri alır.
- * Sunucu ucu (`api/chat/v2`) gövdeden gelen durumu bununla süzer.
+ * Sunucu ucu (`api/chat`) gövdeden gelen durumu bununla süzer.
  */
 export function isPresenceState(value: unknown): value is PresenceState {
   return value === 'typing' || value === 'uploading' || value === 'recording'

@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LocaleProvider } from '@/components/locale-provider'
-import { ChatV2 } from './chat-v2'
+import { Chat } from './chat'
 
 /**
  * Admin sohbet yönetimi (2026-10-11 kullanıcı isteği).
@@ -65,7 +65,7 @@ async function renderAdminChat(extra: (url: string, init?: RequestInit) => Promi
   })
   render(
     <LocaleProvider detectedLocale="tr">
-      <ChatV2 />
+      <Chat />
     </LocaleProvider>,
   )
   await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
@@ -128,7 +128,7 @@ describe('admin kullanıcı menüsü', () => {
 
   it('takma ad kaydedilir ve liste anında güncellenir', async () => {
     const spy = await renderAdminChat((url, init) => {
-      if (url.includes('/api/chat/v2') && init?.method === 'POST' && String(init?.body).includes('nickname')) {
+      if (url.includes('/api/chat') && init?.method === 'POST' && String(init?.body).includes('nickname')) {
         return jsonResponse({ success: true, nickname: 'Yeni Takma' })
       }
       return jsonResponse({ success: true })
@@ -147,7 +147,7 @@ describe('admin kullanıcı menüsü', () => {
 
   it('favori/engelle/sabitle istekleri doğru gövdeyle gider', async () => {
     const spy = await renderAdminChat((url, init) => {
-      if (url.includes('/api/chat/v2') && init?.method === 'POST' && String(init?.body).includes('"action":"open"')) {
+      if (url.includes('/api/chat') && init?.method === 'POST' && String(init?.body).includes('"action":"open"')) {
         return jsonResponse({ success: true, conversation: { id: 'conv-1' } })
       }
       return jsonResponse({ success: true })
@@ -170,7 +170,7 @@ describe('admin kullanıcı menüsü', () => {
 
   it('"Profilini incele": gruplar ve sayılar görünür, GİZLİ alanlar GÖRÜNMEZ', async () => {
     await renderAdminChat((url, init) => {
-      if (url.includes('/api/chat/v2') && String(init?.body).includes('"action":"profile"')) {
+      if (url.includes('/api/chat') && String(init?.body).includes('"action":"profile"')) {
         return jsonResponse({
           success: true,
           profile: {
@@ -211,7 +211,7 @@ describe('admin kullanıcı menüsü', () => {
         · telefon numarası deseni
         · parola özeti (bcrypt) deseni
       Sunucu katmanındaki asıl garanti: getAdminProfileView() gizli sütunu
-      SEÇİM bile yapmıyor (bkz. chat-v2.test.ts sözleşme testi).
+      SEÇİM bile yapmıyor (bkz. chat.test.ts sözleşme testi).
     */
     const html = document.body.innerHTML
     expect(html, 'e-posta adresi sızdı').not.toMatch(/[\w.+-]+@[\w-]+\.[a-z]{2,}/i)
@@ -239,7 +239,7 @@ describe('admin kullanıcı menüsü', () => {
     })
     render(
       <LocaleProvider detectedLocale="tr">
-        <ChatV2 />
+        <Chat />
       </LocaleProvider>,
     )
     await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
@@ -273,7 +273,7 @@ describe('admin kullanıcı menüsü', () => {
     })
     render(
       <LocaleProvider detectedLocale="tr">
-        <ChatV2 />
+        <Chat />
       </LocaleProvider>,
     )
     await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
@@ -306,7 +306,7 @@ describe('admin kullanıcı menüsü', () => {
           ],
         })
       }
-      if (url.includes('/api/chat/v2') && !init?.method) {
+      if (url.includes('/api/chat') && !init?.method) {
         return jsonResponse({
           success: true,
           conversations: [
@@ -318,7 +318,7 @@ describe('admin kullanıcı menüsü', () => {
     })
     render(
       <LocaleProvider detectedLocale="tr">
-        <ChatV2 />
+        <Chat />
       </LocaleProvider>,
     )
     await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
@@ -351,7 +351,7 @@ describe('admin kullanıcı menüsü', () => {
     })
     render(
       <LocaleProvider detectedLocale="tr">
-        <ChatV2 />
+        <Chat />
       </LocaleProvider>,
     )
 
@@ -371,14 +371,14 @@ describe('admin kullanıcı menüsü', () => {
       if (url.includes('/api/chat/users')) {
         return jsonResponse({ success: true, users: [] })
       }
-      if (url.includes('/api/chat/v2') && !init?.method) {
+      if (url.includes('/api/chat') && !init?.method) {
         return jsonResponse({ success: false, code: 'CHAT_SCHEMA_MISSING', message: 'tablo yok' }, 503)
       }
       return jsonResponse({ success: true })
     })
     render(
       <LocaleProvider detectedLocale="tr">
-        <ChatV2 />
+        <Chat />
       </LocaleProvider>,
     )
 
@@ -424,7 +424,7 @@ describe('yazma sinyali ve boş sohbet', () => {
     const spy = await renderAdminChat((url, init) => {
       // Mesaj gönderimi (POST + conversationId) yanıtı ASILI kalır: düğmenin
       // gönderim sırasındaki kilitli hâlini ölçebilmek için.
-      if (url.includes('/api/chat/v2') && init?.method === 'POST' && String(init.body).includes('conversationId')) {
+      if (url.includes('/api/chat') && init?.method === 'POST' && String(init.body).includes('conversationId')) {
         return hung
       }
       return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
