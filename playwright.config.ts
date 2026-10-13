@@ -33,9 +33,25 @@ import { defineConfig, devices } from '@playwright/test'
  *   · CI'da: 3000 boş olduğu için Playwright kendi sunucusunu başlatır.
  * Ayrı iki port yerine tek kaynak (3000) hem CI'da hem lokalde aynı davranışı
  * veriyor.
+ *
+ * 2026-10-13: `PLAYWRIGHT_PORT` ile geçersiz kılınabilir. Gerekçe: geliştirme
+ * sunucusu günlerdir açık kalınca modül grafiği bayatlıyor (yeniden adlandırılan
+ * dosya "Module not found" olarak takılı kalıyor) ve 3000'e bağlanan testler
+ * UYGULAMAYI DEĞİL o bayat süreci ölçüyor. İzole bir kopyada taze sunucu açıp
+ * `PLAYWRIGHT_PORT=3210` ile aynı paket koşulabiliyor.
  */
-const PORT = 3000
-const BASE_URL = `http://127.0.0.1:${PORT}`
+const PORT = Number(process.env.PLAYWRIGHT_PORT ?? 3000)
+/**
+ * `localhost` — `127.0.0.1` DEĞİL (2026-10-13 ölçüldü).
+ *
+ * Geliştirme sunucusu Next 16'da `/_next/hmr` ve diğer dev kaynaklarını
+ * "cross-origin" sayıp BLOKLUYOR:
+ *   ⚠ Blocked cross-origin request to Next.js dev resource /_next/hmr from "127.0.0.1".
+ * Bloklanınca istemci JS'i (hidrasyon) hiç çalışmıyor: SSR HTML görünür ama
+ * hiçbir buton/form yanıt vermiyor. Yıllardır "dev sunucusu hydrate olmuyor"
+ * diye anılan belirtinin kökü buydu — uygulama değil, test adresi yanlıştı.
+ */
+const BASE_URL = `http://localhost:${PORT}`
 
 export default defineConfig({
   testDir: './e2e',
