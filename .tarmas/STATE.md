@@ -1,10 +1,10 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-12T23:45:00+03:00
+updated: 2026-10-13T18:05:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: 476f456 (yerel; push/deploy YOK)
+branch: faz-1-guvenlik last_commit: b5cf083 (yerel; push/deploy YOK)
 
 === TARMAS KERNEL (preserve verbatim in any summary/compaction) ===
 
@@ -31,10 +31,22 @@ branch: faz-1-guvenlik last_commit: 476f456 (yerel; push/deploy YOK)
 
 ## Current
 
-phase: TARMAS / SERBEST FAZI — UI ROZETI 2 (sohbet sayfasi + admin sekme seridi + rol etiketi) step: KAPANDI (commit 76f5020)
+phase: ADMIN PANELI YENILEME + AD TEMIZLIGI (v2 / Faz 1..6) step: KAPANDI (b5cf083)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 76f5020 (yerel; push/deploy ASLA otomatik)
-running_processes: next dev (turbopack) :3000 PID 19720
+branch: faz-1-guvenlik last_commit: b5cf083 (yerel; push/deploy ASLA otomatik)
+running_processes: next dev (turbopack) :3000
+not: 4 commit: 2bf3ebf (admin 5 sekme + serit + uyari) · ff74999 (chat v2 adlari
+kaldirildi) · ea7d67d (Faz 1..6 yorum/dokuman adlari) · b5cf083 (e2e/docs/CI ad
+temizligi). **tsc 0 · vitest 680/680 (61 dosya) · eslint --max-warnings 0 (81
+dosya) 0.** Gercek admin oturumuyla API olcumu: /api/admin/overview sayilari DB
+ile ayni. Iki migration eksik (languages tablosu, messages.phone) → panel uyarisi
+artik ilgili SQL dosyasini soyluyor (`ResourceDef.sqlFile`).
+DIKKAT: commit aninda lint-staged hatasi "The command line is too long" (82 dosya
+tek eslint komutunda Windows limitini asti) → degisiklikler 4 mantiksal commit'e
+bolundu; kapi ATLANMADI (`--no-verify` kullanilmadi).
+BU TURDA YAPILAMAYAN: gercek tarayicida tiklayarak dogrulama (dev sunucu
+hydrate olmuyor: `_next/hmr` ws `ERR_INVALID_HTTP_RESPONSE`; BrowserOS neo
+bagli degil) → kanit jsdom + kaynak sozlesmesi + HTTP olcumu.
 not: ROZET 2 kapandi (5 kullanici istegi) →
 A) `/chat`: "Sohbet" baslik blogu SILINDI (yer israfi); kutu `100svh-19rem`
 → `100svh-11rem`, bosalan alani doldurur.
@@ -57,6 +69,57 @@ DIKKAT: commit aninda lint-staged prettier `globals.css`i TUMUYLE yeniden
 bicimlendirdi (1952 satir; tirnak stili + girinti, davranis ayni) → CSS metnini
 string ile esleyen 2 test tirnak-bagimsiz hale getirildi (`theme-contrast.test.ts`
 satir ~361, `scrollable-tabs.test.ts`).
+
+## Bu tur (2026-10-13, admin paneli yenileme + v2/faz ad temizligi)
+
+Kullanici 6 istek verdi; hepsi kapandi. Commitler (yerel): `2bf3ebf`,
+`ff74999`, `ea7d67d`, `b5cf083`.
+
+1. **v2 adlari kaldirildi** (onceden yarim kalmisti, ajan ag hatasiyla dusmustu):
+   `/api/chat` = konusma API'si (eski v2), `/api/chat/messages` = eski thread
+   API'si; `api/chat/v2/` silindi. `lib/chat-v2.ts` → `chat-db.ts`,
+   `chat-v2.tsx` → `chat.tsx` (`ChatV2`→`Chat`), 4 test dosyasi + `chat.v2Title`
+   → `chat.pageTitle` (8 sozluk) + hiz siniri anahtari `chat-v2` → `chat-send`.
+   Admin `ChatPanel` `/api/chat/messages`e tasindi (eski thread sekli korunur).
+2. **Admin paneli 11 sekme → 5 grup**: Genel Bakis / Profil & Hakkimda /
+   Icerik & Veri / Site Ayarlari / Mesajlar & Kullanicilar. Eski sekmelerin
+   govdeleri `SubSection` basliklari altinda AYNEN korundu (alan/fonksiyon
+   kaybi yok). Baslik ana sayfa bileseniyle: `SectionTitle big headingLevel="h1"`
+   (sol ikon, buyuk mavi buyuk harf, mavi alt cizgi).
+3. **Veri Yonetimi kaynak seridi** de `ScrollableTabs` + yeni `TabLabel`:
+   oklar seridin DISINDA (en basta sol, en sonda sag; `scrollBy(200)`),
+   orta sayfa oklari ve nokta gostergeleri tamamen kaldirildi, aktif sekme
+   ortalanir, scrollbar gizli. Tek yeniden kullanilabilir bilesen.
+4. **Kaydedilmemis degisiklik uyarisi**: sekme degisiminde `window.confirm`
+   (reddedilirse sekme degismez) + mavi-yaninda amber ipucu metni; basarili
+   kayitta "temiz" anlik goruntu guncellenir.
+5. **Veri/CRUD dogrulamasi**: gercek `admin_session` cookie'si yerel
+   `ADMIN_SECRET` ile imzalanip `/api/admin/overview` + 9 kaynak ucu cagrildi.
+   Sayilar DB ile ayni (Yetenekler 6, Istatistikler 1, Mesajlar 3, Reklamlar 3,
+   Profil 2, CV 1; posts/projects 0). Eksikler: `languages` tablosu YOK,
+   `messages.phone` kolonu YOK → ikisi de hazir SQL dosyasina sahip
+   (`scripts/schema-languages.sql`, `scripts/schema-fixes.sql`) ama SQL
+   Editor'de calistirilmamis; panel uyarisi artik DOSYA ADINI soyluyor.
+6. **Ad/etiket temizligi**: `Faz6Editor` → `SectionsEditor`, `faz6-fields` →
+   `section-fields`, `FAZ6_BOLUMLERI` → `SECTION_SPECS`,
+   `e2e/phase6-pages` → `personal-pages`, `docs/faz1-secret-sizinti` →
+   `docs/secret-sizinti`; repo genelinde "Faz 1..6" yorum/CI/husky/css izleri
+   gercek adlara cevrildi. `content.phase6` veri anahtari + `phase6.ts` dosya
+   adi KORUNDU (kayitli icerik uyumu; `phase6.ts` basina not eklendi).
+7. **Test altyapisi**: `vitest.setup.ts` (jsdom `ResizeObserver` +
+   `Element.prototype.scrollTo` + `globalThis.scrollTo`) → DataManager seridini
+   render eden 27 test artik geciyor. `configure({ asyncUtilTimeout: 3000 })`
+   → `chat.admin.test.tsx` "Merhaba de!" testinin paralel kosudaki flake'i
+   (1 sn waitFor butcesi) kapandi; 3 ardisik kosu + tam kosu yesil.
+   Yeni `admin-panel.test.tsx` (10 test): baslik h1 + mavi alt cizgi, tam 5
+   sekme, "Faz 6" metni hicbir yerde yok, her grubun alt bolumleri gorunur,
+   onay akisi iki dalda, konsolda React uyarisi yok.
+
+**Kanit:** tsc 0 · vitest **680/680** (61 dosya) · `eslint --max-warnings 0`
+(81 degisen dosya) 0 · `/api/admin/overview` HTTP 200 + gercek sayilar ·
+`admin-panel.test.tsx` 10/10 · `data-manager.test.tsx` 27/27.
+**Kanit YOK:** gercek tarayicida tiklayarak dogrulama (dev sunucu hydrate
+olmuyor, BrowserOS neo bagli degil) · deploy (kullanici onayi).
 
 ## Bu tur (2026-10-13, ROZET 2: sohbet sayfasi + admin sekme seridi + rol etiketi)
 
@@ -215,6 +278,11 @@ _"Kişisel Bilgiler kartını toparla"_.
 - ~~`supabase/chat.sql` + `supabase/schema.sql` ALTER'leri SQL Editor'da calistirilmali.~~
   **TAMAM (2026-10-12):** SQL Editor'da calistirildi ("Success. No rows returned");
   sonda 4 tablo + 3 kolon 200. `/api/chat/v2` artik 503 vermiyor.
+- **SQL Editor'de calistirilmasi gereken 2 migration (2026-10-13 olculdu):**
+  `scripts/schema-languages.sql` (admin "Bildigim Diller" sekmesi bu yuzden
+  "tablo yok" uyarisi veriyor) ve `scripts/schema-fixes.sql`
+  (`messages.phone` kolonu: iletisim formu telefonu simdilik `body` icine
+  yaziyor, veri kaybi YOK). Panel artik uyari metninde DOSYA ADINI gosterir.
 - `site_content` tablosu hala YOK (PGRST205) — sohbetle ilgisi yok; ayri karar.
 
 ## KAPANANLAR (2026-10-04)

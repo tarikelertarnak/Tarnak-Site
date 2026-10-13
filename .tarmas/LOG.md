@@ -1774,3 +1774,100 @@ dosyalarda oldugu icin 3 arka plan `fixer` alt ajanina dagitildi; 4-5-6
   testleri + kaynak sozlesmesiyle yapildi. Gercek tarayici + canli veri ile
   (WSL build veya oturum acikken) tekrar olculmesi gerekiyor.
 - Deploy YOK (canli site eski build), push YOK.
+
+## 2026-10-13
+
+### [UI-014] Admin paneli yenileme + v2/faz ad temizligi (6 istek, hepsi kapandi)
+
+Istekler: (1) v2 adlarini kaldir, (2) admin basligi ana sayfa basligi gibi,
+(3) "Faz 6"/gelistirme fazi adlarini gercek adlara cevir, (4) Veri Yonetimi
+kartlarini tek satir kaydirilabilir seride cevir, (5) sekmeleri birlestir
+(11 → 5) kayipsiz, (6) her sekmenin okuma/yazmasi calissin + konsol temiz +
+"tumunu kaydet" + kaydedilmemis degisiklik uyarisi + gercek DB ile dogrula.
+
+**Commitler (yerel, push YOK):** `2bf3ebf` admin (5 sekme + serit + uyari) ·
+`ff74999` chat v2 adlari kaldirildi · `ea7d67d` Faz 1..6 adlari · `b5cf083`
+e2e/docs/CI ad temizligi.
+
+**v2 temizligi (yarim kalmis is bitirildi):** `/api/chat` = konusma API'si
+(eski v2), `/api/chat/messages` = eski thread API'si; `api/chat/v2/` silindi.
+`lib/chat-v2.ts` → `chat-db.ts`, `chat-v2.tsx` → `chat.tsx` (`ChatV2`→`Chat`,
+`ChatV2Props`→`ChatProps`), 4 test dosyasi `chat{,.admin,.resize,.session}`,
+`chat.v2Title` → `chat.pageTitle` (8 sozluk), hiz siniri anahtari `chat-v2` →
+`chat-send`. Admin `ChatPanel` `/api/chat/messages`e tasindi (eski sekil
+`{success,messages}` + admin POST `{owner:true,to}` korunur — ucta dogrulandi).
+Dokunulmayan yanlis-pozitifler: SVG `d="..."`, `nodejs_compat_v2`.
+
+**Admin sekmeleri 11 → 5:** Genel Bakis / Profil & Hakkimda / Icerik & Veri /
+Site Ayarlari / Mesajlar & Kullanicilar. Her eski sekme govdesi bir sabite
+alindi ve yeni sekmede `SubSection` basligi altinda AYNEN render edildi →
+alan/fonksiyon kaybi yok (test: her grubun alt bolumleri gorunur).
+`setTab('data')` → `setTab('content')`. Sekme URL/hash yonlendirmesi yok
+(`useState('overview')`), yonlendirilecek bir sey YOK.
+
+**Baslik:** `SectionTitle big headingLevel="h1" title="Admin Paneli"
+subTitle="ADMIN PANELI" icon=<mdi:shield-account> tightGap` — ana sayfa
+bileseninin ta kendisi (yeni stil yok). Kimlik blogu (e-posta, rol, "Siteyi
+Goruntule", "Cikis") aynen korundu.
+
+**Kaynak seridi:** `ScrollableTabs` + yeni `TabLabel` (iki seritte ortak).
+Oklar seridin DISINDA flex kardes (en basta sol, en sonda sag) —
+`scrollBy({left:±200})`, uclarda `disabled`+`opacity-0`, aktif sekme
+ortalanir, scrollbar gizli, tekerlek/dokunma calisir. Eski sabit orta sayfa
+oklari ve alt nokta gostergeleri (`TabScrollDots`) tamamen silindi.
+
+**Kaydedilmemis degisiklik:** `savedRef` + `JSON.stringify(content)` karsilastirmasi;
+sekme degisiminde `window.confirm` (reddedilirse degismez) + amber ipucu.
+Basarili kayit anlik goruntuyu gunceller.
+
+**Ad temizligi:** `Faz6Editor`→`SectionsEditor`, `faz6-fields`→`section-fields`,
+`FAZ6_BOLUMLERI`→`SECTION_SPECS`, `e2e/phase6-pages`→`personal-pages`,
+`docs/faz1-secret-sizinti`→`docs/secret-sizinti`; repo genelinde "Faz 1..6"
+yorum/CI/husky/lint-staged/css izleri konu adiyla degistirildi. Kalan tek
+"Faz 6" metni negatif-kontrol testinin basligi. `content.phase6` veri anahtari
+ve `phase6.ts` dosya adi KORUNDU (kayitli icerik uyumu) — `phase6.ts` basina
+gerekce notu eklendi. `TODO: saglayici secilene kadar kapali` alan aciklamasi
+ve `TODO (kullanici)` notu kullanici-dili olmayan ifadelere cevrildi.
+
+**Olcum (gercek admin oturumu, yerel `ADMIN_SECRET` ile imzalanmis cookie):**
+`/api/admin/overview` HTTP 200 — Yetenekler 6, Istatistikler 1, Mesajlar 3,
+Reklamlar 3, Profil 2, CV 1, posts/projects 0; **Bildigim Diller EKSIK**.
+Dokuz kaynak ucu HTTP 200; `missingTable` yalniz `languages` (count=null),
+`messages` icin dusen kolon `phone`. Cozum: `ResourceDef.sqlFile` +
+`sqlHint()` → uyari metni artik `scripts/schema-languages.sql` /
+`scripts/schema-fixes.sql` adini soyluyor (DDL PostgREST ile calistirilamaz).
+
+### Kapilar (bu tur)
+
+- `tsc --noEmit` → **0 hata** (her commit oncesi husky icinde de kosuldu).
+- `vitest run` → **680/680 test, 61/61 dosya** (once 670/60).
+- `eslint <81 degisen dosya> --max-warnings 0` → **0 hata / 0 uyari**.
+- `admin-panel.test.tsx` 10/10 (baslik, 5 sekme, alt bolumler, onay iki dal,
+  konsolda React uyarisi yok) · `data-manager.test.tsx` 27/27.
+- Commit YEREL (branch `faz-1-guvenlik`), push/deploy YOK.
+
+### Tuzak / ders
+
+- **lint-staged Windows limiti:** 95 dosya tek seferde sahnelenince hook
+  "The command line is too long" ile dustu (82 mutlak yol tek `eslint`
+  komutunda 8191 karakteri asti). Cozum: degisiklikler 4 mantiksal commit'e
+  bolundu. Kapi ATLANMADI — `--no-verify` KULLANILMADI.
+- **prettier TS/TSX icin KAPALI** (`.lintstagedrc.json`): `@antfu/eslint-config`
+  stilleriyle celistigi icin 2026-10-10'da kaldirildi; CSS/MD/JSON/YML'de
+  kalir. `prettier --check` TS dosyalarinda kirmizi olmasi KAPI DEGILDIR
+  (stil sahibi eslint). `tokens.css` hizali satir-ici yorumlari prettier
+  tarafindan duzlestirildi (arac davranisi, kabul edildi).
+- **Flake kapandi:** `chat.admin.test.tsx` "Merhaba de!" testi paralel kosuda
+  1 sn'lik `waitFor` butcesini asiyordu → `vitest.setup.ts` icinde
+  `configure({ asyncUtilTimeout: 3000 })`. 3 ardisi kosu + tam kosu yesil.
+
+### Acik kalan / risk
+
+- **Tarayici dogrulamasi YOK:** dev sunucu hydrate olmuyor (`_next/hmr` ws
+  `ERR_INVALID_HTTP_RESPONSE`), admin parolasi bilinmiyor, BrowserOS neo bagli
+  degil → kanit jsdom + kaynak sozlesmesi + imzali-cookie HTTP olcumu.
+- **Kullanici eylemi:** SQL Editor'de `scripts/schema-languages.sql` +
+  `scripts/schema-fixes.sql` calistirilmali (aksi halde "Bildigim Diller"
+  sekmesi uyari verir).
+- `site_content` tablosu hala YOK; `progress.md` ve `scripts/` **gitignored**
+  (yerel dosyalar, commitlenmez).
