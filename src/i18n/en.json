@@ -480,6 +480,8 @@
   "chat.replyingTo": "Replying to:",
   "chat.reply": "Reply",
   "chat.copy": "Copy",
+  "chat.forward": "Forward",
+  "chat.forwardTitle": "Forward to…",
   "chat.pin": "Pin",
   "chat.unpin": "Unpin",
   "chat.info": "Message info",

@@ -27,6 +27,7 @@ import {
 } from '@/lib/chat-peers'
 import { tickFor } from '@/lib/chat-ticks'
 import { helloMessage } from '@/lib/greeting'
+import { MenuHeader, MenuItem, menuPoint, MenuSurface, useLongPress } from './context-menu'
 
 /**
  * Sohbet arayüzü (kullanıcı tarafı) — 2026-10-11.
@@ -134,7 +135,19 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
   const [replyTo, setReplyTo] = useState<ChatMessageRow | null>(null)
-  const [menuMsg, setMenuMsg] = useState<ChatMessageRow | null>(null)
+  /**
+   * AÇIK BAĞLAM MENÜSÜ — aynı anda TEK menü (2026-10-13 kullanıcı isteği:
+   * "aynı anda tek menü açık olsun"). Hedef + imleç noktası birlikte tutulur;
+   * kişi menüsü eskiden `menuPeer`, mesaj menüsü `menuMsg` idi ve ikisi ayrı
+   * state olduğu için çakışabiliyorlardı.
+   */
+  const [menu, setMenu] = useState<
+    | { kind: 'peer', peer: Peer, x: number, y: number }
+    | { kind: 'message', message: ChatMessageRow, x: number, y: number }
+    | null
+  >(null)
+  /** "İlet" (forward) hedef seçimi — mesajı başka bir kişiye gönderir. */
+  const [forwardMsg, setForwardMsg] = useState<ChatMessageRow | null>(null)
   const [infoMsg, setInfoMsg] = useState<ChatMessageRow | null>(null)
   const [confirmMsg, setConfirmMsg] = useState<ChatMessageRow | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
@@ -168,7 +181,6 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   /** Yan panel genişliği (px). */
   const [panelWidth, setPanelWidth] = useState(CHAT_PANEL_DEFAULT)
   const [peerQuery, setPeerQuery] = useState('')
-  const [menuPeer, setMenuPeer] = useState<Peer | null>(null)
   const [profilePeer, setProfilePeer] = useState<Peer | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   /** Metin alanı: emoji imlecin olduğu yere eklensin diye ref gerekir. */
@@ -408,6 +420,31 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       locale,
     )
   }, [peers, now, locale])
+
+  /**
+   * UZUN BASMA (mobil, 2026-10-13 kullanıcı isteği: "Mobilde sağ tık yerine
+   * uzun basma aynı menüyü açsın"). Tek kapsayıcıya takılır — satırlar
+   * `.map()` ile üretildiği için hook satır başına çağrılamaz; dokunulan
+   * öğeden `data-*` ile hangi satır olduğu bulunur. Sağ tık (masaüstü) yolunu
+   * etkilemez: `pointerType === 'mouse'` erken çıkar.
+   */
+  const peerLongPress = useLongPress((x, y, target) => {
+    if (!isAdmin) {
+      return
+    }
+    const id = target?.closest<HTMLElement>('[data-peer-id]')?.dataset.peerId
+    const peer = (peers ?? []).find(p => p.id === id)
+    if (peer) {
+      setMenu({ kind: 'peer', peer, x, y })
+    }
+  })
+  const messageLongPress = useLongPress((x, y, target) => {
+    const id = target?.closest<HTMLElement>('[data-message-id]')?.dataset.messageId
+    const message = messages.find(m => m.id === id)
+    if (message) {
+      setMenu({ kind: 'message', message, x, y })
+    }
+  })
 
   /** Bir kişiye tıklanınca doğrudan sohbeti açar (idempotent). */
   const openWith = useCallback(async (peerId: string) => {
@@ -728,12 +765,64 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       setMessages(prev => prev.filter(m => m.id !== confirmMsg.id))
     }
     setConfirmMsg(null)
-    setMenuMsg(null)
+    setMenu(null)
   }
 
   function copy(text: string) {
     navigator.clipboard?.writeText(text)
-    setMenuMsg(null)
+    setMenu(null)
+  }
+
+  /**
+   * İLET (forward, 2026-10-13): eldeki mesajın içeriğini BAŞKA bir kişiye
+   * gönderir. Yeni sunucu ucu GEREKMEZ: önce hedefle doğrudan sohbet açılır
+   * (`action:'open'`, yoksa oluşturur), sonra mesaj o sohbete yazılır. Dosya
+   * ve görseller de taşınır (URL zaten `/uploads/chat/` altında yüklü).
+   * Kendi mesaj listemiz DEĞİŞMEZ — iletilen mesaj hedef sohbete gider.
+   */
+  async function forwardTo(peer: Peer, message: ChatMessageRow) {
+    try {
+      const opened = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'open', peerId: peer.id }),
+      })
+      const openJson = await opened.json()
+      if (openJson?.code === 'CHAT_SCHEMA_MISSING') {
+        setSchemaMissing(true)
+        return
+      }
+      const target = openJson?.conversation?.id
+      if (!target) {
+        setError(openJson?.message ?? t('chat.error'))
+        return
+      }
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send',
+          conversationId: target,
+          text: message.text ?? '',
+          kind: message.kind,
+          file: message.file_url
+            ? {
+                url: message.file_url,
+                name: message.file_name ?? 'dosya',
+                type: message.file_type ?? 'application/octet-stream',
+                size: message.file_size ?? 0,
+              }
+            : undefined,
+        }),
+      })
+      const json = await res.json()
+      if (!json?.success) {
+        setError(json?.message ?? t('chat.error'))
+      }
+    }
+    catch {
+      setError(t('chat.error'))
+    }
   }
 
   /* ── durumlar ─────────────────────────────────────────────────────── */
@@ -829,7 +918,23 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
 
   return (
     <div
-      className="relative flex h-[calc(100svh-11rem)] min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background"
+      /*
+        YÜKSEKLİK (2026-10-13 kullanıcı isteği: "dar ekranda kart tam genişlik ve
+        tam yükseklik kaplasın; kenar boşluğu en fazla 8-12px olsun").
+         · `md` ALTI (<768px): `h-[calc(100dvh-4.5rem)]` — TopBar payı 3.5rem +
+           üstte/altta 8er px = 4.5rem. YÜKSEKLİK ŞART (ölçüldü): yükseklik
+           verilmezse (ne `h-full` ne sınıfsız) kartın yüksekliği İÇERİĞE göre
+           belirsiz kalıyor, `flex-1` çocuklar (mesaj listesi) küçülemiyor ve
+           `overflow-y-auto` devre dışı kalıyordu: 24 mesajla 390px'de kaydırma
+           kabının `clientHeight`'ı 1106px'e (içerik boyu) çıkıyor, yazma alanı
+           kartın dışına itilip `overflow-hidden` ile KIRPILIYORDU.
+           `dvh`: mobil klavye açılınca kutu küçülür, yazma alanı taşmaz.
+         · `md` VE ÜSTÜ (≥768px): eski sabit yükseklik (`100svh` eksi TopBar 56px
+           + bölüm üst payı 80px + slot payları 40px = 11rem) ve yuvarlak kart.
+        KIRILMA NOKTASI: 768px (`md`). Altında TEK panel (liste ↔ sohbet geçişi),
+        üstünde liste + sohbet yan yana.
+      */
+      className="relative flex h-[calc(100dvh-4.5rem)] min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background md:h-[calc(100svh-11rem)]"
       style={{ '--chat-panel-w': `${panelWidth}px` } as CSSProperties}
     >
       {/* ── SOL: kime yazmak istiyorum (kişi listesi) ── */}
@@ -867,8 +972,9 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
 
         <div
           className="relative min-h-0 flex-1 overflow-y-auto p-2"
-          onClick={() => setMenuPeer(null)}
+          onClick={() => setMenu(null)}
           onContextMenu={e => e.preventDefault()}
+          {...peerLongPress}
         >
           {peers === null && !peersError && <ChatSkeleton label={t('chat.loading')} />}
           {peers === null && peersError && <p className="p-4 text-sm text-danger">{t('chat.error')}</p>}
@@ -879,15 +985,16 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
             <div key={p.id} className="relative">
               <button
                 type="button"
+                data-peer-id={p.id}
                 onClick={() => openWith(p.id)}
                 onContextMenu={isAdmin
                   ? (e) => {
                       // Sağ tık menüsü (favori/takma ad/profil/engelle...) yalnız
                       // yöneticiye açık; normal kullanıcıya "Yetki yok." hatası
-                      // göstermenin anlamı yok.
+                      // göstermenin anlamı yok. Menü İMLECİN konumunda açılır.
                       e.preventDefault()
                       e.stopPropagation()
-                      setMenuPeer(p)
+                      setMenu({ kind: 'peer', peer: p, ...menuPoint(e) })
                     }
                   : undefined}
                 className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-foreground/5"
@@ -916,17 +1023,17 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                       )
                     : (
                         <span className="block truncate text-xs text-foreground-500">
-                          {p.nickname && p.fullName
-                            ? `${p.fullName} · @${p.username}`
-                            : `@${p.username}`}
-                          {p.preview && (
-                            <>
-                              {' '}
-                              ·
-                              {' '}
-                              {p.preview}
-                            </>
-                          )}
+                          {/*
+                            ÖNİZLEME (2026-10-13 kullanıcı isteği): satır eskiden
+                            her zaman KARŞI TARAFIN adını (`@kullanıcı`) gösterip
+                            sonra mesajı ekliyordu — mesajı ben yazsam bile
+                            "@tarikelertr · Merhaba 👋" görünüyordu. Artık gönderen
+                            `last_sender_name`den gelir (sunucu her gönderimde
+                            yazar); hiç mesaj yoksa boş durum metni gösterilir.
+                          */}
+                          {p.preview
+                            ? `${p.previewSender ? `@${p.previewSender} · ` : ''}${p.preview}`
+                            : t('chat.empty')}
                         </span>
                       )}
                 </span>
@@ -936,46 +1043,6 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                   </span>
                 )}
               </button>
-
-              {menuPeer?.id === p.id && (
-                <PeerMenu
-                  peer={p}
-                  t={t}
-                  onClose={() => setMenuPeer(null)}
-                  onNicknameSave={async (nickname) => {
-                    await runAdmin('nickname', p, { nickname })
-                    setPeers(prev =>
-                      (prev ?? []).map(x => (x.id === p.id ? { ...x, nickname: nickname || null } : x)))
-                    setMenuPeer(null)
-                  }}
-                  onProfile={() => {
-                    setProfilePeer(p)
-                    setMenuPeer(null)
-                  }}
-                  onToggle={async (action, next) => {
-                    setMenuPeer(null)
-                    await runAdmin(action, p, { [action]: next })
-                    // 20 sn'lik tazelemeyi bekleme — menü hemen yeni durumu göstersin.
-                    setPeers(prev =>
-                      (prev ?? []).map((x) => {
-                        if (x.id !== p.id) {
-                          return x
-                        }
-                        return action === 'favorite' || action === 'important' || action === 'block'
-                          ? { ...x, [action]: next }
-                          : x
-                      }))
-                  }}
-                  onClear={async () => {
-                    setMenuPeer(null)
-                    await runAdmin('clear', p)
-                  }}
-                  onDelete={async () => {
-                    setMenuPeer(null)
-                    await runAdmin('deleteConversation', p)
-                  }}
-                />
-              )}
             </div>
           ))}
         </div>
@@ -1020,12 +1087,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setConversationId(null)
-                  setActivePeerId(null)
-                  setMessages([])
-                  setError(null)
-                }}
+                onClick={() => setListOpen(true)}
                 title={t('chat.backToList')}
                 aria-label={t('chat.backToList')}
                 className="cursor-pointer rounded-lg px-2 py-1 text-sm transition-colors hover:bg-foreground/10 md:hidden"
@@ -1073,7 +1135,11 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         )}
 
         {/* mesajlar */}
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4">
+        <div
+          className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4"
+          onContextMenu={e => e.preventDefault()}
+          {...messageLongPress}
+        >
           {!threadOpen && (
             <p className="pt-10 text-center text-sm text-foreground-500">{t('chat.selectPerson')}</p>
           )}
@@ -1096,20 +1162,36 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
               </button>
             </div>
           )}
-          {threadOpen && messages.map((m) => {
+          {threadOpen && messages.map((m, i) => {
             const mine = m.sender_id === (selfId || currentUserId)
           const replied = replyTo?.id === m.id
           const tick = mine ? tickFor(m) : null
+          /*
+            GÖNDEREN SATIRI (2026-10-13 kullanıcı isteği): balonun üstünde küçük
+            "@kullanıcı" satırı durur. ART ARDA gelen aynı gönderenin mesajlarında
+            TEKRARLANMAZ (gruplama). Kendi mesajlarımda gösterilmez: sağdaki mavi
+            hizalama zaten kimin yazdığını söyler ve tek kişilik sohbette
+            kendi adını okumak gürültüdür.
+          */
+          const showSender = !mine && (i === 0 || messages[i - 1]?.sender_id !== m.sender_id)
           return (
             <div
               key={m.id}
               data-replied={replied || undefined}
-              className={cn('flex', mine ? 'justify-end' : 'justify-start')}
+              className={cn('flex flex-col', mine ? 'items-end' : 'items-start')}
             >
+              {showSender && (
+                <span className="mb-0.5 px-1 text-[10px] text-foreground-500">
+                  @
+                  {m.sender_name}
+                </span>
+              )}
               <div
+                data-message-id={m.id}
                 onContextMenu={(e) => {
+                  // Menü İMLECİN konumunda (eskiden tam ekran ortalanmış diyalogdu).
                   e.preventDefault()
-                  setMenuMsg(m)
+                  setMenu({ kind: 'message', message: m, ...menuPoint(e) })
                 }}
                 onClick={() => replied && document.getElementById(`m-${m.id}`)?.scrollIntoView({ behavior: 'smooth' })}
                 className={cn(
@@ -1161,9 +1243,12 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           <div ref={endRef} />
         </div>
 
-        {/* yazma alanı — kişi seçilmeden gösterilmez */}
+        {/* yazma alanı — kişi seçilmeden gösterilmez.
+            `shrink-0` + `env(safe-area-inset-bottom)`: klavye açıldığında
+            (kart `dvh` ile küçülür) giriş alanı kırpılmaz, çentikli ekranda
+            alt güvenli alan kadar içeriden boşluk bırakır. */}
         {threadOpen && (
-          <div className="border-t border-foreground/10 p-3">
+          <div className="shrink-0 border-t border-foreground/10 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         {replyTo && (
           <div className="mb-2 flex items-center justify-between rounded-lg bg-foreground/10 px-3 py-1.5 text-xs">
             <span className="truncate">
@@ -1283,22 +1368,94 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         />
       )}
 
-      {/* sağ tık menüsü */}
-      {menuMsg && (
+      </section>
+
+      {/* ── BAĞLAM MENÜLERİ: imleç konumunda; aynı anda YALNIZ BİRİ açık ── */}
+      {menu?.kind === 'peer' && (
+        <PeerMenu
+          peer={menu.peer}
+          x={menu.x}
+          y={menu.y}
+          t={t}
+          onClose={() => setMenu(null)}
+          onNicknameSave={async (nickname) => {
+            const peer = menu.peer
+            await runAdmin('nickname', peer, { nickname })
+            setPeers(prev =>
+              (prev ?? []).map(x => (x.id === peer.id ? { ...x, nickname: nickname || null } : x)))
+            setMenu(null)
+          }}
+          onProfile={() => {
+            setProfilePeer(menu.peer)
+            setMenu(null)
+          }}
+          onToggle={async (action, next) => {
+            const peer = menu.peer
+            setMenu(null)
+            await runAdmin(action, peer, { [action]: next })
+            // 20 sn'lik tazelemeyi bekleme — menü hemen yeni durumu göstersin.
+            setPeers(prev =>
+              (prev ?? []).map((x) => {
+                if (x.id !== peer.id) {
+                  return x
+                }
+                return action === 'favorite' || action === 'important' || action === 'block'
+                  ? { ...x, [action]: next }
+                  : x
+              }))
+          }}
+          onClear={async () => {
+            const peer = menu.peer
+            setMenu(null)
+            await runAdmin('clear', peer)
+          }}
+          onDelete={async () => {
+            const peer = menu.peer
+            setMenu(null)
+            await runAdmin('deleteConversation', peer)
+          }}
+        />
+      )}
+
+      {menu?.kind === 'message' && (
         <MessageMenu
-          message={menuMsg}
-          onClose={() => setMenuMsg(null)}
-          onReply={() => { setReplyTo(menuMsg); setMenuMsg(null) }}
-          onCopy={() => copy(menuMsg.text ?? '')}
-          onPin={() => { act('pin', { messageId: menuMsg.id, pinned: !menuMsg.pinned }); setMenuMsg(null) }}
-          onInfo={() => { setInfoMsg(menuMsg); setMenuMsg(null) }}
-          onDelete={() => { setConfirmMsg(menuMsg); setMenuMsg(null) }}
+          message={menu.message}
+          x={menu.x}
+          y={menu.y}
+          onClose={() => setMenu(null)}
+          onReply={() => { setReplyTo(menu.message); setMenu(null) }}
+          onCopy={() => copy(menu.message.text ?? '')}
+          onForward={() => { setForwardMsg(menu.message); setMenu(null) }}
+          onPin={() => { act('pin', { messageId: menu.message.id, pinned: !menu.message.pinned }); setMenu(null) }}
+          onInfo={() => { setInfoMsg(menu.message); setMenu(null) }}
+          onDelete={() => { setConfirmMsg(menu.message); setMenu(null) }}
           labels={{
+            header: menu.message.text || menu.message.file_name || '',
             reply: t('chat.reply'),
             copy: t('chat.copy'),
-            pin: menuMsg.pinned ? t('chat.unpin') : t('chat.pin'),
+            forward: t('chat.forward'),
+            pin: menu.message.pinned ? t('chat.unpin') : t('chat.pin'),
             info: t('chat.info'),
             delete: t('chat.delete'),
+            close: t('common.close'),
+          }}
+        />
+      )}
+
+      {/* "İLET": mesajı başka bir kişiye gönder (yeni sunucu ucu gerekmez) */}
+      {forwardMsg && (
+        <ForwardPicker
+          peers={peers ?? []}
+          labels={{
+            title: t('chat.forwardTitle'),
+            cancel: t('chat.cancel'),
+            empty: t('chat.noMatch'),
+          }}
+          onCancel={() => setForwardMsg(null)}
+          onPick={async (peer) => {
+            const message = forwardMsg
+            setForwardMsg(null)
+            await forwardTo(peer, message)
           }}
         />
       )}
@@ -1317,7 +1474,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           }}
         />
       )}
-      </section>
+
     </div>
   )
 }
@@ -1425,9 +1582,17 @@ function MessageInfo({ message, onClose, labels }: {
 /**
  * Admin için kullanıcı sağ tık menüsü (2026-10-11 kullanıcı isteği).
  * Sohbet düzeyinde: sabitle/favori, engelle, temizle, sil + takma ad + profil.
+ *
+ * 2026-10-13 (kullanıcı isteği: "menü sağ tıklanan noktada açılmalı"): menü
+ * artık `MenuSurface` içinde — imleç konumunda açılır, ekran kenarına taşarsa
+ * içeri kayar, Esc / dışarı tıklama / kaydırma kapatır, ok tuşlarıyla gezilir.
+ * Önceden `absolute top-2 right-2` ile satırın sağ üst köşesine çakılıydı ve
+ * kaydırılan listenin İÇİNDE render edildiği için uzun listede kırpılabiliyordu.
  */
-function PeerMenu({ peer, t, onClose, onNicknameSave, onProfile, onToggle, onClear, onDelete }: {
+function PeerMenu({ peer, x, y, t, onClose, onNicknameSave, onProfile, onToggle, onClear, onDelete }: {
   peer: Peer
+  x: number
+  y: number
   t: (key: string) => string
   onClose: () => void
   onNicknameSave: (nickname: string) => void | Promise<void>
@@ -1438,10 +1603,9 @@ function PeerMenu({ peer, t, onClose, onNicknameSave, onProfile, onToggle, onCle
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(peer.nickname ?? '')
-  const item = 'block w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-foreground/10'
 
   return (
-    <div className="absolute top-2 right-2 z-50 min-w-56 overflow-hidden rounded-xl border border-foreground/10 bg-background shadow-xl" onClick={e => e.stopPropagation()}>
+    <MenuSurface x={x} y={y} onClose={onClose} label={t('chat.chats')}>
       {editing
         ? (
             <form
@@ -1465,60 +1629,40 @@ function PeerMenu({ peer, t, onClose, onNicknameSave, onProfile, onToggle, onCle
                   {t('chat.save')}
                 </button>
                 <button type="button" onClick={() => setEditing(false)} className="cursor-pointer rounded-lg border border-foreground/10 px-2 py-1.5 text-xs">
-                  {t('cancel')}
+                  {t('chat.cancel')}
                 </button>
               </div>
             </form>
           )
         : (
             <>
-              <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-2">
-                <p className="min-w-0 truncate text-xs text-foreground-500">
-                  {peer.nickname || peer.fullName || peer.username}
-                </p>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  aria-label={t('common.close')}
-                  className="cursor-pointer rounded px-1 text-xs hover:bg-foreground/10"
-                >
-                  ✕
-                </button>
-              </div>
-              <button type="button" className={item} onClick={() => onProfile()}>
-👤
-{t('chat.viewProfile')}
-</button>
-              <button type="button" className={item} onClick={() => setEditing(true)}>
-✏️
-{t('chat.setNickname')}
-</button>
-              <button type="button" className={item} onClick={() => onToggle('favorite', !peer.favorite)}>
-                ⭐
-{' '}
-{peer.favorite ? t('chat.unfavorite') : t('chat.favorite')}
-              </button>
-              <button type="button" className={item} onClick={() => onToggle('important', !peer.important)}>
-                📌
-{' '}
-{peer.important ? t('chat.unmarkImportant') : t('chat.markImportant')}
-              </button>
-              <button type="button" className={item} onClick={() => onToggle('block', !peer.blocked)}>
-                🚫
-{' '}
-{peer.blocked ? t('chat.unblock') : t('chat.block')}
-              </button>
-              <button type="button" className={item} onClick={() => onClear()}>
-🧹
-{t('chat.clearConversation')}
-</button>
-              <button type="button" className={`${item} text-red-500`} onClick={() => onDelete()}>
-🗑
-{t('chat.deleteConversation')}
-</button>
+              <MenuHeader
+                text={peer.nickname || peer.fullName || peer.username}
+                onClose={onClose}
+                closeLabel={t('common.close')}
+              />
+              <MenuItem icon="👤" label={t('chat.viewProfile')} onSelect={() => onProfile()} />
+              <MenuItem icon="✏️" label={t('chat.setNickname')} onSelect={() => setEditing(true)} />
+              <MenuItem
+                icon="⭐"
+                label={peer.favorite ? t('chat.unfavorite') : t('chat.favorite')}
+                onSelect={() => onToggle('favorite', !peer.favorite)}
+              />
+              <MenuItem
+                icon="📌"
+                label={peer.important ? t('chat.unmarkImportant') : t('chat.markImportant')}
+                onSelect={() => onToggle('important', !peer.important)}
+              />
+              <MenuItem
+                icon="🚫"
+                label={peer.blocked ? t('chat.unblock') : t('chat.block')}
+                onSelect={() => onToggle('block', !peer.blocked)}
+              />
+              <MenuItem icon="🧹" label={t('chat.clearConversation')} onSelect={() => onClear()} />
+              <MenuItem icon="🗑" label={t('chat.deleteConversation')} danger onSelect={() => onDelete()} />
             </>
           )}
-    </div>
+    </MenuSurface>
   )
 }
 
@@ -1651,51 +1795,106 @@ function ProfileSheet({ peer, t, onClose }: {
   )
 }
 
-function MessageMenu({ message, onClose, onReply, onCopy, onPin, onInfo, onDelete, labels }: {
+/**
+ * Mesaj bağlam menüsü (2026-10-13 kullanıcı isteği).
+ * Eskiden tam ekran karartma + EKRANIN ORTASINDA sabit bir diyalogdu; artık
+ * balonun sağ tıklandığı NOKTADA `MenuSurface` ile açılır (aynı stil, aynı
+ * kapatma kuralları, ok tuşlarıyla gezinme).
+ * Maddeler: Kopyala · Yanıtla · İlet · Sabitle · Bilgi · Sil.
+ *
+ * NOT: "Düzenle" (mesaj düzenleme) BİLEREK YOK — metni değiştirmek için
+ * `chat_messages.edited_at` kolonu gerekir, o kolon şemada ve canlı veritabanında
+ * YOKTUR (`supabase/chat.sql`). Kolonsuz düzenleme "düzenlendi" işareti
+ * koyamaz → kullanıcıya sessizce değiştirilmiş geçmiş gösterirdi.
+ */
+function MessageMenu({ message, x, y, onClose, onReply, onCopy, onForward, onPin, onInfo, onDelete, labels }: {
   message: ChatMessageRow
+  x: number
+  y: number
   onClose: () => void
   onReply: () => void
   onCopy: () => void
+  onForward: () => void
   onPin: () => void
   onInfo: () => void
   onDelete: () => void
   labels: Record<string, string>
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <MenuSurface x={x} y={y} onClose={onClose} label={labels.header || labels.info}>
+      {labels.header && (
+        <MenuHeader text={labels.header} onClose={onClose} closeLabel={labels.close} />
+      )}
+      <MenuItem icon="⧉" label={labels.copy} disabled={!message.text} onSelect={onCopy} />
+      <MenuItem icon="↩︎" label={labels.reply} onSelect={onReply} />
+      <MenuItem icon="➦" label={labels.forward} onSelect={onForward} />
+      <MenuItem icon="📌" label={labels.pin} onSelect={onPin} />
+      <MenuItem icon="ⓘ" label={labels.info} onSelect={onInfo} />
+      <MenuItem icon="🗑" label={labels.delete} danger onSelect={onDelete} />
+    </MenuSurface>
+  )
+}
+
+/**
+ * "İlet" hedef seçimi (2026-10-13).
+ * Bağlam menüsü DEĞİL: seçim yapılana kadar açık kalan ortalanmış diyalogdur —
+ * Esc, dışarı tıklama veya "İptal" kapatır.
+ */
+function ForwardPicker({ peers, labels, onCancel, onPick }: {
+  peers: Peer[]
+  labels: { title: string, cancel: string, empty: string }
+  onCancel: () => void
+  onPick: (peer: Peer) => void | Promise<void>
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onCancel()
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onCancel])
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4"
+      onClick={onCancel}
+    >
       <div
-        className="min-w-48 overflow-hidden rounded-xl border border-foreground/10 bg-background shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label={labels.title}
+        className="w-full max-w-sm overflow-hidden rounded-xl border border-foreground/10 bg-background shadow-xl"
         onClick={e => e.stopPropagation()}
       >
-        {message.text && (
-          <p className="max-h-20 overflow-y-auto border-b border-foreground/10 px-4 py-2 text-xs text-foreground-500">
-            {message.text}
-          </p>
-        )}
-        <button type="button" onClick={onReply} className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-foreground/10">
-          ↩︎
-{' '}
-{labels.reply}
-        </button>
-        <button type="button" onClick={onCopy} className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-foreground/10">
-          ⧉
-{' '}
-{labels.copy}
-        </button>
-        <button type="button" onClick={onPin} className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-foreground/10">
-          📌
-{' '}
-{labels.pin}
-        </button>
-        <button type="button" onClick={onInfo} className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-foreground/10">
-          ⓘ
-{' '}
-{labels.info}
-        </button>
-        <button type="button" onClick={onDelete} className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm text-red-500 hover:bg-red-500/10">
-          🗑
-{' '}
-{labels.delete}
+        <p className="border-b border-foreground/10 px-4 py-3 text-sm font-semibold">
+          {labels.title}
+        </p>
+        <div className="max-h-72 overflow-y-auto">
+          {peers.length === 0 && (
+            <p className="px-4 py-3 text-sm text-foreground-500">{labels.empty}</p>
+          )}
+          {peers.map(p => (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onPick(p)}
+              className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-foreground/10"
+            >
+              @
+              {p.username}
+              {p.nickname || p.fullName ? ` · ${p.nickname || p.fullName}` : ''}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="block w-full cursor-pointer border-t border-foreground/10 px-4 py-2.5 text-left text-sm hover:bg-foreground/10"
+        >
+          {labels.cancel}
         </button>
       </div>
     </div>

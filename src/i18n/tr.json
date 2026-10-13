@@ -480,6 +480,8 @@
   "chat.replyingTo": "Yanıtlanıyor:",
   "chat.reply": "Yanıtla",
   "chat.copy": "Kopyala",
+  "chat.forward": "İlet",
+  "chat.forwardTitle": "Kime iletilsin?",
   "chat.pin": "Sabitle",
   "chat.unpin": "Sabitlemeyi kaldır",
   "chat.info": "Mesaj bilgisi",

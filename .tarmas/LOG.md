@@ -1954,3 +1954,101 @@ grafigini bayatlatiyor ve testler UYGULAMAYI degil o sureci olcuyordu).
 2. SQL Editor'de `scripts/schema-languages.sql` + `scripts/schema-fixes.sql`.
 3. Canliya deploy icin onay (canli site hala ESKI build — /admin hatasi orada
    da mevcut).
+
+## 2026-10-13 (sohbet duzeltmeleri — kullanicinin 5 maddesi)
+
+### [CHAT-001] Liste onizlemesi: karsidaki degil, SON MESAJI GONDEREN
+
+- before: satir `@<karsidaki> · <onizleme>` ciziyordu; `previewSender` prop'u
+  hic okunmuyordu (DB katmani ZATEN dogruydu: `last_sender_name`).
+- after: `@${previewSender} · ${preview}`; mesaj yoksa `chat.empty`.
+- kanit: gercek veri (konusma `0b8b9266`) `last_sender_name:
+"tarikelertarnak"` → eski kod `@tarikelertr`, yeni kod
+  `@tarikelertarnak · Merhaba 👋` (kullanicinin verdigi ornegin AYNISI).
+
+### [CHAT-002] Dar ekran: tek panel; secim ve kaydirma korunur
+
+- before: `md` altinda liste paneli kayboluyordu (yerine koyacak kontrol yok).
+- after: 768px altinda TEK panel; liste ↔ sohbet gecisi basliktaki
+  "Kisi listesini ac" (`👥`) / "Sohbet listesine don" (`←`) ile; sohbet
+  kapaliyken liste gorunur (kaynak: `!threadOpen && 'flex'`).
+- kanit: 390px'de liste gorunur/sohbet `display:none`; kisi secimi ve mesaj
+  alani 1440↔390 arasinda korunur; kaydirma konumu 200→200→200.
+
+### [CHAT-003] Dar ekran: kart tam ekran (8px kenar), yazma alani sabit
+
+- before: `Section` dolgusu (`px_4`) yuzunden kart kenardan 16-24px icerde;
+  kart yuksekligi belirsizdi.
+- after: `-mx-4 w-[calc(100%+2rem)]` (>=640px `-mx-6`/`+3rem`; `md`de eski
+  duzen) + kartta `h-[calc(100dvh-4.5rem)]`.
+- **OLCULDU (gercek Chromium):** `Section` `items-center` oldugu icin yalniz
+  `-mx-4` YETMIYOR (genislik telafi edilmezse kart x=16'da kaliyordu);
+  ayrica yukseklik sinifi olmadan 24 mesajda kaydirma kabi icerik boyuna
+  (clientHeight 1106px) cikiyor, `overflow-y-auto` devre disi kaliyor ve
+  yazma alani kartin disina itilip `overflow-hidden` ile KIRPILIYORDU.
+- kanit: 390×780 → kart x8 y64 w374 h708; `chat-composer-field` karti icinde;
+  kaydirma kabi 576/1106 (kaydirilabilir). 1440 → x16 w1408 h724 (degismedi).
+
+### [CHAT-004] Kisi menusu imlecte acilir; kirpilmiyor
+
+- before: menus satirin (kaydirilabilir listenin) ICINDE render ediliyordu →
+  `overflow-y-auto` tarafindan kesiliyordu.
+- after: menuler kart kokunde, `position: fixed`, `contextmenu` +
+  `clientX/clientY`; viewport'a clamp (EDGE 8 / GAP 4); disari tik/Esc/
+  kaydirma/boyut degisimi kapatir; ayni anda tek menu; mobilde uzun basma
+  (`useLongPress`, `pointerType === 'mouse'` erken cikar).
+- maddeler: Profilini incele · Takma ad koy · Favorilere ekle · Onemli kisi
+  olarak isaretle · Engelle · Sohbeti temizle · Sohbeti sil (kirmizi).
+- kanit: menu imlecin ±2px'inde; **kaydirilan listenin SAGINA tasiyor**
+  (kirpilmadiginin kaniti); 390px'de uzun basma sohbeti ACMADAN menuyu aciyor.
+
+### [CHAT-005] Balon menusu imlecte (eski tam ekran karartilmis diyalog DEGIL)
+
+- before: `MessageMenu` tam ekran karartilmis ortalanmis modal idi.
+- after: ayni `MenuSurface`; maddeler Kopyala · Yanitla · Ilet · Sabitle ·
+  Mesaj bilgisi · Sil (kirmizi); gonderen satiri balonun ustunde ve ardisik
+  ayni gonderen icin TEKRARLANMAZ; tiklama saati/isaretler balonun icinde;
+  kendi mesajlarim sagda/mavi, karsininki solda/gri.
+- `Duzenle` YOK (bilincli): `chat_messages`'ta `edited_at` kolonu ve
+  duzenleme API'si yok — DDL yalnizca SQL Editor'de kullanici tarafindan
+  calistirilabildigi icin dogrulanamazdi. Yerine **Ilet** yazildi (mevcut
+  uclarla: `action:'open'` → `action:'send'`).
+- kanit (24 mesajlik fixture): 1 gonderen satiri (kendi mesajimda hic yok),
+  saga tiklanan balon menude, Ilet → `POST /api/chat` `{text:'fixture 0',
+conversationId:'e2e-conv'}`.
+
+### Yolda bulunan 3 gizli hata (hepsi duzeltildi + test edildi)
+
+1. **Menu bolumu `display:none` icinde:** menuler `<section>` ICINDE
+   render ediliyordu; mobilde liste acikken panel `hidden` oldugu icin menu
+   DOM'da olmasina ragmen GORUNMUYORDU (erisilebilirlik agacinda da yok →
+   `getByRole` bulamiyordu). Menuler kart kokune tasindi; kaynak sozlesmesi
+   testi eklendi (`chat.test.ts`).
+2. **Odak gizli ogeye veriliyordu:** `MenuSurface` ilk maddeye odagi
+   `visibility: hidden` durumdayken cagiriyordu (gizli oge odaklanamaz) ve
+   bir daha denemiyordu → sag tik sonrasi ok tuslari OLU idi
+   (`document.activeElement` `<body>`'de). Odak artik `pos.ready` sonrasi.
+3. **Kart yuksekligi belirsizdi** (bkz. CHAT-003).
+
+### Olcum / kanit
+
+- `tsc --noEmit` 0 · `eslint <degisen dosyalar> --max-warnings 0` 0.
+- `vitest run` **717/717** (63 dosya). `src/components/chat` = 6 dosya/86 test
+  (yeni: `context-menu.test.tsx` 16 test).
+- `playwright test e2e/chat-fixes.spec.ts` (gercek Chromium, gercek oturum,
+  sadece yazmalar stub'lanmis) **8/8**.
+- **Tum e2e suite: 44/45.** Kirmizi olan TEK test `e2e/personal-pages.spec.ts
+› footer baglantisi hedef sayfaya goturuyor` — bu degisiklikle ILGISIZ
+  (diff'te home/footer/config yok, spec HEAD'de degismemis, tek worker'da da
+  kirmizi). Probe ile ayni tik `/changelog`e GIDIYOR; spec `domcontentloaded`
+  sonrasi 5800px'lik yumusak kaydirma surerken tikliyor → zamanlama kirilgani.
+- **Negatif kontrol:** `chat.test.ts` sozlesmeleri kod-metni eslesmesi;
+  davranis testleri (`chat.admin.test.tsx`) onizleme/gonderen satirini,
+  `context-menu.test.tsx` klavye/konum/kapatma davranisini dogruluyor.
+
+### Kullanici eylemi (degismedi)
+
+1. SQL Editor'de `scripts/schema-languages.sql` + `scripts/schema-fixes.sql`.
+2. Canliya deploy icin onay.
+3. (Bu turda gerekmedi: 3000'deki `next dev` degisiklikleri servis etti —
+   olcumler uygulamayi dogruladi, bayat modul grafigi belirtisi yok.)

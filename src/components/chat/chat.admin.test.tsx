@@ -463,3 +463,120 @@ describe('yazma sinyali ve boş sohbet', () => {
     })
   })
 })
+
+/**
+ * KİŞİ LİSTESİ ÖNİZLEMESİ (2026-10-13 kullanıcı isteği).
+ *
+ * ÖLÇÜLEN HATA: satır her zaman KARŞI TARAFIN adını yazıyordu —
+ * "@tarikelertr · Merhaba 👋" görünüyordu ama mesajı site sahibi yazmıştı.
+ * Önizleme `chat_conversations.last_sender_name`den (gönderen kişi) gelmeli.
+ */
+describe('kişi listesi önizlemesi', () => {
+  const conversation = (lastSender: string | null, preview: string | null) => ({
+    success: true,
+    conversations: [
+      {
+        id: 'conv-1',
+        direct_key: 'admin:OWNER|u-1',
+        important: null,
+        favorite: null,
+        blocked: null,
+        updated_at: null,
+        last_preview: preview,
+        last_sender_name: lastSender,
+      },
+    ],
+  })
+
+  const conversationsHandler = (
+    body: unknown,
+  ): ((url: string, init?: RequestInit) => Promise<Response>) => (url, init) => {
+    // GET /api/chat → sohbet listesi (POST'lar `method` taşır).
+    if (url === '/api/chat' && !init?.method) {
+      return jsonResponse(body)
+    }
+    return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
+  }
+
+  it('son mesajı BEN yazdıysam benim adım görünür (karşı tarafınki değil)', async () => {
+    await renderAdminChat(conversationsHandler(conversation('tarikelertarnak', 'Merhaba 👋')))
+
+    await waitFor(() => {
+      expect(screen.getByText('@tarikelertarnak · Merhaba 👋')).not.toBeNull()
+    })
+    // Eski hata: karşı tarafın adı yazılıyordu.
+    expect(screen.queryByText(/· Merhaba 👋/)?.textContent).toBe('@tarikelertarnak · Merhaba 👋')
+  })
+
+  it('son mesajı karşı taraf yazdıysa onun adı görünür', async () => {
+    await renderAdminChat(conversationsHandler(conversation('ayse', 'Merhaba 👋')))
+
+    await waitFor(() => {
+      expect(screen.getByText('@ayse · Merhaba 👋')).not.toBeNull()
+    })
+  })
+
+  it('hiç mesaj yoksa boş durum metni gösterilir', async () => {
+    await renderAdminChat(conversationsHandler(conversation(null, null)))
+
+    // İki kişi de mesajsız → iki satırda aynı boş durum metni.
+    await waitFor(() => {
+      expect(screen.getAllByText('Henüz mesaj yok. İlk mesajı sen yaz!').length).toBe(2)
+    })
+  })
+})
+
+/**
+ * BALON GÖNDEREN SATIRI (2026-10-13 kullanıcı isteği):
+ * balonun üstünde "@kullanıcı" satırı durur, art arda gelen aynı gönderenin
+ * mesajlarında TEKRARLANMAZ. Kendi mesajımda gösterilmez (sağdaki mavi hizalama
+ * zaten kimin yazdığını söyler).
+ */
+describe('mesaj gönderen satırı', () => {
+  it('karşı tarafta bir kez görünür, art arda tekrarlanmaz, kendi mesajımda olmaz', async () => {
+    const msg = (id: string, senderId: string, senderName: string, text: string) => ({
+      id,
+      conversation_id: 'conv-1',
+      sender_id: senderId,
+      sender_name: senderName,
+      text,
+      kind: 'text',
+      file_url: null,
+      file_name: null,
+      file_type: null,
+      file_size: null,
+      audio_duration: null,
+      reply_to_id: null,
+      delivered_at: null,
+      read_at: null,
+      pinned: false,
+      pinned_at: null,
+      deleted_for_all: false,
+      deleted_by: null,
+      deleted_at: null,
+      created_at: new Date().toISOString(),
+    })
+
+    await renderAdminChat((url, init) => {
+      if (url.includes('conversationId=') && !init?.method) {
+        return jsonResponse({
+          success: true,
+          messages: [
+            msg('m-1', 'u-1', 'ayse', 'birinci'),
+            msg('m-2', 'u-1', 'ayse', 'ikinci'),
+            msg('m-3', 'admin:OWNER', 'tarikelertarnak', 'benim'),
+          ],
+        })
+      }
+      return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
+    })
+
+    fireEvent.click(screen.getByText('Ayşecik'))
+    await waitFor(() => expect(screen.getByText('birinci')).not.toBeNull())
+
+    // 2 mesaj aynı gönderenden → TEK satır (gruplama).
+    expect(screen.getAllByText('@ayse').length).toBe(1)
+    // Kendi mesajımda gönderen satırı yok.
+    expect(screen.queryByText('@tarikelertarnak')).toBeNull()
+  })
+})

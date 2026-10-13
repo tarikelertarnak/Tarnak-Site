@@ -25,6 +25,15 @@ const SRC = readFileSync(
   'utf8',
 )
 
+/**
+ * YORUMSUZ kaynak. Negatif iddialar (`not.toContain`) için ŞART: dosyadaki
+ * gerekçe yorumları kaldırılan kodu adıyla anar ("eskiden `menuPeer` idi"),
+ * ham metinde arayınca yanlış pozitif verir.
+ */
+const CODE = SRC
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/\/\/.*$/gm, '')
+
 describe('chat arayüz sözleşmesi', () => {
   it('tik: gönderildi/teslim → sarı, okundu → yeşil; inline SVG ikonlar', () => {
     // İkon + renk kararı saf modülde (chat-ticks.test.ts onu tek tek doğrular);
@@ -144,7 +153,9 @@ describe('chat arayüz sözleşmesi', () => {
     // 2026-10-13: başlıktaki ⚪/🔴 düğmesi kaldırıldı → işaret hâlâ `important`
     // bayrağına yazılır, ama karar PeerMenu'de (sağ tık) verilir.
     expect(SRC).toContain('onToggle(\'important\'')
-    expect(SRC).toContain('runAdmin(action, p, { [action]: next })')
+    // 2026-10-13 (#2): menü imleç konumunda açıldığı için hedef kişi `menu.peer`
+    // üzerinden gelir (eskiden doğrudan `p` idi).
+    expect(SRC).toContain('runAdmin(action, peer, { [action]: next })')
     expect(SRC).toContain('action === \'favorite\' || action === \'important\' || action === \'block\'')
   })
 
@@ -232,10 +243,119 @@ describe('chat arayüz sözleşmesi', () => {
 
     it('sohbet tam ekranı kaplar (eski 760px / 68svh / max-w-3xl sınırı yok)', () => {
       // 2026-10-13: başlık bloğu kalktı → ayrılan pay 19rem'den 11rem'e indi.
-      expect(SRC).toContain('flex h-[calc(100svh-11rem)] min-h-[260px] w-full')
+      // 2026-10-13 (#2, kullanıcı isteği): dar ekranda (<768px) kart TAM ekranı
+      // kaplar; yüksekliği saran sayfa kutusu `dvh` ile verir.
+      // ÖLÇÜLDÜ (2026-10-13, gerçek Chromium 390×780): `h-full` burada
+      // ÇÖZÜLMÜYOR (slot yüksekliği `min-height`+`flex-1`'den geldiği için
+      // "belirli" sayılmıyor) → kart `min-h-[260px]`'te kalıyordu. Doğrusu
+      // yükseklik sınıfı KOYMAMAK: slotun `items-stretch`'i uzatır.
+      // ÖLÇÜLDÜ (2026-10-13, gerçek Chromium 390×780, 24 mesaj): kartın
+      // yüksekliği belirsizse (ne `h-full` ne sınıf) kaydırma kabı içerik boyuna
+      // (1106px) çıkıyor, `overflow-y-auto` devre dışı kalıyor, yazma alanı
+      // kartın dışına itilip `overflow-hidden` ile kırpılıyordu. Sabit `dvh`
+      // yüksekliği şart; `h-full` (=height:100%) burada ÇÖZÜLMÜYOR.
+      expect(SRC).toContain('h-[calc(100dvh-4.5rem)] min-h-[260px] w-full overflow-hidden')
+      expect(SRC).not.toMatch(/className="[^"]*h-full min-h-\[260px\]/)
+      expect(SRC).toContain('md:h-[calc(100svh-11rem)]')
       // sınıf listesinde eski sınırlar YOK (yorumda anılmaları serbest)
       expect(SRC).not.toMatch(/className="[^"]*max-h-\[760px\]/)
       expect(SRC).not.toMatch(/className="[^"]*68svh/)
+    })
+
+    it('bağlam menüleri sohbet panelinin DIŞINDA render edilir', () => {
+      // ÖLÇÜLDÜ (2026-10-13, gerçek Chromium 390px): menüler `<section>` içinde
+      // kalırsa, liste açıkken panel `hidden` olduğu için menü DOM'da olmasına
+      // rağmen GÖRÜNMÜYOR (erişilebilirlik ağacına da girmiyor, `getByRole`
+      // bulamıyordu) → mobilde uzun basma/menü bozuk görünüyordu.
+      const sectionClose = SRC.indexOf('</section>')
+      const asideClose = SRC.indexOf('</aside>')
+      const menus = SRC.indexOf('BAĞLAM MENÜLERİ')
+      expect(menus).toBeGreaterThan(0)
+      expect(sectionClose).toBeGreaterThan(0)
+      expect(asideClose).toBeGreaterThan(0)
+      expect(menus).toBeGreaterThan(sectionClose)
+      expect(menus).toBeGreaterThan(asideClose)
+      expect(SRC.lastIndexOf('</section>')).toBe(sectionClose)
+    })
+
+    /*
+      2026-10-13 (#2) KULLANICI İSTEKLERİ — kaynak sözleşmeleri.
+      Hepsi canlı tarayıcıda `e2e/chat-fixes.spec.ts` ile de ölçülür; burada
+      niyet kaynakta sabitlenir (yanlışlıkla geri alınmasın).
+    */
+    it('dar ekran yazma alanı: klavyeye/safe-area\'ya dayanıklı', () => {
+      // Klavye açılınca taşmasın: giriş alanı küçülmez, alt güvenli alan kadar
+      // içeriden boşluk bırakır.
+      expect(SRC).toContain('shrink-0 border-t')
+      expect(SRC).toContain('env(safe-area-inset-bottom)')
+    })
+
+    it('kırılma noktası 768px: altında tek panel, üstünde iki panel', () => {
+      // `md` = 768px. Liste dar ekranda kaplama olur, md'de sabit sütuna döner.
+      expect(SRC).toContain('absolute inset-0 z-40 flex')
+      expect(SRC).toContain('md:static')
+      expect(SRC).toContain('md:w-[var(--chat-panel-w)]')
+    })
+
+    it('"←" ve "👥" listeyi açar, SEÇİLİ sohbeti SİLMEZ (geri dönüşte korunur)', () => {
+      // Eski hâlde "←" sohbeti sıfırlıyordu (`setConversationId(null)`), yani
+      // listeden geri dönüldüğünde seçim ve kaydırma konumu kayboluyordu.
+      expect(CODE).toMatch(
+        /onClick=\{\(\) => setListOpen\(true\)\}\s*\n\s*title=\{t\('chat\.backToList'\)\}/,
+      )
+    })
+
+    it('kişi önizlemesi GÖNDERENİ gösterir; mesaj yoksa boş durum metni', () => {
+      expect(CODE).toContain('p.previewSender ?')
+      // `@<gönderen>` öneki (regex: düz dizgede `${...}` lint hatası verir).
+      expect(CODE).toMatch(/@\$\{p\.previewSender\}/)
+      // Mesaj yoksa "Henüz mesaj yok. İlk mesajı sen yaz!" (chat.empty)
+      expect(CODE).toContain(': t(\'chat.empty\')')
+      // Eski hatalı davranış: önizleme KARŞI TARAFIN adını yazıyordu.
+      expect(CODE).not.toMatch(/`\$\{p\.fullName\} · @\$\{p\.username\}`/)
+    })
+
+    it('sağ tık menüleri İMLEÇ konumunda ve AYNI ANDA TEK tanesi açılır', () => {
+      // Konum `clientX/clientY`den; klavyeyle açılırsa öğenin köşesinden.
+      expect(CODE).toContain('menuPoint(e)')
+      expect(CODE).toMatch(/setMenu\(\{ kind: 'peer', peer: p, \.\.\.menuPoint\(e\) \}\)/)
+      expect(CODE).toMatch(/setMenu\(\{ kind: 'message', message: m, \.\.\.menuPoint\(e\) \}\)/)
+      // Tek `menu` state → çakışma imkânsız (eski ayrı menuPeer/menuMsg kalktı).
+      expect(CODE).not.toContain('menuPeer')
+      expect(CODE).not.toContain('menuMsg')
+      // İki menü de ortak yüzeyi kullanır: taşma düzeltmesi + Esc/ok tuşları.
+      expect(CODE).toContain('<MenuSurface')
+      // Kişi menüsü kaydırılan listenin DIŞINDA (kırpılmaz).
+      expect(CODE.indexOf('menu?.kind === \'peer\'')).toBeGreaterThan(CODE.indexOf('</aside>'))
+    })
+
+    it('mobilde uzun basma aynı menüyü açar (sağ tık şart değil)', () => {
+      expect(CODE).toContain('useLongPress')
+      expect(CODE).toContain('data-peer-id')
+      expect(CODE).toContain('data-message-id')
+      // Satır başına hook çağrılmaz (kapsayıcıya takılır) — `.map()` içinde hook YASAK.
+      expect(CODE).toMatch(/const peerLongPress = useLongPress\(/)
+      expect(CODE).toMatch(/const messageLongPress = useLongPress\(/)
+    })
+
+    it('mesaj menüsü: Kopyala · Yanıtla · İlet · Sabitle · Bilgi · Sil', () => {
+      for (const key of ['reply', 'copy', 'forward', 'pin', 'info', 'delete']) {
+        expect(CODE, `labels.${key}`).toContain(`label={labels.${key}}`)
+      }
+      // "İlet" yeni bir sunucu ucu gerektirmez: hedefle sohbet açılır + gönderilir.
+      expect(CODE).toContain('async function forwardTo(peer: Peer, message: ChatMessageRow)')
+      expect(CODE).toContain('action: \'send\'')
+      // Sil kırmızı ve ayrı vurgulu kalır.
+      expect(CODE).toContain('danger onSelect={onDelete}')
+    })
+
+    it('balon üstünde gönderen satırı var; art arda tekrarlanmaz', () => {
+      expect(CODE).toContain('const showSender = !mine &&')
+      expect(CODE).toContain('messages[i - 1]?.sender_id !== m.sender_id')
+      expect(CODE).toContain('{m.sender_name}')
+      // Kendi mesajım sağda mavi, karşı taraf solda koyu gri (değişmedi).
+      expect(CODE).toContain('mine ? \'items-end\' : \'items-start\'')
+      expect(CODE).toContain('mine ? \'bg-primary text-primary-fg\' : \'bg-foreground/10 text-foreground\'')
     })
 
     it('yükleme ekranı iskelet: "Sohbet yükleniyor" metni basılmaz', () => {

@@ -1,7 +1,7 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-13T19:05:00+03:00
+updated: 2026-10-13T21:20:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
 branch: faz-1-guvenlik last_commit: 9cc2a5d (yerel; push/deploy YOK)
@@ -31,11 +31,29 @@ branch: faz-1-guvenlik last_commit: 9cc2a5d (yerel; push/deploy YOK)
 
 ## Current
 
-phase: /ADMIN ERISIM HATASI (kritik) + ILK GERCEK TARAYICI DOGRULAMASI step: KAPANDI (9cc2a5d)
+phase: SOHBET IYILESTIRME (5 hata: onizleme gonderici · mobil tek panel · mobil margin · sag tik konumu · balon menusu) step: KAPANDI (yerel commit; YOLDA 3 gizli hata da duzeltildi)
+prev_phase: /ADMIN ERISIM HATASI (kritik) + ILK GERCEK TARAYICI DOGRULAMASI step: KAPANDI (9cc2a5d)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: 9cc2a5d (yerel; push/deploy ASLA otomatik)
-running_processes: next dev (turbopack) :3000 — KULLANICININ, BAYAT (dosya yeniden adlandirmasindan once basladi; yeniden baslatilmali)
-not: 2 commit: 4bfe73e (/admin erisim duzeltmesi: oturum istemcide) · 9cc2a5d
+branch: faz-1-guvenlik last_commit: yerel (bkz. LOG.md [CHAT-001..005]; push/deploy ASLA otomatik)
+running_processes: next dev (turbopack) :3000 — KULLANICININ; bu turda degisiklikleri SERVIS ETTIGI olculdu (kart x8/w374, menuler gorunur) → bayat modul grafigi belirtisi yok
+not: 5 madde: (1) liste onizlemesi `@<son gonderen> · <onizleme>` + bos durum,
+(2) 768px altinda tek panel (liste ↔ sohbet), secim/kaydirma korunur,
+(3) dar ekranda kart tam ekran (8px kenar, `100dvh`), yazma alani kart icinde,
+(4) kisi menusu imlecte + kirpilmaz + uzun basma, (5) balon menusu imlecte
+(Kopyala/Yanitla/Ilet/Sabitle/Mesaj bilgisi/Sil); `Duzenle` YOK (edited_at
+kolonu + API yok, DDL kullanicida → dogrulanamazdi), yerine `Ilet`.
+YOLDA BULUNAN 3 GIZLI HATA: menuler `display:none` panelin icindeydi (gorunmez)
+· ilk maddeye odak `visibility:hidden` iken cagriliyordu (klavye olu)
+· kart yuksekligi belirsizdi (24 mesajda kaydirma kabi icerik boyuna cikip
+yazma alanini kartin disina itiyordu). **tsc 0 · eslint --max-warnings 0 0 ·
+vitest 717/717 (63 dosya) · `e2e/chat-fixes.spec.ts` (gercek Chromium) 8/8 ·
+tum e2e suite 44/45** — tek kirmizi `personal-pages.spec.ts` footer navigasyonu
+(bu degisiklikle ilgisiz; probe ile ayni tik GIDIYOR, spec yumusak kaydirma
+surerken tikliyor → zamanlama kirilgani). YENI DOSYA:
+`src/components/chat/context-menu.tsx` (+16 unit test) · `e2e/chat-fixes.spec.ts`.
+Kullanicinin devam eden eylemleri: SQL Editor (languages + messages.phone) ve
+canli deploy onayi.
+not: son tur 3 commit: 4bfe73e (/admin erisim duzeltmesi: oturum istemcide) · 9cc2a5d
 (e2e admin spec + playwright localhost/PLAYWRIGHT_PORT). **tsc 0 · vitest 688/688
 (62 dosya; +8 gate testi) · eslint --max-warnings 0 (6 dosya) 0 · Playwright
 admin-panel.spec.ts 12/12 (masaustu+mobil, GERCEK Chromium).**
