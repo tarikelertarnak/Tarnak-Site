@@ -1,15 +1,14 @@
 'use client'
 
-import type { ReactNode } from 'react'
 import { Icon } from '@iconify/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 
 /**
- * Faz 6 içerik editörü (admin paneli).
+ * Ek bölümler içerik editörü (admin paneli).
  *
- * Neden spec tabanlı: Faz 6'da 7 ayrı liste var (services, testimonials,
+ * Neden spec tabanlı: ek bölümlerde 7 ayrı liste var (services, testimonials,
  * timeline, certificates, uses, changelog, now). Her birine ayrı form
  * yazmak 7 kopya demek; burada TEK bir bileşen var, alanlar veri olarak
  * aşağıda tanımlı. Yeni bir alan eklemek = spec'e bir satır.
@@ -41,7 +40,7 @@ export interface BolumSpec {
 
 type Kayit = Record<string, unknown>
 
-export function Faz6Editor({
+export function SectionsEditor({
   specs,
   value,
   onChange,
@@ -325,8 +324,4 @@ function Alan({
       {ipucu}
     </div>
   )
-}
-
-export function Faz6EditorShell({ children }: { children: ReactNode }) {
-  return <div className="min-w-0">{children}</div>
 }

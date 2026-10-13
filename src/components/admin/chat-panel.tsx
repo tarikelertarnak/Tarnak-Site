@@ -70,7 +70,7 @@ export function ChatPanel({
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/chat')
+        const res = await fetch('/api/chat/messages')
         const data = await res.json()
         if (data.success) {
           setMessages((prev) => {
@@ -164,7 +164,7 @@ export function ChatPanel({
     }
     setSending(true)
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

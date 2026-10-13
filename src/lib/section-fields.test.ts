@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { FAZ6_BOLUMLERI } from '@/lib/faz6-fields'
 import { parsePhase6 } from '@/lib/phase6'
+import { SECTION_SPECS } from '@/lib/section-fields'
 
 /**
- * Faz 6 admin editörü alan tanımları (Faz 6 · 1-4).
+ * Ek bölümler admin editörü alan tanımları.
  *
  * Editör "spec'ten çalışıyor" — yani alan tanımı ile gerçek şema
  * arasındaki uyumsuzluk kullanıcıya boş form olarak döner. Burada
  * ikisinin hizalı olduğunu ölçüyoruz.
  */
-describe('fAZ6_BOLUMLERI', () => {
+describe('sectionSpecs', () => {
   it('şemadaki her üst alanın karşılığı var', () => {
     // `phase6Schema` üst anahtarları — boş nesiyle parse edip alıyoruz.
     const ornek = {
@@ -41,20 +41,20 @@ describe('fAZ6_BOLUMLERI', () => {
     const cozulmus = parsePhase6(ornek)
     expect(cozulmus).not.toBeNull()
 
-    const specAnahtarlari = FAZ6_BOLUMLERI.map(b => b.anahtar).sort()
+    const specAnahtarlari = SECTION_SPECS.map(b => b.anahtar).sort()
     const semaAnahtarlari = Object.keys(ornek).sort()
     expect(specAnahtarlari).toEqual(semaAnahtarlari)
   })
 
   it('her bölümün başlığı var (kart boş görünmesin)', () => {
-    for (const b of FAZ6_BOLUMLERI) {
+    for (const b of SECTION_SPECS) {
       expect(b.baslik.length).toBeGreaterThan(0)
       expect(b.anahtar.length).toBeGreaterThan(0)
     }
   })
 
   it('her alanın etiketi var', () => {
-    for (const b of FAZ6_BOLUMLERI) {
+    for (const b of SECTION_SPECS) {
       for (const a of b.alanlar ?? []) {
         expect(a.etiket.length).toBeGreaterThan(0)
       }
@@ -65,7 +65,7 @@ describe('fAZ6_BOLUMLERI', () => {
   })
 
   it('select alanlarının seçenekleri şemadaki enum ile aynı', () => {
-    const availability = FAZ6_BOLUMLERI.find(
+    const availability = SECTION_SPECS.find(
       b => b.anahtar === 'availability',
     )
     const tone = availability?.alanlar?.find(a => a.anahtar === 'tone')
@@ -74,7 +74,7 @@ describe('fAZ6_BOLUMLERI', () => {
   })
 
   it('duplicate anahtar yok', () => {
-    const anahtarlar = FAZ6_BOLUMLERI.map(b => b.anahtar)
+    const anahtarlar = SECTION_SPECS.map(b => b.anahtar)
     expect(new Set(anahtarlar).size).toBe(anahtarlar.length)
   })
 })

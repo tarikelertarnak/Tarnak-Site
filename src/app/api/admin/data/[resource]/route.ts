@@ -29,6 +29,17 @@ function unauthorized() {
   return NextResponse.json({ success: false, message: 'Yetkisiz.' }, { status: 401 })
 }
 
+/**
+ * "Neden boş liste" mesajı — kaynağın SQL dosyası biliniyorsa onu söyler.
+ * Genel "ilgili SQL dosyasını çalıştır" ifadesi kullanıcıya hangi dosyayı
+ * açacağını söylemiyordu (2026-10-13).
+ */
+function sqlHint(resource: { table: string, sqlFile?: string }): string {
+  return resource.sqlFile
+    ? `"${resource.table}" tablo/kolonları veritabanında eksik. Kalıcı çözüm: Supabase SQL Editor'de ${resource.sqlFile} dosyasını çalıştır.`
+    : `"${resource.table}" tablosu veritabanında yok. İlgili SQL dosyasını Supabase SQL Editor'de çalıştır.`
+}
+
 /** ISR onbellegini temizle — Cloudflare Workers'ta no-op. */
 function invalidate() {
   try {
@@ -152,7 +163,7 @@ export async function GET(
         message: ignoredFilters.length > 0
           ? `Şu filtreler uygulanamadı (kolon veritabanında yok): ${ignoredFilters.join(', ')}. Sonuçlar filtresiz olabilir.`
           : droppedColumns.length > 0
-            ? `Şu kolonlar veritabanında yok, listeden çıkarıldı: ${droppedColumns.join(', ')}. Kalıcı çözüm için ilgili SQL dosyasını Supabase SQL Editor'de çalıştır.`
+            ? `Şu kolonlar veritabanında yok, listeden çıkarıldı: ${droppedColumns.join(', ')}. ${sqlHint(resource)}`
             : undefined,
       })
     }
@@ -166,7 +177,7 @@ export async function GET(
           total: 0,
           page,
           perPage,
-          message: `"${resource.table}" tablosu veritabanında yok. İlgili SQL dosyasını Supabase SQL Editor'de çalıştır.`,
+          message: `${sqlHint(resource)}`,
           missingTable: true,
         },
         { status: 200 },

@@ -18,6 +18,8 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
+    // jsdom'da olmayan tarayıcı API'leri (ResizeObserver vb.) tek yerden.
+    setupFiles: ['./vitest.setup.ts'],
     // Next.js + Tailwind v4 PostCSS config breaks vitest CSS pipeline; skip it.
     css: false,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],

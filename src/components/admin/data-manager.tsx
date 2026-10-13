@@ -4,7 +4,10 @@ import type { CsvColumn } from '@/lib/admin/csv'
 import type { FieldDef, ResourceDef } from '@/lib/admin/resources'
 
 import { Icon } from '@iconify/react'
+import { Tabs } from '@lobehub/ui/base-ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
+import { TabLabel } from '@/components/admin/tab-label'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
 import { Drawer } from '@/components/ui/drawer'
@@ -375,26 +378,24 @@ export function DataManager({ initialResource }: { initialResource?: string } = 
   const canWrite = !resource.readOnly
   const hasActiveFilters = Object.values(activeFilters).some(Boolean)
   return (
-    <div className="flex flex-col gap-4 pt-4 lg:flex-row">
-      {/* Kaynak listesi */}
-      <div className="flex shrink-0 flex-row gap-1.5 overflow-x-auto pb-1 lg:w-56 lg:flex-col lg:overflow-visible lg:pb-0">
-        {RESOURCES.map(r => (
-          <button
-            key={r.key}
-            type="button"
-            onClick={() => setActiveKey(r.key)}
-            className={cn(
-              'flex shrink-0 items-center gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors',
-              r.key === resource.key
-                ? 'border-primary/50 bg-primary/15 text-foreground'
-                : 'border-foreground/10 text-foreground/70 hover:bg-foreground/5',
-            )}
-          >
-            <Icon icon={r.icon} width={16} height={16} />
-            <span className="whitespace-nowrap">{r.label}</span>
-          </button>
-        ))}
-      </div>
+    <div className="flex min-w-0 flex-col gap-4 pt-4">
+      <ScrollableTabs activeTabKey={resource.key}>
+        <Tabs
+          size="large"
+          className="w-full min-w-0"
+          classNames={{
+            list: 'max-w-full overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
+            panel: 'min-w-0',
+          }}
+          activeKey={resource.key}
+          onChange={k => setActiveKey(String(k))}
+          items={RESOURCES.map(r => ({
+            key: r.key,
+            label: <TabLabel icon={r.icon} text={r.label} />,
+            children: null,
+          }))}
+        />
+      </ScrollableTabs>
 
       {/* Icerik */}
       <div className="flex min-w-0 flex-1 flex-col gap-3">

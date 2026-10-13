@@ -1,14 +1,14 @@
-import type { BolumSpec } from '@/components/admin/faz6-editor'
+import type { BolumSpec } from '@/components/admin/sections-editor'
 
 /**
- * Faz 6 içerik alanlarının TEK tanım yeri.
+ * Ek bölümler içerik alanlarının TEK tanım yeri.
  *
  * Hem admin panelindeki editör hem de şema doğrulaması buradan
  * besleniyor; alan listesi iki yere kopyalanmıyor.
  *
  * ORTAK KURAL: içerik uydurulmaz. Tüm diziler boş başlar.
  */
-export const FAZ6_BOLUMLERI: BolumSpec[] = [
+export const SECTION_SPECS: BolumSpec[] = [
   {
     anahtar: 'availability',
     baslik: 'Müsaitlik rozeti',
@@ -203,7 +203,7 @@ export const FAZ6_BOLUMLERI: BolumSpec[] = [
     anahtar: 'newsletter',
     baslik: 'Bülten',
     aciklama:
-      'TODO: sağlayıcı seçilene kadar kapalı. Form uydurma abonelik toplamaz.',
+      'Sağlayıcı seçilene kadar kapalı; form uydurma abonelik toplamaz.',
     alanlar: [
       { anahtar: 'enabled', etiket: 'Göster', tip: 'bool' },
       { anahtar: 'title', etiket: 'Başlık', tip: 'text' },

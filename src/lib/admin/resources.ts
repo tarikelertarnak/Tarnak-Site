@@ -102,6 +102,12 @@ export interface ResourceDef {
   autoSlugFrom?: string
   /** Bu kaynakta arama yapilacak kolonlar */
   searchColumns: readonly string[]
+  /**
+   * Tablo/kolon eksikse çalıştırılacak SQL dosyası. Uyarı metnine girer:
+   * panel "ilgili SQL dosyasını çalıştır" demekle kalmayıp HANGİ dosya
+   * olduğunu söyler (2026-10-13).
+   */
+  sqlFile?: string
 }
 
 const POSTS: ResourceDef = {
@@ -226,6 +232,7 @@ const MESSAGES: ResourceDef = {
   orderBy: { column: 'created_at', ascending: false },
   listColumns: ['id', 'name', 'email', 'phone', 'subject', 'body', 'is_read', 'created_at'],
   searchColumns: ['name', 'email', 'subject', 'body'],
+  sqlFile: 'scripts/schema-fixes.sql',
   filters: [
     {
       column: 'is_read',
@@ -408,7 +415,7 @@ const CVS: ResourceDef = {
   ],
 }
 
-const LANGUAGES: ResourceDef = { key: 'languages', table: 'languages', label: 'Bildiğim Diller', description: 'Konuşulan diller ve seviyeleri (A1–C2 / Ana dil).', icon: 'mdi:translate', idColumn: 'id', titleColumn: 'language', orderBy: { column: 'sort_order', ascending: true }, listColumns: ['id', 'language', 'level', 'sort_order'], searchColumns: ['language'], autoSlugFrom: 'language', fields: [
+const LANGUAGES: ResourceDef = { key: 'languages', table: 'languages', label: 'Bildiğim Diller', description: 'Konuşulan diller ve seviyeleri (A1–C2 / Ana dil).', icon: 'mdi:translate', idColumn: 'id', titleColumn: 'language', orderBy: { column: 'sort_order', ascending: true }, listColumns: ['id', 'language', 'level', 'sort_order'], searchColumns: ['language'], sqlFile: 'scripts/schema-languages.sql', autoSlugFrom: 'language', fields: [
   {
     name: 'language',
     label: 'Dil',
