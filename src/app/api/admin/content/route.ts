@@ -1,10 +1,36 @@
 import type { SiteContent } from '@/lib/content'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
+import { getPosts } from '@/lib/blog'
+import { getMessages } from '@/lib/chat'
 import { getContent, saveContent } from '@/lib/content'
 import { guardWrite } from '@/lib/rate-guard'
 import { isAdminUser } from '@/lib/supabase/session'
 import { contentSchema } from '@/lib/validations'
+
+/*
+ * 2026-10-13: GET eklendi.
+ *
+ * Neden: `/admin` sayfası kök layout'un `force-static`'i yüzünden istek
+ * zamanlı cookie GÖREMİYOR (bkz. src/app/admin/page.tsx) — bu yüzden panel
+ * artık istemci tarafında açılıyor. Panelin ilk verisi sunucu render'ında
+ * build zamanına donmasın (bayat içerikle kaydetme = sessiz veri kaybı)
+ * diye üç liste de tek uçtan, her istekte taze okunur.
+ */
+export async function GET() {
+  const admin = await isAdminUser()
+  if (!admin) {
+    return NextResponse.json({ success: false, message: 'Yetkisiz.' }, { status: 401 })
+  }
+
+  const [content, messages, blogPosts] = await Promise.all([
+    getContent(),
+    getMessages(),
+    getPosts('tr'),
+  ])
+
+  return NextResponse.json({ success: true, content, messages, blogPosts })
+}
 
 export async function POST(req: Request) {
   /* __RATE_GUARD__ KV hız sınırı: IP başına admin-content dakikada 20 yazma.
