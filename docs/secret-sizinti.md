@@ -1,4 +1,4 @@
-# Faz 1 · Sır Yönetimi — Bulgular
+# Sır Yönetimi — Bulgular
 
 Tarih: 2026-10-07
 Kapsam: kaynak kod + **git geçmişi** (2564 nesne, 1096 metin blob tarandı)
@@ -16,18 +16,20 @@ GitHub PAT, OpenAI, Anthropic, PEM, AWS, aisa/atmos/groq).
 
 **Google OAuth client secret (`GOCSPX-…`) commit'lendi.**
 
-| | |
-|---|---|
-| Dosya | `progress.md` (artık repoda DEĞİL, `.gitignore`'landı) |
-| Commit'ler | `0d1f2dc`, `49da9b0` |
-| Repo | `https://github.com/tarikelertarnak/Tarnak-Site` — **PUBLIC** |
-| Durum | `.env.local`'daki `GOOGLE_CLIENT_SECRET` **aynen bu sızan anahtar** (35 karakter, `GOCSPX-` ile başlıyor) |
+|            |                                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------- |
+| Dosya      | `progress.md` (artık repoda DEĞİL, `.gitignore`'landı)                                                    |
+| Commit'ler | `0d1f2dc`, `49da9b0`                                                                                      |
+| Repo       | `https://github.com/tarikelertarnak/Tarnak-Site` — **PUBLIC**                                             |
+| Durum      | `.env.local`'daki `GOOGLE_CLIENT_SECRET` **aynen bu sızan anahtar** (35 karakter, `GOCSPX-` ile başlıyor) |
 
 ### Neden acil
+
 Repo herkese açık. `git log -p` ile **herkes** anahtarı okuyabilir. Dosyayı
 kaldırmak yetmez: commit geçmişi hâlâ yayında.
 
 ### Yapılacak (SIRA ÖNEMLİ)
+
 1. **Google Cloud Console → APIs & Services → Credentials** → ilgili OAuth
    Client'ı aç → **Client secret'ı SİL/YENİLE**. Eskisi artık geçersiz olur.
 2. Yeni secret'ı `.env.local`'e yaz.
@@ -38,6 +40,7 @@ kaldırmak yetmez: commit geçmişi hâlâ yayında.
    **Push yalnızca senin onayınla yapılır.**
 
 ### Not: gitleaks kurulu DEĞİL
+
 `.gitleaks.toml` hazırlandı ama binary bu makinede yok. Komutlar:
 
 ```

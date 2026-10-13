@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# pre-commit (Faz 1 · kalite kapısı)
+# pre-commit (kalite kapısı)
 #
 # Sıra önemli:
 #   1) gitleaks      → sır varsa EN BAŞTA dur. Geri bildirim gitmesin.

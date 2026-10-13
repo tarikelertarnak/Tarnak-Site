@@ -1,7 +1,7 @@
 import antfu from '@antfu/eslint-config'
 
 /*
-  eslint.config.mjs — Faz 1 · kod kalitesi (2026-10-07)
+  eslint.config.mjs — kod kalitesi (2026-10-07)
 
   Temel kural: `pnpm lint` (`eslint . --max-warnings 0`) CI'da VE commit
   öncesi çalışıyor, yani hata bırakmamalı. Bunun için:
@@ -71,7 +71,7 @@ export default antfu({
     'node/prefer-global/buffer': 'off',
 
     // Admin panelinde `alert()` ile onay var (puck kaydetme, kullanıcı
-    // silme, şifre değiştirme…). Bunları kalıcı bir diyaloğa taşmak Faz 1'in
+    // silme, şifre değiştirme…). Bunları kalıcı bir diyaloğa taşmak
     // konusu değil ve akışı kırabilir. TODO: uyarı diyaloğuna taşı.
     'no-alert': 'off',
 

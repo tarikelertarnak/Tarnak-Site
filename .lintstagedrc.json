@@ -1,5 +1,5 @@
 {
-  "//": "lint-staged (Faz 1 · kod kalitesi). Commit ÖNCESİ sadece DEĞİŞEN dosyalara bakar → hızlı.",
+  "//": "lint-staged (kod kalitesi). Commit ÖNCESİ sadece DEĞİŞEN dosyalara bakar → hızlı.",
   "//typecheck": "tsc burada DEĞİL: tsc dosya listesi kabul etmez, tüm projeyi kontrol eder. Bu yüzden `.husky/pre-commit` içinde lint-staged'den SONRA ayrı bir adımda çalışır.",
   "//eslint": "Next 16'da `next lint` kaldırıldı; doğrudan `eslint` çağrılıyor. CI da aynı komutu kullanıyor.",
   "//prettier": "2026-10-10: Prettier TS/TSX/JS için KALDIRILDI. `@antfu/eslint-config` stilleri (`style/*`, `antfu/*`) Prettier ile ÇELİŞİYORDU: prettier `if-newline`/`operator-linebreak`/`arrow-parens` düzenini geri sarıyor, eslint tekrar düzeltiyor → her commit'te flip-flop, commit BOZUK kod kaydediyordu. CI yalnızca `eslint --max-warnings 0` çalıştırdığı için ESLint tek biçim sahibidir. Prettier artık sadece ESLint'in kapsamadığı dosyalarda (json/css/md/yml) çalışır.",

@@ -1,4 +1,4 @@
-name: Performance Budget (Faz 3 · 5)
+name: Performance Budget
 
 # Lighthouse CI'yi GitHub Actions'a ekler. Bütçe ihlali CI'yı KIRMIZI yapar:
 #   LCP ≤ 2500 ms · INP ≤ 200 ms · CLS ≤ 0.1

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * Faz 6 sayfaları (/uses, /now, /changelog, /gizlilik, /kvkk).
+ * Kişisel sayfalar (/uses, /now, /changelog, /gizlilik, /kvkk).
  *
  * Kural (ortak kural dosyası): içerik UYDURULMAZ. Bu yüzden testler
  * "doluluk" değil "doğru davranış" ölçer:
@@ -18,7 +18,7 @@ const SAYFALAR = [
   { yol: '/kvkk', baslik: /kvkk/i },
 ]
 
-test.describe('Faz 6 sayfaları', () => {
+test.describe('Kişisel sayfalar', () => {
   for (const { yol, baslik } of SAYFALAR) {
     test(`${yol} açılıyor ve başlığı doğru`, async ({ page }) => {
       const yanit = await page.goto(yol, { waitUntil: 'domcontentloaded' })

@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 /**
- * Ana sayfa akışları — Faz 1 · test
+ * Ana sayfa akışları
  *
  * Kapsam: hero görünür mü, bölümler yükleniyor mu, yatay taşma var mı,
  * klavye ile gezinilebiliyor mu, hydration gerçekten çalışıyor mu,
