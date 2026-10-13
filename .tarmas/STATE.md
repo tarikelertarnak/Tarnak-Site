@@ -1,10 +1,10 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-13T18:05:00+03:00
+updated: 2026-10-13T19:05:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: b5cf083 (yerel; push/deploy YOK)
+branch: faz-1-guvenlik last_commit: 9cc2a5d (yerel; push/deploy YOK)
 
 === TARMAS KERNEL (preserve verbatim in any summary/compaction) ===
 
@@ -31,10 +31,22 @@ branch: faz-1-guvenlik last_commit: b5cf083 (yerel; push/deploy YOK)
 
 ## Current
 
-phase: ADMIN PANELI YENILEME + AD TEMIZLIGI (v2 / Faz 1..6) step: KAPANDI (b5cf083)
+phase: /ADMIN ERISIM HATASI (kritik) + ILK GERCEK TARAYICI DOGRULAMASI step: KAPANDI (9cc2a5d)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: b5cf083 (yerel; push/deploy ASLA otomatik)
-running_processes: next dev (turbopack) :3000
+branch: faz-1-guvenlik last_commit: 9cc2a5d (yerel; push/deploy ASLA otomatik)
+running_processes: next dev (turbopack) :3000 — KULLANICININ, BAYAT (dosya yeniden adlandirmasindan once basladi; yeniden baslatilmali)
+not: 2 commit: 4bfe73e (/admin erisim duzeltmesi: oturum istemcide) · 9cc2a5d
+(e2e admin spec + playwright localhost/PLAYWRIGHT_PORT). **tsc 0 · vitest 688/688
+(62 dosya; +8 gate testi) · eslint --max-warnings 0 (6 dosya) 0 · Playwright
+admin-panel.spec.ts 12/12 (masaustu+mobil, GERCEK Chromium).**
+KOK NEDEN: kok layout `dynamic='force-static'` Next 16'da alt segmentlerde
+`cookies()`'i BOS donduruyor → /admin'daki `getSessionUser()` daima null →
+sonsuz /login yonlendirmesi (panel tarayicidan HIC acilamiyordu). Olculdu: ayni
+cookie ile /api/admin/session 200, /admin 307. Cozum /chat deseni: sayfa oturum
+okumaz, kapi istemcide (AdminGate), zorunlu kontrol API'de (401 kanitli).
+EK BULGU: dev hidrasyonunun yillarca "calismiyor" sanilmasinin koku — Next 16 dev
+`/_next/hmr`'i 127.0.0.1'den gelince cross-origin sayip BLOKLUYOR; `localhost`
+kullanilinca hidrasyon calisir (playwright config duzeltildi).
 not: 4 commit: 2bf3ebf (admin 5 sekme + serit + uyari) · ff74999 (chat v2 adlari
 kaldirildi) · ea7d67d (Faz 1..6 yorum/dokuman adlari) · b5cf083 (e2e/docs/CI ad
 temizligi). **tsc 0 · vitest 680/680 (61 dosya) · eslint --max-warnings 0 (81
@@ -69,6 +81,66 @@ DIKKAT: commit aninda lint-staged prettier `globals.css`i TUMUYLE yeniden
 bicimlendirdi (1952 satir; tirnak stili + girinti, davranis ayni) → CSS metnini
 string ile esleyen 2 test tirnak-bagimsiz hale getirildi (`theme-contrast.test.ts`
 satir ~361, `scrollable-tabs.test.ts`).
+
+## Bu tur (2026-10-13, /ADMIN ERISIM HATASI + ILK GERCEK TARAYICI DOGRULAMASI)
+
+Kullanici: "gereksiz contexti sil, yeni fazlara baslayalim". Tarayici
+dogrulamasini (kapanmamis tek kanit boslugu) kapatmak icin Playwright spec
+yazildi — ve spec ILK KOSUSUNDA gercek, kritik bir hata buldu.
+
+1. **BULGU (kritik): /admin tarayicidan HIC acilamiyordu.** Kok neden olculdu
+   ve deneyle izole edildi: `src/app/layout.tsx:58`
+   `export const dynamic = 'force-static'` Next 16'da alt segmentlerde
+   `cookies()`'i BOS donduruyor (dokuman: "forcing cookies/headers to return
+   empty values") → `/admin` sayfasindaki `getSessionUser()` admin_session
+   cookie'si GECERLI olsa bile daima null → `redirect('/login?next=/admin')`.
+   Kanit: ayni istek/ayni cookie → `/api/admin/session` 200 + admin kullanici,
+   `/admin` 307 → /login. Deneyler (izole kopyada, gercek dev sunucusu):
+   force-static + sayfada force-dynamic = cookies() BOS; ic ice
+   `admin/layout.tsx` force-dynamic = BOS; kok layout notr = `['admin_session']`.
+2. **DUZELTME** (`4bfe73e`): `/chat`'te 2026-10-11'de kullanilan desen aynen
+   uygulandi — sayfa oturum okumaz, kimlik kapisi istemcide, zorunlu kontrol
+   API katmaninda. Yeni `src/components/admin/admin-gate.tsx`:
+   `/api/admin/session` → yok ise `/login`e yonlendirir, admin degilse
+   "Yetkisiz Erisim", admin ise paneli acar. `src/app/admin/page.tsx` artik
+   yalniz `<AdminGate/>` render eden statik kabuk.
+3. **Veri tazeligi:** panele `GET /api/admin/content` eklendi (content +
+   messages + blogPosts, `isAdminUser()` guard). Gerekce: sayfa statik
+   oldugu icin sunucu render'i build zamaninda donardi; bayat icerikle
+   kaydetmek sessiz veri kaybi olurdu.
+4. **Guvenlik negatif kontrol:** `/api/admin/content` cookiesiz → 401,
+   bozuk imzali cookie → 401. Guvenlik siniri API'de kaldi; istemci kapisi
+   yalnizca UX.
+5. **EK BULGU (yillarca yanlis bilinen): "dev sunucusu hydrate olmuyor".**
+   Gercek neden: Next 16 dev sunucusu `/_next/hmr` gibi dev kaynaklarini
+   `127.0.0.1`'den gelince "cross-origin" sayip BLOKLUYOR → istemci JS'i hic
+   calismaz. `localhost` kullanilinca hidrasyon calisir. `playwright.config.ts`
+   `localhost`a baglandi (+ `PLAYWRIGHT_PORT` ile port secimi: gunlerdir acik
+   dev sunucusu modul grafigini bayatlatiyor, testler yanlis sureci olcuyordu).
+6. **YENI KANIT: `e2e/admin-panel.spec.ts` 12/12 (masaustu + mobil, gercek
+   Chromium)** — h1 mavi alt cizgi, tam 5 sekme, her sekmenin alt bolumleri,
+   kaynak seridi oklari (uclarda dogru durum + tiklayinca kayma), kaydedilmemis
+   degisiklik uyarisi, TEMIZ KONSOL. Oturum cookie'si spec icinde yerel
+   ADMIN_SECRET ile imzalanir (parola uydurulmaz, sir yazilmaz).
+
+Kapilar (bu tur, HEAD=9cc2a5d): `tsc --noEmit` **0** · `vitest run`
+**688/688 (62 dosya)** · `eslint --max-warnings 0` (6 dosya) **0** ·
+`playwright e2e/admin-panel.spec.ts` **12/12**. Commit YEREL, push/deploy YOK.
+
+Tuzak/ders: (a) spec'in `useRouter` mock'u her render'da YENI nesne donerse
+kapinin `[router]` bagimliligi degisir, effect sonsuz donguye girer ve mock
+`Response` govdesi ikinci kez okunamaz → testler yanlis yere kirmizi olur;
+mock STABIL olmali. (b) Kaynak sozlesmesi testleri yorumlari da tarar:
+"koddan alinti iceren yorum" testi kirar → once yorumlari strip et.
+(c) Lobehub `Button` jsdom'da `ConfigProvider` ister ve patlar; kapinin
+"giris gerekli" dalinda duz `Link` kullanildi (auto-yonlendirme zaten var).
+(d) Windows'ta izole kopyada build icin `node_modules` junction'i CALISMAZ
+(Turbopack "symlink target leaves the filesystem root" der) → kopyada gercek
+`pnpm install` yapildi (3 dk, store'dan hardlink) ve is bitince kopya silindi.
+
+Kullanici eylemi: (1) 3000'deki dev sunucusunu yeniden baslat (bayat modul
+grafigi), (2) SQL Editor'de `scripts/schema-languages.sql` +
+`scripts/schema-fixes.sql` (degismedi), (3) canliya deploy icin onay.
 
 ## Bu tur (2026-10-13, admin paneli yenileme + v2/faz ad temizligi)
 

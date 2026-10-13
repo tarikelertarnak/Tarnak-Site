@@ -1871,3 +1871,86 @@ Dokuz kaynak ucu HTTP 200; `missingTable` yalniz `languages` (count=null),
   sekmesi uyari verir).
 - `site_content` tablosu hala YOK; `progress.md` ve `scripts/` **gitignored**
   (yerel dosyalar, commitlenmez).
+
+## 2026-10-13 (ikinci tur)
+
+### [BUG-KRITIK] /admin tarayicidan hic acilamiyordu — kok layout force-static tuzagi
+
+**Nasil bulundu:** Tarayici dogrulamasi (kapanmamis tek kanit boslugu) icin
+`e2e/admin-panel.spec.ts` yazildi; spec ILK kosusunda gercek hatayi buldu
+(6 testin 6'si kirmizi, sayfa `/login`e atiyordu).
+
+**Kok neden (olculdu + deneyle izole edildi):** `src/app/layout.tsx:58`
+`export const dynamic = 'force-static'`. Next 16 alt segmentlerde `cookies()`'i
+BOS donduruyor ("forcing cookies/headers to return empty values"). Bu yuzden
+`/admin/page.tsx` icindeki `getSessionUser()` admin cookie'si GECERLI olsa bile
+daima null donuyordu → `redirect('/login?next=/admin')` → panel erisilemez.
+
+- Olcum: ayni istek/ayni cookie → `/api/admin/session` **200** + admin kullanici,
+  `/admin` **307** → /login.
+- Deney 1: force-static + sayfada `force-dynamic` → `cookieNames: []`
+- Deney 2: ic ice `src/app/admin/layout.tsx` force-dynamic → `cookieNames: []`
+- Deney 3: kok layout notr (`auto`) → `cookieNames: ['admin_session']`,
+  `directVerify: TARIKELERTARNAK`, `sessionUserRole: admin`
+  → Yani alt segmentte hicbir sey kok layout'un force-static'ini EZEMIYOR.
+
+**Neden force-static kaldirilmadi:** public sayfalar `getLocale()` ile cookie
+okuyor; dinamik olsalardi Cloudflare Free 10 ms CPU butcesi asilirdi
+(2026-10-03 1102 duzeltmesinin dayandigi varsayim).
+
+**Duzeltme (`4bfe73e`)** — `/chat` sayfasinda 2026-10-11'de kullanilan AYNI
+desen: sayfa oturum okumaz, kapi istemcide, zorunlu kontrol API katmaninda.
+
+- `src/components/admin/admin-gate.tsx` (YENI): `/api/admin/session` ile
+  oturumu okur; yok → `/login?next=/admin`, admin degil → "Yetkisiz Erisim",
+  admin → panel.
+- `src/app/admin/page.tsx`: statik kabuk, yalniz `<AdminGate/>`.
+- `GET /api/admin/content` eklendi (content+messages+blogPosts, `isAdminUser()`
+  guard): panelin ilk verisi build zamaninda DONMASIN — bayat icerikle
+  kaydetmek sessiz veri kaybi olurdu.
+- Guvenlik negatif kontrol: cookiesiz **401**, bozuk imzali cookie **401**.
+
+### [BULGU] "Dev sunucusu hydrate olmuyor" efsanesinin koku
+
+Next 16 dev sunucusu `/_next/hmr` gibi dev kaynaklarini **`127.0.0.1`'den**
+gelince "cross-origin" sayip BLOKLUYOR:
+`⚠ Blocked cross-origin request to Next.js dev resource /_next/hmr from "127.0.0.1"`.
+Bloklaninca istemci JS'i hic calismaz: SSR HTML gorunur, hicbir buton/form
+tepki vermez — yillarca "dev hydrate olmuyor" sanildi. `localhost` ile
+hidrasyon CALISIYOR. `playwright.config.ts` artik `localhost`a baglanir
+(+ `PLAYWRIGHT_PORT` ile port secimi; gunlerdir acik dev sunucusu modul
+grafigini bayatlatiyor ve testler UYGULAMAYI degil o sureci olcuyordu).
+
+### Kapilar (bu tur, HEAD=9cc2a5d)
+
+- `tsc --noEmit` → **0**
+- `vitest run` → **688/688 test, 62/62 dosya** (once 680/61; +8 gate testi)
+- `eslint <6 dosya> --max-warnings 0` → **0**
+- `playwright e2e/admin-panel.spec.ts` → **12/12** (masaustu + mobil, gercek
+  Chromium; tek gercek tarayici kaniti bu turda uretildi)
+- Commit YEREL (`faz-1-guvenlik`), push/deploy YOK.
+
+### Tuzak / ders
+
+- **Izole kopyada build icin `node_modules` junction'i calismaz:** Turbopack
+  "Symlink node_modules could not be resolved: the symlink target leaves the
+  filesystem root" ile duser → kopyada gercek `pnpm install --frozen-lockfile`
+  yapildi (3 dk, store'dan hardlink; indirme yok). Is bitince kopya silindi.
+- **Yeni rotalar `_`/`__` ile baslayamaz:** `src/app/__probe` sessizce 404
+  doner (App Router ozel klasor kurali); teshis icin normal ad kullan.
+- **Kaynak sozlesmesi testleri yorumlari da tarar:** koddan alinti iceren
+  aciklama yorumu testi kirmizi yapar → once yorumlari strip et, sonra iddia.
+- **`useRouter` mock'u stabil olmali:** her render'da yeni nesne donerse
+  kapinin `[router]` bagimliligi degisir, effect sonsuz donguye girer ve mock
+  `Response` govdesi ikinci okumada patlar → testler yanlis yere kirmizi olur.
+- **Lobehub `Button` jsdom'da `ConfigProvider` ister** ve patlar; kapinin
+  "giris gerekli" dalinda duz `Link` kullanildi (otomatik yonlendirme var).
+
+### Kullanici eylemi (degismedi + yeni)
+
+1. 3000'deki `next dev` **yeniden baslatilmali** (dosya yeniden
+   adlandirmasindan once basladi; bayat modul grafigi "Module not found"
+   durumunda takili).
+2. SQL Editor'de `scripts/schema-languages.sql` + `scripts/schema-fixes.sql`.
+3. Canliya deploy icin onay (canli site hala ESKI build — /admin hatasi orada
+   da mevcut).

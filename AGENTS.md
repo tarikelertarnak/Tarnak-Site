@@ -20,7 +20,8 @@
 - Build: `pnpm build` (`next build`) — **Windows'ta çalışmaz (sharp win32 loader) → WSL'de çalıştır**
 - OpenNext build: `pnpm opennext:build` (`opennextjs-cloudflare build`)
 - Typecheck: `pnpm typecheck` (`tsc --noEmit`) → **0 hata**
-- Test: `pnpm test` (`vitest run`) → **680 test / 61 dosya geçti**
+- Test: `pnpm test` (`vitest run`) → **688 test / 62 dosya geçti**
+- E2E: `pnpm exec playwright test` — **BASE_URL `localhost`** (127.0.0.1 DEĞİL, §12), port `PLAYWRIGHT_PORT` ile değişir. `e2e/admin-panel.spec.ts` gerçek tarayıcıda paneli doğrular.
 - Lint: `pnpm lint` = `eslint . || true` ⚠️ **Windows'ta kırık** (`|| true` cmd/pwsh'te tanınmaz) → `pnpm exec eslint .` kullan
 - Lint (kapı): `pnpm lint:strict` (`eslint . --max-warnings 0`) → şu an **687 hata** (hepsi stil, 663 auto-fix)
 - Deploy: `bash scripts/deploy-pages.sh` (WSL) — **ASLA otomatik, kullanıcı onayı şart**
@@ -49,7 +50,8 @@
 ## 5. Admin auth
 
 - İki yol: **(1)** `/login` → `admin_session` cookie (HMAC-SHA256, `ADMIN_SECRET`, bcrypt `admin.json` parolası, 7 gün). **(2)** Supabase Auth (Google OAuth `/api/auth/google` + e-posta kayıt `/sign`) — `@supabase/ssr` cookie session; `profiles.role/roles[]/is_owner` + izin kataloğu `src/lib/permissions.ts`.
-- `/admin` girişi `getSessionUser()` ile kilitli; `role !== 'admin'` → "Yetkisiz Erişim". `dev-role` cookie bypass'ı **kaldırıldı** — geri EKLEME.
+- `/admin` girişi **istemci tarafında** ( `AdminGate` → `/api/admin/session`); `role !== 'admin'` → "Yetkisiz Erişim". **Sunucuda `getSessionUser()` ÇAĞIRMA** — kök layout `force-static` olduğu için orada `cookies()` boş döner (§12), sayfa sunucuda oturumu hiç göremez. `dev-role` cookie bypass'ı **kaldırıldı** — geri EKLEME.
+- Zorunlu yetki kontrolü **API katmanında**: bütün `/api/admin/*` uçları `isAdminUser()` ile 401 döner. Sayfa/istemci kapısı yalnızca UX'tir, güvenlik sınırı değildir.
 - Proxy session refresh yalnızca `/api /admin /auth /chat /login /puck /sign` prefix'lerinde (CPU tasarrufu).
 
 ## 6. Ortam değişkenleri (yalnızca adlar — değer yazma)
@@ -79,7 +81,7 @@
 
 - `ui/`: `Button`, `Card`, `Modal`, `Drawer`, `Input`, `Textarea`, `Link`, `Section`/`SectionTitle`, `Skeleton`, `SplitButton`, `searchable-combobox`, `phone-input`, `country-select`, `command` (cmdk), `star-rating`, `bento-box`, `load-more-button`, `cv-picker`, `cn`.
 - Global: `TopBar`, `Sidebar`, `Navigation`, `Footer`, `SearchDialog` (⌘/Ctrl+K), `MusicPlayer`, `ScrollToTop`, `SkipLink`, `Shortcuts` (Ctrl+K/B//), `ShortcutHelp` (`?`), `ScrollSpy`, `AnnouncementBanner`, `ThemedBackground`, `ReadingProgress`.
-- `admin/`: `AdminPanel` (5 sekme: Genel Bakış / Profil & Hakkımda / İçerik & Veri / Site Ayarları / Mesajlar & Kullanıcılar; alt gruplar `SubSection`), `ScrollableTabs` + `useScrollState` (oklar uçlarda, nokta göstergesi YOK — `TabScrollDots` kaldırıldı), `TabLabel`, `DataManager` (kaynak CRUD+CSV), `ChatPanel`, `SectionsEditor` (eski adı: `Faz6Editor`), `OverviewPanel`, `UsersPanel`, `ProfilePhotoUploader`.
+- `admin/`: `AdminGate` (**istemci kapısı** — `/admin` sayfası bunu render eder; oturumu `/api/admin/session`'dan okur, ilk veriyi `GET /api/admin/content`'ten çeker), `AdminPanel` (5 sekme: Genel Bakış / Profil & Hakkımda / İçerik & Veri / Site Ayarları / Mesajlar & Kullanıcılar; alt gruplar `SubSection`), `ScrollableTabs` + `useScrollState` (oklar uçlarda, nokta göstergesi YOK — `TabScrollDots` kaldırıldı), `TabLabel`, `DataManager` (kaynak CRUD+CSV), `ChatPanel`, `SectionsEditor` (eski adı: `Faz6Editor`), `OverviewPanel`, `UsersPanel`, `ProfilePhotoUploader`.
 - Hook'lar: `use-contact-form`, `use-scroll-state`, `use-grid-cols`, `use-row-pagination`, `use-previous-list-path`.
 
 ## 11. Sert kurallar
@@ -101,6 +103,9 @@
 - `pnpm audit --prod`: 1 low + 1 moderate — `@lobehub/ui` üzerinden (`colord`, `katex`); çalışma yolunda değil, kaldırılamaz.
 - **Supabase `site_content` tablosu:** SQL hazır (`supabase/site-content.sql`) ama SQL Editor'de çalıştırıldığı doğrulanmadı.
 - **Uygulanmamış migration'lar (2026-10-13 ölçüldü, admin API'si gerçek oturumla çağrıldı):** `languages` tablosu YOK (`scripts/schema-languages.sql`) → admin'de "Bildiğim Diller" sekmesi "tablo yok" uyarısı verir; `messages.phone` kolonu YOK (`scripts/schema-fixes.sql`) → listeden düşülür, iletişim formu telefonu `body` içine yazar. İkisi de SQL Editor'de çalıştırılmalı; panelin uyarı metni artık ilgili dosya adını söyler (`ResourceDef.sqlFile`).
+- **KÖK LAYOUT `force-static` TUZAĞI (2026-10-13, ölçüldü):** `src/app/layout.tsx:58` `export const dynamic = 'force-static'` Next 16'da **alt segmentlerde `cookies()`'ı BOŞ döndürüyor** ("forcing cookies/headers to return empty values"). Yani `force-static` altındaki HİÇBİR sayfa sunucu tarafında oturum okuyamaz; sayfanın kendi `force-dynamic`'i veya iç içe bir layout bunu EZEMEZ (üçü de deneyle doğrulandı). Bu yüzden `/chat` (2026-10-11) ve `/admin` (2026-10-13) oturumu **istemcide** çözüyor. Kök layout'un `force-static`'i KALMALI (public sayfalar `getLocale()` ile cookie okuyor; dinamik olsalardı Free 10 ms CPU bütçesi aşılırdı) — kalıcı çözüm budur, ayarı silmek 1102 hatasını geri getirir.
+- **Windows'ta dev hidrasyonu 127.0.0.1'de ÇALIŞMAZ (2026-10-13, ölçüldü):** Next 16 dev sunucusu `/_next/hmr` gibi dev kaynaklarını `127.0.0.1`'den gelince "cross-origin" sayıp blokluyor → istemci JS'i hiç çalışmaz, SSR HTML görünür ama buton/form tepki vermez. Belirti "sunucu hydrate olmuyor" sanılır, kökü test adresidir: **`localhost` kullan.** `playwright.config.ts` bu yüzden `localhost`'a bağlanır. (Kalıcı alternatif: `next.config.mjs` → `allowedDevOrigins: ['127.0.0.1']`.)
+- **Çok gün açık kalan `next dev` modül grafiğini bayatlatıyor:** dosya yeniden adlandırıldıysa eski süreç "Module not found" durumunda takılı kalır (HMR soketi bloklu olduğu için kendini toparlayamaz) ve test/ölçüm UYGULAMAYI değil o süreci ölçer. Şüphelenince sunucuyu yeniden başlatın; e2e için `PLAYWRIGHT_PORT` ile izole taze sunucu kullanılabilir.
 - İçerik boş: blog (`posts=0`), ek bölüm dizileri, YouTube `channelId`; bülten sağlayıcı yok → bilerek kurulmadı.
 - Workers Free 10 ms CPU → tüm public rotalar `force-static`/prerender; dinamik rota sayısını artırma.
 
