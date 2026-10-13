@@ -27,7 +27,7 @@ import { SITE_URL } from '@/lib/site-url'
 import './globals.css'
 import './tokens.css'
 /*
- * AĞIR BİLEŞENLERİN GEÇ YÜKLENMESİ (Faz 3 · 1)
+ * AĞIR BİLEŞENLERİN GEÇ YÜKLENMESİ
  *
  * `MusicPlayer`  : 5 useState + audio element + event dinleyicileri. İlk
  *   ekranda GÖRÜNTÜSÜ YOK (oynatmadıkça hiç görünmüyor) ama her sayfanın
@@ -295,7 +295,7 @@ export default async function RootLayout({
                 // ana sayfa alt başlığı, `profile.title` ve yapısal veri aynı metni söyler.
                 'jobTitle': 'Yazılımcı & Sistem Mimarı',
                 /*
-                 * sameAs (Faz 2 · SEO 3, kullanıcı isteği): "sosyal linkleri
+                 * sameAs (kullanıcı isteği): "sosyal linkleri
                  * content dosyasından oku, bilmediğin linki uydurma".
                  *
                  * ÖNCE HATA: `tarikelertarnak.pages.dev` (sitenin KENDİ adresi)
@@ -367,9 +367,9 @@ export default async function RootLayout({
                   tetiklenmez.
                 */}
                 <Shortcuts shortcuts={GLOBAL_SHORTCUTS} />
-                {/* Kısayol yardım penceresi — `?` (Faz 5 · 3) */}
+                {/* Kısayol yardım penceresi — `?` */}
                 <ShortcutHelp shortcuts={GLOBAL_SHORTCUTS} />
-                {/* Aktif bölüm göstergesi (Faz 5 · 3) */}
+                {/* Aktif bölüm göstergesi */}
                 <ScrollSpy />
                 <TopBar />
                 <Sidebar />

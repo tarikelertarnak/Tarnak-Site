@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 
 /**
- * Okuma ilerleme çubuğu (Faz 4 · 3)
+ * Okuma ilerleme çubuğu
  *
  * Sayfanın ne kadarının okunduğunu üstte ince bir çizgiyle gösterir.
  *

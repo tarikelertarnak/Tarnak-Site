@@ -147,7 +147,7 @@ export default async function PostPage({ params }: PostPageProps) {
         <div className="mb-6 flex items-center gap-3">
           {' '}
           <BackToListButton fallback="/blog" />
-          {/* Okuma ilerleme çubuğu (Faz 4 · 3) */}
+          {/* Okuma ilerleme çubuğu */}
           <ReadingProgress targetId="yazi-icerik" />
 {' '}
           <Link
@@ -239,7 +239,7 @@ export default async function PostPage({ params }: PostPageProps) {
           />
 {' '}
           {/*
-            İLGİLİ YAZILAR (Faz 4 · 3)
+            İLGİLİ YAZILAR
             Aynı etiketleri paylaşan, aynı türde (TIL/normal), tarih olarak
             yakın yazılar. Puanlama `src/lib/post-utils.ts` → `relatedPosts`.
           */}
@@ -284,7 +284,7 @@ export default async function PostPage({ params }: PostPageProps) {
 {' '}
       </main>
 {' '}
-      {/* Kod bloklarına "Kopyala" düğmesi + dil etiketi (Faz 4 · 3) */}
+      {/* Kod bloklarına "Kopyala" düğmesi + dil etiketi */}
       <CodeCopyEnhancer />
 {' '}
     </div>

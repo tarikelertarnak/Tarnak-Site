@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Duyuru bandı (Faz 5 · 3)
+ * Duyuru bandı
  *
  * Üstte ince, kapatılabilir bant. İçerik `content.announcement` alanından
  * gelir — metin YOKSA render edilmez (boş bant araya girmez).

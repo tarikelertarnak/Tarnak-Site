@@ -5,7 +5,7 @@ import { getContent } from '@/lib/content'
 import { parsePhase6 } from '@/lib/phase6'
 
 /**
- * Faz 6 sayfaları için ortak okuyucu.
+ * Ek bölüm sayfaları için ortak okuyucu.
  *
  * Sayfaların hepsi aynı veri kaynağını kullanıyor (`content.phase6`) ve
  * hepsi aynı kurala uyuyor: **içerik yoksa bölüm render edilmez.**

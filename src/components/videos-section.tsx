@@ -2,7 +2,7 @@ import type { KanalVideosu } from '@/lib/youtube'
 import { Icon } from '@iconify/react'
 
 /**
- * YouTube videoları bölümü (Faz 6 · 3).
+ * YouTube videoları bölümü.
  *
  * Kullanıcı kuralı: kanal ID boşsa veya besleme hata verirse bölüm
  * HİÇ render edilmez — kırık kutu ya da boş kart yığını gösterilmez.

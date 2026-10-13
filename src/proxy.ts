@@ -15,7 +15,7 @@ const CANONICAL_HOST = 'tarikelertarnak.pages.dev'
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0'])
 
 /**
- * 301 kalıcı yönlendirme (Faz 2 · SEO 2: "adı değişen sayfalar için 301
+ * 301 kalıcı yönlendirme (SEO: "adı değişen sayfalar için 301
  * yönlendirme yapısı (tek dosyada)").
  *
  * Harita `src/lib/breadcrumb.ts` → `PERMANENT_REDIRECTS` içinde; burada
@@ -69,7 +69,7 @@ return moved
 return guard
 
   /*
-   * 2026-10-07 CSP faz 1 — nonce tabanlı politika (REPORT-ONLY).
+   * 2026-10-07 CSP — nonce tabanlı politika (REPORT-ONLY).
    *
    * Neden burada: `next.config.mjs` statik çalışır, request'e erişemez; nonce
    * ise her istekte benzersiz olmak ZORUNDA. `next.config.mjs` içindeki
@@ -163,7 +163,7 @@ function needsServerSession(request: NextRequestType): boolean {
 }
 
 /**
- * BAKIM MODU (2026-10-07, Faz 1 · operasyon)
+ * BAKIM MODU (2026-10-07, operasyon)
  *
  * `MAINTENANCE_MODE=1` ortam değişkeni tanımlıysa her istek tek bir
  * HTML sayfasıyla karşılanır: 503 + `Retry-After`. Kullanıcı gerçek bir
@@ -283,7 +283,7 @@ export const config = {
      *   - _next/hmr                  → ⚠️ KRİTİK (2026-10-07 bulundu)
      *   - favicon, public files, robots/sitemap
      *
-     * `_next/hmr` NEDEN DIŞARIDA (Faz 1 · Playwright yazarken yakalandı):
+     * `_next/hmr` NEDEN DIŞARIDA (Playwright yazarken yakalandı):
      * `next dev` istemcisi sayfayı hydrate etmeden ÖNCE HMR WebSocket'ine
      * bağlanmayı dener. Bu proxy matcher'ı `/_next/hmr`'ı kapsadığı için
      * upgrade isteği proxy'ye düşüyor, `NextResponse` dönüyor ve el sıkışma

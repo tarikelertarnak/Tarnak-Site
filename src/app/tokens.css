@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   FAZ 5 · 1 — TASARIM JETONLARI (tek kaynak)
+   TASARIM JETONLARI (tek kaynak)
 
    Neden: Sitede `rounded-xl`, `gap-4`, `text-sm` gibi değerler YÜZLERCE yerde
    tekrar ediyordu. Bir köşe yarıçapını değiştirmek için onlarca dosyayı
@@ -46,11 +46,11 @@
   /* ── Yazı boyutu ───────────────────────────────────────────────────────
      Akışkan: `clamp(min, tercih, max)` → küçük ekranda okunur, büyük
      ekranda taşmaz. Tailwind'in text-* sınıfları da aynı değerleri kullanır. */
-  --text-xs: 0.75rem;    /* 12px */
-  --text-sm: 0.875rem;   /* 14px */
-  --text-base: 1rem;     /* 16px */
-  --text-lg: 1.125rem;   /* 18px */
-  --text-xl: 1.25rem;    /* 20px */
+  --text-xs: 0.75rem; /* 12px */
+  --text-sm: 0.875rem; /* 14px */
+  --text-base: 1rem; /* 16px */
+  --text-lg: 1.125rem; /* 18px */
+  --text-xl: 1.25rem; /* 20px */
   --text-2xl: clamp(1.5rem, 1.2rem + 1.2vw, 1.75rem);
   --text-3xl: clamp(1.75rem, 1.4rem + 1.6vw, 2.25rem);
 
@@ -67,7 +67,7 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* ── Metin dengeleme (Faz 5 · 1) ───────────────────────────────────────────
+/* ── Metin dengeleme ───────────────────────────────────────────
    `text-wrap: balance` başlıklarda: satır sonları eşitlenir, "TARIK ELER -
    TARNAK" gibi kısa başlıklar tek satırda ortalanır.
    `text-wrap: pretty` paragraflarda: son satırdaki tek kelime (orphan)
@@ -85,17 +85,17 @@ p {
   text-wrap: pretty;
 }
 
-/* ── Sayı hizalama (Faz 5 · 1) ────────────────────────────────────────────
+/* ── Sayı hizalama ────────────────────────────────────────────
    Yıldız/indirme/görüntülenme sayaçlarında rakamların genişliği değişince
    (0 → 1 → 11) hizalar zıplar. `tabular-nums` sabitler. */
 .tabular-nums,
 .stat-value,
 time {
   font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
+  font-feature-settings: 'tnum';
 }
 
-/* ── Metin seçim rengi (Faz 5 · 1) ────────────────────────────────────────
+/* ── Metin seçim rengi ────────────────────────────────────────
    Varsayılan mavi-siyah çok okunak; mavi tonu marka rengine yakın ve
    seçili metni sayfadan ayırıyor. */
 ::selection {
@@ -103,7 +103,7 @@ time {
   color: var(--foreground);
 }
 
-/* ── Tema uyumlu ince scrollbar (Faz 5 · 1) ───────────────────────────────
+/* ── Tema uyumlu ince scrollbar ───────────────────────────────
    Webkit (Chrome/Edge) ve Firefox ayrı ayrı; koyu temada koyu, açık temada
    açık iz çizgisi. `scrollbar-width: thin` modern Firefox'ta çalışır. */
 * {
@@ -132,7 +132,7 @@ time {
   background-clip: content-box;
 }
 
-/* ── Tutarlı focus halkası (Faz 5 · 1, erişilebilirlik) ───────────────────
+/* ── Tutarlı focus halkası (erişilebilirlik) ───────────────────
    Kenarlıklarda (buton, link) odak halkası `outline` ile çizilir; koyu
    zeminde kalın çizgi daha görünür. `outline-offset` kenarın Dışına çıkar,
    böylece butonun kendi çerçevesiyle karışmaz. */
@@ -141,16 +141,16 @@ time {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
-/* ── Aktif bölüm göstergesi (Faz 5 · 3) ─────────────────────────────────────
+/* ── Aktif bölüm göstergesi ─────────────────────────────────────
    `ScrollSpy` görünür bölümü `data-active="true"` ile işaretler.
    Burada SADECE görsel vurgu: kenarlık ve metin rengi. Arama motorları
    ve ekran okuyucular bunu görmez (sunucu HTML'inde yok, JS sonrası
    ekleniyor) — yani SEO/erişilebilirliği bozmaz. */
-[data-active="true"] {
+[data-active='true'] {
   border-color: var(--tprimary) !important;
 }
 
-[data-active="true"] h2,
-[data-active="true"] h3 {
+[data-active='true'] h2,
+[data-active='true'] h3 {
   color: var(--foreground);
 }

@@ -1,5 +1,5 @@
 /**
- * vCard 3.0 üretimi (Faz 6 · 2 — dijital kartvizit)
+ * vCard 3.0 üretimi (dijital kartvizit)
  *
  * Neden elle yazıyoruz: hazır `vcard` paketi yok, elle yazmak 30 satır.
  *

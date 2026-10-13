@@ -1,7 +1,7 @@
 import localFont from 'next/font/local'
 
 /**
- * Montserrat — `next/font/local` ile self-hosted (Faz 3 · 3)
+ * Montserrat — `next/font/local` ile self-hosted
  *
  * ÖNCE: `@fontsource/montserrat/{400..800}.css` import ediliyordu. Her CSS
  * dosyası TÜM alt kümeleri (latin, latin-ext, cyrillic, greek, vietnamese)
@@ -20,7 +20,7 @@ import localFont from 'next/font/local'
  *  · `preload: true` → kritik font HTML'de `<link rel=preload>` ile gelir,
  *    LCP beklemez.
  *  · `display: 'swap'` → font yüklenene kadar sistem fontu gösterilir,
- *    CLS oluşmaz (Faz 3 bütçesi: CLS ≤ 0.1).
+ *    CLS oluşmaz (performans bütçesi: CLS ≤ 0.1).
  *  · `adjustFontFallback` → satır yüksekliği farkını telafi eder.
  *  · CSS dosyası zinciri ve `node_modules`'a çalışma zamanı erişimi yok.
  *

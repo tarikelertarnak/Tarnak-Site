@@ -12,7 +12,7 @@
  * Karar (2026-09-24): yayında olan TEK site `https://tarikelertarnak.pages.dev`
  * — eski GitHub Pages ve Vercel yayından kaldırıldı.
  *
- * FAZ 2 DEĞİŞİKLİĞİ (2026-10-07, kullanıcı isteği: "Site adresi tek bir ortam
+ * SİTE ADRESİ DEĞİŞİKLİĞİ (2026-10-07, kullanıcı isteği: "Site adresi tek bir ortam
  * değişkeninden gelsin (NEXT_PUBLIC_SITE_URL). Kendi alan adımı sonra
  * bağlayacağım"):
  *

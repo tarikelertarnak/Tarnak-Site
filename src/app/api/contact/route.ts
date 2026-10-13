@@ -195,7 +195,7 @@ export async function POST(req: Request) {
   }
 
   /*
-    HONEYPOT (2026-10-07, Faz 1 · form güvenliği).
+    HONEYPOT (2026-10-07, form güvenliği).
     Görünmez alan dolu geldiyse bu bir bot. İsteği `200` ile "başarılı"
     kapatıyoruz: bot geri bildirim almaz (daha fazla denemez), gerçek
     kullanıcı ise alanı göremediği için hiçbir zaman dolu gelmez.

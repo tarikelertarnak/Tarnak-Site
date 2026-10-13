@@ -545,7 +545,7 @@ function RadioGroup<T extends string>({
   label: string
 }) {
   /*
-    ERİŞİLEBİLİRLİK DÜZELTMESİ (2026-10-07, Faz 1 · Playwright yazarken
+    ERİŞİLEBİLİRLİK DÜZELTMESİ (2026-10-07, Playwright yazarken
     yakalandı): seçenekler düz `<button>` olarak basılıyordu. Bu, birbirini
     dışlayan (radio) bir grup olduğu halde ekran okuyucuya "hangi seçili?"
     bilgisini VERMİYORDU — kullanıcı koyu temanın açık olduğunu duyamıyor.

@@ -70,15 +70,15 @@ describe('buildSiteNavigation', () => {
     // 2026-10-07: Sayfa Duzenleyici kaldirildi → /puck menude DEGIL.
   })
 
-  // 2026-10-09 (Faz 6): /uses, /now, /changelog sayfaları ve /gizlilik,
+  // 2026-10-09: /uses, /now, /changelog sayfaları ve /gizlilik,
   // /kvkk hukuki metinleri eklendi → 13 + 5 = 18 bağlantı.
-  it('13 sayfa + 3 bolum + 2 hesap = 18 baglanti (Faz 6 sayfalari eklendi)', () => {
+  it('13 sayfa + 3 bolum + 2 hesap = 18 baglanti (kisisel sayfalar eklendi)', () => {
     expect(all.length).toBe(18)
   })
 
-  // Faz 6 sayfaları gezinmede gerçekten var mı? (regresyon)
+  // Kişisel sayfalar gezinmede gerçekten var mı? (regresyon)
   it.each(['/uses', '/now', '/changelog', '/gizlilik', '/kvkk'])(
-    'faz 6 sayfasi listede: %s',
+    'kisisel sayfa listede: %s',
     (href) => {
       expect(hrefs).toContain(href)
     },

@@ -30,13 +30,13 @@ export default async function Page() {
   const content = await getStaticLocalizedContent()
   const posts = await getPosts(locale)
   const cvs = await getCvs()
-  // Faz 6 · 1 — hizmetler + referanslar (içerik boşsa render edilmez)
+  // Ek bölümler — hizmetler + referanslar (içerik boşsa render edilmez)
   const phase6 = parsePhase6(
     (content as unknown as Record<string, unknown>).phase6,
   )
   const hizmetler = phase6?.services?.items.filter(i => i.title) ?? []
   const referanslar = phase6?.testimonials?.items.filter(i => i.quote) ?? []
-  // Faz 6 · 3 — YouTube videoları. Kanal ID boşsa veya besleme hata
+  // YouTube videoları. Kanal ID boşsa veya besleme hata
   // verirse boş dizi döner ve bölüm render edilmez (kullanıcı kuralı).
   const videolar = await kanalVideolari(
     phase6?.videos?.channelId,
@@ -55,7 +55,7 @@ export default async function Page() {
         />
         <BlogSection posts={posts} />
 
-        {/* Faz 6 · 1 — hizmetler + referanslar. Boşsa HİÇ render edilmez. */}
+        {/* Ek bölümler — hizmetler + referanslar. Boşsa HİÇ render edilmez. */}
         {hizmetler.length > 0 && (
           <>
             <div aria-hidden className="h-[var(--section-gap)]" />

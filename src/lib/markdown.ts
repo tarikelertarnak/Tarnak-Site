@@ -4,7 +4,7 @@ import sanitizeHtml from 'sanitize-html'
 /**
  * TEK doğru politika: hangi etiket/nitelik/sema geçer.
  * Hem `renderMarkdown` hem `sanitizeRenderedHtml` bunu kullanır — ikisi
- * arasında izin listesi kaymasın (2026-10-07, Faz 1 · içerik güvenliği).
+ * arasında izin listesi kaymasın (2026-10-07, içerik güvenliği).
  */
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [
@@ -76,7 +76,7 @@ export function renderMarkdown(markdown: string): string {
 /**
  * ZATEN HTML olan içeriği temizler (markdown'a çevirmeden).
  *
- * 2026-10-07 (Faz 1 · içerik güvenliği): `GithubRepoView`, GitHub'ın
+ * 2026-10-07 (içerik güvenliği): `GithubRepoView`, GitHub'ın
  * bize verdiği README HTML'ini `dangerouslySetInnerHTML` ile basıyordu —
  * markdown'a çevirmediği için TEMİZLENMİYORDU. README içinde
  * `<script>`, `onerror=` veya `javascript:` href'i varsa doğrudan çalışırdı

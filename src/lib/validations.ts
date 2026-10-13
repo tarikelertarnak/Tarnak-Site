@@ -6,7 +6,7 @@ import { E164_MAX_DIGITS, normalizePhone } from '@/lib/phone'
 const CONTACT_VALUE_MAX = 254
 
 /**
- * HONEYPOT (2026-10-07, Faz 1 · form güvenliği).
+ * HONEYPOT (2026-10-07, form güvenliği).
  *
  * İnsan bu alanı göremez (`position:absolute; left:-9999px` + `aria-hidden`
  * + `tabIndex={-1}` + `autoComplete="off"`). Botlar formu doldururken görünmez
@@ -116,9 +116,9 @@ const projectItem = z.object({
   /** Multiple media (image/gif/video URLs). Falls back to `image` when empty. */
   media: z.array(z.string().max(500)).max(12).optional(),
   stars: z.number().int().nonnegative().optional(),
-  /** Faz 4 · 2 — öne çıkan proje, listenin en üstünde sabitlenir */
+  /** Öne çıkan proje, listenin en üstünde sabitlenir */
   pinned: z.boolean().optional(),
-  /** Faz 4 · 2 — vaka çalışması alanları (boş bırakılabilir, uydurulmaz) */
+  /** Vaka çalışması alanları (boş bırakılabilir, uydurulmaz) */
   caseStudy: z
     .object({
       summary: z.string().max(2000).optional(),

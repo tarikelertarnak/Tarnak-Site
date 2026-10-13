@@ -4,7 +4,7 @@ import { SITE_URL } from '@/lib/site-url'
 export type { Metadata } from 'next'
 
 /**
- * Sayfa metadata'sı — TEK kaynak (Faz 2 · SEO 1)
+ * Sayfa metadata'sı — TEK kaynak
  *
  * SORUN: Çoğu sayfanın kendi `metadata` export'u YOKTU; hepsi kök
  * layout'ın `alternates.canonical: '/'` değerini miras alıyordu. Yani

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 /**
  * Sağlık ucu — UptimeRobot / Cloudflare durum izleme için.
  *
- * TASARIM KARARI (Faz 1 · operasyon):
+ * TASARIM KARARI (operasyon):
  *  · **Her zaman erişilebilir.** Bakım modunda bile 200 döner; bakım
  *    sırasında "site çöktü" sanılmasın. Bakım durumu gövdede `maintenance`
  *    olarak bildirilir.

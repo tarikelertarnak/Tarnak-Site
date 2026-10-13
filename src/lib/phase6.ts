@@ -1,7 +1,10 @@
 import { z } from 'zod'
 
 /**
- * Faz 6 — yeni bölümlerin içerik şeması.
+ * Ek bölümlerin içerik şeması.
+ *
+ * Not: `content.phase6` anahtarı ve bu dosyanın adı, kayıtlı içerik ve
+ * mevcut çağrılarla uyumluluk için korunuyor (2026-10-13).
  *
  * ORTAK KURAL (ortak kural dosyasından): içerik UYDURULMAZ. Bu şemadaki
  * her alanın boş bırakılabilir bir hâli var; boş olan bölüm sayfada
@@ -103,14 +106,14 @@ export const changelogEntrySchema = z.object({
   changes: z.array(z.string().max(300)).max(20).default([]),
 })
 
-/* ── Bülten aboneliği (Faz 6 · 4) ───────────────────────────────────── */
+/* ── Bülten aboneliği ───────────────────────────────────── */
 export const newsletterSchema = z.object({
   enabled: z.boolean().default(false),
   title: z.string().max(80).optional(),
   description: z.string().max(300).optional(),
   /**
    * Sağlayıcı anahtarı — BOŞ. Kullanıcı seçip dolduracak.
-   * TODO (kullanıcı): butchery/brevo/mailchimp vb. seç, `NEXT_PUBLIC_NEWSLETTER_*`
+   * Açık karar (kullanıcı): butchery/brevo/mailchimp vb. seç, `NEXT_PUBLIC_NEWSLETTER_*`
    * ortam değişkenlerini doldur. Boşken form "yakında" durumunda kalır.
    */
   provider: z.string().max(40).optional(),

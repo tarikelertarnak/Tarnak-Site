@@ -19,7 +19,7 @@ export function TopBar() {
   const [scrolled, setScrolled] = useState(false)
 
   /*
-    2026-10-07 (Faz 1 · lint temizliği): burada `pathname`, `router`,
+    2026-10-07 (lint temizliği): burada `pathname`, `router`,
     `isAdmin` ve `adminChecked` vardı ve HİÇBİRİ okunmuyordu. `isAdmin`
     yüzünden her sayfa yüklemesinde `/api/admin/session` isteği atılıyor,
     yanıtı çöpe gidiyordu. Kaldırıldı: boşuna istek + boşuna render.

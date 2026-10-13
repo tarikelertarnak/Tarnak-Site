@@ -105,7 +105,7 @@ export interface ProjectItem {
   /** Fork count if GitHub repo */
   forks?: number
   /**
-   * Öne çıkan proje (Faz 4 · 2). `true` olanlar listenin EN ÜSTÜNDE,
+   * Öne çıkan proje. `true` olanlar listenin EN ÜSTÜNDE,
    * seçili sıralamadan BAĞIMSIZ olarak sabitlenir. En fazla 3 tanesi
    * uygulanır (listenin en üstündeki 3 işaretli proje).
    *
@@ -114,7 +114,7 @@ export interface ProjectItem {
    */
   pinned?: boolean
   /**
-   * Vaka çalışması (Faz 4 · 2). Alanlar boş bırakılırsa proje detay
+   * Vaka çalışması. Alanlar boş bırakılırsa proje detay
    * sayfasında "TODO" placeholder'ı gösterilir — içerik UYDURULMAZ.
    */
   caseStudy?: {
@@ -150,7 +150,7 @@ export interface ProjectItem {
   /** Tags (for filtering/searching) */
   tags?: string[]
   /**
-   * Yazı türü (Faz 4 · 3).
+   * Yazı türü.
    *
    * · `'article'` → normal blog yazısı (varsayılan)
    * · `'til'`     → "Today I Learned": kısa, tek konulu öğrenme notu
@@ -176,7 +176,7 @@ export interface BlogPost {
   badge?: string
   tags?: string[]
   /**
-   * Yazı türü (Faz 4 · 3).
+   * Yazı türü.
    *
    * · `'article'` → normal blog yazısı (varsayılan)
    * · `'til'`     → "Today I Learned": kısa, tek konulu öğrenme notu
@@ -318,7 +318,7 @@ export interface SiteContent {
     copyright: string
   }
   /**
-   * Faz 6 bölümleri (availability, services, testimonials, timeline,
+   * Ek bölümler (availability, services, testimonials, timeline,
    * certificates, uses, now, changelog, newsletter, videos, vcard,
    * privacy, kvkk).
    *

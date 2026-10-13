@@ -49,7 +49,7 @@ export function HeroSection({
   cvs: CvDoc[]
 }) {
   const { name, tagline, description } = content.hero
-  // Faz 6 · 1 — müsaitlik rozeti (içerik boşsa render edilmez)
+  // Müsaitlik rozeti (içerik boşsa render edilmez)
   const phase6 = parsePhase6(
     (content as unknown as Record<string, unknown>).phase6,
   )
@@ -104,7 +104,7 @@ export function HeroSection({
             Sadece renk — glow/gölge/ölçek YOK.
           */}
           {/*
-          Müsaitlik rozeti (Faz 6 · 1) — logonun ÜSTÜNDE, ayrı bir öğe.
+          Müsaitlik rozeti — logonun ÜSTÜNDE, ayrı bir öğe.
           İçerik boşsa (`enabled: false` veya etiket yoksa) render edilmez.
           Logo `<a>`'sının İÇİNE konulmadı: rozet kendi bağlantısını
           taşımalı (iletişime gidiyor), logo bağlantısının parçası olursa

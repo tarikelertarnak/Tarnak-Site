@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next'
 import { siteUrl } from '@/lib/site-url'
 
 /**
- * robots.txt (Faz 2 · SEO — 2026-10-07)
+ * robots.txt (2026-10-07)
  *
  * ÖNCE: `robots.txt` YOKTU. Statik bir dosya bekleniyordu ama gerçekte
  * üretilmiyordu; arama motorları 404 alıyordu.

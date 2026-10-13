@@ -265,7 +265,7 @@ return
     }
 
     /*
-      ÖNE ÇIKAN (PINNED) PROJELER — Faz 4 · 2
+      ÖNE ÇIKAN (PINNED) PROJELER
       "öne çıkan (pinned) projeler her zaman en üstte (en fazla 3)".
 
       Neden AYRI bir sıralama değil: kullanıcı "yıldıza göre" seçtiyse

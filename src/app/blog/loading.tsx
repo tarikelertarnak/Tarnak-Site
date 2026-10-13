@@ -1,7 +1,7 @@
 import { Skeleton, SkeletonGrid } from '@/components/ui/skeleton'
 
 /**
- * /blog yükleme durumu (Faz 5 · 2)
+ * /blog yükleme durumu
  *
  * ÖNCE: elle yazılmış `shimmer` blokları. `.shimmer` sınıfı hareketli bir
  * parlama (gradient + animasyon) — kullanıcı şartı "glow/parlama efekti

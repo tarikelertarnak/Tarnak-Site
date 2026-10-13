@@ -1,7 +1,7 @@
 /**
  * Sentry — edge (Cloudflare Workers) uyumlu hata izleme.
  *
- * NEDEN `@sentry/cloudflare` (Faz 1 · operasyon):
+ * NEDEN `@sentry/cloudflare` (operasyon):
  *   Sentry'nin Node SDK'sı `node:` built-in'lerine (`fs`, `http`, `zlib`)
  *   dayanır; Workers'ta ÇALIŞMAZ. `@sentry/cloudflare` Web API üzerine
  *   kuruludur ve `@opennextjs/cloudflare` ile desteklenir. Resmi paket,
@@ -20,7 +20,7 @@
  *     telefon biçimli değerler MASKELENİR.
  *   · Gövde (body) hiçbir koşulda gönderilmez.
  *
- * KURULUM (bkz. docs/faz1-rapor.md):
+ * KURULUM:
  *   1. sentry.io → proje oluştur → "Cloudflare" SDK'sını seç
  *   2. Alınan DSN'i `SENTRY_DSN` olarak tanımla
  *   3. `SENTRY_AUTH_TOKEN` + org/project ile sourcemap yükle (aşağıda)

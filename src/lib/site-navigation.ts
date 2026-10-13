@@ -69,14 +69,14 @@ function buildStaticGroups(l: Labels): NavGroup[] {
 
         { id: 'donate', label: l.donate, href: '/donate' },
         { id: 'credits', label: l.credits, href: '/credits' },
-        // Faz 6 — kişisel sayfalar
+        // Kişisel sayfalar
         { id: 'uses', label: l.uses, href: '/uses' },
         { id: 'now', label: l.now, href: '/now' },
         { id: 'changelog', label: l.changelog, href: '/changelog' },
       ],
     },
     {
-      // Faz 6 — hukuki metinler gezinmeden ayrı tutuldu; footer'ın alt
+      // Hukuki metinler gezinmeden ayrı tutuldu; footer'ın alt
       // satırındaki ikincil alana bağlanır (her sayfa "herkese açık"
       // gezinme listesinde şişiklik yapmasın).
       id: 'legal',
@@ -95,7 +95,7 @@ function buildStaticGroups(l: Labels): NavGroup[] {
         { id: 'sec-about', label: l.about, href: '/about/' },
         { id: 'sec-projects', label: l.projects, href: '/projects/' },
         { id: 'sec-blog', label: l.blog, href: '/blog/' },
-        // Faz 4 · 4 — kaynaklar (araç/link listesi)
+        // Kaynaklar (araç/link listesi)
 
         { id: 'sec-contact', label: l.contact, href: '/contact/' },
       ],

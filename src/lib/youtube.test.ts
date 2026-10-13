@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { gecerliKanalId, parseKanalBesleme } from '@/lib/youtube'
 
 /**
- * YouTube besleme ayrıştırıcı (Faz 6 · 3).
+ * YouTube besleme ayrıştırıcı.
  *
  * Kanal beslemesi Atom 1.0'dır. Örnek şekil gerçek
  * `youtube.com/feeds/videos.xml` çıktısının kısaltılmış hâlidir —

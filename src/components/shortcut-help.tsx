@@ -4,7 +4,7 @@ import type { ShortcutSpec } from '@/components/shortcuts'
 import { useEffect, useState } from 'react'
 
 /**
- * Kısayol yardım penceresi — `?` tuşu (Faz 5 · 3)
+ * Kısayol yardım penceresi — `?` tuşu
  *
  * Kısayol listesini `GLOBAL_SHORTCUTS`'ten ALIR; ayrı bir liste tutulmaz.
  * Yeni kısayol eklendiğinde burası otomatik güncellenir.

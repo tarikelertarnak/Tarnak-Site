@@ -201,12 +201,12 @@ const VALUES_EN: typeof VALUES = [
 
 export default async function AboutPage() {
   const content = await getStaticLocalizedContent()
-  // Faz 6 · 1 — içerik şemasından okunur, boşsa hiçbir şey render edilmez
+  // Ek bölümler — içerik şemasından okunur, boşsa hiçbir şey render edilmez
   const phase6 = parsePhase6(
     (content as unknown as Record<string, unknown>).phase6,
   )
-  const faz6Timeline = phase6?.timeline?.items.filter(i => i.title) ?? []
-  const faz6Sertifika = phase6?.certificates?.items.filter(i => i.name) ?? []
+  const timelineItems = phase6?.timeline?.items.filter(i => i.title) ?? []
+  const certificateItems = phase6?.certificates?.items.filter(i => i.name) ?? []
   const locale = await getStaticLocale()
   const isEn = locale === 'en'
   const { about } = content
@@ -445,29 +445,29 @@ export default async function AboutPage() {
           </div>
         </Section>
 
-        {/* ── Faz 6 · 1 — zaman çizelgesi + sertifikalar ────────────────
+        {/* ── Ek bölümler — zaman çizelgesi + sertifikalar ────────────────
             İçerik UYDURULMADI: `content.phase6.timeline.items` ve
             `certificates.items` boşken bu blok render EDİLMEZ. Kullanıcı
             admin panelinden doldurunca bölümler kendiliğinden belirir. */}
-        {faz6Timeline.length > 0 && (
+        {timelineItems.length > 0 && (
           <>
             <div aria-hidden className="h-[var(--section-gap)]" />
             <Section className="flex-col pb-0">
               <TimelineSection
                 title={phase6?.timeline?.title}
-                items={faz6Timeline}
+                items={timelineItems}
               />
             </Section>
           </>
         )}
 
-        {faz6Sertifika.length > 0 && (
+        {certificateItems.length > 0 && (
           <>
             <div aria-hidden className="h-[var(--section-gap)]" />
             <Section className="flex-col pb-0">
               <CertificatesSection
                 title={phase6?.certificates?.title}
-                items={faz6Sertifika}
+                items={certificateItems}
               />
             </Section>
           </>

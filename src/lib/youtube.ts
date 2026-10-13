@@ -1,5 +1,5 @@
 /**
- * YouTube kanal videoları (Faz 6 · 3).
+ * YouTube kanal videoları.
  *
  * Neden RSS: YouTube Data API için anahtar + kota gerekir; kanal
  * RSS beslemesi (`youtube.com/feeds/videos.xml?channel_id=...`) anahtarsız

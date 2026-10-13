@@ -11,7 +11,7 @@ import { renderMarkdown } from '@/lib/markdown'
 import { pageMetadata } from '@/lib/page-metadata'
 
 /**
- * Proje detay sayfası — Faz 4 · 2 (vaka çalışması formatı)
+ * Proje detay sayfası — vaka çalışması formatı
  *
  * ÖNCE: bu sayfa yalnızca `owner/repo` yazısı gösteren bir STUB'tu. Gerçek
  * repo görünümü (`GithubRepoView`, 903 satır) hiçbir yerde import
@@ -276,7 +276,7 @@ export default async function GithubRepoPage({
 
         <div aria-hidden className="h-[var(--section-gap)]" />
       </main>
-      {/* Kod bloklarına "Kopyala" düğmesi (Faz 4 · 3) */}
+      {/* Kod bloklarına "Kopyala" düğmesi */}
       <CodeCopyEnhancer />
     </div>
   )

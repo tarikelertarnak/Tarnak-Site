@@ -47,7 +47,7 @@ export function AboutSection({
 }: {
   content: SiteContent
   cvs: CvDoc[]
-  /** Faz 6 · dijital kartvisit ayarları. Verilmezse blok render edilmez. */
+  /** Dijital kartvizit ayarları. Verilmezse blok render edilmez. */
   vcard?: VCard
 }) {
   /**
@@ -65,7 +65,7 @@ export function AboutSection({
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
   /*
-   * Dijital kartvizit QR içeriği (Faz 6 · 2; düzenleme).
+   * Dijital kartvizit QR içeriği (düzenleme).
    *
    * vCard indirme route'u ve "Kartvisiti indir" düğmesi KALDIRILDI. Artık tek
    * yol QR kod: vCard doğrudan `content` (Supabase merge sonrası) üzerinden
@@ -294,10 +294,10 @@ export function AboutSection({
                 </div>
               </div>
             </div>
-            {/* Dijital kartvizit (Faz 6 · 2) — YALNIZCA QR kod. vCard içeriğini
+            {/* Dijital kartvizit — YALNIZCA QR kod. vCard içeriğini
                 doğrudan taşır (telefon taratınca kişiyi tanır). İndirme
                 düğmesi ve kart üstü metinler (2026-10-11, kullanıcı) kaldırıldı;
-                Faz 6 vcard bölümü kapalıysa hiç gösterilmez. */}
+                Kartvizit bölümü kapalıysa hiç gösterilmez. */}
             {vcard && vcard.enabled !== false && vcardQrMetin ? (
               <VCardQr vcardText={vcardQrMetin} />
             ) : null}

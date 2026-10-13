@@ -9,7 +9,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import Link from 'next/link'
 
 /**
- * Faz 6 — yeni bölüm bileşenleri
+ * Ek bölüm bileşenleri
  *
  * ORTAK KURAL: içerik uydurulmaz. Her bileşen boş veriyle çağrılırsa
  * `null` döner → sayfada boş kart yığını oluşmaz.

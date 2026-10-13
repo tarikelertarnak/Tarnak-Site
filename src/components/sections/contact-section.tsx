@@ -57,7 +57,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
    * Giris yapmamis kullanici icin zorunlu kalir.
    */
   /*
-    2026-10-07 (Faz 1 · lint temizliği): `session` ve `sessionChecked`
+    2026-10-07 (lint temizliği): `session` ve `sessionChecked`
     state'leri bir zamanlar okunuyordu, artık hiç kullanılmıyor — JSX'te
     `{session && …}` yok. Formu dolduran şey doğrudan `u` (fetch'in
     döndürdüğü kullanıcı), state değil. State'ler kaldırıldı; istek
@@ -235,7 +235,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
           <form onSubmit={handleSubmit}>
             <CardBody className="flex flex-col w-full gap-4 sm:gap-6 lg:gap-8">
               {/*
-                HONEYPOT (2026-10-07, Faz 1 · form güvenliği).
+                HONEYPOT (2026-10-07, form güvenliği).
                 İnsan göremez, göremeyen de dokunulamaz; botlar görünmez
                 alanları da doldurduğu için dolu gelen istek sunucuda
                 sessizce düşürülüyor. `display:none` KULLANMIYORUZ — bazı

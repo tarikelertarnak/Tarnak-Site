@@ -1,5 +1,5 @@
 /**
- * Skeleton yükleme (Faz 5 · 2)
+ * Skeleton yükleme
  *
  * JS'siz (CSS-only) iskelet. Neden JS değil:
  *  · Yükleme durumu Next'in `loading.tsx`'i ile SUNUCUDA gelir; JS

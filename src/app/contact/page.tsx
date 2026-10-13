@@ -33,7 +33,7 @@ export default async function ContactPage() {
     <div className="min-h-screen w-full relative">
       <Navigation />
       <main id="main" className="w-full">
-        {/* Breadcrumb (Faz 2 · SEO 2): görünür navigasyon + BreadcrumbList */}
+        {/* Breadcrumb: görünür navigasyon + BreadcrumbList */}
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
           <Breadcrumb items={CRUMBS['/contact']} />
           <BreadcrumbJsonLd items={CRUMBS['/contact']} />

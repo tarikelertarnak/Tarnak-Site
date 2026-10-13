@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 
 /**
- * Kod bloklarına "Kopyala" düğmesi + dil etiketi ekler (Faz 4 · 3)
+ * Kod bloklarına "Kopyala" düğmesi + dil etiketi ekler
  *
  * NEDEN DOM MANİPÜLASYONU:
  *  · Blog gövdesi `renderMarkdown()` ile **sunucuda** HTML'e çevrilip

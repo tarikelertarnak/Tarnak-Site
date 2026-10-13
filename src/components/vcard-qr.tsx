@@ -3,7 +3,7 @@
 import { QRCodeSVG } from '@rc-component/qrcode'
 
 /**
- * Dijital kartvizit (Faz 6 · 2) — yalnızca QR kod.
+ * Dijital kartvizit — yalnızca QR kod.
  *
  * vCard indirme route'u ve indirme düğmesi KALDIRILDI. vCard verileri doğrudan
  * `getContent()` (Supabase merge sonrası `content`) üzerinden `buildVCard()` ile

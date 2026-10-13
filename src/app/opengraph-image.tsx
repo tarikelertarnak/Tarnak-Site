@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og'
 import { SITE_URL } from '@/lib/site-url'
 
 /**
- * Open Graph görseli — Faz 2 · SEO 4)
+ * Open Graph görseli)
  *
  * EDGE UYUMU: `next/og` (satori) Workers'ta çalışır; `fs`, `sharp` gibi
  * Node'e özgü bir şey kullanmılmıyor. Görsel tamamen JSX ile çiziliyor.

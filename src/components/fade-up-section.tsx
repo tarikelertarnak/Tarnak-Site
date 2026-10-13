@@ -4,7 +4,7 @@
  * Scroll-reveal — tüm ana bölümler (Hero hariç) aynı yumuşak
  * "Fade In Up" animasyonunu paylaşır.
  *
- * Faz 5 · 2 iyileştirmeleri (2026-10-07):
+ * İyileştirmeler (2026-10-07):
  *
  * 1) `prefers-reduced-motion` SAYGIYOR. Önceki sürüm koşulsuz animasyon
  *    oynatıyordu — hareket hassasiyeti olan kullanıcılar için bu bir

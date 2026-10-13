@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { buildVCard, vcardFilename } from '@/lib/vcard'
 
 /**
- * vCard 3.0 üretimi (Faz 6 · 2).
+ * vCard 3.0 üretimi (dijital kartvizit).
  *
  * Buradaki testler özellikle KAÇIŞ kurallarını ölçer: virgül, noktalı
  * virgül, ters eğik çizgi ve satır sonu vCard'da özel anlam taşır ve

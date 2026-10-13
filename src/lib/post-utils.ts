@@ -1,7 +1,7 @@
 import type { BlogPost } from '@/lib/content'
 
 /**
- * Okuma süresi + TIL etiketi yardımcıları (Faz 4 · 3)
+ * Okuma süresi + TIL etiketi yardımcıları
  *
  * `TIL` = "Today I Learned" — kısa, tek konulu öğrenme notları. Uzun
  * yazılardan AYRI bir türdür; kullanıcı bunları birbirine karıştırmasın.

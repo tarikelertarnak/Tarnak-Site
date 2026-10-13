@@ -2,7 +2,7 @@ import type { BreadcrumbItem } from '@/lib/breadcrumb'
 import { siteUrl } from '@/lib/site-url'
 
 /**
- * Breadcrumb arayüzü + BreadcrumbList JSON-LD (Faz 2 · SEO 2)
+ * Breadcrumb arayüzü + BreadcrumbList JSON-LD
  *
  * İKİ ŞEYİ TEK YERDE ÜRETİR:
  *  1) Ekranda görünen navigasyon (tıklanabilir `Link`'ler).

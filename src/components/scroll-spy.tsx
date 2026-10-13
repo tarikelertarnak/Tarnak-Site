@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Scrollspy — Faz 5 · 3 (menüde aktif bölüm göstergesi)
+ * Scrollspy (menüde aktif bölüm göstergesi)
  *
  * Sayfa kaydırıldıkça o an GÖRÜNEN bölümü bulup `data-scrollspy` özniteliği
  * ile işaretler. CSS o özniteliği okuyup vurguyu çizer.

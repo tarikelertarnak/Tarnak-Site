@@ -1,5 +1,5 @@
 /**
- * Breadcrumb öğe tipi (Faz 2 · SEO 2)
+ * Breadcrumb öğe tipi
  *
  * `href` site içi yol olmalı (`/blog/yazi`). Dış bağlantı breadcrumb'a
  * konmaz — breadcrumb bir hiyerarşi gösterir, dış site değil.
