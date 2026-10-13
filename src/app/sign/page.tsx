@@ -24,6 +24,10 @@ export default async function SignupPage({
   // Kullanici istegi (2026-10-11): giris/kayit sonrasi "?next=/chat" degerine
   // don. safeNext() acik yonlendirmeyi (open redirect) engeller.
   const next = safeNext((await searchParams)?.next, '/')
+  /* 2026-10-13: bu blok /login ile aynı sebeple şu an ETKİSİZ (inert) —
+   * kök layout `force-static` yüzünden alt segmentte `cookies()` boş dönüyor,
+   * `getSessionUser()` daima null. Kanıt ve gerekçe: src/app/login/page.tsx.
+   * `next` akışı zaten AuthForm tarafında istemcide yürüyor (giriş sonrası). */
   const user = await getSessionUser()
   if (user) {
     // `next` varsa ona don; yoksa eski davranis (admin -> /admin).
