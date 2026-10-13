@@ -57,6 +57,7 @@ const ja: Record<string, string> = {
   'chat.empty': 'まだメッセージがありません。最初のメッセージを送ってみましょう！',
   'chat.general': '一般',
   'chat.generalHint': '公開メッセージ',
+  'chat.you': 'あなた',
   'chat.others': 'その他',
   'chat.error': 'エラーが発生しました。',
   'chat.home': 'ホーム',

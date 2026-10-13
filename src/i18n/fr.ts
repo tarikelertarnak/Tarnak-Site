@@ -57,6 +57,7 @@ const fr: Record<string, string> = {
   'chat.empty': 'Aucun message pour le moment. Soyez le premier !',
   'chat.general': 'Général',
   'chat.generalHint': 'Messages publics',
+  'chat.you': 'Vous',
   'chat.others': 'Autres',
   'chat.error': 'Une erreur est survenue.',
   'chat.home': 'Accueil',

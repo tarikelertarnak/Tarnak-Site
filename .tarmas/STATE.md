@@ -31,11 +31,32 @@ branch: faz-1-guvenlik last_commit: 9cc2a5d (yerel; push/deploy YOK)
 
 ## Current
 
-phase: SOHBET IYILESTIRME #2 (8 kullanici maddesi: yan panel her zaman + kapatilabilir · kendi satiri ve sohbetsiz kayit gizli · sayfa kaymasi · kendi adim · bos alan + baslik sag tik menuleri · secili satir) step: KAPANDI (yerel commit; push yok)
-prev_phase: SOHBET IYILESTIRME (5 madde + yolda bulunan 3 gizli hata) step: KAPANDI (be69016)
+phase: SOHBET — KENDI SATIRIM (9. kullanici maddesi: admin kendisini gorur ve kendisiyle konusur; adi "TARIK ELER TARNAK (Siz)" — ek dile gore cevrilir) step: KAPANDI (yerel commit; push yok)
+prev_phase: SOHBET IYILESTIRME #2 (8 kullanici maddesi: yan panel her zaman + kapatilabilir · kendi satiri ve sohbetsiz kayit gizli · sayfa kaymasi · kendi adim · bos alan + baslik sag tik menuleri · secili satir) step: KAPANDI (yerel commit; push yok)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: yerel (ayrinti: LOG.md [CHAT-006..010]; push/deploy ASLA otomatik)
-running_processes: next dev (turbopack) :3000 — KULLANICININ; bu turda degisiklikleri SERVIS ETTIGI yeniden olculdu (probe + gercek Chromium e2e) → bayat modul grafigi belirtisi yok
+branch: faz-1-guvenlik last_commit: yerel (ayrinti: LOG.md [CHAT-011..012]; push/deploy ASLA otomatik)
+running_processes: next dev (turbopack) :3000 — KULLANICININ; bu turda degisiklikleri SERVIS ETTIGI yeniden olculdu (gercek Chromium e2e + API probe) → bayat modul grafigi belirtisi yok
+not: KENDI SATIRIM (2026-10-13, son istek): "Admin kendisini gorsun kendisiyle
+konusa bilsin ama ismi TARIK ELER TARNAK (Siz) gorsun — bu 'Siz' hangi dildeysen
+ona cevrilir ve ismin SONUNA eklenir". Onceki "kullanici kendisiyle de
+konusamasin" kurali NORMAL KULLANICI icin kaldi. Degisenler: (1) suzgec
+`p.id === selfId ? isAdmin : (!isAdmin || !!p.hasConversation)` — kendi satirim
+sohbeti olmasa da gorunur, (2) `openWith` kapisi `peerId === selfId && !isAdmin`,
+(3) ad TEK yerden: `orderedPeers` icinde kendi satirimda TAKMA ADIM degil TAM
+ADIM + `(${t('chat.you')})`; satir + avatar bas harfleri artik `p.name` render
+ediyor (onceden ham ifade), (4) `chat.you` 8 sozluge eklendi (tr Siz · en You ·
+de Sie · es Tu · fr Vous · ja あなた · pt Voce · ru Вы). Sunucu DEGISMEDI:
+`<id>|<id>` sohbeti destekli (chat-db `ensureParticipants` 2026-10-12).
+ACIK KALAN (veri): DB'deki `profiles.full_name` = `TARIK ELER` → satir
+"TARIK ELER (Siz)" yazar; tam istedigi dize icin profil tam adi
+`TARIK ELER TARNAK` olmali (sahip satiri veri API'sinde korumali → 403;
+kendi profil ucu `/api/auth/profile` ile düzenlenir).
+**tsc 0 · eslint --max-warnings 0 (chat + i18n + e2e) 0 · vitest 724/724 (63
+dosya) · `e2e/chat-fixes.spec.ts --project=desktop` 15/15 (1 yeni test).**
+Veriye bagli e2e testi de duzeltildi: karsi taraf sohbetinde mesajlar silinmis
+oldugu icin (`last_preview: null`, admin cookie ile olculdu) test kiriliyordu →
+onizleme artik `page.route` ile YANITTA kuruluyor (kisiler/sohbetler gercek,
+Supabase'e yazilmiyor; dosyadaki "Ilet" testi de ayni desende).
 not: 8 madde (hepsi uygulandi + olculdu): (1) yan panel HER ZAMAN erisilebilir ve
 tek dugmeyle kapanip acilir (`data-testid="chat-panel-toggle"`, `>=768` sutunu
 katlar, `<768` kaplamayi acar; kapaliyken de dugme durur), (2) KENDI SATIRIM ve

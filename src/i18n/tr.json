@@ -535,5 +535,6 @@
   "chat.togglePanel": "Yan paneli aç/kapat",
   "chat.findPerson": "Kişi ara",
   "chat.refresh": "Sohbeti yenile",
-  "chat.scrollBottom": "En sona git"
+  "chat.scrollBottom": "En sona git",
+  "chat.you": "Siz"
 }

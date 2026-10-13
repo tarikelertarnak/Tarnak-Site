@@ -104,9 +104,10 @@ function peerLabel(peer: PeerLite): string {
 }
 
 /**
- * PANELDE GÖRÜNEN satırlar (2026-10-13 kullanıcı kuralı): kendi satırım VE hiç
- * sohbeti olmayan kayıt listelenmez. Testler satır seçerken `data.users`
- * yerine bunu kullanır — yoksa tıklanacak düğme bulunamaz.
+ * TIKLANACAK satırlar (2026-10-13 kullanıcı kuralı): hiç sohbeti olmayan kayıt
+ * listelenmez; kendi satırım bu yardımcıdan HARİÇ — testler tıklayacak bir
+ * KARŞI taraf arıyor (kendi satırım ayrı testte doğrulanır). Panelde görünen
+ * toplam satır = `panelPeers(data).length + 1`.
  */
 function panelPeers(data: ChatData): PeerLite[] {
   return data.users.filter(u =>
@@ -138,39 +139,65 @@ async function openChat(page: Page, width: number, height: number) {
 /* ────────────────────────────────────────────────────────────────────────────
    MADDE 1 — kişi listesi önizlemesi SON MESAJI GÖNDERENİ gösterir
    ──────────────────────────────────────────────────────────────────────────── */
-test('kişi listesi önizlemesi göndereni gösterir; mesajsız satırda boş durum', async ({ page, context }) => {
+test('kişi listesi önizlemesi göndereni gösterir; sohbetsiz kayıt listelenmez', async ({ page, context }) => {
+  /*
+    FİKSTÜR (2026-10-13): canlı veride önizlemeli sohbet HER ZAMAN olmayabilir —
+    ölçüldü: karşı tarafla sohbetin mesajları silinmişti (`last_preview: null`)
+    ve bu test "veriye bağlı" diye kırmızıya düştü. Önizleme artık YANITTA
+    eklenir: kişiler, sohbetler ve mesaj durumu GERÇEK kalır, Supabase'e hiç
+    yazılmaz (dosyadaki son testin de yaptığı gibi). Gönderen KASITLI olarak
+    BEN'im — eski hata, satırın önizlemesinde KARŞI TARAFIN adını yazmasıydı.
+  */
+  const base = await chatData(context.request)
+  const me = base.chatId
+  const meUser = base.users.find(u => u.id === me)
+  const target = base.conversations.find(
+    c => (c.direct_key ?? '').split('|').some(part => part && part !== me),
+  )
+  expect(meUser, 'kendi kaydım listede yok — bu test veriye bağlı').toBeTruthy()
+  expect(target, 'karşı tarafla sohbet yok — bu test veriye bağlı').toBeTruthy()
+
+  const PREVIEW = 'e2e önizleme 👋'
+  const LABEL = `@${meUser!.username} · ${PREVIEW}`
+  await page.route('**/api/chat', async (route) => {
+    if (route.request().method() !== 'GET') {
+      return route.continue()
+    }
+    const res = await route.fetch()
+    const json = (await res.json()) as { conversations?: ConvLite[] }
+    await route.fulfill({
+      response: res,
+      json: {
+        ...json,
+        conversations: (json.conversations ?? []).map(c =>
+          c.id === target!.id
+            ? { ...c, last_preview: PREVIEW, last_sender_name: meUser!.username }
+            : c),
+      },
+    })
+  })
+
   await openChat(page, 1440, 900)
   const data = await chatData(context.request)
 
-  const me = data.chatId
-  const conv = data.conversations.find(
-    c => c.last_preview && (c.direct_key ?? '').split('|').some(part => part && part !== me),
-  )
-  expect(conv, 'önizlemeli sohbet yok — bu test veriye bağlı').toBeTruthy()
-
-  const peerId = (conv!.direct_key ?? '').split('|').find(part => part && part !== me)!
+  const peerId = (target!.direct_key ?? '').split('|').find(part => part && part !== me)!
   const peer = data.users.find(u => u.id === peerId)
   expect(peer, 'sohbetin karşı tarafı kişi listesinde yok').toBeTruthy()
 
-  /*
-    NEGATİF KONTROL: iddia yalnızca gönderen ≠ karşı taraf iken anlamlıdır.
-    Bu veri kümesinde ölçüldü: sohbet `tarikelertr` ile, mesajı
-    `tarikelertarnak` yazmış → eski kod "@tarikelertr · Merhaba 👋" diyordu.
-  */
-  expect(conv!.last_sender_name, 'veri iddiayı boşa çıkarıyor: gönderen = karşı taraf')
-    .not
-.toBe(peer!.username)
-
   const row = page.locator(`button[data-peer-id="${peerId}"]`)
-  await expect(row).toContainText(`@${conv!.last_sender_name} · ${conv!.last_preview}`)
+  await expect(row).toContainText(LABEL)
   // Eski hata: satır KARŞI TARAFIN adını yazıyordu.
   await expect(row).not.toContainText(`@${peer!.username} ·`)
 
   /*
     HİÇ SOHBETİ OLMAYAN KAYIT LİSTELENMEZ (2026-10-13 kullanıcı isteği:
-    "grupta yer almayıp sadece benimle konuşabilen kişi gözükmesin") ve KENDİ
-    SATIRIM da yok ("kullanıcı kendisiyle de konuşamasın"). Eski hâlde satır
-    vardı ve "Henüz mesaj yok…" yazıyordu.
+    "grupta yer almayıp sadece benimle konuşabilen kişi gözükmesin"). Eski
+    hâlde satır vardı ve "Henüz mesaj yok…" yazıyordu.
+
+    KENDİ SATIRIM (aynı gün, SON istek: "admin kendisini görsün kendisiyle
+    konuşa bilsin ama ismi TARIK ELER TARNAK (Siz) görünsün") artık YÖNETİCİDE
+    görünür — o yüzden aşağıdaki satır sayısı `+1`. Etiketi ve tıklanması ayrı
+    testte doğrulanır. Normal kullanıcıda kendi satırı yine hiç görünmez.
   */
   const withoutConv = data.users.filter(
     u => u.id !== me && !data.conversations.some(c => (c.direct_key ?? '').split('|').includes(u.id)),
@@ -178,10 +205,36 @@ test('kişi listesi önizlemesi göndereni gösterir; mesajsız satırda boş du
   for (const u of withoutConv) {
     await expect(page.locator(`button[data-peer-id="${u.id}"]`)).toHaveCount(0)
   }
-  // Kendi satırım hiçbir koşulda listelenmez.
-  await expect(page.locator(`button[data-peer-id="${me}"]`)).toHaveCount(0)
-  // Panelde tam olarak sohbeti olan kişiler var.
-  await expect(page.locator('button[data-peer-id]')).toHaveCount(panelPeers(data).length)
+  // Panelde sohbeti olan kişiler + kendi satırım (yalnız yöneticiye görünür).
+  await expect(page.locator('button[data-peer-id]')).toHaveCount(panelPeers(data).length + 1)
+})
+
+/* ────────────────────────────────────────────────────────────────────────────
+   KENDİ SATIRIM (2026-10-13, son kullanıcı isteği)
+   ──────────────────────────────────────────────────────────────────────────── */
+test('kendi satırım tam adımla + "(Siz)" ekiyle görünür ve kendimle sohbet açılır', async ({ page, context }) => {
+  await openChat(page, 1440, 900)
+  const data = await chatData(context.request)
+
+  const me = data.users.find(u => u.id === data.chatId)
+  expect(me, 'kendi kaydım listede yok — bu test veriye bağlı').toBeTruthy()
+
+  const selfRow = page.locator(`button[data-peer-id="${data.chatId}"]`)
+  await expect(selfRow).toHaveCount(1)
+  // TAKMA ADIM değil ORJİNAL adım (profil tam adı) + dile göre ek.
+  await expect(selfRow).toContainText(me!.fullName || me!.username)
+  await expect(selfRow).toContainText(/\((Siz|You)\)/)
+  if (me!.nickname) {
+    await expect(selfRow, 'takma adım gösterilmemeli').not.toContainText(me!.nickname)
+  }
+
+  // Kendisiyle KONUŞABİLİR: satır tıklanınca sohbet açılır, başlık aynı etiketi
+  // gösterir ve mesaj alanı görünür (sunucu `<id>|<id>` sohbetini destekler).
+  await selfRow.click()
+  const header = threadPanel(page).locator('div[data-peer-id]').first()
+  await expect(header).toContainText(me!.fullName || me!.username)
+  await expect(header).toContainText(/\((Siz|You)\)/)
+  await expect(scroller(page)).toBeVisible()
 })
 
 /* ────────────────────────────────────────────────────────────────────────────

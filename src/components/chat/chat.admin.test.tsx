@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { LocaleProvider } from '@/components/locale-provider'
+import { dictionaries } from '@/lib/i18n'
 import { Chat } from './chat'
 
 /**
@@ -247,14 +248,16 @@ describe('admin kullanıcı menüsü', () => {
   })
 
   /*
-    2026-10-13 (kullanıcı): 2026-10-11'deki "kendim dahil herkes görünsün"
-    isteği DEĞİŞTİ. Yeni istek: "kullanıcı kendisiyle de konuşamasın" +
-    "bir grupta yer almayıp sadece benimle konuşabilen kişi gözükmesin".
-    Ölçülen hâl: kendi satırım takma adımla ("Tarnak") duruyordu; tıklanınca
-    `<id>|<id>` anahtarlı, kimsenin görmediği boş bir sohbet açıyordu.
+    2026-10-13 (kullanıcı, SON istek): "Admin kendisini görsün kendisiyle
+    konuşa bilsin ama ismi şöyle görsün: TARIK ELER TARNAK (Siz) — bu 'Siz'
+    hangi dildeysen ona çevrilir ve ismin SONUNA eklenir."
+    Bu istek öncekini DEĞİŞTİRDİ: 2026-10-11 "kendim dahil herkes görünsün" →
+    2026-10-13 "kullanıcı kendisiyle de konuşamasın" → ŞİMDİ kendi satırım
+    YÖNETİCİDE görünür ve tıklanabilir, normal kullanıcıda görünmez.
+    Ölçülen eski hâl: satır takma adımla ("Tarnak") duruyordu.
   */
-  it('kendi satırım ve hiç sohbeti olmayan kayıt listelenmez; sohbetli kişi görünür', async () => {
-    mockFetch((url, init) => {
+  it('yönetici kendi satırını "TARIK ELER TARNAK (Siz)" görür ve kendisiyle sohbet açar', async () => {
+    const spy = mockFetch((url, init) => {
       if (url.includes('/api/admin/session')) {
         return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
       }
@@ -263,7 +266,7 @@ describe('admin kullanıcı menüsü', () => {
           success: true,
           chatId: 'me-1',
           users: [
-            // kendi satırım: chatId ile AYNI id → listelenmez
+            // kendi satırım: TAM ADIM (takma adım değil) — ek dile göre eklenir
             { id: 'me-1', username: 'tarnak', fullName: 'TARIK ELER TARNAK', nickname: 'Tarnak', avatarUrl: null },
             // kayıtlı ama hiç sohbeti yok → listelenmez
             { id: 'u-9', username: 'yenikayit', fullName: 'Yeni Kayıt', avatarUrl: null },
@@ -275,7 +278,7 @@ describe('admin kullanıcı menüsü', () => {
       if (url === '/api/chat' && !init?.method) {
         return jsonResponse({ success: true, conversations: [conv('u-1')] })
       }
-      return jsonResponse({ success: true })
+      return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
     })
     render(
       <LocaleProvider detectedLocale="tr">
@@ -284,10 +287,58 @@ describe('admin kullanıcı menüsü', () => {
     )
     await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
 
+    // Kendi satırım: tam adım + yerelleşmiş ek; TAKMA ADIM hiç görünmez.
+    const me = screen.getByText('TARIK ELER TARNAK (Siz)')
+    expect(screen.queryByText('Tarnak'), 'takma adım gösterilmemeli').toBeNull()
     expect(screen.getByText('Ayşecik')).not.toBeNull()
-    expect(screen.queryByText('Tarnak'), 'kendi satırım görünmemeli').toBeNull()
     expect(screen.queryByText('Yeni Kayıt'), 'sohbetsiz kayıt görünmemeli').toBeNull()
     expect(screen.queryByText(/henüz başka kullanıcı yok/i)).toBeNull()
+
+    // Kendisiyle KONUŞABİLİR: satır tıklanınca kendi id'mle "open" gider.
+    fireEvent.click(me)
+    await waitFor(() => {
+      expect(spy.mock.calls.some(([, init]) => init?.method === 'POST'
+        && String(init.body).includes('"action":"open"')
+        && String(init.body).includes('me-1'))).toBe(true)
+    })
+  })
+
+  it('"(Siz)" eki dile göre çevrilir (en: "(You)")', async () => {
+    mockFetch((url, init) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({
+          success: true,
+          chatId: 'me-1',
+          users: [
+            { id: 'me-1', username: 'tarnak', fullName: 'TARIK ELER TARNAK', nickname: 'Tarnak', avatarUrl: null },
+          ],
+        })
+      }
+      if (url === '/api/chat' && !init?.method) {
+        return jsonResponse({ success: true, conversations: [] })
+      }
+      return jsonResponse({ success: true, conversation: { id: 'conv-1' }, messages: [] })
+    })
+    render(
+      <LocaleProvider detectedLocale="en">
+        <Chat />
+      </LocaleProvider>,
+    )
+    await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
+    // Satır + (tek kişi olduğu için) başlık aynı etiketi taşır.
+    expect(screen.getAllByText('TARIK ELER TARNAK (You)').length).toBeGreaterThan(0)
+  })
+
+  it('sekiz sözlükte de "chat.you" var (dile göre çeviri)', () => {
+    for (const l of ['tr', 'en', 'de', 'es', 'fr', 'ja', 'pt', 'ru'] as const) {
+      const value = dictionaries[l]?.['chat.you']
+      expect(value, `chat.you → ${l}`).toBeTruthy()
+    }
+    expect(dictionaries.tr!['chat.you']).toBe('Siz')
+    expect(dictionaries.en!['chat.you']).toBe('You')
   })
 
   /*

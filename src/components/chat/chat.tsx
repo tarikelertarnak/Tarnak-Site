@@ -441,16 +441,30 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
    * engellenenler. Sıralama mantığı `lib/chat-peers.ts`te (saf + testli).
    */
   const orderedPeers = useMemo(() => {
+    /*
+      KENDİ SATIRIMIN ADI (2026-10-13 kullanıcı isteği: "admin kendisini görsün,
+      kendisiyle konuşabilsin ama ismi TARIK ELER TARNAK (Siz) görünsün; bu
+      'Siz' hangi dildeyse ona çevrilir ve ismin SONUNA eklenir").
+        · Kendi satırımda TAKMA ADIM kullanılmaz — takma ad başkasının bana
+          taktığı etikettir; "orjinal isim" profildeki tam addır (ölçüldü:
+          satır "Tarnak" gösteriyordu, kullanıcı "TARIK ELER TARNAK" istedi).
+        · Ek parantezli ve DİLE GÖRE (`t('chat.you')`): tr "Siz", en "You", …
+        · Başka satırlar aynı kalır: takma ad → tam ad → kullanıcı adı. Bir kez
+          burada üretildiği için satır, başlık ve menüler aynı adı gösterir.
+    */
+    const you = t('chat.you')
     return sortPeers(
       (peers ?? []).map((p): PeerRow => ({
         ...p,
-        name: p.nickname || p.fullName || p.username,
+        name: p.id === selfId
+          ? `${p.fullName || p.username} (${you})`
+          : p.nickname || p.fullName || p.username,
         presence: presenceOf(p.lastSeenAt, now),
         typing: isTyping(p.lastSeenAt, p.presenceState, now),
       })),
       locale,
     )
-  }, [peers, now, locale])
+  }, [peers, now, locale, selfId, t])
 
   /**
    * UZUN BASMA (mobil, 2026-10-13 kullanıcı isteği: "Mobilde sağ tık yerine
@@ -545,11 +559,12 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
 
   /** Bir kişiye tıklanınca doğrudan sohbeti açar (idempotent). */
   const openWith = useCallback(async (peerId: string) => {
-    // KENDİMLE SOHBET AÇILMAZ (2026-10-13 kullanıcı isteği). ÖLÇÜLDÜ: kendi
-    // satırım listede duruyordu ("Tarnak") ve tıklayınca `<id>|<id>` anahtarlı,
-    // kimsenin görmediği boş bir sohbet açıyordu. Satır artık listelenmiyor;
-    // bu kapı ikinci savunma (satır bir yoldan gelirse de açılmaz).
-    if (peerId === selfId) {
+    // KENDİMLE SOHBET: yalnız YÖNETİCİ açabilir (2026-10-13 kullanıcı isteği:
+    // "admin kendisini görsün, kendisiyle konuşa bilsin"). Normal kullanıcı
+    // kendisiyle konuşmaz — ayrıca listesinde kendi satırı hiç görünmez.
+    // `<id>|<id>` sohbeti sunucuda destekli: katılım satırları her açılışta
+    // garanti edilir (chat-db `ensureParticipants`), mesaj okuma 403 dönmez.
+    if (peerId === selfId && !isAdmin) {
       return
     }
     setActivePeerId(peerId)
@@ -582,7 +597,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     finally {
       setLoading(false)
     }
-  }, [t, selfId])
+  }, [t, selfId, isAdmin])
 
   /*
     TEK KİŞİ VARSA SOHBET KENDİLİĞİNDEN AÇILIR (2026-10-12): normal kullanıcının
@@ -1002,19 +1017,19 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     Takma ad, kullanıcı adı VE gerçek ad birlikte aranır — takma ad konulsa
     bile gerçek ad kaybolmaz (kullanıcı isteği).
 
-    PANEL SÜZGECİ (2026-10-13 kullanıcı isteği): "kullanıcı kendisiyle de
-    konuşamasın" + "bir grupta yer almayıp sadece benimle konuşabilen kişi
-    görünmesin".
-      · KENDİ SATIRIM hiç görünmez. ÖLÇÜLDÜ: satır takma adımla ("Tarnak")
-        duruyordu ve tıklanınca `<id>|<id>` anahtarlı, kimsenin görmediği boş
-        bir sohbet açıyordu.
-      · YÖNETİCİ listesinde, henüz SOBETİ olmayan kayıtlar da görünmez: satır ilk
-        mesajla (ileride grupla) belirir. Kayıt olup hiç yazmayan kişi paneli
-        doldurmaz. Normal kullanıcıda bu kural UYGULANMAZ — onun listesindeki tek
-        satır site sahibidir; gizlenirse kimseye yazamazdı.
+    PANEL SÜZGECİ (2026-10-13 kullanıcı istekleri):
+      · "bir grupta yer almayıp sadece benimle konuşabilen kişi görünmesin" →
+      YÖNETİCİ listesinde, henüz SOBETİ olmayan kayıtlar görünmez: satır ilk
+      mesajla (ileride grupla) belirir. Kayıt olup hiç yazmayan kişi paneli
+      doldurmaz. Normal kullanıcıda bu kural UYGULANMAZ — onun listesindeki tek
+      satır site sahibidir; gizlenirse kimseye yazamazdı.
+      · "kullanıcı kendisiyle de konuşamasın" + "admin kendisini görsün,
+      kendisiyle konuşabilsin" (son istek, öncekini DEĞİŞTİRDİ): KENDİ SATIRIM
+      yalnız YÖNETİCİYE görünür ve sohbeti olmasa da görünür — satır ilk
+      tıklamada sohbeti açar (`openWith`). Normal kullanıcı kendisiyle konuşmaz.
   */
   const visiblePeers = orderedPeers
-    .filter(p => p.id !== selfId && (!isAdmin || !!p.hasConversation))
+    .filter(p => (p.id === selfId ? isAdmin : (!isAdmin || !!p.hasConversation)))
     .filter((p) => {
       if (!q) {
         return true
@@ -1145,13 +1160,13 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                   <span className="flex size-9 items-center justify-center overflow-hidden rounded-full bg-primary/15 text-xs font-semibold text-primary">
                     {p.avatarUrl
                       ? <img src={p.avatarUrl} alt="" className="size-full object-cover" />
-                      : (p.nickname || p.fullName || p.username).slice(0, 2).toUpperCase()}
+                      : p.name.slice(0, 2).toUpperCase()}
                   </span>
                   <PresenceDot presence={p.presence} t={t} />
                 </span>
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">
-                    {p.nickname || p.fullName || p.username}
+                    {p.name}
                   </span>
                   {/* Yazan kişide son mesaj satırı yerine MAVİ "@kullanıcı
                       yazıyor…" görünür (2026-10-12 kullanıcı isteği). Kendi

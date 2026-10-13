@@ -535,5 +535,6 @@
   "chat.togglePanel": "Toggle the side panel",
   "chat.findPerson": "Find a person",
   "chat.refresh": "Refresh chat",
-  "chat.scrollBottom": "Go to latest"
+  "chat.scrollBottom": "Go to latest",
+  "chat.you": "You"
 }

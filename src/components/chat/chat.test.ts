@@ -408,12 +408,24 @@ describe('chat arayüz sözleşmesi', () => {
       expect(SRC).toContain('md:static')
     })
 
-    it('kendi satırım listelenmez; sohbetsiz kayıt yönetici listesinde görünmez', () => {
-      // Kullanıcı isteği (2026-10-13): "kullanıcı kendisiyle de konuşamasın",
-      // "bir grupta yer almayıp sadece benimle konuşabilen kişi gözükmesin".
-      expect(CODE).toMatch(/p\.id !== selfId && \(!isAdmin \|\| !!p\.hasConversation\)/)
-      // İkinci savunma: satır bir yoldan yine gelirse kendimle sohbet açılmaz.
-      expect(CODE).toMatch(/if \(peerId === selfId\) \{\s*\n\s*return/)
+    it('kendi satırım yalnız yöneticiye görünür ve "TARIK ELER TARNAK (Siz)" yazar', () => {
+      /*
+        Kullanıcı istekleri (2026-10-13, kronolojik):
+          1. "kullanıcı kendisiyle de konuşamasın" + "bir grupta yer almayıp
+             sadece benimle konuşabilen kişi gözükmesin",
+          2. SON istek: "Admin kendisini görsün kendisiyle konuşa bilsin ama
+             ismi TARIK ELER TARNAK (Siz) görünsün — bu 'Siz' hangi dildeysen
+             ona çevrilir ve ismin SONUNA eklenir".
+        Net davranış: kendi satırım YÖNETİCİDE görünür (sohbeti olmasa da),
+        normal kullanıcıda hiç görünmez; sohbetsiz kayıt yönetici listesinde
+        yine görünmez.
+      */
+      expect(CODE).toMatch(/p\.id === selfId \? isAdmin : \(!isAdmin \|\| !!p\.hasConversation\)/)
+      // Kendi satırımda TAKMA ADIM değil TAM ADIM + yerelleşmiş parantezli ek.
+      expect(CODE).toMatch(/p\.id === selfId\s*\? `\$\{p\.fullName \|\| p\.username\} \(\$\{you\}\)`/)
+      expect(CODE).toContain('t(\'chat.you\')')
+      // Normal kullanıcı kendisiyle sohbet açamaz (kapı yalnız yöneticiye açık).
+      expect(CODE).toMatch(/if \(peerId === selfId && !isAdmin\) \{\s*\n\s*return/)
     })
 
     it('boş alana sağ tık menüsü: "Kişi ara · Sohbeti yenile · En sona git"', () => {

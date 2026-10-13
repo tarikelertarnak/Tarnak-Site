@@ -57,6 +57,7 @@ const ru: Record<string, string> = {
   'chat.empty': 'Сообщений пока нет. Напишите первым!',
   'chat.general': 'Общий',
   'chat.generalHint': 'Публичные сообщения',
+  'chat.you': 'Вы',
   'chat.others': 'Другие',
   'chat.error': 'Что-то пошло не так.',
   'chat.home': 'Главная',

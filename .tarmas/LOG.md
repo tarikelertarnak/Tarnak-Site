@@ -2154,3 +2154,59 @@ gorunsun, bos alana ve sohbet basligina sag tik menusu, secili satir belirgin.
 1. SQL Editor'de `scripts/schema-languages.sql` + `scripts/schema-fixes.sql`.
 2. Canliya deploy icin onay.
 3. `git push` istenirse (yerel commit bu turda yeterli).
+
+---
+
+## KENDI SATIRIM — 9. madde (2026-10-13: "Admin kendisini gorsun, kendisiyle konusabilsin")
+
+### [CHAT-011] Kendi satirim YONETICIYE gorunur, adi "TARIK ELER TARNAK (Siz)"
+
+- **istenen:** "Admin kendisini gorsun kendisiyle konusa bilsin ama ismi su
+  sekilde gorsun: TARIK ELER TARNAK (Siz) — bu 'Siz' hangi dildeysen ona
+  cevrilir ve ismin SONUNA eklenir". Onceki turun "kullanici kendisiyle de
+  konusamasin" istegi NORMAL KULLANICI icin gecerli kaldi; yonetici icin
+  gecersiz oldu.
+- **after:** suzgec `p.id === selfId ? isAdmin : (!isAdmin || !!p.hasConversation)`
+  — kendi satirim sohbeti olmasa da gorunur (satir tiklamasi `openWith` ile
+  sohbeti acar). `openWith` kapisi `peerId === selfId && !isAdmin` (normal
+  kullanici kendisiyle konusamaz). Ad tek yerden uretiliyor (`orderedPeers` →
+  `p.name`): kendi satirimda TAKMA ADIM degil TAM ADIM + `(${t('chat.you')})`;
+  diger satirlar eskisi gibi takma ad → tam ad → kullanici adi. Satir ve avatar
+  bas harfleri artik `p.name` render ediyor (onceden ham ifade vardi).
+- **neden tam ad:** takma ad baskasinin bana taktigi etiket; kullanici "orjinal
+  isim" istedi ve satir "Tarnak" gosteriyordu.
+- **sunucu:** `<id>|<id>` sohbeti destekli — `chat-db.getOrCreateDirectConversation`
+  katilim satirlarini her acilista garantiliyor (`ensureParticipants`, 2026-10-12
+  olcumu) → mesaj okuma 403 donmuyor. Sunucu degisikligi GEREKMEDI.
+- **i18n:** `chat.you` 8 sozluge eklendi (tr Siz · en You · de Sie · es Tu ·
+  fr Vous · ja あなた · pt Voce · ru Вы).
+- **kanit (jsdom):** yonetici fiksturunde satir "TARIK ELER TARNAK (Siz)" olarak
+  bulunuyor, "Tarnak" HIC gecmiyor, tiklayinca govdede `"action":"open"` + kendi
+  id'm gidiyor; en dilinde "(You)"; sozluk testi 8 dilde `chat.you` dolu.
+- **kanit (gercek tarayici):** yeni e2e testi — satir TAM AD + `(Siz|You)` ekiyle
+  gorunur, tiklayinca baslik ayni etiketi gosterir, mesaj alani acilir.
+- **acik kalan (veri):** DB'deki `profiles.full_name` = `TARIK ELER` → satir
+  "TARIK ELER (Siz)" yazar. Tam "TARIK ELER TARNAK (Siz)" icin profildeki tam ad
+  `TARIK ELER TARNAK` olmali; sahip satiri veri API'sinde KORUMALI
+  (`isProtectedOwner` → 403), kullanici kendi profil ucundan
+  (`/api/auth/profile`) düzenler.
+
+### [CHAT-012] Veriye bagli e2e testi deterministik yapildi (kirmizi duzeltmesi)
+
+- **olculen:** `e2e/chat-fixes.spec.ts` onizleme testi "onizlemeli sohbet yok —
+  veriye bagli" diye kirmiziya dustu. Admin cookie ile `GET /api/chat`: karsi
+  taraf sohbetinde `last_preview: null` (mesajlar onceki turlarin panel
+  testlerinde silinmis), onizlemeli mesaj yalniz KENDI sohbetimde duruyordu.
+- **after:** test onizlemeyi KENDISI kuruyor — `page.route('**/api/chat')` ile
+  GERCEK yanit alinip yalniz `last_preview`/`last_sender_name` alanlari
+  yaziliyor. Kisi listesi/sohbetler gercek, Supabase'e YAZILMIYOR (dosyadaki
+  "Ilet hedefe gonderir" testi de ayni desende). Test adi gercege uyduruldu:
+  "… önizlemesi göndereni gösterir; sohbetsiz kayıt listelenmez".
+- **kanit:** ayni dosya 15/15 (yeni kendi-satirim testi dahil).
+
+### Olcum / kanit (ozet)
+
+- `tsc --noEmit` **0** · `eslint src/components/chat src/i18n e2e/chat-fixes.spec.ts --max-warnings 0` **0**.
+- `vitest run` **724/724 (63 dosya)**.
+- `playwright e2e/chat-fixes.spec.ts --project=desktop` **15/15** (1 yeni test).
+- Panelde gorunen satir sayisi testi `panelPeers(data).length + 1` (kendi satirim).
