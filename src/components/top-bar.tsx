@@ -86,7 +86,7 @@ export function TopBar() {
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }
               }}
-              className={`flex items-center gap-2 font-bold tracking-tight whitespace-nowrap transition-all duration-300 ${
+              className={`flex items-center gap-2 font-bold tracking-tight whitespace-nowrap ${
                 scrolled ? 'text-xs' : 'text-sm sm:text-base'
               }`}
             >
@@ -104,17 +104,25 @@ export function TopBar() {
               */}
               <SiteLogo
                 size={28}
-                className={`shrink-0 transition-all duration-300 ${
+                className={`shrink-0 transition-all duration-200 ${
                   scrolled ? 'h-6 w-6' : 'h-7 w-7 sm:h-7 sm:w-7'
-                }`}
+                } group-hover:opacity-80`}
               />
-              <span className="inline">TARIK ELER</span>
-              <span className="inline text-foreground/30">—</span>
-              {/* ⚠️ Eskiden `from-blue-400 to-cyan-400` gradient'i vardi:
-                  cyan sitedeki diger mavilerle UYUSMUYORDU. Artik tum mavi
-                  vurgularla ayni kaynak: `primary` (dark #3b82f6 /
-                  light #2563eb). */}
-              <span className="font-black text-primary">TARNAK</span>
+              {/* Brand text parts: same hover behavior — all respond equally.
+                  - TARIK ELER: default → primary on hover
+                  - Separator: muted → primary on hover
+                  - TARNAK: primary → lighter primary on hover
+                  Shared: transition, font-weight, letter-spacing, line-height.
+              */}
+              <span className="inline text-foreground transition-colors duration-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+                TARIK ELER
+              </span>
+              <span className="inline text-foreground/30 transition-colors duration-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+                —
+              </span>
+              <span className="inline font-black text-primary transition-colors duration-200 hover:text-primary/70 focus-visible:text-primary/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70">
+                TARNAK
+              </span>
             </Link>
           </div>
 

@@ -296,19 +296,35 @@ setIsOpen(false)
       {/* Brand — same layout as header: logo + "TARIK ELER — TARNAK" side by side
           Logo 2026-10-05: `logo-framed-*.svg` çerçeveli marka. İki ayrı `<img>` +
           `dark:block/dark:hidden` yerine tek inline `SiteLogo` — `fill` yazı
-          rengini, `stroke` sayfa zeminini alır, tema CSS'ten okunur. */}
-      <div
+          rengini, `stroke` sayfa zeminini alır, tema CSS'ten okunur.
+          Brand text parts: same hover behavior as TopBar — all respond equally.
+          Clickable link to home. */}
+      <Link
+        href="/"
+        onPress={() => {
+          if (
+            typeof window !== 'undefined'
+            && window.location.pathname === '/'
+          ) {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }
+        }}
         className={`flex items-center gap-2.5 ${PANEL_SURFACE_BORDER} px-5 py-4`}
+        aria-label="Ana sayfa"
       >
-        <SiteLogo size={30} className="shrink-0" />
-        <span className="truncate text-base font-bold tracking-tight text-foreground">
-          TARIK ELER
-          <span className="text-foreground/30"> — </span>
-          {/* Ayni duzeltme top-bar.tsx'te de var: cyan diger mavilerle
-              uyusmuyordu → artik `primary`. */}
-          <span className="font-black text-primary">TARNAK</span>
+        <SiteLogo size={30} className="shrink-0 transition-colors duration-200 hover:opacity-80" />
+        <span className="truncate text-base font-bold tracking-tight whitespace-nowrap">
+          <span className="inline text-foreground transition-colors duration-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+            TARIK ELER
+          </span>
+          <span className="inline text-foreground/30 transition-colors duration-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+            —
+          </span>
+          <span className="inline font-black text-primary transition-colors duration-200 hover:text-primary/70 focus-visible:text-primary/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70">
+            TARNAK
+          </span>
         </span>
-      </div>
+      </Link>
 
       {/* Search — en üstte (marka bandının hemen altı). */}
       <button
