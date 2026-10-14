@@ -3,6 +3,7 @@ import { canSeeAllPeers } from '@/lib/chat-access'
 import {
   ChatSchemaMissing,
   clearConversation,
+  conversationMeta,
   deleteConversation,
   deleteForAll,
   getAdminProfileView,
@@ -69,7 +70,20 @@ export async function GET(req: Request) {
   try {
     if (!conversationId) {
       const conversations = await listForUser(chatId)
-      return NextResponse.json({ success: true, conversations })
+      /*
+        LİSTE EK BİLGİSİ (2026-10-13 kullanıcı isteği: "okunmamış rozeti + tikler
+        listede"): sohbet başına okunmamış sayısı ve son mesajın damgaları.
+        Var olan veriden türetilir (`chat_messages`) — yeni tablo YOK.
+      */
+      const meta = await conversationMeta(chatId, conversations.map(c => c.id))
+      return NextResponse.json({
+        success: true,
+        conversations: conversations.map(c => ({
+          ...c,
+          unread: meta[c.id]?.unread ?? 0,
+          last: meta[c.id]?.last ?? null,
+        })),
+      })
     }
 
     if (!(await isParticipant(conversationId, chatId))) {
@@ -146,12 +160,15 @@ export async function POST(req: Request) {
     }
 
     /*
-      ÇEVRİMİÇİ NABZI (2026-10-11). Her giriş yapmış kullanıcı KENDİ nabzını
-      atar (başkasının durumunu yazamaz) — bu yüzden admin kapısı dışındadır.
+      ÇEVRİMİÇİ NABZI (2026-10-11; 2026-10-14 local-first).
+      Her giriş yapmış kullanıcı KENDİ nabzını atar (başkasının durumunu yazamaz).
+      `force` parametresi periyodik senkron için: `last_seen_at` tazelenir ama
+      `presence_state` dokunmaz (mevcut durum korunur).
     */
     if (action === 'presence') {
       const raw = body?.state
-      await touchPresence(chatId, isPresenceState(raw) ? raw : null)
+      const force = body?.force === true
+      await touchPresence(chatId, isPresenceState(raw) ? raw : null, force)
       return NextResponse.json({ success: true })
     }
 

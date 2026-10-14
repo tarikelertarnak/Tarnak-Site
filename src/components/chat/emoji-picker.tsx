@@ -11,17 +11,25 @@ import { useEffect, useRef } from 'react'
  * Element de `document.createElement` ile üretilir — React JSX'inde `emoji-picker`
  * etiketi tanımlı olmadığı için tip çakışması da böylece doğmaz.
  *
- * Tema: `dark` sınıfı zorlanır ve renkler sitenin jetonlarından verilir
- * (`globals.css` → `.emoji-picker-host emoji-picker`).
+ * Boyut/kenarlık/tema `globals.css` → `.emoji-picker-host emoji-picker`
+ * bloğundan gelir (kütüphanenin `:host{width:min-content}` kuralı orada ezilir,
+ * yoksa seçici ortada dar bir kutu olarak kalıyordu).
+ *
+ * ARAMA DİLİ (2026-10-13 kullanıcı isteği: "arama sadece İngilizce çalışıyor"):
+ * kütüphane aramayı YALNIZ `dataSource` JSON'undaki etiketlerle yapar; API'sinde
+ * veri enjeksiyonu yok (`picker.d.ts` → yalnız `dataSource`/`locale`/`i18n`).
+ *   · Resmî paket 5 dil yayınlıyor → CDN'den.
+ *   · Diğer diller için İngilizce taban + CLDR çevirisi birleştirilip YEREL dosya
+ *     üretildi (`scripts/build-emoji-data.mjs` → `public/emoji-data/<dil>.json`).
+ *     Böylece o dilde hem yerel ("kalp") hem İngilizce ("heart") arama çalışır.
+ *   · Yerel dosya silinmiş/üretilmemişse İngilizce veriye düşülür + tek satır
+ *     konsol uyarısı verilir (seçici hata ekranı göstermez).
  */
 
-/**
- * Emoji VERİSİ (`emoji-picker-element-data` CDN'i) yalnız bu dillerde yayınlanır;
- * TR dahil diğerleri için İngilizce veri kullanılır (paket tarafında veri yok).
- * Arayüz etiketleri ise `I18N` ile site diline çevrilir.
- * shortcut: TR emoji etiketi yok — paket yayınlarsa DATA_LOCALES'e 'tr' ekle.
- */
-const DATA_LOCALES = new Set(['en', 'fr', 'ja', 'ru', 'zh'])
+/** Resmî paketin yayınladığı veri dilleri (2026-10-13 ölçüldü: tr/de/es/pt/ar 404). */
+const CDN_DATA_LOCALES = new Set(['en', 'fr', 'ja', 'ru', 'zh'])
+/** `scripts/build-emoji-data.mjs` ile üretilmiş yerel veri dosyaları. */
+const LOCAL_DATA_LOCALES = new Set(['tr', 'de', 'es', 'pt', 'ar'])
 const DATA_BASE = 'https://cdn.jsdelivr.net/npm/emoji-picker-element-data@^1'
 
 /** Arayüz çevirileri (kütüphaneyle gelenler): site dili → gecikmeli import. */
@@ -37,7 +45,39 @@ const I18N: Record<string, () => Promise<{ default: unknown }>> = {
   pl: () => import('emoji-picker-element/i18n/pl'),
   pt: () => import('emoji-picker-element/i18n/pt_BR'),
   ru: () => import('emoji-picker-element/i18n/ru_RU'),
+  tr: () => import('emoji-picker-element/i18n/tr'),
   zh: () => import('emoji-picker-element/i18n/zh_CN'),
+}
+
+/** Yerel dosyanın varlığı dil başına BİR kez ölçülür (oturum boyunca hatırlanır). */
+const localDataProbe = new Map<string, Promise<boolean>>()
+
+function hasLocalData(code: string) {
+  let probe = localDataProbe.get(code)
+  if (!probe) {
+    probe = fetch(`/emoji-data/${code}.json`, { method: 'HEAD' })
+      .then(res => res.ok)
+      .catch(() => false)
+    localDataProbe.set(code, probe)
+  }
+  return probe
+}
+
+/** Kullanılacak veri adresi + o verinin dili (IndexedDB deposu dile göre ayrılır). */
+async function resolveDataSource(code: string): Promise<{ dataSource: string, dataLocale: string }> {
+  if (LOCAL_DATA_LOCALES.has(code) && await hasLocalData(code)) {
+    return { dataSource: `/emoji-data/${code}.json`, dataLocale: code }
+  }
+  if (LOCAL_DATA_LOCALES.has(code)) {
+    console.warn(
+      `[emoji] ${code} için yerel veri yok — İngilizce veriyle devam. `
+      + `Üretmek için: node scripts/build-emoji-data.mjs ${code}`,
+    )
+  }
+  if (code !== 'en' && CDN_DATA_LOCALES.has(code)) {
+    return { dataSource: `${DATA_BASE}/${code}/emojibase/data.json`, dataLocale: code }
+  }
+  return { dataSource: `${DATA_BASE}/en/emojibase/data.json`, dataLocale: 'en' }
 }
 
 type PickerElement = HTMLElement & {
@@ -71,30 +111,22 @@ export function EmojiPicker({ locale, onPick, onClose }: EmojiPickerProps) {
     let cancelled = false
     void (async () => {
       await import('emoji-picker-element')
+      const code = (locale || 'en').slice(0, 2).toLowerCase()
+      const { dataSource, dataLocale } = await resolveDataSource(code)
+      // Çeviri de veriyle PARALEL yüklenir (aynı anda tek yuvarlak yol).
+      const loadI18n = I18N[code] ?? I18N.en
+      const [i18n] = await Promise.all([
+        loadI18n().then(m => m.default).catch(() => undefined),
+      ])
       if (cancelled || !host.current) {
         return
       }
-      const code = (locale || 'en').slice(0, 2).toLowerCase()
-      const dataLocale = DATA_LOCALES.has(code) ? code : 'en'
       const picker = document.createElement('emoji-picker') as PickerElement
       picker.setAttribute('class', 'dark')
-      // Yükseklik sabit (kütüphanenin kendi kaydırması bu kutuda çalışır) ama
-      // kısa ekranlarda taşmasın: en fazla ekranın %45'i.
-      picker.style.height = 'min(350px, 45svh)'
-      picker.style.width = '100%'
       picker.locale = dataLocale
-      picker.dataSource = `${DATA_BASE}/${dataLocale}/emojibase/data.json`
-      const loadI18n = I18N[code]
-      if (loadI18n) {
-        try {
-          picker.i18n = (await loadI18n()).default
-        }
-        catch {
-          // Çeviri yüklenemezse kütüphanenin İngilizce etiketleri kalır.
-        }
-      }
-      if (cancelled || !host.current) {
-        return
+      picker.dataSource = dataSource
+      if (i18n) {
+        picker.i18n = i18n
       }
       picker.addEventListener('emoji-click', (e) => {
         const unicode = (e as CustomEvent<{ unicode?: string }>).detail?.unicode
@@ -132,10 +164,12 @@ export function EmojiPicker({ locale, onPick, onClose }: EmojiPickerProps) {
     }
   }, [])
 
+  /* Genişlik yazma çubuğuyla AYNI: kap `w-full`, kütüphanenin
+     `:host{width:min-content}` kuralı globals.css'te `width:100%` ile ezilir. */
   return (
     <div
       ref={host}
-      className="emoji-picker-host mx-auto mt-2 w-full max-w-[350px] overflow-hidden rounded-xl border border-surface-border bg-surface-1"
+      className="emoji-picker-host mt-2 w-full overflow-hidden rounded-xl border border-surface-border bg-surface-1"
     />
   )
 }

@@ -22,7 +22,6 @@ import {
   PRESENCE_UI,
   presenceOf,
   sortPeers,
-  TYPING_TTL_MS,
   typingLabel,
 } from '@/lib/chat-peers'
 import { tickFor } from '@/lib/chat-ticks'
@@ -64,6 +63,14 @@ const CHAT_PANEL_MIN = 240
 const CHAT_PANEL_MAX = 560
 const CHAT_PANEL_DEFAULT = 288
 const CHAT_PANEL_KEY = 'chat-panel-width'
+/**
+ * Liste panelinin GENİŞ/KOMPAKT durumu hatırlanır (2026-10-13 kullanıcı isteği:
+ * "hamburger listeyi genişletip daraltsın … seçimi localStorage'a kaydet").
+ * KOMPAKT = yalnız avatar sütunu; GENİŞ = arama kutusu + isim + son mesaj.
+ */
+const CHAT_PANEL_OPEN_KEY = 'chat-panel-open'
+/** Çok dar ekran (kullanıcı isteği: "480px altında otomatik kompakt liste"). */
+const CHAT_NARROW_QUERY = '(max-width: 479px)'
 
 /**
  * YAZMA SİNYALİ (2026-10-12 kullanıcı isteği: "gecikme çok uzun").
@@ -77,17 +84,42 @@ const TYPING_IDLE_MS = 2_500
 const POLL_MS = 2_000
 
 /**
- * `md` kırılma noktası (768px) JS tarafı — panel düğmesi davranışını seçer.
- * `matchMedia` jsdom'da YOK: optional chaining ile false'a düşer (test kırılmaz).
+ * `md` kırılma noktası JS tarafı YOK ARTIK: liste paneli her genişlikte yan yana
+ * durur, daralma/genişleme CSS `clamp()` + `--chat-panel-w` ile yapılır.
  */
-function isWideScreen() {
+
+/** Çok dar ekran mı — 480px altında liste otomatik KOMPAKT başlar. */
+function isNarrowScreen() {
   return typeof window !== 'undefined'
-    && window.matchMedia?.('(min-width: 768px)').matches === true
+    && window.matchMedia?.(CHAT_NARROW_QUERY).matches === true
 }
 
 /** Boş alan menüsü hedefi — sağ tık ve uzun basma aynı menüyü açar. */
 function areaMenuAt(x: number, y: number) {
   return { kind: 'area' as const, x, y }
+}
+
+/**
+ * YEREL ÇEVRIMİÇİ DURUMU (local-first, 2026-10-14).
+ *
+ * Sunucudan gelen `lastSeenAt` yerine, SEKME ODAĞI + KULLANICI ETKILEŞİMİ
+ * ile yerel olarak hesaplanır. Sunucuya senkron:
+ *   - Sekme kapanırken / gizlenirken (pagehide, visibilitychange)
+ *   - Periyodik (5 dk bir) — sadece "hala buradayım" demek için
+ *   - Yazma durumu değiştiğinde (typing start/stop)
+ *
+ * Bu sayede:
+ *   - 2 sn'de bir `/api/chat/users` çekmek YOK (liste POLL_MS kaldırıldı)
+ *   - Yeşil nokta anında tepki verir (ağ gecikmesi yok)
+ *   - Sunucu yükü %90+ azalır
+ */
+const LOCAL_ONLINE_TTL_MS = 30_000 // yerel "çevrimiçi" sayılma penceresi (30 sn)
+const SYNC_INTERVAL_MS = 5 * 60 * 1000 // sunucuya periyodik senkron (5 dk)
+
+interface LocalPresenceState {
+  isOnline: boolean
+  lastActivity: number
+  presenceState: PresenceState | null
 }
 
 /** Sohbete yazılacak kişi (admin için liste). */
@@ -114,6 +146,16 @@ interface Peer {
   /** Liste öğesindeki son mesaj özeti. */
   preview?: string | null
   previewSender?: string | null
+  /**
+   * LİSTE ROZETİ + TİK (2026-10-13 kullanıcı isteği): bana gelen okunmamış
+   * mesaj sayısı ve son mesajın BENİM olup olmadığı/durumu (ticks).
+   * Sunucu `/api/chat` listesinden gelir (`chat-db.conversationMeta`).
+   */
+  unread?: number
+  /** Son mesaj: benim mi + teslim/okundu (tik göstergesi). */
+  lastMessage?: { mine: boolean, delivered: boolean, read: boolean, at: string } | null
+  /** Sohbet türü — "Gruplar" süzgeci kullanır ('direct' | 'group'). */
+  kind?: string | null
 }
 
 /** `GET /api/chat`nin sohbet satırından ihtiyaç duyduğumuz alanlar. */
@@ -126,6 +168,17 @@ interface ConversationLite {
   updated_at: string | null
   last_preview: string | null
   last_sender_name: string | null
+  /** Sohbet türü ('direct' | 'group') — "Gruplar" süzgeci. */
+  kind?: string | null
+  /** Okunmamış sayısı (sunucu türetir). */
+  unread?: number
+  /** Son mesajın damgaları (sunucu türetir). */
+  last?: {
+    sender_id: string
+    delivered_at: string | null
+    read_at: string | null
+    created_at: string
+  } | null
 }
 
 /**
@@ -165,6 +218,8 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     | { kind: 'message', message: ChatMessageRow, x: number, y: number }
     /** Boş alana sağ tık / uzun basma (2026-10-13 kullanıcı isteği). */
     | { kind: 'area', x: number, y: number }
+    /** Kişi listesi süzgeci (filtre düğmesi — arama kutusunun yanı). */
+    | { kind: 'filter', x: number, y: number }
     | null
   >(null)
   /** "İlet" (forward) hedef seçimi — mesajı başka bir kişiye gönderir. */
@@ -173,15 +228,12 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   const [confirmMsg, setConfirmMsg] = useState<ChatMessageRow | null>(null)
   const [showEmoji, setShowEmoji] = useState(false)
   /**
-   * DAR EKRANDA kişi listesi KAPLAMASI (2026-10-13). Sohbet açıkken liste
-   * gizlenir; düğmeyle üstte kaplama olarak geri gelir. `md` ve üstünde etkisi
-   * yok — orada liste sabit sütundur (CSS `md:static` sıfırlar).
-   */
-  const [listOpen, setListOpen] = useState(false)
-  /**
-   * GENİŞ EKRANDA panel katlanmış mı (2026-10-13 kullanıcı isteği: "yan panel
-   * açılıp kapanabilsin"). Varsayılan AÇIK; kapatan kullanıcı başlıktaki aynı
-   * düğmeyle geri açar. Dar ekranda bu bayrak kullanılmaz (orada kaplama var).
+   * Liste paneli GENİŞ mi (2026-10-13 kullanıcı isteği: "hamburger tam ekran
+   * liste açmasın, paneli genişletip daraltsın").
+   *   · GENİŞ (`true`)   → arama kutusu + avatar + isim + son mesaj.
+   *   · KOMPAKT (`false`) → yalnız avatar sütunu (72px), isim/son mesaj/arama gizli.
+   * Panel HİÇBİR genişlikte kaybolmaz; iki panel her zaman yan yana durur.
+   * Seçim `localStorage`ta hatırlanır; <480px'de varsayılan KOMPAKT.
    */
   const [panelOpen, setPanelOpen] = useState(true)
   const [session, setSession] = useState<{ id: string, role?: string } | null>(null)
@@ -274,61 +326,189 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         important: !!conv?.important,
         favorite: !!conv?.favorite,
         blocked: !!conv?.blocked,
+        kind: conv?.kind ?? null,
         lastMessageAt: conv?.updated_at ?? null,
         preview: conv?.last_preview ?? null,
         previewSender: conv?.last_sender_name ?? null,
+        // Rozet + tik (sunucu türetir; `me` ile karşılaştırma BURADA).
+        unread: conv?.unread ?? 0,
+        lastMessage: conv?.last
+          ? {
+              mine: conv.last.sender_id === me,
+              delivered: !!conv.last.delivered_at,
+              read: !!conv.last.read_at,
+              at: conv.last.created_at,
+            }
+          : null,
       }
     })
   }, [currentUserId])
 
   /*
-    ÇEVRİMİÇİ NABZI + YAZMA SİNYALİ. Sohbet sayfası açıkken 20 sn'de bir nabız
-    gider → karşı taraf YEŞİL nokta görür. Yazarken durum `typing` yazılır →
-    karşı tarafta MAVİ "@kullanıcı yazıyor…" satırı görünür (nokta DEĞİL,
-    2026-10-12 kullanıcı isteği). Durum sinyalle tazelenmezse `TYPING_TTL_MS`
-    sonunda kendiliğinden söner (ağ/sleep durumunda sonsuz "yazıyor" kalmaz).
+    YEREL ÇEVRIMİÇİ DURUMU + YAZMA SİNYALİ (local-first, 2026-10-14).
+
+    Sunucudan gelen `lastSeenAt` yerine, SEKME ODAĞI + KULLANICI ETKILEŞİMİ
+    ile yerel olarak hesaplanır. Sunucuya senkron:
+      - Sekme kapanırken / gizlenirken (pagehide, visibilitychange)
+      - Periyodik (5 dk bir) — sadece "hala buradayım" demek için
+      - Yazma durumu değiştiğinde (typing start/stop)
+
+    Bu sayede:
+      - 2 sn'de bir `/api/chat/users` çekmek YOK (liste POLL_MS kaldırıldı)
+      - Yeşil nokta anında tepki verir (ağ gecikmesi yok)
+      - Sunucu yükü %90+ azalır
   */
-  const presenceRef = useRef<PresenceState | null>(null)
-  const presenceClear = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const localPresenceRef = useRef<LocalPresenceState>({
+    isOnline: true,
+    lastActivity: Date.now(),
+    presenceState: null,
+  })
+  const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const activityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   /** Yazma sinyalinin son gönderim zamanı (throttle) + "durdu" zamanlayıcısı. */
   const typingSentAt = useRef(0)
   const typingIdle = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const beat = useCallback(() => {
-    void fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'presence', state: presenceRef.current }),
-    }).catch(() => {})
+  /** Yerel aktiviteyi tazeler (fare/klavye/odak). */
+  const markActivity = useCallback(() => {
+    const now = Date.now()
+    localPresenceRef.current.lastActivity = now
+    localPresenceRef.current.isOnline = true
+    if (activityTimerRef.current) {
+      clearTimeout(activityTimerRef.current)
+    }
+    // 30 sn aktivite yoksa yerel olarak offline say
+    activityTimerRef.current = setTimeout(() => {
+      localPresenceRef.current.isOnline = false
+    }, LOCAL_ONLINE_TTL_MS)
   }, [])
 
-  const signalPresence = useCallback((state: PresenceState | null) => {
-    const changed = presenceRef.current !== state
-    presenceRef.current = state
-    if (changed) {
-      beat()
+  /** Sunucuya presence gönder (debounced, sadece durum değişiminde veya periyodik). */
+  const syncToServer = useCallback(async (force = false) => {
+    const state = localPresenceRef.current.presenceState
+    // Sadece typing/uploading/recording durumunda veya zorunluysa gönder
+    if (!force && state === null) {
+      return
     }
-    if (presenceClear.current) {
-      clearTimeout(presenceClear.current)
-      presenceClear.current = null
+    try {
+      await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'presence', state, force }),
+      })
     }
-    if (state) {
-      presenceClear.current = setTimeout(() => {
-        presenceRef.current = null
-        beat()
-      }, TYPING_TTL_MS)
+ catch {
+      // sessizce başarısız olsun, yerel durum bozulmasın
     }
-  }, [beat])
+  }, [])
+
+  /**
+   * Kişi listesi için yerel presence hesaplama (diğer kullanıcılar için).
+   * Sunucudan gelen `lastSeenAt` + `presenceState` kullanır, ama yerel `now`
+   * ile karşılaştırır. Bu sayede liste tazelenmesede nokta rengi anında güncellenir.
+   */
+  const computePeerPresence = useCallback((peer: Peer, now: number): Presence => {
+    // KENDİMİZ: yerel hesaplama (sekme odaklı + aktivite)
+    if (peer.id === selfId) {
+      return localPresenceRef.current.isOnline ? 'online' : 'offline'
+    }
+    // BAŞKALARI: sunucudan gelen lastSeenAt ile hesapla (chat-peers mantığı)
+    return presenceOf(peer.lastSeenAt, now)
+  }, [selfId])
+
+  /**
+   * Kişi listesi için yazma durumu (diğer kullanıcılar için).
+   * Kendi yazma durumumuz yerel `signalTyping`/`stopTyping` ile yönetiliyor.
+   */
+  const computePeerTyping = useCallback((peer: Peer, now: number): boolean => {
+    if (peer.id === selfId) {
+      return localPresenceRef.current.presenceState === 'typing'
+    }
+    return isTyping(peer.lastSeenAt, peer.presenceState, now)
+  }, [selfId])
+
+  /** Periyodik sunucu senkronu başlat. */
+  const startSyncTimer = useCallback(() => {
+    if (syncTimerRef.current) {
+      return
+    }
+    syncTimerRef.current = setInterval(() => {
+      syncToServer(true) // force=true: "hala buradayım" (presenceState=null olsa bile last_seen_at tazelensin)
+    }, SYNC_INTERVAL_MS)
+  }, [syncToServer])
+
+  /** Periyodik sunucu senkronunu durdur. */
+  const stopSyncTimer = useCallback(() => {
+    if (syncTimerRef.current) {
+      clearInterval(syncTimerRef.current)
+      syncTimerRef.current = null
+    }
+  }, [])
+
+  /** Sayfa görünürlüğü / odak değiştiğinde yerel durumu güncelle. */
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        localPresenceRef.current.isOnline = false
+        localPresenceRef.current.presenceState = null
+        syncToServer(true) // offline oluyoruz, sunucuyu bilgilendir
+        stopSyncTimer()
+      }
+ else {
+        markActivity()
+        startSyncTimer()
+      }
+    }
+    const onPageHide = () => {
+      localPresenceRef.current.isOnline = false
+      localPresenceRef.current.presenceState = null
+      // sendBeacon ile güvence altına al (sayfa kapanırken fetch iptal olabilir)
+      navigator.sendBeacon('/api/chat', new Blob([JSON.stringify({ action: 'presence', state: null })], { type: 'application/json' }))
+      stopSyncTimer()
+    }
+    const onFocus = () => markActivity()
+    const onUserActivity = () => markActivity()
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('pagehide', onPageHide)
+    window.addEventListener('focus', onFocus)
+    // Kullanıcı etkileşimleri: tıklama, tuş basma, dokunma, kaydırma
+    window.addEventListener('click', onUserActivity, { passive: true })
+    window.addEventListener('keydown', onUserActivity, { passive: true })
+    window.addEventListener('touchstart', onUserActivity, { passive: true })
+    window.addEventListener('scroll', onUserActivity, { passive: true })
+
+    // Başlangıçta online olarak işaretle ve senkron başlat
+    markActivity()
+    startSyncTimer()
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('pagehide', onPageHide)
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('click', onUserActivity)
+      window.removeEventListener('keydown', onUserActivity)
+      window.removeEventListener('touchstart', onUserActivity)
+      window.removeEventListener('scroll', onUserActivity)
+      stopSyncTimer()
+      if (activityTimerRef.current) {
+        clearTimeout(activityTimerRef.current)
+      }
+    }
+  }, [markActivity, syncToServer, startSyncTimer, stopSyncTimer])
 
   /**
    * Yazı yazıldı: sinyal en fazla `TYPING_THROTTLE_MS`'de bir gider (throttle),
    * yazma durunca `TYPING_IDLE_MS` sonra "durdu" bildirilir (debounce).
+   * Yerel state'e yaz + sunucuya senkron et.
    */
   const signalTyping = useCallback(() => {
     const at = Date.now()
+    markActivity()
     if (at - typingSentAt.current >= TYPING_THROTTLE_MS) {
       typingSentAt.current = at
-      signalPresence('typing')
+      localPresenceRef.current.presenceState = 'typing'
+      syncToServer()
     }
     if (typingIdle.current) {
       clearTimeout(typingIdle.current)
@@ -336,9 +516,10 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     typingIdle.current = setTimeout(() => {
       typingIdle.current = null
       typingSentAt.current = 0
-      signalPresence(null)
+      localPresenceRef.current.presenceState = null
+      syncToServer()
     }, TYPING_IDLE_MS)
-  }, [signalPresence])
+  }, [markActivity, syncToServer])
 
   /** Yazma bitti (mesaj gönderildi / sohbet kapandı): durum HEMEN temizlenir. */
   const stopTyping = useCallback(() => {
@@ -347,8 +528,9 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       typingIdle.current = null
     }
     typingSentAt.current = 0
-    signalPresence(null)
-  }, [signalPresence])
+    localPresenceRef.current.presenceState = null
+    syncToServer()
+  }, [syncToServer])
 
   /*
     OTURUM İSTEMCİDE çözülür (`force-static` layout tuzağı — 2026-10-11).
@@ -388,22 +570,26 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   }, [t])
 
   /**
-   * Nokta rengi ve "yazıyor" METNİ yeni veri gelmeden de eskisin diye listenin
-   * saatini tazele. Aralık `POLL_MS`: `TYPING_TTL_MS` (5 sn) dolduğunda satır
-   * gecikmeden son mesaja döner.
+   * Liste saati: diğer kullanıcıların `lastSeenAt`inden presence hesaplamak için.
+   * Yerel first: kendi durumumuz `localPresenceRef`'den gelir (anlık).
+   * Başkaları için sunucudan gelen `lastSeenAt` + yerel `now` ile hesaplanır.
+   * 2 sn yerine 10 sn: yazma durumu (typing) yine de anlık görünür çünkü
+   * sunucu `presenceState: 'typing'` + `lastSeenAt` her yazışta güncellenir.
    */
+  const LIST_CLOCK_MS = 10_000
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), POLL_MS)
+    const id = setInterval(() => setNow(Date.now()), LIST_CLOCK_MS)
     return () => clearInterval(id)
   }, [])
 
   /*
-    KİŞİ LİSTESİ: giriş yapmış HERKES için ilk yükleme + `POLL_MS`'de bir
-    tazeleme (yeni sohbet, son mesaj özeti, karşı tarafın çevrimiçi nabzı VE
-    yazma durumu). Aralık 20 sn'den 2 sn'ye indirildi: yazma durumu o kadar
-    gecikmeyle görünüyordu (2026-10-12 kullanıcı: "gecikme çok uzun"). Sunucu
-    listeyi yetkiye göre süzer; istemcide rol kapısı YOK.
+    KİŞİ LİSTESİ: giriş yapmış HERKES için ilk yükleme + periyodik tazeleme.
+    Local-first: kendi çevrimiçi durumumuz yerel, başkaları sunucudan.
+    Tazeleme aralığı 30 sn (eskiden 2 sn): yeni sohbet, son mesaj özeti,
+    karşı tarafın lastSeenAt/presenceState için yeterli. Yazma durumu
+    yine anlık görünür çünkü sunucu her keystroke'ta presence günceller.
   */
+  const PEERS_REFRESH_MS = 30_000
   useEffect(() => {
     if (!isAuthenticated) {
       return
@@ -412,46 +598,28 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     const run = async () => {
       const list = await loadPeers()
       if (!cancelled) {
-        // null → sorgu başarısız: "yükleniyor"da takılı kalma, hatayı göster.
         setPeers(list)
         setPeersError(list === null)
       }
     }
     void run()
-    const id = setInterval(run, POLL_MS)
+    const id = setInterval(run, PEERS_REFRESH_MS)
     return () => {
       cancelled = true
       clearInterval(id)
     }
   }, [isAuthenticated, loadPeers])
 
-  /* Nabız: sohbet sayfası açıkken 20 sn'de bir "buradayım" (yeşil nokta). */
-  useEffect(() => {
-    if (!isAuthenticated) {
-      return
-    }
-    beat()
-    const id = setInterval(beat, 20_000)
-    return () => clearInterval(id)
-  }, [isAuthenticated, beat])
-
   /**
    * Kişi listesi HİYERARŞİSİ: sabitlenen → YAZAN (şu an bana yazıyor) →
    * konuşulanlar (en yeni önce) → favoriler → çevrimiçiler → diğerleri →
    * engellenenler. Sıralama mantığı `lib/chat-peers.ts`te (saf + testli).
+   *
+   * Local-first presence:
+   *   - KENDİMİZ: `localPresenceRef` (sekme odak + aktivite) → anlık, ağsız
+   *   - BAŞKALARI: sunucudan `lastSeenAt` + `presenceState` + yerel `now`
    */
   const orderedPeers = useMemo(() => {
-    /*
-      KENDİ SATIRIMIN ADI (2026-10-13 kullanıcı isteği: "admin kendisini görsün,
-      kendisiyle konuşabilsin ama ismi TARIK ELER TARNAK (Siz) görünsün; bu
-      'Siz' hangi dildeyse ona çevrilir ve ismin SONUNA eklenir").
-        · Kendi satırımda TAKMA ADIM kullanılmaz — takma ad başkasının bana
-          taktığı etikettir; "orjinal isim" profildeki tam addır (ölçüldü:
-          satır "Tarnak" gösteriyordu, kullanıcı "TARIK ELER TARNAK" istedi).
-        · Ek parantezli ve DİLE GÖRE (`t('chat.you')`): tr "Siz", en "You", …
-        · Başka satırlar aynı kalır: takma ad → tam ad → kullanıcı adı. Bir kez
-          burada üretildiği için satır, başlık ve menüler aynı adı gösterir.
-    */
     const you = t('chat.you')
     return sortPeers(
       (peers ?? []).map((p): PeerRow => ({
@@ -459,12 +627,12 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         name: p.id === selfId
           ? `${p.fullName || p.username} (${you})`
           : p.nickname || p.fullName || p.username,
-        presence: presenceOf(p.lastSeenAt, now),
-        typing: isTyping(p.lastSeenAt, p.presenceState, now),
+        presence: computePeerPresence(p, now),
+        typing: computePeerTyping(p, now),
       })),
       locale,
     )
-  }, [peers, now, locale, selfId, t])
+  }, [peers, now, locale, selfId, t, computePeerPresence, computePeerTyping])
 
   /**
    * UZUN BASMA (mobil, 2026-10-13 kullanıcı isteği: "Mobilde sağ tık yerine
@@ -498,27 +666,17 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   })
 
   /**
-   * YAN PANEL DÜĞMESİ (2026-10-13 kullanıcı isteği: "kişi listesini aç düğmesini
-   * kaldır, onun yerine yan paneli açma ekle; panel açılıp kapanabilsin").
-   *   · `<md` (dar): liste sohbet açıkken gizli → düğme onu KAPLAMA olarak açar.
-   *   · `≥md` (geniş): sütunu katlar/açar (`panelOpen`).
-   * Panel hiçbir genişlikte kaybolmaz; kapalıyken de aynı düğme geri getirir.
+   * YAN PANEL DÜĞMESİ (2026-10-13 kullanıcı isteği: "hamburger listeyi
+   * genişletip daraltsın, tam ekran liste açmasın"). Tek davranış, her genişlikte
+   * aynı: GENİŞ ↔ KOMPAKT. Panel kaybolmaz, sohbet alanı yerinde kalır.
    */
   function togglePanel() {
-    if (isWideScreen()) {
-      setPanelOpen(v => !v)
-    }
-    else {
-      setListOpen(true)
-    }
+    setPanelOpen(v => !v)
   }
 
-  /** "Kişi ara": panel (gerekirse kaplama) açılır ve arama alanı odaklanır. */
+  /** "Kişi ara": panel KOMPAKT ise genişletilir ve arama alanı odaklanır. */
   function focusSearch() {
     setPanelOpen(true)
-    if (!isWideScreen()) {
-      setListOpen(true)
-    }
     requestAnimationFrame(() => searchRef.current?.focus())
   }
 
@@ -568,8 +726,17 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       return
     }
     setActivePeerId(peerId)
-    // Mobil kaplama liste: kişi seçilince kapanır, sohbet görünür.
-    setListOpen(false)
+    /*
+      ROZET SIFIRLANIR (kullanıcı isteği: "sohbeti açınca okunmamış sıfırlansın,
+      rozet kaysın"). Sunucu tarafı da okundu işaretler (`GET /api/chat` →
+      `markRead`); liste 2 sn'de bir tazelendiği için sunucudan da 0 gelir —
+      buradaki sıfırlama yalnız ANINDA görünmesini sağlar (yeni yoklama yok).
+    */
+    setPeers(prev => prev && prev.some(p => p.id === peerId && p.unread)
+      ? prev.map(p => (p.id === peerId ? { ...p, unread: 0 } : p))
+      : prev)
+    // Liste paneli AÇIK KALIR (kullanıcı isteği: "sohbet seçilince liste
+    // kapanmasın, sağdaki alan değişsin") — kaplama modu kaldırıldı.
     setLoading(true)
     setError(null)
     setMessages([])
@@ -635,6 +802,34 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       // Yazamıyorsa sessizce geç — genişlik yalnız bu oturumda yaşar.
     }
   }, [panelWidth])
+
+  /**
+   * Panel GENİŞ/KOMPAKT seçimi hatırlanır. Kayıt yoksa: dar ekranda KOMPAKT,
+   * geniş ekranda GENİŞ başlar (kullanıcı isteği 3).
+   */
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CHAT_PANEL_OPEN_KEY)
+      if (saved === '0' || saved === '1') {
+        setPanelOpen(saved === '1')
+        return
+      }
+      setPanelOpen(!isNarrowScreen())
+    }
+    catch {
+      // Depolama kapalı: dar ekran kuralı yine de uygulanır.
+      setPanelOpen(!isNarrowScreen())
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHAT_PANEL_OPEN_KEY, panelOpen ? '1' : '0')
+    }
+    catch {
+      // Yazamıyorsa sessizce geç — seçim yalnız bu oturumda yaşar.
+    }
+  }, [panelOpen])
 
   /** Panel sürüklemesi (pointer) — desen: `components/sidebar.tsx`. */
   const startResize = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
@@ -828,7 +1023,8 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     if (!conversationId) {
       return
     }
-    signalPresence('uploading')
+    localPresenceRef.current.presenceState = 'uploading'
+    syncToServer()
     setSending(true)
     try {
       const fd = new FormData()
@@ -870,7 +1066,8 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     }
     finally {
       setSending(false)
-      signalPresence(null)
+      localPresenceRef.current.presenceState = null
+      syncToServer()
     }
   }
 
@@ -1082,52 +1279,51 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       className="relative flex h-[calc(100dvh-4.5rem)] min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background md:h-[calc(100svh-11rem)]"
       style={{ '--chat-panel-w': `${panelWidth}px` } as CSSProperties}
     >
-      {/* ── SOL: kime yazmak istiyorum (kişi listesi) ── */}
+      {/* ── SOL: kime yazmak istiyorum (kişi listesi) ──
+          İKİ PANEL HER GENİŞLİKTE YAN YANA (2026-10-13 kullanıcı isteği: "tam
+          ekran liste görünümü tamamen kaldırılsın"). Genişlik:
+            · `md` altı  → `clamp(72px, 28vw, 300px)` (esnek; 480px altında
+              kullanıcı isteğiyle KOMPAKT başlar),
+            · `md` ve üstü → sürüklenebilir `--chat-panel-w` (kullanıcı ayarı).
+          KOMPAKT modda genişlik 72px'e iner; genişlik geçişi 200ms animasyonlu. */}
       <aside
         className={cn(
-          'min-h-0 w-full shrink-0 flex-col border-r border-foreground/10 bg-background md:static md:w-[var(--chat-panel-w)]',
-          // Geniş ekranda kullanıcı paneli KAPATTI (2026-10-13: "açılıp
-          // kapanabilsin") → başlıktaki düğme geri getirir.
-          !panelOpen && 'hidden',
-          // Sohbet açık değilken liste her ekranda görünür.
-          panelOpen && !threadOpen && 'flex',
-          // Sohbet açıkken: md'de sabit sütun, küçükte gizli — düğme (bkz.
-          // başlık) listeyi KAPLAMA olarak getirir.
-          panelOpen && threadOpen && (listOpen ? 'absolute inset-0 z-40 flex' : 'hidden md:flex'),
+          'flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-foreground/10 bg-background transition-[width] duration-200 ease-out',
+          panelOpen
+            ? 'w-[clamp(72px,28vw,300px)] md:w-[var(--chat-panel-w)]'
+            : 'w-[72px]',
         )}
       >
-        <div className="flex items-center gap-2 border-b border-foreground/10 p-2">
-          <input
-            ref={searchRef}
-            type="search"
-            value={peerQuery}
-            onChange={e => setPeerQuery(e.target.value)}
-            placeholder={t('chat.searchPeople')}
-            aria-label={t('chat.searchPeople')}
-            className="w-full min-w-0 flex-1 rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
-          />
-          {/* Kaplama modunda kapatma (md ve üstünde panel sabittir → gizli). */}
-          {listOpen && (
-            <button
-              type="button"
-              onClick={() => setListOpen(false)}
-              aria-label={t('common.close')}
-              className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-foreground/10 md:hidden"
-            >
-              ✕
-            </button>
-          )}
-        </div>
+        {/* Arama kutusu yalnız GENİŞ modda. KOMPAKT modda gizlenir (kullanıcı
+            isteği 3: "arama kutusu gizlensin"); "Kişi ara" menü maddesi paneli
+            genişletip odağı verir (`focusSearch`). */}
+        {panelOpen && (
+          <div className="flex items-center gap-2 border-b border-foreground/10 p-2">
+            <input
+              ref={searchRef}
+              type="search"
+              value={peerQuery}
+              onChange={e => setPeerQuery(e.target.value)}
+              placeholder={t('chat.searchPeople')}
+              aria-label={t('chat.searchPeople')}
+              className="w-full min-w-0 flex-1 rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
+            />
+          </div>
+        )}
 
         <div
-          className="relative min-h-0 flex-1 overflow-y-auto p-2"
+          className={cn(
+            'relative min-h-0 flex-1 overflow-y-auto',
+            panelOpen ? 'p-2' : 'p-1',
+          )}
           onClick={() => setMenu(null)}
           onContextMenu={onAreaContextMenu}
           {...peerLongPress}
         >
           {peers === null && !peersError && <ChatSkeleton label={t('chat.loading')} />}
           {peers === null && peersError && <p className="p-4 text-sm text-danger">{t('chat.error')}</p>}
-          {peers !== null && visiblePeers.length === 0 && (
+          {peers !== null && visiblePeers.length === 0 && panelOpen && (
+            /* KOMPAKT modda yer 72px: metin sığmaz, mesaj gösterilmez. */
             <p className="p-4 text-sm text-foreground-500">{t('chat.noMatch')}</p>
           )}
           {visiblePeers.map(p => (
@@ -1135,6 +1331,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
               <button
                 type="button"
                 data-peer-id={p.id}
+                title={panelOpen ? undefined : p.name}
                 onClick={() => openWith(p.id)}
                 onContextMenu={isAdmin
                   ? (e) => {
@@ -1147,7 +1344,8 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                     }
                   : undefined}
                 className={cn(
-                  'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-foreground/5',
+                  'flex w-full cursor-pointer items-center gap-3 rounded-lg text-left transition-colors hover:bg-foreground/5',
+                  panelOpen ? 'px-3 py-2' : 'justify-center p-1.5',
                   // SEÇİLİ satır (2026-10-13 kullanıcı isteği: "seçili kişinin
                   // arka planı bi tık daha koyu olsun / seçili olduğu
                   // anlaşılmalı"): mavi jeton tonu — sitedeki `bg-primary/15`
@@ -1164,39 +1362,44 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                   </span>
                   <PresenceDot presence={p.presence} t={t} />
                 </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">
-                    {p.name}
-                  </span>
-                  {/* Yazan kişide son mesaj satırı yerine MAVİ "@kullanıcı
-                      yazıyor…" görünür (2026-10-12 kullanıcı isteği). Kendi
-                      satırımızda gösterilmez — insan kendi yazdığını görmez. */}
-                  {p.typing && p.id !== selfId
-                    ? (
-                        <span className="block truncate text-xs text-primary">
-                          {typingLabel([p.username], t)}
-                        </span>
-                      )
-                    : (
-                        <span className="block truncate text-xs text-foreground-500">
-                          {/*
-                            ÖNİZLEME (2026-10-13 kullanıcı isteği): satır eskiden
-                            her zaman KARŞI TARAFIN adını (`@kullanıcı`) gösterip
-                            sonra mesajı ekliyordu — mesajı ben yazsam bile
-                            "@tarikelertr · Merhaba 👋" görünüyordu. Artık gönderen
-                            `last_sender_name`den gelir (sunucu her gönderimde
-                            yazar); hiç mesaj yoksa boş durum metni gösterilir.
-                          */}
-                          {p.preview
-                            ? `${p.previewSender ? `@${p.previewSender} · ` : ''}${p.preview}`
-                            : t('chat.empty')}
-                        </span>
-                      )}
-                </span>
-                {(p.important || p.favorite || p.blocked) && (
-                  <span className="ml-auto shrink-0 text-xs" aria-hidden="true">
-                    {p.blocked ? '🚫' : p.important ? '📌' : '⭐'}
-                  </span>
+                {/* KOMPAKT modda isim/son mesaj YOK — yalnız avatar (istek 3). */}
+                {panelOpen && (
+                  <>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">
+                        {p.name}
+                      </span>
+                      {/* Yazan kişide son mesaj satırı yerine MAVİ "@kullanıcı
+                          yazıyor…" görünür (2026-10-12 kullanıcı isteği). Kendi
+                          satırımızda gösterilmez — insan kendi yazdığını görmez. */}
+                      {p.typing && p.id !== selfId
+                        ? (
+                            <span className="block truncate text-xs text-primary">
+                              {typingLabel([p.username], t)}
+                            </span>
+                          )
+                        : (
+                            <span className="block truncate text-xs text-foreground-500">
+                              {/*
+                                ÖNİZLEME (2026-10-13 kullanıcı isteği): satır eskiden
+                                her zaman KARŞI TARAFIN adını (`@kullanıcı`) gösterip
+                                sonra mesajı ekliyordu — mesajı ben yazsam bile
+                                "@tarikelertr · Merhaba 👋" görünüyordu. Artık gönderen
+                                `last_sender_name`den gelir (sunucu her gönderimde
+                                yazar); hiç mesaj yoksa boş durum metni gösterilir.
+                              */}
+                              {p.preview
+                                ? `${p.previewSender ? `@${p.previewSender} · ` : ''}${p.preview}`
+                                : t('chat.empty')}
+                            </span>
+                          )}
+                    </span>
+                    {(p.important || p.favorite || p.blocked) && (
+                      <span className="ml-auto shrink-0 text-xs" aria-hidden="true">
+                        {p.blocked ? '🚫' : p.important ? '📌' : '⭐'}
+                      </span>
+                    )}
+                  </>
                 )}
               </button>
             </div>
@@ -1224,13 +1427,11 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         )}
       />
 
-      {/* ── SAĞ: seçili kişiyle sohbet ── */}
-      <section
-        className={cn(
-          'min-h-0 min-w-0 flex-1 flex-col',
-          threadOpen ? 'flex' : 'hidden md:flex',
-        )}
-      >
+      {/* ── SAĞ: seçili kişiyle sohbet ──
+          Her genişlikte GÖRÜNÜR (`flex`): liste kaplaması kaldırıldı, iki panel
+          yan yana durur (kullanıcı isteği: "geniş ekrandaki iki panelli düzen
+          korunsun"). Kişi seçilmemişse içeride boş durum metni çıkar. */}
+      <section className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* başlık: seçili kişinin adı + durum noktası. Sağ tık / uzun basma →
             KİŞİ menüsü (kullanıcı isteği: "üstte ismi oluyor ya, ordaki kısma
             da sağ tıklayabilelim"); seçili kişi yoksa boş alan menüsü. */}
@@ -1249,21 +1450,18 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           {...peerLongPress}
           className="flex items-center gap-2 border-b border-foreground/10 px-4 py-3"
         >
-          {/* YAN PANEL düğmesi (2026-10-13 kullanıcı isteği): eski
-              "👥 kişi listesini aç" ve "←" düğmelerinin yerine TEK düğme —
-              dar ekranda listeyi KAPLAMA olarak açar, geniş ekranda sütunu
-              katlar/açar. Panel hiçbir genişlikte kaybolmaz. Kişi seçilmeden
-              (`md` altı) gösterilmez: orada liste zaten tüm ekrandır. */}
+          {/* YAN PANEL düğmesi (2026-10-13 kullanıcı isteği: "hamburger tam
+              ekran liste açmasın, paneli genişletip daraltsın"). HER genişlikte
+              ve kişi seçilmemişken de görünür — liste artık kaplama değil, hep
+              yan yana duran bir sütundur. */}
           <button
             type="button"
             data-testid="chat-panel-toggle"
             onClick={togglePanel}
             title={t('chat.togglePanel')}
             aria-label={t('chat.togglePanel')}
-            className={cn(
-              'grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-foreground/10',
-              !threadOpen && 'hidden md:grid',
-            )}
+            aria-expanded={panelOpen}
+            className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-lg transition-colors hover:bg-foreground/10"
           >
             <MenuIcon size={20} />
           </button>

@@ -242,6 +242,89 @@ export async function listForUser(userId: string): Promise<ChatConversationRow[]
   return convs.data as ChatConversationRow[]
 }
 
+/**
+ * LİSTE SATIRI EK BİLGİSİ (2026-10-13 kullanıcı isteği: "okunmamış mavi rozet +
+ * tikler listede görünsün").
+ *
+ * Sohbet başına:
+ *   · `unread` → BANA gelen, henüz okunmamış mesaj sayısı (mavi rozet),
+ *   · `last`   → SON mesajın gönderen/teslim/okundu damgaları (tik göstergesi).
+ *
+ * Neden yeni tablo YOK: ikisi de mevcut veriden türetilir
+ * (`chat_messages.read_at` + `sender_id`). Migration gerekmedi.
+ */
+export interface ConversationMeta {
+  unread: number
+  last: {
+    sender_id: string
+    delivered_at: string | null
+    read_at: string | null
+    created_at: string
+  } | null
+}
+
+/**
+ * `shortcut:` "son mesaj" taraması en yeni `LAST_SCAN` satıra bakar (sohbet
+ * başına 1 satır almanın PostgREST'te yolu yok — `DISTINCT ON`/RPC migration
+ * ister). Sohbet sayısı bu sınırı zorlamaya başlarsa ya da son mesajı bu
+ * pencerenin dışında kalan bir sohbet görülürse RPC'ye geç.
+ */
+const LAST_SCAN = 300
+
+export async function conversationMeta(
+  userId: string,
+  conversationIds: string[],
+): Promise<Record<string, ConversationMeta>> {
+  const meta: Record<string, ConversationMeta> = {}
+  if (conversationIds.length === 0) {
+    return meta
+  }
+  for (const id of conversationIds) {
+    meta[id] = { unread: 0, last: null }
+  }
+  const client = db()
+  const [unreadRes, lastRes] = await Promise.all([
+    client
+      .from('chat_messages')
+      .select('conversation_id')
+      .in('conversation_id', conversationIds)
+      .neq('sender_id', userId)
+      .is('read_at', null),
+    client
+      .from('chat_messages')
+      .select('conversation_id, sender_id, delivered_at, read_at, created_at')
+      .in('conversation_id', conversationIds)
+      .order('created_at', { ascending: false })
+      .limit(LAST_SCAN),
+  ])
+  const error = unreadRes.error ?? lastRes.error
+  if (error) {
+    if (isMissingTable(error)) {
+      throw new ChatSchemaMissing()
+    }
+    throw error
+  }
+  for (const row of unreadRes.data ?? []) {
+    const entry = meta[row.conversation_id as string]
+    if (entry) {
+      entry.unread += 1
+    }
+  }
+  // Zaman azalan sırada geldiği için her sohbette İLK görülen = son mesaj.
+  for (const row of lastRes.data ?? []) {
+    const entry = meta[row.conversation_id as string]
+    if (entry && !entry.last) {
+      entry.last = {
+        sender_id: row.sender_id as string,
+        delivered_at: (row.delivered_at as string | null) ?? null,
+        read_at: (row.read_at as string | null) ?? null,
+        created_at: row.created_at as string,
+      }
+    }
+  }
+  return meta
+}
+
 /** Kullanıcı bu sohbetin katılımcısı mı? (okuma/yazma yetkisi) */
 export async function isParticipant(
   conversationId: string,
@@ -344,23 +427,55 @@ export function messagePreview(
 }
 
 /**
- * ÇEVRİMİÇİ NABZI (2026-10-11).
+ * ÇEVRİMİÇİ NABZI (2026-10-11; 2026-10-14 local-first güncellendi).
  *
- * Sohbet sayfası açıkken istemci 20 sn'de bir çağırır; `last_seen_at` tazelenir
- * ve sarı nokta durumu yazılır (`null` = normal). Yeşil/kırmızı/sarı kararı
- * `lib/chat-peers.ts:presenceOf` içinde, bu damgadan hesaplanır.
+ * İstemci yerel aktiviteye göre presence hesaplar (sekme odak, fare/klavye).
+ * Sunucuya senkron:
+ *   - `state` doluysa (typing/uploading/recording): `last_seen_at` + `presence_state` güncellenir
+ *   - `state === null` ve `force !== true`: sadece `presence_state` null yapılır (offline)
+ *   - `state === null` ve `force === true`: periyodik "hala buradayım" → `last_seen_at` tazelenir, `presence_state` DOKUNMUYOR (mevcut değer kalır)
+ *
+ * Bu sayede:
+ *   - Yerel first: yeşil nokta anlık (ağ gecikmesi yok)
+ *   - Sunucu yükü az: 20 sn → 5 dk periyodik, sadece durum değişiminde yazma
+ *   - `last_seen_at` her 5 dk bir tazelenir → diğer istemciler presenceOf() ile doğru hesaplar
  */
 export async function touchPresence(
   userId: string,
   state: 'typing' | 'uploading' | 'recording' | null,
+  force = false,
 ): Promise<void> {
   const client = db()
-  const res = await client
-    .from('profiles')
-    .update({ last_seen_at: new Date().toISOString(), presence_state: state })
-    .eq('id', userId)
-  if (res.error) {
-    throw res.error
+  const now = new Date().toISOString()
+  if (state !== null) {
+    // Yazma/yükleme/kayıt: her ikisini güncelle
+    const res = await client
+      .from('profiles')
+      .update({ last_seen_at: now, presence_state: state })
+      .eq('id', userId)
+    if (res.error) {
+      throw res.error
+    }
+  }
+ else if (force) {
+    // Periyodik "hala buradayım": sadece last_seen_at tazelenir, presence_state KORUNUR
+    const res = await client
+      .from('profiles')
+      .update({ last_seen_at: now })
+      .eq('id', userId)
+    if (res.error) {
+      throw res.error
+    }
+  }
+ else {
+    // Gerçek offline: presence_state null, last_seen_at artık eskimeye başlar
+    const res = await client
+      .from('profiles')
+      .update({ presence_state: null })
+      .eq('id', userId)
+    if (res.error) {
+      throw res.error
+    }
   }
 }
 

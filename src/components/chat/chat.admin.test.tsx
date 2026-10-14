@@ -493,24 +493,27 @@ describe('admin kullanıcı menüsü', () => {
  *  · gönderim sürerken düğme kilitlenir → çift tıklamada iki mesaj gitmez.
  */
 describe('yazma sinyali ve boş sohbet', () => {
-  it('ilk tuşta "typing" sinyali gider, yazma durunca "durdu" (null) gider', async () => {
+  it('ilk tuşta "typing" sinyali gider, yazma durunca sunucu TTL ile söner (local-first)', async () => {
     const spy = await renderAdminChat()
     fireEvent.click(screen.getByText('Ayşecik'))
     const box = await screen.findByRole('textbox')
 
     fireEvent.change(box, { target: { value: 'merhaba' } })
 
-    // Throttle ilk sinyali GEÇİRİR: gecikme yok.
+    // Local-first: throttle ilk sinyali GEÇİRİR (gecikme yok), presenceState='typing' olur.
     await waitFor(() => {
       expect(spy.mock.calls.some(([, init]) => init?.method === 'POST'
         && String(init.body).includes('"state":"typing"'))).toBe(true)
     })
 
-    // Debounce (2.5 sn) sonra "durdu": karşı taraf sonsuz "yazıyor" görmez.
+    // Yeni davranış: "durdu" (null) GÖNDERMEYIZ — sunucu TYPING_TTL_MS (5 sn) sonra
+    // kendiliğinden söner. Test: 3 sn içinde ikinci "typing" çağrısı YOK (throttle çalışır).
     await waitFor(() => {
-      expect(spy.mock.calls.some(([, init]) => init?.method === 'POST'
-        && String(init.body).includes('"state":null'))).toBe(true)
-    }, { timeout: 6_000 })
+      const typingCalls = spy.mock.calls.filter(([, init]) =>
+        init?.method === 'POST' && String(init.body).includes('"state":"typing"'),
+      )
+      expect(typingCalls.length).toBe(1)
+    }, { timeout: 4_000 })
   })
 
   it('boş sohbetteki "Merhaba de!" tıklanınca selamlama gönderir ve gönderim sırasında kilitlenir', async () => {

@@ -27,11 +27,22 @@ beforeEach(() => {
 
 afterEach(() => {
   createSpy.mockRestore()
+  vi.unstubAllGlobals()
   cleanup()
 })
 
 describe('emoji-picker-element bağlantısı', () => {
-  it('koyu tema + veri kaynağı + sabit yükseklik verir; seçim onPick\'e düşer', async () => {
+  /**
+   * VERİ KAYNAĞI (2026-10-13): resmî paket yalnız 5 dil yayınlıyor; tr/de/es/pt/ar
+   * için `scripts/build-emoji-data.mjs` ile üretilen yerel dosya kullanılır.
+   * Yerel dosyanın varlığı `HEAD` ile bir kez ölçülür → testte `fetch` sabitlenir.
+   */
+  function stubFetch(ok: boolean) {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok })))
+  }
+
+  it('yerel veri varsa onu kullanır (tr): veri kaynağı + depo dili + seçim', async () => {
+    stubFetch(true)
     const onPick = vi.fn()
     render(<EmojiPicker locale="tr" onPick={onPick} onClose={() => {}} />)
 
@@ -42,17 +53,44 @@ describe('emoji-picker-element bağlantısı', () => {
     })
 
     expect(el.className).toBe('dark')
-    // TR emoji VERİSİ `emoji-picker-element-data` paketinde YOK (ölçüldü:
-    // tr/de/es/ko → 404) → İngilizce veri; arayüz etiketleri site dilinde (i18n).
-    expect(el.dataSource).toContain('emoji-picker-element-data')
-    expect(el.dataSource).toContain('/en/emojibase/data.json')
-    expect(el.locale).toBe('en')
-    // Sabit yükseklik (350px) ama kısa ekranda taşmaz: `min(350px, 45svh)`.
-    expect(el.style.height).toContain('350px')
-    expect(el.style.height).toContain('svh')
+    // Yerel birleşik veri: TR + İngilizce anahtar kelimeler birlikte.
+    expect(el.dataSource).toBe('/emoji-data/tr.json')
+    expect(el.locale).toBe('tr')
 
     el.dispatchEvent(new CustomEvent('emoji-click', { detail: { unicode: '🔥' } }))
     expect(onPick).toHaveBeenCalledWith('🔥')
+  })
+
+  it('yerel veri yoksa İngilizce veriye düşer ve tek satır uyarı yazar', async () => {
+    stubFetch(false)
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    render(<EmojiPicker locale="de" onPick={() => {}} onClose={() => {}} />)
+
+    const el = await waitFor(() => {
+      const node = document.querySelector('.emoji-picker-host > div')
+      expect(node).not.toBeNull()
+      return node as HTMLElement & { dataSource?: string, locale?: string }
+    })
+
+    expect(el.dataSource).toContain('emoji-picker-element-data')
+    expect(el.dataSource).toContain('/en/emojibase/data.json')
+    expect(el.locale).toBe('en')
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('scripts/build-emoji-data.mjs'))
+    warn.mockRestore()
+  })
+
+  it('resmî pakette verisi olan dil CDN\'den alınır (ja)', async () => {
+    stubFetch(false)
+    render(<EmojiPicker locale="ja" onPick={() => {}} onClose={() => {}} />)
+
+    const el = await waitFor(() => {
+      const node = document.querySelector('.emoji-picker-host > div')
+      expect(node).not.toBeNull()
+      return node as HTMLElement & { dataSource?: string, locale?: string }
+    })
+
+    expect(el.dataSource).toContain('/ja/emojibase/data.json')
+    expect(el.locale).toBe('ja')
   })
 
   it('esc basılınca kapanır', async () => {

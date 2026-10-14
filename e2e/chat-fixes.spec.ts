@@ -279,9 +279,10 @@ test('tablet 900px: iki panel yan yana kalır', async ({ page }) => {
 })
 
 /* ────────────────────────────────────────────────────────────────────────────
-   MADDE 3 + 2 — mobil: kart tam ekran (8px kenar), tek panel, liste kaplaması
+   MADDE 3 + 2 — mobil: kart tam ekran (8px kenar), İKİ PANEL yan yana
+   (2026-10-13 SON istek: "tam ekran liste görünümü tamamen kaldırılsın")
    ──────────────────────────────────────────────────────────────────────────── */
-test('mobil 390px: kart tam ekran + 8px kenar; liste ↔ sohbet geçişi', async ({ page, context }) => {
+test('mobil 390px: kart tam ekran + 8px kenar; liste ve sohbet YAN YANA', async ({ page, context }) => {
   await openChat(page, 390, 780)
   const data = await chatData(context.request)
   const peer = panelPeers(data)[0]
@@ -293,51 +294,51 @@ test('mobil 390px: kart tam ekran + 8px kenar; liste ↔ sohbet geçişi', async
   expect(Math.round(before.y)).toBe(64) // TopBar payı 56 + 8
   expect(Math.round(780 - (before.y + before.height))).toBe(8)
 
-  // Tek panel: sohbet kapalıyken LİSTE görünür, sohbet alanı gizli (dar ekranda
-  // ilk yüz kişi listesidir; kaynak: `!threadOpen && 'flex'`).
+  // İKİ PANEL AYNI ANDA: 480px altında liste OTOMATİK KOMPAKT (72px, istek 3),
+  // sohbet alanı kalan genişliği alır ve görünür kalır.
   await expect(listPanel(page)).toBeVisible()
-  await expect(threadPanel(page)).toBeHidden()
-
-  // Kişiye tıkla → sohbet açılır, liste gizlenir; GEOMETRİ DEĞİŞMEZ.
-  await page.locator(`button[data-peer-id="${peer.id}"]`).click()
   await expect(threadPanel(page)).toBeVisible()
-  await expect(listPanel(page)).toBeHidden()
+  const compact = (await listPanel(page).boundingBox())!
+  expect(Math.round(compact.width)).toBe(72)
+  // Arama kutusu ve isimler kompakt modda GİZLİ (istek 3).
+  await expect(listPanel(page).locator('input[type="search"]')).toBeHidden()
+  await expect(listPanel(page).locator('span[title]')).toHaveCount(0)
+
+  // Kişiye tıkla → sohbet SAĞDA açılır; liste KAPANMAZ (istek 5), geometri aynı.
+  await page.locator(`button[data-peer-id="${peer.id}"]`).click()
   await expect(threadPanel(page).locator('div').first()).toContainText(peerLabel(peer))
+  await expect(listPanel(page)).toBeVisible()
   const after = (await card(page).boundingBox())!
   for (const key of ['x', 'y', 'width', 'height'] as const) {
     expect(Math.round(after[key]), key).toBe(Math.round(before[key]))
   }
 
   // Yazma alanı altta ve KARTIN İÇİNDE (klavye açılınca kart `dvh` ile küçülür).
-  // Ölçüldü: yükseklik sınıfı olmadan 24 mesajda kaydırma kabı içerik boyuna
-  // (1106px) çıkıp yazma alanını kartın dışına itiyordu (`overflow-hidden` ile
-  // kırpılıyordu) → kartın sabit `dvh` yüksekliği bu yüzden şart.
   const composer = (await page.locator('[data-testid="chat-slot"] .chat-composer-field').first().boundingBox())!
   expect(composer.y + composer.height).toBeLessThanOrEqual(after.y + after.height)
   expect(composer.y + composer.height).toBeLessThanOrEqual(780)
 
-  // YAN PANEL düğmesi → liste KAPLAMA olarak açılır ve kart alanını kaplar.
-  // (2026-10-13 kullanıcı isteği: eski "👥 kişi listesini aç" ve "←" düğmeleri
-  // kaldırıldı; tek düğme paneli açar/kapatır.)
+  // HAMBURGER → liste GENİŞLER (tam ekran kaplama DEĞİL): 72 → clamp(72,28vw,300)
+  // = 109px @390px; sohbet alanı yanında durmaya devam eder.
   await page.locator('[data-testid="chat-panel-toggle"]').click()
-  await expect(listPanel(page)).toBeVisible()
-  const overlay = (await listPanel(page).boundingBox())!
-  // `absolute inset-0` kartın DOLGU kutusuna göre konumlanır → 1px çerçeve dışta
-  // kalır (ölçüldü: x kartın 1px içinde).
-  expect(Math.round(overlay.x)).toBe(Math.round(after.x) + 1)
-  expect(Math.round(overlay.width)).toBe(Math.round(after.width) - 2)
-  expect(Math.round(overlay.height)).toBe(Math.round(after.height) - 2)
+  await expect(listPanel(page).locator('input[type="search"]')).toBeVisible()
+  const wide = (await listPanel(page).boundingBox())!
+  expect(Math.round(wide.width)).toBe(Math.round(Math.min(300, Math.max(72, 0.28 * 390))))
+  expect(Math.round(wide.width)).toBeGreaterThan(Math.round(compact.width))
+  const thread = (await threadPanel(page).boundingBox())!
+  // Yan yana: sohbet alanı listenin SAĞINDAN başlar, ikisi kartı aşmaz.
+  expect(Math.round(thread.x)).toBeGreaterThanOrEqual(Math.round(wide.x + wide.width))
+  expect(Math.round(thread.x + thread.width)).toBeLessThanOrEqual(Math.round(after.x + after.width))
+  // Tam ekran kaplama YOK: liste kartın tamamını kaplamaz.
+  expect(Math.round(wide.width)).toBeLessThan(Math.round(after.width))
 
-  // Kişiye tıkla → sohbete dön (seçim korunur).
-  await page.locator(`button[data-peer-id="${peer.id}"]`).click()
-  await expect(listPanel(page)).toBeHidden()
+  // Hamburger geri → KOMPAKT; seçili sohbet korunur (eski hâlde siliniyordu).
+  await page.locator('[data-testid="chat-panel-toggle"]').click()
+  await expect(listPanel(page).locator('input[type="search"]')).toBeHidden()
   await expect(threadPanel(page).locator('div').first()).toContainText(peerLabel(peer))
 
-  // Düğme → listeyi açar; geri dönünce AYNI sohbet durur (eski hâlde siliniyordu).
-  await page.locator('[data-testid="chat-panel-toggle"]').click()
-  await expect(listPanel(page)).toBeVisible()
-  await page.locator(`button[data-peer-id="${peer.id}"]`).click()
-  await expect(threadPanel(page).locator('div').first()).toContainText(peerLabel(peer))
+  // Seçim LOCALSTORAGE'da hatırlanır (istek 4): yeniden yüklemede kompakt kalır.
+  await expect.poll(() => page.evaluate(() => localStorage.getItem('chat-panel-open'))).toBe('0')
 })
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -352,14 +353,21 @@ test('boyut değişimi: seçili sohbet ve mesaj alanı korunur', async ({ page, 
   await expect(threadPanel(page).locator('div').first()).toContainText(peerLabel(peer))
   await expect(scroller(page)).toBeVisible()
 
-  // 390 → 900 (md üstü: iki panel) → 390. Sohbet kapanmaz, kaydırma Düğümü aynı kalır.
+  // İki panel HER genişlikte durur (2026-10-13: kaplama kaldırıldı); boyut
+  // değişimi seçimi ve kaydırma kabını bozmaz.
+  const listW = async () => Math.round((await listPanel(page).boundingBox())!.width)
+  const at390 = await listW()
+
   await page.setViewportSize({ width: 900, height: 800 })
   await expect(listPanel(page)).toBeVisible()
   await expect(threadPanel(page).locator('div').first()).toContainText(peerLabel(peer))
+  await expect(scroller(page)).toBeVisible()
 
   await page.setViewportSize({ width: 390, height: 780 })
-  await expect(listPanel(page)).toBeHidden()
+  await expect(listPanel(page)).toBeVisible()
   await expect(threadPanel(page).locator('div').first()).toContainText(peerLabel(peer))
+  // Seçim korunur; dar ekranda liste otomatik KOMPAKT genişliğe döner.
+  expect(await listW()).toBe(at390)
 })
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -458,9 +466,11 @@ test('mobilde uzun basma kişi menüsünü açar (sohbeti açmadan)', async ({ p
 
   const menu = page.getByRole('menu')
   await expect(menu).toBeVisible({ timeout: 3_000 })
-  // Uzun basma satırı SEÇMEZ: liste hâlâ açık (sohbet açılmadı).
+  // Uzun basma satırı SEÇMEZ: hiçbir kişi seçili olmaz (başlıkta `data-peer-id`
+  // taşıyan öğe yok) ve liste ile sohbet paneli yerinde durur.
   await expect(listPanel(page)).toBeVisible()
-  await expect(threadPanel(page)).toBeHidden()
+  await expect(threadPanel(page)).toBeVisible()
+  await expect(page.locator('[data-testid="chat-slot"] div[data-peer-id]')).toHaveCount(0)
   const mb = (await menu.boundingBox())!
   expect(mb.x + mb.width).toBeLessThanOrEqual(390)
   expect(mb.y + mb.height).toBeLessThanOrEqual(780)
@@ -703,24 +713,31 @@ test('yeni mesaj SAYFAYI kaydırmaz: kaydırma mesaj alanının İÇİNDE kalır
 /* ────────────────────────────────────────────────────────────────────────────
    MADDE 3 — tek "yan panel" düğmesi (eski "👥 kişi listesini aç" ve "←" gitti)
    ──────────────────────────────────────────────────────────────────────────── */
-test('yan panel düğmesi masaüstünde sütunu katlar ve geri açar', async ({ page }) => {
+test('yan panel düğmesi listeyi genişletir/daraltır (kaplama yok)', async ({ page }) => {
   await openChat(page, 1440, 900)
   const toggle = page.locator('[data-testid="chat-panel-toggle"]')
   await expect(toggle).toBeVisible()
   await expect(listPanel(page)).toBeVisible()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
-  const openW = (await threadPanel(page).boundingBox())!.width
-  await toggle.click()
-  await expect(listPanel(page)).toBeHidden()
-  // Düğme KAPALIYKEN de durur → panel geri getirilebilir (kilitli kalma yok).
-  await expect(toggle).toBeVisible()
-  const closedW = (await threadPanel(page).boundingBox())!.width
-  expect(closedW, 'kapalıyken sohbet tam genişlik olmalı').toBeGreaterThan(openW + 100)
+  const listW = async () => Math.round((await listPanel(page).boundingBox())!.width)
+  const openW = await listW()
+  const threadOpenW = (await threadPanel(page).boundingBox())!.width
 
+  // Kapat → liste 72px kompakt; sohbet alanı GENİŞLER ama liste kaybolmaz.
   await toggle.click()
+  await expect(listPanel(page).locator('input[type="search"]')).toBeHidden()
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
   await expect(listPanel(page)).toBeVisible()
-  const backW = (await threadPanel(page).boundingBox())!.width
-  expect(Math.abs(backW - openW)).toBeLessThanOrEqual(2)
+  expect(await listW()).toBe(72)
+  const threadCompactW = (await threadPanel(page).boundingBox())!.width
+  expect(threadCompactW, 'kompaktken sohbet daha geniş olmalı').toBeGreaterThan(threadOpenW + 100)
+
+  // Geri aç → aynı genişlik ve sohbet alanı eski hâline döner.
+  await toggle.click()
+  await expect(listPanel(page).locator('input[type="search"]')).toBeVisible()
+  expect(await listW()).toBe(openW)
+  expect(Math.abs((await threadPanel(page).boundingBox())!.width - threadOpenW)).toBeLessThanOrEqual(2)
 })
 
 /* ────────────────────────────────────────────────────────────────────────────

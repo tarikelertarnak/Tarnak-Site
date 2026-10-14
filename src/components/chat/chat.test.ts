@@ -116,12 +116,27 @@ describe('chat arayüz sözleşmesi', () => {
     // Kütüphane YALNIZ istemcide: customElements sunucuda yok.
     expect(PICKER).toMatch(/await import\('emoji-picker-element'\)/)
     expect(PICKER).toContain('dataSource')
+    // Veri kaynağı: resmî CDN (5 dil) + yerelde üretilmiş dosyalar (tr/de/es/pt/ar).
     expect(PICKER).toContain('emoji-picker-element-data')
+    expect(PICKER).toContain('/emoji-data/')
+    expect(PICKER).toContain('resolveDataSource')
+    // Arayüz etiketleri sitenin dilinde; TR çevirisi kütüphanede VAR.
+    expect(PICKER).toMatch(/tr: \(\) => import\('emoji-picker-element\/i18n\/tr'\)/)
     expect(PICKER).toMatch(/setAttribute\('class', 'dark'\)/)
-    // Sabit yükseklik + odağın/imlecin korunması çağıranda.
-    expect(PICKER).toContain('svh')
     expect(PICKER).toContain('emoji-click')
     expect(PICKER).toContain('Escape')
+    // Boyut (genişlik/sütun/yükseklik) tek kaynaktan: globals.css.
+    const CSS = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8')
+    const block = CSS.slice(
+      CSS.indexOf('.emoji-picker-host emoji-picker'),
+      CSS.indexOf('/* ---------- Marquee ----------'),
+    )
+    expect(block, 'kütüphanenin width:min-content kuralı ezilir').toContain('width: 100%')
+    expect(block).toContain('height: min(350px, 45svh)')
+    expect(block).toContain('--num-columns: 8')
+    expect(block, 'mavi odak çerçevesi inceltildi').toContain('--outline-size: 1px')
+    expect(block).toContain('@media (min-width: 480px)')
+    expect(block).toContain('@media (min-width: 768px)')
   })
 
   it('yazma durumu: sarı nokta yok, mavi "@kullanıcı yazıyor…" metni var', () => {
@@ -291,25 +306,33 @@ describe('chat arayüz sözleşmesi', () => {
       expect(SRC).toContain('env(safe-area-inset-bottom)')
     })
 
-    it('kırılma noktası 768px: altında tek panel, üstünde iki panel', () => {
-      // `md` = 768px. Liste dar ekranda kaplama olur, md'de sabit sütuna döner.
-      expect(SRC).toContain('absolute inset-0 z-40 flex')
-      expect(SRC).toContain('md:static')
-      expect(SRC).toContain('md:w-[var(--chat-panel-w)]')
+    it('iki panel HER genişlikte yan yana; tam ekran liste kaplaması YOK', () => {
+      // 2026-10-13 (SON istek): "Ekran ne kadar küçük olursa olsun geniş
+      // ekrandaki iki panelli düzen korunsun … tam ekran liste görünümü
+      // tamamen kaldırılsın." Yani: `md:hidden` kaplama, X kapatma ve
+      // `absolute inset-0` yok; genişlik `clamp(72px,28vw,300px)` + md'de
+      // sürüklenebilir `--chat-panel-w`.
+      expect(SRC).not.toContain('absolute inset-0 z-40')
+      expect(SRC).not.toContain('md:static')
+      expect(SRC).toContain('w-[clamp(72px,28vw,300px)] md:w-[var(--chat-panel-w)]')
+      // KOMPAKT mod 72px'e iner (avatar sütunu) — genişlik geçişi animasyonlu.
+      expect(SRC).toContain('\'w-[72px]\'')
+      expect(SRC).toContain('transition-[width] duration-200')
     })
 
-    it('yan panel düğmesi listeyi açar, SEÇİLİ sohbeti SİLMEZ (geri dönüşte korunur)', () => {
+    it('yan panel düğmesi GENİŞ ↔ KOMPAKT yapar, SEÇİLİ sohbeti SİLMEZ', () => {
       // Eski hâlde "←" sohbeti sıfırlıyordu (`setConversationId(null)`), yani
       // listeden geri dönüldüğünde seçim ve kaydırma konumu kayboluyordu.
-      // 2026-10-13 (kullanıcı isteği): "👥 kişi listesini aç" ve "←" düğmeleri
-      // kaldırıldı; yerine TEK "yan panel" düğmesi (`togglePanel`) geldi.
+      // 2026-10-13 (kullanıcı isteği): düğme artık tam ekran liste AÇMAZ,
+      // paneli genişletip daraltır; seçili sohbet yerinde kalır.
       const toggle = CODE.slice(
         CODE.indexOf('function togglePanel()'),
         CODE.indexOf('function focusSearch()'),
       )
-      expect(toggle).toContain('setListOpen(true)')
+      expect(toggle).toContain('setPanelOpen(v => !v)')
       expect(toggle, 'seçili sohbet korunur').not.toContain('setConversationId')
       expect(toggle, 'seçili kişi korunur').not.toContain('setActivePeerId')
+      expect(CODE).not.toContain('setListOpen')
       expect(CODE).not.toContain('chat.openPeopleList')
       expect(CODE).not.toContain('chat.backToList')
     })
@@ -395,17 +418,22 @@ describe('chat arayüz sözleşmesi', () => {
       expect(SRC).toContain('t(\'chat.unmarkImportant\')')
     })
 
-    it('yan panel düğmesi başlıkta durur: dar ekranda kaplamayı açar, md\'de sütunu katlar', () => {
-      // 2026-10-13 kullanıcı isteği: "kişi listesini aç butonunu kaldır,
-      // küçükkenkinin yerine yan paneli açma ekle; yan panel açılıp kapanabilsin".
+    it('yan panel düğmesi başlıkta durur: listeyi genişletir/daraltır (kaplama YOK)', () => {
+      // 2026-10-13 (SON istek): "Hamburger butonu sohbet başlığında kalsın ama
+      // artık tam ekran liste açmasın: liste panelini genişletip daraltsın
+      // (geniş mod ↔ kompakt/avatar modu). Seçimi localStorage'a kaydet."
       expect(CODE).toContain('data-testid="chat-panel-toggle"')
       expect(CODE).toContain('t(\'chat.togglePanel\')')
-      expect(CODE).toContain('isWideScreen()')
-      // Panel kapalıyken de düğme durur (geri açılabilir).
-      expect(CODE).toMatch(/!threadOpen && 'hidden md:grid'/)
-      // Dar ekranda kaplama, `md` ve üstünde panel sabit sütun kalır.
-      expect(SRC).toContain('absolute inset-0 z-40 flex')
-      expect(SRC).toContain('md:static')
+      expect(CODE).toContain('CHAT_PANEL_OPEN_KEY')
+      expect(CODE).toContain('localStorage.setItem(CHAT_PANEL_OPEN_KEY')
+      // Düğme her genişlikte görünür: liste kaplama değil, hep yan yana sütun.
+      expect(CODE).not.toMatch(/!threadOpen && 'hidden md:grid'/)
+      // Dar ekranda otomatik KOMPAKT başlar (480px altı).
+      expect(CODE).toContain('isNarrowScreen()')
+      expect(CODE).toContain('CHAT_NARROW_QUERY = \'(max-width: 479px)\'')
+      // Kaplama ve X kapatma tamamen gitti.
+      expect(SRC).not.toContain('absolute inset-0 z-40')
+      expect(CODE).not.toContain('setListOpen')
     })
 
     it('kendi satırım yalnız yöneticiye görünür ve "TARIK ELER TARNAK (Siz)" yazar', () => {

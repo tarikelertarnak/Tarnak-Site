@@ -150,11 +150,13 @@ export function MenuSurface({ x, y, onClose, label, children }: {
 }
 
 /** Menü satırı. Kapatma kararı `onSelect` geri çağrısının içindedir. */
-export function MenuItem({ icon, label, danger, disabled, onSelect }: {
+export function MenuItem({ icon, label, danger, disabled, selected, onSelect }: {
   icon?: ReactNode
   label: string
   danger?: boolean
   disabled?: boolean
+  /** Seçili satır (mavi) — kişi listesi SÜZGEÇ menüsü kullanır (2026-10-13). */
+  selected?: boolean
   onSelect: () => void
 }) {
   return (
@@ -162,10 +164,14 @@ export function MenuItem({ icon, label, danger, disabled, onSelect }: {
       type="button"
       role="menuitem"
       disabled={disabled}
+      aria-checked={selected}
       onClick={() => onSelect()}
       className={cn(
         'flex w-full cursor-pointer items-center gap-2 px-4 py-2.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-50',
-        danger ? 'text-red-500 hover:bg-red-500/10' : 'hover:bg-foreground/10',
+        danger
+          ? 'text-red-500 hover:bg-red-500/10'
+          : 'hover:bg-foreground/10',
+        selected && 'font-medium text-primary hover:bg-primary/10',
       )}
     >
       {icon}
