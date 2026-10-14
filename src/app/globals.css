@@ -596,10 +596,18 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb {
   display: none;
 }
 
-/* Emoji seçici (emoji-picker-element, 2026-10-12): kütüphanenin `:host`
-   değişkenleri sitenin tasarım jetonlarına bağlanır — koyu zemin, kenarlık ve
-   mavi vurgu. Değerler tek kaynaktan (`--tsurface-*`, `--tfg-*`, `--tprimary`),
-   böylece tema değişince seçici de değişir. */
+/* Emoji seçici (emoji-picker-element, 2026-10-12; boyut 2026-10-13): kütüphanenin
+   `:host` değişkenleri sitenin tasarım jetonlarına bağlanır — koyu zemin, kenarlık
+   ve mavi vurgu. Değerler tek kaynaktan (`--tsurface-*`, `--tfg-*`, `--tprimary`),
+   böylece tema değişince seçici de değişir.
+
+   BOYUT (kullanıcı isteği: "mesaj yazma alanıyla aynı genişlikte olsun"):
+   kütüphane varsayılanı `:host{width:min-content;height:400px}` — bu yüzden seçici
+   ortada dar bir kutu gibi kalıyordu. Kap `w-full` olduğu için genişlik `100%`'e
+   çekilir; sütun sayısı `--num-columns` ile ekran genişliğine göre artar
+   (kütüphane bu değişkeni okur ve pencere boyutunda yeniden hesaplar).
+   Yükseklik sabit 350px, ama kısa ekranda taşmasın diye `45svh` ile sınırlanır.
+   `--outline-size`: mavi odak halkası kütüphanede 2px idi → siteyle uyum için 1px. */
 .emoji-picker-host emoji-picker {
   --background: var(--tsurface-1);
   --border-color: var(--tsurface-border);
@@ -615,6 +623,22 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb {
     transparent
   );
   --outline-color: var(--tprimary);
+  --outline-size: 1px;
+  --num-columns: 8;
+  width: 100%;
+  height: min(350px, 45svh);
+}
+
+@media (min-width: 480px) {
+  .emoji-picker-host emoji-picker {
+    --num-columns: 10;
+  }
+}
+
+@media (min-width: 768px) {
+  .emoji-picker-host emoji-picker {
+    --num-columns: 12;
+  }
 }
 
 /* ---------- Marquee ---------- */
