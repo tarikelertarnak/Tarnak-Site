@@ -1,10 +1,10 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-13T21:20:00+03:00
+updated: 2026-10-15T00:00:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: 9cc2a5d (yerel; push/deploy YOK)
+branch: faz-1-guvenlik last_commit: ec46dc8 (chat local-first) + 574ea5a (brand hover); push/deploy YOK
 
 === TARMAS KERNEL (preserve verbatim in any summary/compaction) ===
 
@@ -31,119 +31,115 @@ branch: faz-1-guvenlik last_commit: 9cc2a5d (yerel; push/deploy YOK)
 
 ## Current
 
-phase: SOHBET — KENDI SATIRIM (9. kullanici maddesi: admin kendisini gorur ve kendisiyle konusur; adi "TARIK ELER TARNAK (Siz)" — ek dile gore cevrilir) step: KAPANDI (yerel commit; push yok)
-prev_phase: SOHBET IYILESTIRME #2 (8 kullanici maddesi: yan panel her zaman + kapatilabilir · kendi satiri ve sohbetsiz kayit gizli · sayfa kaymasi · kendi adim · bos alan + baslik sag tik menuleri · secili satir) step: KAPANDI (yerel commit; push yok)
+phase: SOHBET — LOCAL-FIRST ÇEVRIMİÇİ DURUMU + HEADER BRAND HOVER TUTARLILIĞI step: TAMAMLANDI (yerel commit; push yok)
+prev_phase: SOHBET — KENDI SATIRIM (9. kullanici maddesi: admin kendisini gorur ve kendisiyle konusur; adi "TARIK ELER TARNAK (Siz)" — ek dile gore cevrilir) step: KAPANDI (yerel commit; push yok)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: yerel (ayrinti: LOG.md [CHAT-011..012]; push/deploy ASLA otomatik)
+branch: faz-1-guvenlik last_commit: yerel (ayrinti: LOG.md [CHAT-011..013]; push/deploy ASLA otomatik)
 running_processes: next dev (turbopack) :3000 — KULLANICININ; bu turda degisiklikleri SERVIS ETTIGI yeniden olculdu (gercek Chromium e2e + API probe) → bayat modul grafigi belirtisi yok
-not: KENDI SATIRIM (2026-10-13, son istek): "Admin kendisini gorsun kendisiyle
-konusa bilsin ama ismi TARIK ELER TARNAK (Siz) gorsun — bu 'Siz' hangi dildeysen
-ona cevrilir ve ismin SONUNA eklenir". Onceki "kullanici kendisiyle de
-konusamasin" kurali NORMAL KULLANICI icin kaldi. Degisenler: (1) suzgec
-`p.id === selfId ? isAdmin : (!isAdmin || !!p.hasConversation)` — kendi satirim
-sohbeti olmasa da gorunur, (2) `openWith` kapisi `peerId === selfId && !isAdmin`,
-(3) ad TEK yerden: `orderedPeers` icinde kendi satirimda TAKMA ADIM degil TAM
-ADIM + `(${t('chat.you')})`; satir + avatar bas harfleri artik `p.name` render
-ediyor (onceden ham ifade), (4) `chat.you` 8 sozluge eklendi (tr Siz · en You ·
-de Sie · es Tu · fr Vous · ja あなた · pt Voce · ru Вы). Sunucu DEGISMEDI:
-`<id>|<id>` sohbeti destekli (chat-db `ensureParticipants` 2026-10-12).
-ACIK KALAN (veri): DB'deki `profiles.full_name` = `TARIK ELER` → satir
-"TARIK ELER (Siz)" yazar; tam istedigi dize icin profil tam adi
-`TARIK ELER TARNAK` olmali (sahip satiri veri API'sinde korumali → 403;
-kendi profil ucu `/api/auth/profile` ile düzenlenir).
-**tsc 0 · eslint --max-warnings 0 (chat + i18n + e2e) 0 · vitest 724/724 (63
-dosya) · `e2e/chat-fixes.spec.ts --project=desktop` 15/15 (1 yeni test).**
-Veriye bagli e2e testi de duzeltildi: karsi taraf sohbetinde mesajlar silinmis
-oldugu icin (`last_preview: null`, admin cookie ile olculdu) test kiriliyordu →
-onizleme artik `page.route` ile YANITTA kuruluyor (kisiler/sohbetler gercek,
-Supabase'e yazilmiyor; dosyadaki "Ilet" testi de ayni desende).
-not: 8 madde (hepsi uygulandi + olculdu): (1) yan panel HER ZAMAN erisilebilir ve
-tek dugmeyle kapanip acilir (`data-testid="chat-panel-toggle"`, `>=768` sutunu
-katlar, `<768` kaplamayi acar; kapaliyken de dugme durur), (2) KENDI SATIRIM ve
-hic sohbeti olmayan kayit listelenmez ("kullanici kendisiyle de konusamasin" —
-kendi satirim "Tarnak" adiyla duruyordu ve tiklayinca `<id>|<id>` anahtarli bos
-sohbet aciyordu; ikinci savunma `openWith` icinde `peerId === selfId`),
-(3) eski "👥 kisi listesini ac" + "←" dugmeleri KALDIRILDI (← secili sohbeti de
-siliyordu), (4) sohbet SAYFASI kaymaz: `min-h-screen` her boyutta 56px tasiyordu
-→ kaldirildi, kaydirma mesaj alaninda (`scrollIntoView` chat.tsx'ten cikti,
-yerine `listRef.scrollTo` + `scrollToMessage`), (5) kendi adim `TARIK ELER TARNAK`,
-(6) bos alana sag tik → "Kisi ara / Sohbeti yenile / En sona git" (sonuncu yalniz
-sohbet acikken), (7) sohbet basligina sag tik → kisi menusu, (8) secili satir
-`bg-primary/15 hover:bg-primary/20`.
-"Grup olustur" EKLENMEDI: sunucuda grup ucu YOK (`kind='group'` hic olusmuyor,
-`api/chat` grup aksiyonu yok) → calisan maddeler konuldu, uydurulmadi.
-**tsc 0 · eslint --max-warnings 0 (chat + e2e) 0 · vitest 722/722 (63 dosya) ·
-`playwright e2e/chat-fixes.spec.ts --project=desktop` 14/14 (6 yeni test).**
-Tum e2e suite 86/88 (14 atlandi) — 2 kirmizi AYNI ILGISIZ test
-(`personal-pages.spec.ts` footer navigasyonu, masaustu + mobil); kanit: spec
-HEAD'e geri alinip kosuldu, yine kirmizi + probe ile tiklama noktasi `<ul>`e
-dusuyor ve sayfa tiklama sonrasi ~784px buyuyor (yerlesim kaymasi). Bu
-degisiklikle ilgisi yok; spec DEGISTIRILMEDI.
-4 chat test dosyasi yeni kurala gore guncellendi: fiksturlere SOHBET eklendi
-(satir gorunurlugu artik sohbete bagli — yoksa liste bos kalir).
-not: 5 madde: (1) liste onizlemesi `@<son gonderen> · <onizleme>` + bos durum,
-(2) 768px altinda tek panel (liste ↔ sohbet), secim/kaydirma korunur,
-(3) dar ekranda kart tam ekran (8px kenar, `100dvh`), yazma alani kart icinde,
-(4) kisi menusu imlecte + kirpilmaz + uzun basma, (5) balon menusu imlecte
-(Kopyala/Yanitla/Ilet/Sabitle/Mesaj bilgisi/Sil); `Duzenle` YOK (edited_at
-kolonu + API yok, DDL kullanicida → dogrulanamazdi), yerine `Ilet`.
-YOLDA BULUNAN 3 GIZLI HATA: menuler `display:none` panelin icindeydi (gorunmez)
-· ilk maddeye odak `visibility:hidden` iken cagriliyordu (klavye olu)
-· kart yuksekligi belirsizdi (24 mesajda kaydirma kabi icerik boyuna cikip
-yazma alanini kartin disina itiyordu). **tsc 0 · eslint --max-warnings 0 0 ·
-vitest 717/717 (63 dosya) · `e2e/chat-fixes.spec.ts` (gercek Chromium) 8/8 ·
-tum e2e suite 44/45** — tek kirmizi `personal-pages.spec.ts` footer navigasyonu
-(bu degisiklikle ilgisiz; probe ile ayni tik GIDIYOR, spec yumusak kaydirma
-surerken tikliyor → zamanlama kirilgani). YENI DOSYA:
-`src/components/chat/context-menu.tsx` (+16 unit test) · `e2e/chat-fixes.spec.ts`.
-Kullanicinin devam eden eylemleri: SQL Editor (languages + messages.phone) ve
-canli deploy onayi.
-not: son tur 3 commit: 4bfe73e (/admin erisim duzeltmesi: oturum istemcide) · 9cc2a5d
-(e2e admin spec + playwright localhost/PLAYWRIGHT_PORT). **tsc 0 · vitest 688/688
-(62 dosya; +8 gate testi) · eslint --max-warnings 0 (6 dosya) 0 · Playwright
-admin-panel.spec.ts 12/12 (masaustu+mobil, GERCEK Chromium).**
-KOK NEDEN: kok layout `dynamic='force-static'` Next 16'da alt segmentlerde
-`cookies()`'i BOS donduruyor → /admin'daki `getSessionUser()` daima null →
-sonsuz /login yonlendirmesi (panel tarayicidan HIC acilamiyordu). Olculdu: ayni
-cookie ile /api/admin/session 200, /admin 307. Cozum /chat deseni: sayfa oturum
-okumaz, kapi istemcide (AdminGate), zorunlu kontrol API'de (401 kanitli).
-EK BULGU: dev hidrasyonunun yillarca "calismiyor" sanilmasinin koku — Next 16 dev
-`/_next/hmr`'i 127.0.0.1'den gelince cross-origin sayip BLOKLUYOR; `localhost`
-kullanilinca hidrasyon calisir (playwright config duzeltildi).
-not: 4 commit: 2bf3ebf (admin 5 sekme + serit + uyari) · ff74999 (chat v2 adlari
-kaldirildi) · ea7d67d (Faz 1..6 yorum/dokuman adlari) · b5cf083 (e2e/docs/CI ad
-temizligi). **tsc 0 · vitest 680/680 (61 dosya) · eslint --max-warnings 0 (81
-dosya) 0.** Gercek admin oturumuyla API olcumu: /api/admin/overview sayilari DB
-ile ayni. Iki migration eksik (languages tablosu, messages.phone) → panel uyarisi
-artik ilgili SQL dosyasini soyluyor (`ResourceDef.sqlFile`).
-DIKKAT: commit aninda lint-staged hatasi "The command line is too long" (82 dosya
-tek eslint komutunda Windows limitini asti) → degisiklikler 4 mantiksal commit'e
-bolundu; kapi ATLANMADI (`--no-verify` kullanilmadi).
-BU TURDA YAPILAMAYAN: gercek tarayicida tiklayarak dogrulama (dev sunucu
-hydrate olmuyor: `_next/hmr` ws `ERR_INVALID_HTTP_RESPONSE`; BrowserOS neo
-bagli degil) → kanit jsdom + kaynak sozlesmesi + HTTP olcumu.
-not: ROZET 2 kapandi (5 kullanici istegi) →
-A) `/chat`: "Sohbet" baslik blogu SILINDI (yer israfi); kutu `100svh-19rem`
-→ `100svh-11rem`, bosalan alani doldurur.
-B) "Onemli kisi olarak isaretle" sag ustten KALDIRILDI → kisiye sag tik menusunde
-(`chat.markImportant` / yeni `chat.unmarkImportant`, 8 dil).
-C) Kucuk ekranda liste KAPLAMA olarak acilir; acma dugmesi "←" okundan ONCE;
-X ile kapanir (`md` ve ustunde sabit sutun aynen kalir).
-D) Admin sekme oklari: `absolute top-1/2` (Tablolar kartlarinin ustune biniyordu)
-→ seritle ayni flex satirinda, kendi alaninda; `scrollBy` 200px; aktif sekme
-ortalanir; scrollbar gizli. Alttaki 4 daire (`TabScrollDots`) + olu sayfalama
-API'si SILINDI.
-E) Rol etiketi "Super Yonetici" → "Site Sahibi"; panel kimlik blogu gruplandi.
-F) Yazma alani: mavi odak halkasi kapatildi (`.chat-composer-field`);
-`input::selection` ozel kurali SILINDI → sitedeki tek secim kaynagi
-(@lobehub/ui ThemeProvider = SARI) gecerli oldu (kok neden buydu).
-**tsc 0 · eslint --max-warnings 0 (21 dosya) 0 · vitest 647/647 (57 dosya) ·
-e2e chat-layout 12/12 (masaustu + mobil, 5 yukseklik) · /chat SSR h1/h2 = 0 ·
-servis edilen CSS'te `.chat-composer-field` + `.admin-tabs-strip` var.**
-DIKKAT: commit aninda lint-staged prettier `globals.css`i TUMUYLE yeniden
-bicimlendirdi (1952 satir; tirnak stili + girinti, davranis ayni) → CSS metnini
-string ile esleyen 2 test tirnak-bagimsiz hale getirildi (`theme-contrast.test.ts`
-satir ~361, `scrollable-tabs.test.ts`).
+not: LOCAL-FIRST PRESENCE (2026-10-14, son istek): "aktiflik herşeyi supabase den seçiyo ama bile bilceği bişeyse benim aktif olup olmadığım bişey yazıp yazmadım sabitleyip sabitlemediğim gibi bunlar bilgisiyarımda yapılır sonra gidecekse yüklencekse yüklenir bölece daha hızlı olur".
+
+- KENDİ ÇEVRIMİÇİ DURUMU: sekme odaklı + kullanıcı etkileşimi (fare/klavye/dokunma/kaydırma) ile yerel hesaplanır (anlık, ağ gecikmesi YOK).
+- SUNUCU SENKRONU: periyodik (5 dk) + sekme gizlenince/kapanırken + yazma durumu değişiminde. `last_seen_at` tazelenir; `presence_state` sadece typing/uploading/recording iken yazılır.
+- LİSTE POLL_MS KALDIRILDI: 2 sn'de bir `/api/chat/users` çekmek YOK → 30 sn'de bir (PEERS_REFRESH_MS). Yazma durumu yine anlık görünür çünkü sunucu her keystroke'ta presence günceller.
+- BAŞKALARININ DURUMU: sunucudan gelen `lastSeenAt` + `presenceState` + yerel `now` ile hesaplanır (chat-peers mantığı değişmez).
+- TYPESCRIPT 0 · VITEST 726/726 (63 dosya) · ESLINT --MAX-WARNINGS 0 (chat + i18n + e2e) 0.
+  DEĞİŞEN DOSYALAR: `src/components/chat/chat.tsx` (local-first mantığı), `src/lib/chat-db.ts` (`touchPresence` force parametresi), `src/app/api/chat/route.ts` (force aktarım), `src/components/chat/chat.admin.test.tsx` (yazma sinyali testi güncellendi).
+  "TARIK ELER (Siz)" yazar; tam istedigi dize icin profil tam adi
+  `TARIK ELER TARNAK` olmali (sahip satiri veri API'sinde korumali → 403;
+  kendi profil ucu `/api/auth/profile` ile düzenlenir).
+  **tsc 0 · eslint --max-warnings 0 (chat + i18n + e2e) 0 · vitest 724/724 (63
+  dosya) · `e2e/chat-fixes.spec.ts --project=desktop` 15/15 (1 yeni test).**
+  Veriye bagli e2e testi de duzeltildi: karsi taraf sohbetinde mesajlar silinmis
+  oldugu icin (`last_preview: null`, admin cookie ile olculdu) test kiriliyordu →
+  onizleme artik `page.route` ile YANITTA kuruluyor (kisiler/sohbetler gercek,
+  Supabase'e yazilmiyor; dosyadaki "Ilet" testi de ayni desende).
+  not: 8 madde (hepsi uygulandi + olculdu): (1) yan panel HER ZAMAN erisilebilir ve
+  tek dugmeyle kapanip acilir (`data-testid="chat-panel-toggle"`, `>=768` sutunu
+  katlar, `<768` kaplamayi acar; kapaliyken de dugme durur), (2) KENDI SATIRIM ve
+  hic sohbeti olmayan kayit listelenmez ("kullanici kendisiyle de konusamasin" —
+  kendi satirim "Tarnak" adiyla duruyordu ve tiklayinca `<id>|<id>` anahtarli bos
+  sohbet aciyordu; ikinci savunma `openWith` icinde `peerId === selfId`),
+  (3) eski "👥 kisi listesini ac" + "←" dugmeleri KALDIRILDI (← secili sohbeti de
+  siliyordu), (4) sohbet SAYFASI kaymaz: `min-h-screen` her boyutta 56px tasiyordu
+  → kaldirildi, kaydirma mesaj alaninda (`scrollIntoView` chat.tsx'ten cikti,
+  yerine `listRef.scrollTo` + `scrollToMessage`), (5) kendi adim `TARIK ELER TARNAK`,
+  (6) bos alana sag tik → "Kisi ara / Sohbeti yenile / En sona git" (sonuncu yalniz
+  sohbet acikken), (7) sohbet basligina sag tik → kisi menusu, (8) secili satir
+  `bg-primary/15 hover:bg-primary/20`.
+  "Grup olustur" EKLENMEDI: sunucuda grup ucu YOK (`kind='group'` hic olusmuyor,
+  `api/chat` grup aksiyonu yok) → calisan maddeler konuldu, uydurulmadi.
+  **tsc 0 · eslint --max-warnings 0 (chat + e2e) 0 · vitest 722/722 (63 dosya) ·
+  `playwright e2e/chat-fixes.spec.ts --project=desktop` 14/14 (6 yeni test).**
+  Tum e2e suite 86/88 (14 atlandi) — 2 kirmizi AYNI ILGISIZ test
+  (`personal-pages.spec.ts` footer navigasyonu, masaustu + mobil); kanit: spec
+  HEAD'e geri alinip kosuldu, yine kirmizi + probe ile tiklama noktasi `<ul>`e
+  dusuyor ve sayfa tiklama sonrasi ~784px buyuyor (yerlesim kaymasi). Bu
+  degisiklikle ilgisi yok; spec DEGISTIRILMEDI.
+  4 chat test dosyasi yeni kurala gore guncellendi: fiksturlere SOHBET eklendi
+  (satir gorunurlugu artik sohbete bagli — yoksa liste bos kalir).
+  not: 5 madde: (1) liste onizlemesi `@<son gonderen> · <onizleme>` + bos durum,
+  (2) 768px altinda tek panel (liste ↔ sohbet), secim/kaydirma korunur,
+  (3) dar ekranda kart tam ekran (8px kenar, `100dvh`), yazma alani kart icinde,
+  (4) kisi menusu imlecte + kirpilmaz + uzun basma, (5) balon menusu imlecte
+  (Kopyala/Yanitla/Ilet/Sabitle/Mesaj bilgisi/Sil); `Duzenle` YOK (edited_at
+  kolonu + API yok, DDL kullanicida → dogrulanamazdi), yerine `Ilet`.
+  YOLDA BULUNAN 3 GIZLI HATA: menuler `display:none` panelin icindeydi (gorunmez)
+  · ilk maddeye odak `visibility:hidden` iken cagriliyordu (klavye olu)
+  · kart yuksekligi belirsizdi (24 mesajda kaydirma kabi icerik boyuna cikip
+  yazma alanini kartin disina itiyordu). **tsc 0 · eslint --max-warnings 0 0 ·
+  vitest 717/717 (63 dosya) · `e2e/chat-fixes.spec.ts` (gercek Chromium) 8/8 ·
+  tum e2e suite 44/45** — tek kirmizi `personal-pages.spec.ts` footer navigasyonu
+  (bu degisiklikle ilgisiz; probe ile ayni tik GIDIYOR, spec yumusak kaydirma
+  surerken tikliyor → zamanlama kirilgani). YENI DOSYA:
+  `src/components/chat/context-menu.tsx` (+16 unit test) · `e2e/chat-fixes.spec.ts`.
+  Kullanicinin devam eden eylemleri: SQL Editor (languages + messages.phone) ve
+  canli deploy onayi.
+  not: son tur 3 commit: 4bfe73e (/admin erisim duzeltmesi: oturum istemcide) · 9cc2a5d
+  (e2e admin spec + playwright localhost/PLAYWRIGHT_PORT). **tsc 0 · vitest 688/688
+  (62 dosya; +8 gate testi) · eslint --max-warnings 0 (6 dosya) 0 · Playwright
+  admin-panel.spec.ts 12/12 (masaustu+mobil, GERCEK Chromium).**
+  KOK NEDEN: kok layout `dynamic='force-static'` Next 16'da alt segmentlerde
+  `cookies()`'i BOS donduruyor → /admin'daki `getSessionUser()` daima null →
+  sonsuz /login yonlendirmesi (panel tarayicidan HIC acilamiyordu). Olculdu: ayni
+  cookie ile /api/admin/session 200, /admin 307. Cozum /chat deseni: sayfa oturum
+  okumaz, kapi istemcide (AdminGate), zorunlu kontrol API'de (401 kanitli).
+  EK BULGU: dev hidrasyonunun yillarca "calismiyor" sanilmasinin koku — Next 16 dev
+  `/_next/hmr`'i 127.0.0.1'den gelince cross-origin sayip BLOKLUYOR; `localhost`
+  kullanilinca hidrasyon calisir (playwright config duzeltildi).
+  not: 4 commit: 2bf3ebf (admin 5 sekme + serit + uyari) · ff74999 (chat v2 adlari
+  kaldirildi) · ea7d67d (Faz 1..6 yorum/dokuman adlari) · b5cf083 (e2e/docs/CI ad
+  temizligi). **tsc 0 · vitest 680/680 (61 dosya) · eslint --max-warnings 0 (81
+  dosya) 0.** Gercek admin oturumuyla API olcumu: /api/admin/overview sayilari DB
+  ile ayni. Iki migration eksik (languages tablosu, messages.phone) → panel uyarisi
+  artik ilgili SQL dosyasini soyluyor (`ResourceDef.sqlFile`).
+  DIKKAT: commit aninda lint-staged hatasi "The command line is too long" (82 dosya
+  tek eslint komutunda Windows limitini asti) → degisiklikler 4 mantiksal commit'e
+  bolundu; kapi ATLANMADI (`--no-verify` kullanilmadi).
+  BU TURDA YAPILAMAYAN: gercek tarayicida tiklayarak dogrulama (dev sunucu
+  hydrate olmuyor: `_next/hmr` ws `ERR_INVALID_HTTP_RESPONSE`; BrowserOS neo
+  bagli degil) → kanit jsdom + kaynak sozlesmesi + HTTP olcumu.
+  not: ROZET 2 kapandi (5 kullanici istegi) →
+  A) `/chat`: "Sohbet" baslik blogu SILINDI (yer israfi); kutu `100svh-19rem`
+  → `100svh-11rem`, bosalan alani doldurur.
+  B) "Onemli kisi olarak isaretle" sag ustten KALDIRILDI → kisiye sag tik menusunde
+  (`chat.markImportant` / yeni `chat.unmarkImportant`, 8 dil).
+  C) Kucuk ekranda liste KAPLAMA olarak acilir; acma dugmesi "←" okundan ONCE;
+  X ile kapanir (`md` ve ustunde sabit sutun aynen kalir).
+  D) Admin sekme oklari: `absolute top-1/2` (Tablolar kartlarinin ustune biniyordu)
+  → seritle ayni flex satirinda, kendi alaninda; `scrollBy` 200px; aktif sekme
+  ortalanir; scrollbar gizli. Alttaki 4 daire (`TabScrollDots`) + olu sayfalama
+  API'si SILINDI.
+  E) Rol etiketi "Super Yonetici" → "Site Sahibi"; panel kimlik blogu gruplandi.
+  F) Yazma alani: mavi odak halkasi kapatildi (`.chat-composer-field`);
+  `input::selection` ozel kurali SILINDI → sitedeki tek secim kaynagi
+  (@lobehub/ui ThemeProvider = SARI) gecerli oldu (kok neden buydu).
+  **tsc 0 · eslint --max-warnings 0 (21 dosya) 0 · vitest 647/647 (57 dosya) ·
+  e2e chat-layout 12/12 (masaustu + mobil, 5 yukseklik) · /chat SSR h1/h2 = 0 ·
+  servis edilen CSS'te `.chat-composer-field` + `.admin-tabs-strip` var.**
+  DIKKAT: commit aninda lint-staged prettier `globals.css`i TUMUYLE yeniden
+  bicimlendirdi (1952 satir; tirnak stili + girinti, davranis ayni) → CSS metnini
+  string ile esleyen 2 test tirnak-bagimsiz hale getirildi (`theme-contrast.test.ts`
+  satir ~361, `scrollable-tabs.test.ts`).
 
 ## Bu tur (2026-10-13, /ADMIN ERISIM HATASI + ILK GERCEK TARAYICI DOGRULAMASI)
 
