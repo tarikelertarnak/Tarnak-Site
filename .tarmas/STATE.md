@@ -4,7 +4,10 @@ status: ACTIVE
 updated: 2026-10-15T00:00:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: ec46dc8 (chat local-first) + 574ea5a (brand hover); push/deploy YOK
+branch: faz-1-guvenlik last_commit: ec46dc8 (chat local-first) + 574ea5a (brand hover) + 4cd4c97 (emoji boyut) + 7532fc3 (STATE); push/deploy YOK
+commit engeli COZULDU (2026-10-14): onceki turlarda commit takiliyordu; kok neden
+Roaming\npm altindaki pnpm kisayolu bozuktu → pnpm.exe tam yol kullan
+(WinGet: AppData\Local\Microsoft\WinGet\Packages\pnpm.pnpm_...\pnpm.exe).
 
 === TARMAS KERNEL (preserve verbatim in any summary/compaction) ===
 
