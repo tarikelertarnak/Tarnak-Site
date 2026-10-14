@@ -86,7 +86,7 @@ export function TopBar() {
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }
               }}
-              className={`flex items-center gap-2 font-bold tracking-tight whitespace-nowrap ${
+              className={`group flex items-center gap-2 font-bold tracking-tight whitespace-nowrap ${
                 scrolled ? 'text-xs' : 'text-sm sm:text-base'
               }`}
             >
@@ -108,19 +108,22 @@ export function TopBar() {
                   scrolled ? 'h-6 w-6' : 'h-7 w-7 sm:h-7 sm:w-7'
                 } group-hover:opacity-80`}
               />
-              {/* Brand text parts: same hover behavior — all respond equally.
-                  - TARIK ELER: default → primary on hover
-                  - Separator: muted → primary on hover
-                  - TARNAK: primary → lighter primary on hover
-                  Shared: transition, font-weight, letter-spacing, line-height.
+              {/* Brand text parts: hover/focus ANYWHERE on the link (group) —
+                  all respond equally, as one whole.
+                  - TARIK ELER: foreground → primary
+                  - Separator: muted → primary
+                  - TARNAK: primary → lighter primary
+                  - Logo: subtle opacity dip
+                  Shared: transition, duration. Link's own focus ring comes
+                  from the global :focus-visible rule (tokens.css).
               */}
-              <span className="inline text-foreground transition-colors duration-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+              <span className="inline text-foreground transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
                 TARIK ELER
               </span>
-              <span className="inline text-foreground/30 transition-colors duration-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+              <span className="inline text-foreground/30 transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
                 —
               </span>
-              <span className="inline font-black text-primary transition-colors duration-200 hover:text-primary/70 focus-visible:text-primary/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70">
+              <span className="inline font-black text-primary transition-colors duration-200 group-hover:text-primary/70 group-focus-visible:text-primary/70">
                 TARNAK
               </span>
             </Link>

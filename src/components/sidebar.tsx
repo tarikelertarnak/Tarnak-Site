@@ -309,18 +309,20 @@ setIsOpen(false)
             window.scrollTo({ top: 0, behavior: 'smooth' })
           }
         }}
-        className={`flex items-center gap-2.5 ${PANEL_SURFACE_BORDER} px-5 py-4`}
-        aria-label="Ana sayfa"
+        className={`group flex items-center gap-2.5 ${PANEL_SURFACE_BORDER} px-5 py-4`}
+        ariaLabel="Ana sayfa"
       >
-        <SiteLogo size={30} className="shrink-0 transition-colors duration-200 hover:opacity-80" />
+        <SiteLogo size={30} className="shrink-0 transition-opacity duration-200 group-hover:opacity-80" />
         <span className="truncate text-base font-bold tracking-tight whitespace-nowrap">
-          <span className="inline text-foreground transition-colors duration-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+          {/* Brand text parts: hover/focus ANYWHERE on the link (group) —
+              same whole-link behavior as TopBar. */}
+          <span className="inline text-foreground transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
             TARIK ELER
           </span>
-          <span className="inline text-foreground/30 transition-colors duration-200 hover:text-primary focus-visible:text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary">
+          <span className="inline text-foreground/30 transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
             —
           </span>
-          <span className="inline font-black text-primary transition-colors duration-200 hover:text-primary/70 focus-visible:text-primary/70 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/70">
+          <span className="inline font-black text-primary transition-colors duration-200 group-hover:text-primary/70 group-focus-visible:text-primary/70">
             TARNAK
           </span>
         </span>
