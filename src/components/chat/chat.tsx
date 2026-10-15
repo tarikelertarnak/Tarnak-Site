@@ -834,8 +834,13 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   /** Panel sürüklemesi (pointer) — desen: `components/sidebar.tsx`. */
   const startResize = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
     e.preventDefault()
+    // Katlanmış (KOMPAKT 72px) panelde de tutamaç aktiftir (2026-10-15
+    // kullanıcı isteği: "her zaman değiştirilebilsin"): sürükleme paneli
+    // açar ve başlangıç GÖRÜNÜR genişlik (72px) üzerinden hesaplanır.
+    if (!panelOpen)
+      setPanelOpen(true)
     const startX = e.clientX
-    const startWidth = panelWidth
+    const startWidth = panelOpen ? panelWidth : 72
     const move = (ev: PointerEvent) => {
       setPanelWidth(
         Math.min(CHAT_PANEL_MAX, Math.max(CHAT_PANEL_MIN, startWidth + ev.clientX - startX)),
@@ -847,7 +852,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
-  }, [panelWidth])
+  }, [panelOpen, panelWidth])
 
   /** Klavye erişimi: ayraç odaklıyken ok tuşları ±16 px. */
   function resizeByKey(e: ReactKeyboardEvent<HTMLDivElement>) {
@@ -856,6 +861,9 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       return
     }
     e.preventDefault()
+    // Katlanmış panelde ok tuşu da paneli açar (tutamaç her durumda işler).
+    if (!panelOpen)
+      setPanelOpen(true)
     setPanelWidth(w => Math.min(CHAT_PANEL_MAX, Math.max(CHAT_PANEL_MIN, w + step)))
   }
 
@@ -1411,7 +1419,10 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         )}
       </aside>
 
-      {/* ── SÜRÜKLEME TUTAMAĞI: panel genişliği (fare + ok tuşları) ── */}
+      {/* ── SÜRÜKLEME TUTAMAĞI: panel genişliği (fare + ok tuşları) ──
+          HER DURUMDA görünür (2026-10-15 kullanıcı isteği: "çok küçükken
+          değiştirilemiyor, her zaman değiştirilebilsin"). Panel katlıyken
+          sürükleme/ok tuşu paneli KOMPAKT'tan açar (startResize/resizeByKey). */}
       <div
         role="separator"
         aria-orientation="vertical"
@@ -1419,12 +1430,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         tabIndex={0}
         onPointerDown={startResize}
         onKeyDown={resizeByKey}
-        className={cn(
-          'w-1 shrink-0 cursor-ew-resize bg-foreground/10 transition-colors hover:bg-primary/40',
-          // Panel katlanmışsa tutamak da yok (yoksa sürüklenip görünmez
-          // genişlik değiştirirdi).
-          panelOpen ? 'hidden md:block' : 'hidden',
-        )}
+        className="w-1 shrink-0 cursor-ew-resize bg-foreground/10 transition-colors hover:bg-primary/40"
       />
 
       {/* ── SAĞ: seçili kişiyle sohbet ──

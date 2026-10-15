@@ -202,4 +202,41 @@ describe('yan panel yeniden boyutlandırma', () => {
     expect(screen.queryByText(/sohbet yükleniyor/i)).toBeNull()
     expect(screen.getByText('Ayşe Yılmaz')).not.toBeNull()
   })
+
+  // 2026-10-15 kullanıcı isteği: "yan panel çok küçükken boyutu değiştirilemiyor,
+  // her zaman değiştirilebilsin." KOMPAKT (72px) panelde ayraç artık kaybolmaz;
+  // sürükleme/ok tuşu paneli açar ve genişliği GÖRÜNÜR 72px'ten hesaplar.
+  it('katlanmış (KOMPAKT) panelde ayraç durur: sürükleme paneli açar ve genişletir', async () => {
+    mockFetch()
+    const { sep, shell } = await shellAndHandle()
+
+    // Gerçek kullanıcı yoluyla katla: panel toggle düğmesi (jsdom'da
+    // localStorage/matchMedia yok — katlama UI üzerinden tetiklenir).
+    fireEvent.click(screen.getByTestId('chat-panel-toggle'))
+    const aside = sep.previousElementSibling as HTMLElement
+    expect(aside.className).toContain('w-[72px]') // panel katlı
+    // ayraç hâlâ erişilebilir tutamaç (kaybolmuyor)
+    expect(sep.getAttribute('tabindex')).toBe('0')
+
+    act(() => sep.dispatchEvent(nativePointer('pointerdown', 100)))
+    act(() => window.dispatchEvent(nativePointer('pointermove', 400))) // +300 px istek
+
+    // Görünür 72px'ten: 72+300=372 (MIN 240 üstünde) — panel açıldı
+    expect(panelWidth(shell)).toBe(372)
+    expect(aside.className).not.toContain('w-[72px]')
+    act(() => window.dispatchEvent(nativePointer('pointerup', 400)))
+  })
+
+  it('katlanmış panelde ok tuşu da paneli açar', async () => {
+    mockFetch()
+    const { sep, shell } = await shellAndHandle()
+
+    fireEvent.click(screen.getByTestId('chat-panel-toggle'))
+    expect((sep.previousElementSibling as HTMLElement).className).toContain('w-[72px]')
+
+    fireEvent.keyDown(sep, { key: 'ArrowRight' })
+
+    expect(panelWidth(shell)).toBe(304) // kayıtlı 288 + 16
+    expect((sep.previousElementSibling as HTMLElement).className).not.toContain('w-[72px]')
+  })
 })
