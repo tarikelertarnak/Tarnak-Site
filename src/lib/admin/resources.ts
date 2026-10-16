@@ -33,6 +33,12 @@ export type FieldType
     | 'url'
     | 'image'
     | 'datetime'
+    /**
+     * IKON alani (`IconField`): gorunsel adres, satir ici SVG, TSX bileseni,
+     * shadcn komutu veya yerel yol yapistirilabilir. Tip otomatik algilanir,
+     * onizlenir ve kaydetme yolunda kanoniklestirilir (2026-10-16).
+     */
+    | 'icon'
 
 export interface FieldDef {
   name: string
@@ -184,7 +190,7 @@ const SKILLS: ResourceDef = {
   key: 'skills',
   table: 'skills',
   label: 'Yetenekler',
-  description: 'Marquee/yetenek listesi ve seviyeleri.',
+  description: 'Sitedeki "Kullandığım Teknolojiler" şeridi: ad, ikon, seviye ve açıklama.',
   icon: 'mdi:lightning-bolt-outline',
   idColumn: 'id',
   titleColumn: 'label',
@@ -193,7 +199,16 @@ const SKILLS: ResourceDef = {
   searchColumns: ['label', 'description'],
   fields: [
     { name: 'label', label: 'Ad', type: 'text', required: true, inTable: true, searchable: true, maxLength: 60 },
-    { name: 'icon', label: 'İkon', type: 'text', required: true, inTable: true, placeholder: 'logos:nextjs-icon', help: 'Iconify ikon adi.' },
+    {
+      name: 'icon',
+      label: 'İkon',
+      type: 'icon',
+      required: true,
+      inTable: true,
+      placeholder: 'logos:nextjs-icon · <svg> kodu · https://… · npx shadcn…',
+      maxLength: 2000,
+      help: 'Iconify adı, görsel adresi, satır içi SVG veya shadcn komutu. Sunucuda kanonikleştirilir.',
+    },
     { name: 'level', label: 'Seviye (0-100)', type: 'number', inTable: true, min: 0, max: 100 },
     { name: 'years', label: 'Deneyim (yıl)', type: 'number', inTable: true, min: 0, max: 60 },
     { name: 'description', label: 'Açıklama', type: 'textarea', maxLength: 500 },

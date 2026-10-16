@@ -27,6 +27,12 @@ export function Modal({
 }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
 
+  /* Odak kaybı kök nedeni — bkz. drawer.tsx: `onClose` bağımlılıkta olduğunda
+     satır içi ok fonksiyonu her render'da efekti yeniden çalıştırıp odağı
+     çalıyor. onClose ref'te tutulur, efekt yalnızca `open` ile çalışır. */
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
+
   // ESC + body scroll lock. Cleanup restores prior overflow so chained modals
   // don't get stuck in locked state if one closes mid-transition.
   useEffect(() => {
@@ -36,7 +42,7 @@ export function Modal({
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
-        onClose()
+        onCloseRef.current()
       }
     }
     const prevOverflow = document.body.style.overflow
@@ -48,7 +54,7 @@ export function Modal({
       document.body.style.overflow = prevOverflow
       document.removeEventListener('keydown', onKey)
     }
-  }, [open, onClose])
+  }, [open])
 
   return (
     <AnimatePresence>

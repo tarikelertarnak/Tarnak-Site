@@ -14,6 +14,7 @@ import { Sidebar } from '@/components/sidebar'
 import { SkipLink } from '@/components/skip-link'
 import { ThemeInitScript } from '@/components/theme-init-script'
 import { TopBar } from '@/components/top-bar'
+import { VisitTracker } from '@/components/visit-tracker'
 import { getContent } from '@/lib/content'
 import { generateCspNonce } from '@/lib/csp-nonce'
 import { montserrat } from '@/lib/fonts'
@@ -375,7 +376,23 @@ export default async function RootLayout({
                 <Sidebar />
                 <SearchDialog />
                 <ScrollToTop />
-                {children}
+                <VisitTracker />
+                {/*
+                  ORTA ANA ALAN (2026-10-16, kullanıcı isteği). Üç bölgeli kabuk:
+                  [sol yan panel] --gap-- [ORTA ANA ALAN] --gap-- [sağ yan panel].
+
+                  - `#layout-main`   : konumlandırma kabı (`relative`). Ayarlar
+                                       buraya portal edilir, `absolute`/`fixed`
+                                       ile bu alanın üstüne oturur.
+                  - `#layout-main-content` : sayfa içeriği. Ayarlar açıkken
+                                       `inert` yapılır (arka planla etkileşim yok);
+                                       sol/sağ paneller inert OLMAZ.
+                  Sol yan panel (Sidebar) `fixed` bir katman olduğu için akışta
+                  yer kaplamaz — sayfa genişlikleri DEĞİŞMEZ.
+                */}
+                <div id="layout-main" className="relative">
+                  <div id="layout-main-content">{children}</div>
+                </div>
                 <MusicPlayer src={musicSrc} />
               </LocaleProvider>
             </EmotionStyleRegistry>

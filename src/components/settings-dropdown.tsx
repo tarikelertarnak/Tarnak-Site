@@ -382,13 +382,39 @@ return
 
   const cur = draft ?? applied
 
+  /*
+    DAR EKRAN (mobil): Ayarlar açılınca sol çekmece kapanır ki altında kalmasın.
+    Masaüstünde paneller AÇIK KALIR (kullanıcı isteği: "panellerin durumu
+    değişmesin"), bu yüzden bu yalnızca <768px'te çalışır.
+  */
+  useEffect(() => {
+    if (!open || typeof window === 'undefined') {
+      return
+    }
+    // jsdom'da `matchMedia` yok — guard'sız test patlar.
+    if (typeof window.matchMedia !== 'function') {
+      return
+    }
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      window.dispatchEvent(new CustomEvent('sidebar:close'))
+    }
+  }, [open])
+
   return (
     <>
       <Drawer
         open={open}
         onClose={requestClose}
         title={t('settings.title')}
-        side="right"
+        /*
+          ORTA ANA ALAN (2026-10-16, kullanıcı isteği): Ayarlar eskiden sağdan
+          kayan dar bir çekmeceydi ("sağdaki artakalan dar alanı dolduruyor").
+          Artık orta ana alanın üstüne oturur; sol/sağ paneller üstte kalıp
+          tıklanabilir olur. Kapatma: X, Esc, dışına tıklama (sol/sağ panel
+          veya aradaki boşluk).
+        */
+        side="middle"
+        ariaLabel={t('settings.title')}
       >
         <div className="flex flex-col gap-6 px-6 pb-8">
           {/* Theme — taslak: `setTheme` HICIR cagrilmaz */}

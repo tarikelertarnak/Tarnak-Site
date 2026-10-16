@@ -171,6 +171,21 @@ interface DownloadComboboxProps {
 }
 
 /**
+ * Grup başlığı ("Latest", "Windows"…).
+ *
+ * Modül düzeyinde — bileşen İÇİNDE tanımlandığında her render'da yeni bir
+ * bileşen tipi oluşuyor ve React alt ağacı söküp yeniden kuruyordu; arama
+ * alanına her tuş vuruşunda tetikleniyordu (odak/performans kaybı).
+ */
+function GroupLabel({ children }: { children: ReactNode }) {
+  return (
+    <div className="sticky top-0 z-[1] border-b border-foreground/10 bg-background/95 px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/60 backdrop-blur">
+      {children}
+    </div>
+  )
+}
+
+/**
  * Version / OS selector — search + grouped list with MULTI-SELECT (batch download).
  *  Default: all groups visible. The user's platform is pinned to the top of each group.
  *  Portal: the menu is moved to document.body, so it is not affected by other cards' stacking.
@@ -454,12 +469,6 @@ next.delete(opt.url)
       </div>
     )
   }
-
-  const GroupLabel = ({ children }: { children: ReactNode }) => (
-    <div className="sticky top-0 z-[1] border-b border-foreground/10 bg-background/95 px-3 pb-1.5 pt-2.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground/60 backdrop-blur">
-      {children}
-    </div>
-  )
 
   // Single-URL mode: no OS, a flat list instead of grouping.
   const flat = options.filter(matches)

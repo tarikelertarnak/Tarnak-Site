@@ -379,6 +379,17 @@ html.dark {
       bileşenleri üzerinden uygular, tek yerden değiştirilir.
     */
   --section-gap: 24px;
+
+  /*
+      ÜÇ BÖLGELİ KABUK (2026-10-16, kullanıcı isteği).
+      [sol yan panel] --gap-- [ORTA ANA ALAN] --gap-- [sağ yan panel]
+      Paneller kenardan yapışık değil, yuvarlak kart gibi durur; aralarında
+      bu TEK sabit boşluk olur. Ayarlar da orta alanın içine bu boşluk kadar
+      içeriden oturur (`inset: var(--layout-gap)`).
+  */
+  --layout-gap: 10px;
+  --layout-panel-width: 264px;
+  --layout-right-width: 264px;
 }
 
 html[data-theme='light'] {

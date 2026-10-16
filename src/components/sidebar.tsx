@@ -187,6 +187,17 @@ export function Sidebar() {
     return () => window.removeEventListener('sidebar:request-toggle', handler)
   }, [])
 
+  /*
+    Ayarlar DAR EKRANDA açılınca çekmece üstte kalmasın (2026-10-16, kullanıcı
+    isteği): masaüstünde paneller açık kalır, mobilde çekmece kapanır.
+    Kapatma ayrı bir olay — `request-toggle` TOGGLE eder, kapalıysa açardı.
+  */
+  useEffect(() => {
+    const close = () => setIsOpen(false)
+    window.addEventListener('sidebar:close', close)
+    return () => window.removeEventListener('sidebar:close', close)
+  }, [])
+
   // Yan panelde bir şeye tıklayınca: hedefi AÇ + paneli KAPAT.
   // Tek bir yakalayıcı tüm linkleri (menü, giriş/kayıt, sosyal, ayarlar) ve
   // hash bağlantılarını kapsar — ayrı ayrı onClick eklemek gerekmez.
@@ -463,7 +474,9 @@ setIsOpen(false)
         <button
           onClick={() => {
             window.dispatchEvent(new CustomEvent('settings:open'))
-            setIsOpen(false)
+            // AYNI anda sol paneli KAPATMA (kullanıcı şikayeti): yan panellerin
+            // açık/kapalı durumu ayarlar etkilemez; sadece kendi toggle'ları
+            // değiştirir. Ayarlar orta alana üstüne biner, paneller yerinde kalır.
           }}
           className="flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
         >

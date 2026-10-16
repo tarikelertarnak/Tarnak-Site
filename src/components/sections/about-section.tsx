@@ -13,6 +13,7 @@ import { BentoBox, BentoBoxItem } from '@/components/ui/bento-box'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
 import { CvPicker } from '@/components/ui/cv-picker'
+import { IconPopup } from '@/components/ui/icon-popup'
 import {
   BrainIcon,
   CheckIcon,
@@ -21,14 +22,12 @@ import {
   CopyIcon,
   FileIcon,
   LaptopIcon,
-  LinkIcon,
   MusicIcon,
   SchoolIcon,
-  TerminalIcon,
   UserIcon,
 } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
-import { techIcon } from '@/components/ui/tech-icons'
+import { TechIcon } from '@/components/ui/tech-icon'
 import { VCardQr } from '@/components/vcard-qr'
 import { siteUrl } from '@/lib/site-url'
 import { buildVCard } from '@/lib/vcard'
@@ -318,33 +317,37 @@ export function AboutSection({
                 ile dikeyde nefes alıyor. `overflow-x-auto` korunuyor —
                 uzun dil adları yatay kaydırılabilir.
             */}
+            {/* DİLLER KARTI: öncelik tablo verisi (`about.languages`). */}
             <div className="w-full overflow-x-auto rounded-xl border border-foreground/200/15 px-3 sm:px-4">
               <table className="w-full text-left text-xs sm:text-sm">
                 <tbody>
-                  <tr className="border-b border-foreground/200/10">
-                    <td className="py-2.5 pr-3 text-sm font-medium sm:text-base">
-                      {content.profile.firstLanguage}
-                    </td>
-                    <td className="py-2.5 text-right">
-                      {/* `LEVELED_PILL`: üç seviye için TEK sınıf seti */}
-                      <span className={LEVEL_BADGE_PILL}>
-                        {t('about.infoFirstLanguage')}
-                      </span>
-                    </td>
-                  </tr>
-                  {parseLanguages(content.profile.otherLanguages).map(row => (
-                    <tr
-                      key={row.name}
-                      className="border-b border-foreground/200/10 last:border-b-0"
-                    >
-                      <td className="py-2.5 pr-3 text-sm text-foreground/80 sm:text-base">
-                        {row.name}
-                      </td>
-                      <td className="py-2.5 text-right">
-                        <span className={LEVEL_BADGE_PILL}>{row.level}</span>
-                      </td>
-                    </tr>
-                  ))}
+                  {(content.about.languages && content.about.languages.length > 0)
+                    ? content.about.languages.map((row, i) => (
+                        <tr key={`${row.name}-${i}`} className="border-b border-foreground/200/10 last:border-b-0">
+                          <td className="py-2.5 pr-3 text-sm font-medium sm:text-base">{row.name}</td>
+                          <td className="py-2.5 text-right">
+                            <span className={LEVEL_BADGE_PILL}>{row.level === 'Ana dil' ? t('about.infoFirstLanguage') : row.level}</span>
+                          </td>
+                        </tr>
+                      ))
+                    : (
+                        <>
+                          <tr className="border-b border-foreground/200/10">
+                            <td className="py-2.5 pr-3 text-sm font-medium sm:text-base">{content.profile.firstLanguage}</td>
+                            <td className="py-2.5 text-right">
+                              <span className={LEVEL_BADGE_PILL}>{t('about.infoFirstLanguage')}</span>
+                            </td>
+                          </tr>
+                          {parseLanguages(content.profile.otherLanguages).map(row => (
+                            <tr key={row.name} className="border-b border-foreground/200/10 last:border-b-0">
+                              <td className="py-2.5 pr-3 text-sm text-foreground/80 sm:text-base">{row.name}</td>
+                              <td className="py-2.5 text-right">
+                                <span className={LEVEL_BADGE_PILL}>{row.level}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </>
+                      )}
                 </tbody>
               </table>
             </div>
@@ -565,72 +568,56 @@ function CvEntryItem({
   )
 }
 
+/**
+ * "Kullandığım Teknolojiler" çipi (2026-10-16, kullanıcı isteği).
+ *
+ * DEĞİŞEN DAVRANIŞ: eskiden `type: 'link'` ise dış bağlantı, `'command'` ise
+ * tıklayınca panoya kopyalama vardı. Kullanıcı: "bunlar link olmayacaklar,
+ * sadece hangi teknolojileri bildiğimi gösterecek". Artık her çip aynı:
+ * üstüne gelince ikon + ad + seviye + açıklama balonu açılır, tıklayınca
+ * sabitlenir. İkon `skills` tablosunun kanonik `icon` değerinden gelir
+ * (`TechIcon`), yoksa yerel ikon haritasına düşer.
+ */
 function ToolboxItem({ item }: { item: ToolboxItemType }) {
-  const { t } = useT()
-  const isCommand = item.type === 'command'
-  const href = item.href?.trim() ?? ''
-  /*
-    İKON (2026-10-06, kullanıcı): "her teknolojinin KENDİ ikonu olsun
-    (HTML, CSS, JavaScript, C#, Python, SQL…); ikon bulunamazsa genel kod
-    ikonu." Önce burada her şey için aynı `LinkIcon` vardı.
-    `techIcon` etiketten çözer; bulamazsa aşağıdaki genel ikona düşer.
-  */
-  const icon = isCommand ? (
-    <TerminalIcon size={14} />
-  ) : (
-    (techIcon(item.label)
-      ?? (href ? <LinkIcon size={14} /> : <CodeIcon size={14} />))
-  )
-  const body = (
-    <>
-      <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">
-        {icon}
-      </span>
-      <span className="truncate font-medium">{item.label}</span>
-      {isCommand && href && (
-        <CopyIcon
-          size={12}
-          className="ml-1.5 shrink-0 opacity-0 transition-opacity duration-300 group-hover:opacity-70"
-        />
-      )}
-    </>
-  )
+  const level = typeof item.level === 'number' && item.level > 0 ? `%${item.level}` : ''
+  const description = item.description?.trim() ?? ''
+
   const chipCls
     = 'group flex flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 hover:shadow-lg hover:shadow-primary/5 min-h-[38px]'
 
-  // Command type: clicking copies the command text to the clipboard.
-  if (isCommand) {
-    return (
-      <li
-        className={`${chipCls} cursor-pointer`}
-        title={href ? t('about.toolboxCopy') : undefined}
-        onClick={() => {
-          if (href)
-void navigator.clipboard?.writeText(href)
-        }}
+  return (
+    <li className={chipCls}>
+      <IconPopup
+        label={item.label}
+        className="w-full"
+        triggerClassName="flex w-full cursor-pointer items-center text-left"
+        trigger={(
+          <>
+            <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">
+              <TechIcon icon={item.icon} label={item.label} size={14} />
+            </span>
+            <span className="truncate font-medium">{item.label}</span>
+          </>
+        )}
       >
-        {body}
-      </li>
-    )
-  }
-
-  // Link type: external link.
-  if (href) {
-    return (
-      <li className={chipCls}>
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex w-full items-center"
-        >
-          {body}
-        </a>
-      </li>
-    )
-  }
-
-  return <li className={chipCls}>{body}</li>
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-foreground-200/15 bg-background text-foreground">
+              <TechIcon icon={item.icon} label={item.label} size={18} />
+            </span>
+            <div className="flex min-w-0 flex-col">
+              <p className="truncate text-sm font-semibold leading-tight">{item.label}</p>
+              {level && <p className="text-[11px] font-medium text-primary">{level}</p>}
+            </div>
+          </div>
+          {/* Açıklama boşsa yalnız ad + seviye gösterilir (kullanıcı isteği). */}
+          {description && (
+            <p className="text-[11px] leading-relaxed text-foreground-500">{description}</p>
+          )}
+        </div>
+      </IconPopup>
+    </li>
+  )
 }
 
 function InterestsItem({

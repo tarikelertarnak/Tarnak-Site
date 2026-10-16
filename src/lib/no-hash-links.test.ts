@@ -33,9 +33,13 @@ describe('capa (#) iceren gezinme linki yok', () => {
   // Kendini tarama: bu dosyanin YORUMUNDA ornek olarak `href="#projects"`
   // yaziyor (root nedeni anlatmak icin) — tarama onu da gorecekti.
   const SELF = 'no-hash-links.test.ts'
+  // Test dosyalari da HARIC: bunlar urun UI'i degil, sabit veri icerir
+  // (orn. svg-sanitize.test.ts'in `href="#grad"` SVG fiksturleri — sanitize
+  // davranisini dogrulamak icin bilincli yazilmis). Test dosyasi urune link
+  // gizleyemez; asil regresyon kaynagi kaynak (.ts/.tsx) dosyalaridir.
   const root = process.cwd()
   const files = [
-    ...walk(join(root, 'src')).filter(f => !f.endsWith(SELF)),
+    ...walk(join(root, 'src')).filter(f => !f.endsWith(SELF) && !/\.(?:test|spec)\.tsx?$/.test(f)),
     // src/ disinda: `data/content.json` da ayni `/#contact` degerini tasiyordu
     ...(existsSync(join(root, 'data/content.json')) ? [join(root, 'data/content.json')] : []),
   ]

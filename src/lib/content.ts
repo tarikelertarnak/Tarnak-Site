@@ -3,10 +3,25 @@ import path from 'node:path'
 import process from 'node:process'
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import { cache } from 'react'
+import { sanitizeSvg } from '@/lib/svg-sanitize'
 import bundledAdminJson from '../../data/admin.json'
 // Cloudflare Workers has no filesystem — content is baked into the worker
 // bundle at build time. Admin edits persist in-memory for the worker lifetime.
 import bundledContentJson from '../../data/content.json'
+
+/**
+ * İkon değerini siteye çıkmadan önce son kez temizler (okuma sınırı).
+ *
+ * Kaydetme yolu (`/api/admin/icon`) zaten kanonik + temizlenmiş değer yazar,
+ * ama veritabanına başka bir yoldan yazılmış işaretleme olabilir; siteye
+ * `dangerouslySetInnerHTML` ile giren tek kapı burasıdır.
+ */
+function safeIcon(value: string | null | undefined): string {
+  const v = (value ?? '').trim()
+  if (!v)
+    return ''
+  return /^<svg[\s>]/i.test(v) ? sanitizeSvg(v) : v
+}
 
 /** Lazy path resolution — process.cwd() can be unavailable/shadowed in Workers. */
 function dataDir(): string {
@@ -26,43 +41,29 @@ function dataDir(): string {
 let supabaseMergeCache: { ts: number, data: SiteContent | null } | null = null
 const SUPABASE_CACHE_TTL_MS = 300_000
 
-/**
- * The Supabase skills table only carries `label, icon` (no href column).
- * Real links for known labels are completed here; unknown labels stay as
- * plain chips (ToolboxItem link behavior is optional).
- */
-const SKILL_LABEL_LINKS: Record<string, string> = {
-  'Next.js': 'https://nextjs.org',
-  'Tailwind': 'https://tailwindcss.com',
-  'Tailwind CSS': 'https://tailwindcss.com',
-  'Docker': 'https://www.docker.com',
-  'Node.js': 'https://nodejs.org',
-  'Git': 'https://git-scm.com',
-  'Python': 'https://www.python.org',
-  'HTML': 'https://developer.mozilla.org/en-US/docs/Web/HTML',
-  'Html': 'https://developer.mozilla.org/en-US/docs/Web/HTML',
-  'CSS': 'https://developer.mozilla.org/en-US/docs/Web/CSS',
-  'JavaScript': 'https://developer.mozilla.org/en-US/docs/Web/JavaScript',
-  'TypeScript': 'https://www.typescriptlang.org',
-  'React': 'https://react.dev',
-  'PostgreSQL': 'https://www.postgresql.org',
-  'C#': 'https://learn.microsoft.com/en-us/dotnet/csharp/',
-  'SQL': 'https://www.postgresql.org/docs/current/sql.html',
-  'C++': 'https://en.cppreference.com',
-}
-
 export interface ToolboxItem {
   label: string
   /**
    * Display type:
    * - 'link' → clickable external link (href)
    * - 'command' → terminal look; clicking copies the command text
+   *
+   * @deprecated 2026-10-16: site artık bunları LİNK olarak çizmiyor (kullanıcı
+   * isteği) — "Kullandığım Teknolojiler" yalnızca hangi teknolojileri
+   * bildiğimizi gösterir. Alanlar eski içerik dosyalarıyla uyum için duruyor.
    */
   type?: 'link' | 'command'
   /** URL for link type; command text copied on click for command type */
   href?: string
-  /** Backward compatibility — no longer used in rendering (SVG instead of iconify) */
+  /**
+   * Kanonik ikon değeri: `<svg>` işaretlemesi, yerel yol, `data:` adresi,
+   * görsel adresi veya `koleksiyon:ikon` (Iconify). Bkz. `lib/icon-resolve.ts`.
+   */
   icon?: string
+  /** 0-100 arası seviye — ikon popup'ında gösterilir. */
+  level?: number
+  /** Kullanıcının yazdığı açıklama — ikon popup'ında gösterilir. */
+  description?: string
 }
 
 export interface TeamItem {
@@ -248,6 +249,11 @@ export interface SiteContent {
     toolboxTitle: string
     toolboxDescription: string
     toolbox: ToolboxItem[]
+    /**
+     * "Bildiğim Diller" tablosundan gelen satırlar (2026-10-16). Boşsa site
+     * `profile.firstLanguage/otherLanguages` metinlerini gösterir.
+     */
+    languages?: { name: string, level: string }[]
     beyondTitle: string
     beyondDescription: string
     interests: InterestItem[]
@@ -556,22 +562,46 @@ throw projectError
     })(),
     (async () => {
       try {
-        // Skills (toolbox / marquee)
+        /* Skills = sitedeki "Kullandığım Teknolojiler" (toolbox) listesi.
+           `level`/`description` de okunur: ikon popup'ında gösterilir.
+           `icon` KANONİK değerdir (bkz. lib/icon-resolve.ts) ama fazladan
+           güvence için okuma sınırında da temizlenir — siteye temizlenmemiş
+           işaretleme asla ulaşmaz. */
         const { data: dbSkills, error: skillError } = await supabase
           .from('skills')
-          .select('label, icon')
+          .select('label, icon, level, description')
           .order('sort_order', { ascending: true })
         if (!skillError && dbSkills?.length) {
           merged.about.toolbox = dbSkills.map(s => ({
             label: s.label,
-            icon: s.icon,
-            type: 'link' as const,
-            href: SKILL_LABEL_LINKS[s.label] ?? '',
+            icon: safeIcon(s.icon),
+            level: typeof s.level === 'number' ? s.level : undefined,
+            description: s.description ?? undefined,
           }))
         }
       }
  catch (error) {
         silent('skills')(error)
+      }
+    })(),
+    (async () => {
+      try {
+        /* "Bildiğim Diller" tablosu (2026-10-16). Tablo yoksa sorgu hata verir
+           ve mevcut profil metinleri (firstLanguage/otherLanguages) yürürlükte
+           kalır — site bozulmaz. */
+        const { data: dbLanguages, error: langError } = await supabase
+          .from('languages')
+          .select('language, level')
+          .order('sort_order', { ascending: true })
+        if (!langError && dbLanguages?.length) {
+          merged.about.languages = dbLanguages.map(l => ({
+            name: l.language,
+            level: l.level ?? '',
+          }))
+        }
+      }
+ catch (error) {
+        silent('languages')(error)
       }
     })(),
     (async () => {

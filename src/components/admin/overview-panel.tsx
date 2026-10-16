@@ -3,6 +3,7 @@
 import { Icon } from '@iconify/react'
 import { useCallback, useEffect, useState } from 'react'
 
+import { VisitorCard } from '@/components/admin/visitor-card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
 
@@ -275,7 +276,7 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
       )}
 
       {/* KPI kartlari */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard
           icon="mdi:database-outline"
           label="Toplam kayıt"
@@ -289,6 +290,7 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
           hint={`${data?.messages?.total ?? 0} toplam mesaj`}
           tone={(data?.messages?.unread ?? 0) > 0 ? 'warning' : 'default'}
         />
+        <VisitorCard />
       </div>
 
       {/* Tablo sayilari — tiklanabilir */}

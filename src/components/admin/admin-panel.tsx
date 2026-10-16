@@ -958,75 +958,11 @@ return prev
         </Grid>
       </PanelCard>
       <PanelCard title="Toolbox (Kullandığım Teknolojiler)">
-        <Grid>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.about.toolboxTitle}
-              onValueChange={value => setAbout('toolboxTitle', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.about.toolboxDescription}
-              onValueChange={value =>
-                setAbout('toolboxDescription', value)}
-            />
-          </Field>
-        </Grid>
-        <div className="mt-4 flex flex-col gap-3">
-          {content.about.toolbox.map((item, index) => (
-            <ItemCard
-              key={index}
-              title={`Teknoloji #${index + 1}`}
-              onRemove={() => removeToolbox(index)}
-            >
-              <Grid>
-                <Field label="İsim">
-                  <Input
-                    variant="faded"
-                    value={item.label}
-                    onValueChange={value =>
-                      setToolbox(index, 'label', value)}
-                  />
-                </Field>
-                <Field label="Tip">
-                  <select
-                    value={item.type ?? 'link'}
-                    onChange={e =>
-                      setToolbox(index, 'type', e.target.value)}
-                    className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-                  >
-                    <option value="link">Link</option>
-                    <option value="command">
-                      Komut (SVG + tıklayınca kopyala)
-                    </option>
-                  </select>
-                </Field>
-                <Field
-                  label={
-                    item.type === 'command'
-                      ? 'Komut (tıklanınca kopyalanır)'
-                      : 'URL'
-                  }
-                >
-                  <Input
-                    variant="faded"
-                    placeholder={
-                      item.type === 'command'
-                        ? 'örn. npx create-next-app@latest'
-                        : 'https://...'
-                    }
-                    value={item.href ?? ''}
-                    onValueChange={value =>
-                      setToolbox(index, 'href', value)}
-                  />
-                </Field>
-              </Grid>
-            </ItemCard>
-          ))}
-          <AddButton onPress={addToolbox} label="Teknoloji Ekle" />
+        <div className="rounded-lg border border-foreground/10 bg-foreground/[0.03] p-3 text-xs text-foreground/60">
+          <p>
+            Sitedeki "Kullandığım Teknolojiler" şeridi artık <strong>Veri Yönetimi → Yetenekler</strong> tablosundan
+            yönetiliyor (seviye, açıklama ve ikon otomatik algılama ile). Bu bölümdeki eski JSON editörü kaldırıldı.
+          </p>
         </div>
       </PanelCard>
       <PanelCard title="İlgi Alanları (Beyond the Code)">

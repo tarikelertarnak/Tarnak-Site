@@ -6,6 +6,7 @@ import type { FieldDef, ResourceDef } from '@/lib/admin/resources'
 import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { IconField, isCanonicalIcon } from '@/components/admin/icon-field'
 import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
 import { TabLabel } from '@/components/admin/tab-label'
 import { Button } from '@/components/ui/button'
@@ -241,10 +242,39 @@ export function DataManager({ initialResource }: { initialResource?: string } = 
         ? `/api/admin/data/${resource.key}`
         : `/api/admin/data/${resource.key}/${encodeURIComponent(String(id))}`
 
+      /* İkon alanı: kullanıcı ham metin yapıştırmış olabilir (SVG kodu, TSX
+         bileşeni, shadcn komutu, görsel adresi). Kanonikleştirme SUNUCUDA
+         yapılır — hem siteye temizlenmiş değer yazılması hem de indirme
+         (SSRF korumalı) tek yerde kalsın. Çözülemezse kaydetmeyip söyleriz:
+         sessizce boş/kırık ikon yazmak en kötü davranış olurdu. */
+      const payload: Record<string, string | boolean> = { ...form }
+      const iconWarnings: string[] = []
+      for (const f of formFields(resource)) {
+        if (f.type !== 'icon')
+          continue
+        const raw = String(payload[f.name] ?? '').trim()
+        if (!raw || isCanonicalIcon(raw))
+          continue
+
+        const iconRes = await fetch('/api/admin/icon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ raw }),
+        })
+        const iconData = await iconRes.json().catch(() => null)
+        if (!iconData?.ok) {
+          setFormError(iconData?.message || 'İkon çözülemedi.')
+          return
+        }
+        payload[f.name] = String(iconData.icon ?? '')
+        if (Array.isArray(iconData.warnings))
+          iconWarnings.push(...iconData.warnings)
+      }
+
       const res = await fetch(url, {
         method: isNew ? 'POST' : 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       const data = await res.json().catch(() => null)
 
@@ -254,7 +284,10 @@ export function DataManager({ initialResource }: { initialResource?: string } = 
       }
 
       setEditing(null)
-      setNotice({ type: 'success', text: data.message || 'Kaydedildi.' })
+      setNotice({
+        type: 'success',
+        text: [data.message || 'Kaydedildi.', ...iconWarnings].join(' '),
+      })
       await load()
     }
     catch {
@@ -740,6 +773,19 @@ export function DataManager({ initialResource }: { initialResource?: string } = 
                   />
                   {f.help && <span className="text-[11px] text-foreground/50">{f.help}</span>}
                 </div>
+              )
+            }
+
+            if (f.type === 'icon') {
+              return (
+                <IconField
+                  key={f.name}
+                  label={f.label}
+                  value={String(value ?? '')}
+                  onChange={v => setForm(prev => ({ ...prev, [f.name]: v }))}
+                  help={f.help}
+                  required={f.required}
+                />
               )
             }
 

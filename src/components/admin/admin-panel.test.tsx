@@ -144,6 +144,24 @@ describe('adminPanel', () => {
     expect(document.body.textContent).not.toMatch(/Faz\s*6|phase6/i)
   })
 
+  it('Profil "Ad" alanına yazarken odak alanda KALIR (odak çalınmaz)', () => {
+    renderPanel()
+    fireEvent.click(screen.getByRole('tab', { name: /Profil & Hakkımda/ }))
+
+    // "Profil" alt bölümünün ilk alanı "Ad (First Name)" — değeriyle doğrula.
+    const input = screen.getAllByRole('textbox')[0] as HTMLInputElement
+    expect(input.value).toBe(content.profile.firstName)
+
+    input.focus()
+    expect(document.activeElement).toBe(input)
+
+    for (const value of ['T', 'TA', 'TAR', 'TARI', 'TARIK']) {
+      fireEvent.change(input, { target: { value } })
+      expect(document.activeElement).toBe(input)
+    }
+    expect(input.value).toBe('TARIK')
+  })
+
   it('genel bakış sekmesinde özet panel görünür', () => {
     renderPanel()
     expect(screen.getByTestId('overview-panel')).toBeTruthy()
