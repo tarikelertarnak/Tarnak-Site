@@ -2210,3 +2210,149 @@ gorunsun, bos alana ve sohbet basligina sag tik menusu, secili satir belirgin.
 - `vitest run` **724/724 (63 dosya)**.
 - `playwright e2e/chat-fixes.spec.ts --project=desktop` **15/15** (1 yeni test).
 - Panelde gorunen satir sayisi testi `panelPeers(data).length + 1` (kendi satirim).
+
+### UX-014 — Header brand hover TEK BÜTÜN + Sidebar brand link (2026-10-15)
+
+**İstek:** Kuş logosu + "TARIK ELER" + "—" + "TARNAK" tek link içinde; tıklama
+alanı ve hover tek bütün olarak çalışsın; Sidebar da aynısı.
+
+**Ölçülen kök nedenler (gerçek Chromium, localhost:3000):**
+
+1. İlk yamada hover span-başına hover:text-* idi → logo/boşluk hover'ında
+   hiçbir tepki yok ("tek bütün" sağlanmıyordu).
+2. TopBar gizli bug: logoda group-hover:opacity-80 vardı ama link'te group
+   yoktu → logo tepkisi HİÇ çalışmıyordu (ölü sınıf).
+3. Span'lerdeki ocus-visible:ring-1 ÖLÜ kod: span odaklanamaz.
+4. Sidebar ria-label attribute'u ui/link tarafından sessizce düşürüldü
+   (DOM'da null); bileşenin prop adı riaLabel.
+
+**Çözüm (iki dosyada aynı desen):** Link'e group · span'lere
+group-hover: + group-focus-visible: · ölü focus-visible:* silindi ·
+link halkası global :focus-visible'dan (tokens.css:139) · Sidebar brand
+<Link href="/" ariaLabel="Ana sayfa"> · sidebar logosu
+group-hover:opacity-80.
+
+**Canlı kanıt (hover LOGO üzerinde, metin değil):**
+
+- TARIK ELER: rgb(237,237,237) → rgb(37,99,235) = primary
+- "—": muted → rgb(37,99,235)
+- TARNAK: primary → oklab(/0.7) = primary/70
+- Logo: opacity 1 → 0.8
+  Sidebar VE TopBar aynı sonuç (önce sidebar backdrop'ı kapatıldı — modal
+  overlay header'ı kılıyordu; Escape ile kapandı).
+
+**Kapılar:** tsc 0 · vitest 726/726 (63 dosya) · eslint --max-warnings 0
+(2 dosya) 0 · commit 1062471 (yerel; push/deploy yok).
+
+**Kalan:** klavye odak görsel testi yapılmadı (yalnız group-focus-visible
+sınıf varlığı + global :focus-visible kuralı doğrulandı); deploy kullanıcı
+onayında.
+
+### UX-015 — Chat yan panel HER ZAMAN yeniden boyutlandırılabilir (2026-10-15)
+
+**İstek:** "yan panel çok küçükken boyutu değiştirilemiyor her zaman
+değiştirilebilsin."
+
+**Ölçülen kök neden:** KOMPAKT modda (72px) ayraç (separator) CSS sınıfı
+panelOpen ? 'hidden md:block' : 'hidden' ile **TAMAMEN gizleniyordu**.
+Sürükleme/ok tuşu hiç çalışmıyordu → panel 72px'te kilitli kalıyordu.
+
+**Çözüm (chat.tsx):**
+
+1. Ayraç sınıfı w-1 ... hidden md:block → w-1 ... (hiçbir hidden yok).
+   Her viewport, her panel durumunda görünür.
+2. startResize: panelOpen false ise setPanelOpen(true) çağırır,
+   başlangıç genişliği **GÖRÜNÜR 72px** olarak alınır (kayıtlı 288 değil).
+   Sürükleme anında panel açılır ve genişler.
+3.
+
+esizeByKey: ok tuşu da katlı panelde setPanelOpen(true) çağırır.
+
+**Regresyon testleri (chat.resize.test.tsx, +2):**
+
+- katlanmış panelde ayraç sürüklenince → panel açılır, 72+delta genişler.
+- katlanmış panelde ArrowRight → panel açılır, 288+16=304 olur.
+  Her ikisi de jsdom'da geçti (728/728).
+
+**Canlı doğrulama (gerçek Chromium, localhost:3000/chat/, 718px viewport):**
+
+- Panel toggle → 72px (KOMPAKT), ayraç **görünür** (display:block).
+- Ayraç tıklama/sürükleme → panel açılır, genişlik değişir (clamp'a dönmedi).
+- Masaüstünde (≥768px) --chat-panel-w CSS değişkeni ile 240–560px arası serbest.
+
+**Kapılar:** tsc 0 · vitest 728/728 · eslint --max-warnings 0 · commit
+da1fe5f (yerel; push/deploy yok).
+
+---
+
+## 2026-10-16 — SOHBET: YANIT (ALINTI) + TIK MANTIGI [CHAT-014]
+
+**Kullanici 2 istek:** (1) mesaj **yanitlama/alinti** akisi bastan calissin,
+(2) durum **tikleri** dogru mantiga cevrilsin (gonderildi / iletildi / okundu;
+yesil KULLANMA) + eski yanlis "okundu" kayitlarini duzeltecek script yazilsin.
+
+### Olculen kok neden (tikler)
+
+`GET /api/chat?conversationId=X` her mesaj cekiminde `markRead(conversationId)` ve
+`markDelivered(conversationId)` cagiriyordu; `chat-db.ts`'teki bu iki UPDATE'te
+**`sender_id` filtresi YOKTU**. Sonuc: kullanici KENDI sohbetini acinca KENDI
+mesajlari "okundu" damgasi aliyordu → alici mesaji hic gormemisken gonderende
+**cift mavi tik**. Ayrica iyimser eklenen mesaj sunucu damgasiz donunce dogrudan
+cift tikle baslayabiliyordu.
+
+### Duzeltmeler
+
+1. `markDelivered(conversationId, viewerId)` / `markRead(conversationId, viewerId)`
+   - `.neq('sender_id', viewerId)`. `GET`ten `markRead` TAMAMEN kaldirildi; yeni
+     `POST { action: 'read' }` ucu (participant kontrolu) eklendi (`chat.send`
+     izni ISTENMEZ — okumak yazmak degildir).
+2. Istemci okundu istegini kendini sinirlar: (a) sohbet acik, (b) sekme gorunur,
+   (c) mesaj listesi gorunur alanda (`IntersectionObserver`), (d) karsi taraftan
+   `read_at` bos mesaj VAR. Yoksa hic POST atilmaz.
+3. `src/lib/chat-ticks.ts` yeniden yazildi: `TICK_PENDING_COLOR =
+'text-primary-fg/60'` (soluk gri = gonderildi/teslim edildi),
+   `TICK_READ_COLOR = 'text-sky-300'` (mavi = okundu), `TICK_SENDING_COLOR`
+   (saat), `TICK_FAILED_COLOR` (kirmizi unlem); `tickFor(m, { pending, failed })`
+   - `TickStyle.state`. YESIL/SARI hic yok — negatif testle sabitlendi.
+4. Liste tiki AYNI karardan gecer (`tickForFlags`) ama rengi `TICK_LIST_COLORS`
+   (balon mavi oldugu icin `sky-300` seffaf liste zemininde okunmazdi; okunmaz
+   renk secmek "tek kaynak" kuralini bozmak olurdu).
+5. `src/lib/chat-reply.ts` (YENI, saf): `REPLY_TEXT_MAX=150`, `toReplyPreview`
+   (metni kirpar; **silinmis mesajin metni/dosyasi alintiye TASINMAZ** — aksi
+   halde "Herkesten sil" icerigi gizlemezdi), `missingReplyPreview` (fiziksel
+   silinmis hedef → "silindi" der, alinti kaybolmaz), `replyPlaceholderKey`.
+   Ayri dosya sarti: `chat-db.ts` sunucu Supabase istemcisi icerdigi icin
+   istemciden DEGER olarak import edilemez.
+6. `chat-db.ts`: `ChatMessageRow.reply_to`; `attachReplyPreviews` tum
+   `reply_to_id`'leri TEK `in()` sorgusunda ceker (N+1 yok) ve alan yoksa da
+   `null`'a normalestirir; `sendMessage` `replyToId`'yi sohbetle DOGRULAR
+   (baska sohbetin mesajina yanit dusurulur, mesaj kaybolmaz).
+7. Arayuz: hover yanit oku (ayni mesaj menusunu acar — ikinci menu YAZILMADI),
+   sag tik menusunde "Yanitla", mobilde saga kaydirma (`use-swipe-reply.ts`,
+   esik 60px, dikey niyet iptal, `navigator.vibrate(10)`, `transform` dogrudan
+   yazilir → React state'i yok), giris ustu onizleme
+   (`data-testid="chat-reply-preview"`, X/Esc, sohbet degisince temizlenir),
+   balon ici alinti blogu (tiklama → kaynaga kaydir + ~1,9 sn mavi `msg-flash`),
+   iyimser gonderim (saat → gercek satir; hata → kirmizi unlem + "Tekrar dene").
+8. `supabase/chat.sql`: yeni bolum — (a) `add column if not exists
+reply_to_id / delivered_at / read_at` + kismi indeks, (b) eski yanlis
+   damgalari temizleyen onarim betigi (kesin imkansiz satirlar + kaynagi
+   guvenilmez damgalar; dogrusu yeni kodla yeniden yazilir → kendini iyilestirir).
+
+### Kanit
+
+- `tsc --noEmit` **0 hata**
+- `vitest run` **773/773 (65 dosya)** — yeni: `chat-reply.test.ts` (11),
+  `use-swipe-reply.test.ts` (8); guncellenen: `chat-ticks.test.ts`,
+  `chat-db.test.ts`, `chat.test.ts`, `chat.admin.test.tsx`
+- `eslint --max-warnings 0` (13 degisen dosya) **0**
+- dev `/chat` HTTP **200** · `POST /api/chat action:read` girissiz **401**
+- **KANIT YOK:** gercek tarayicida tiklayarak dogrulama — BrowserOS neo bagli
+  degil (`neo_*` araclari oturumda yok); baska araca DUSULMEDI.
+- Yol boyunca bulunan gizli hata: bos metin + yanit hedefi secili iken `send`
+  ICERIKSIZ mesaj yazabiliyordu → duzeltildi (bos metin hic gonderilmez).
+
+### Kullanici eylemi
+
+`supabase/chat.sql` SQL Editor'de bir kez calistirilmali (kolonlar + eski yanlis
+damga onarimi). Tekrar calistirmak zararsizdir.

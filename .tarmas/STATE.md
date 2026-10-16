@@ -34,11 +34,25 @@ Roaming\npm altindaki pnpm kisayolu bozuktu → pnpm.exe tam yol kullan
 
 ## Current
 
-phase: SOHBET — LOCAL-FIRST ÇEVRIMİÇİ DURUMU + HEADER BRAND HOVER TUTARLILIĞI step: TAMAMLANDI (yerel commit; push yok)
-prev_phase: SOHBET — KENDI SATIRIM (9. kullanici maddesi: admin kendisini gorur ve kendisiyle konusur; adi "TARIK ELER TARNAK (Siz)" — ek dile gore cevrilir) step: KAPANDI (yerel commit; push yok)
+phase: SOHBET — YANIT/ALINTI (reply) + TİK MANTIĞI (gönderildi/iletildi/okundu) step: TAMAMLANDI (yerel; push/deploy YOK)
+prev_phase: SOHBET — LOCAL-FIRST PRESENCE + HEADER BRAND HOVER + CHAT PANEL RESIZE (HER ZAMAN) step: TAMAMLANDI (commit da1fe5f; push yok)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
 branch: faz-1-guvenlik last_commit: yerel (ayrinti: LOG.md [CHAT-011..013]; push/deploy ASLA otomatik)
 running_processes: next dev (turbopack) :3000 — KULLANICININ; bu turda degisiklikleri SERVIS ETTIGI yeniden olculdu (gercek Chromium e2e + API probe) → bayat modul grafigi belirtisi yok
+not: HEADER BRAND HOVER — TEK BÜTÜN (2026-10-15, commit 1062471): kullanıcının
+"tıklama alanı ve hover tek bütün olarak çalışsın" isteği. İlk uygulama
+span-başına `hover:` idi → logo/boşluk üzerine gelince hiçbir şey olmuyordu.
+KÖK NEDEN 2 GİZLİ BUG: (1) TopBar logosunda `group-hover:opacity-80` VARDI ama
+link'te `group` YOKTU → logo tepkisi hiç çalışmıyordu; (2) span'lerdeki
+`focus-visible:*` sınıfları ÖLÜ koddu (span odaklanamaz). ÇÖZÜM: link'e `group`,
+span'lere `group-hover:`/`group-focus-visible:`, span'lerdeki ölü
+focus-visible:* silindi (link'in halkası global :focus-visible kuralından,
+tokens.css:139). Sidebar brand tiklanabilir Link oldu (`ariaLabel="Ana sayfa"`
+— ui/link bileşeni ham `aria-label` attribute'unu sessizce düşürüyor, prop adı
+`ariaLabel`). CANLI DOĞRULAMA (gerçek Chromium, localhost:3000): logo hover'da
+TARIK ELER rgb(237,237,237)→rgb(37,99,235), — →primary, TARNAK→primary/70,
+logo opacity 1→0.8; Sidebar ve TopBar AYNI davranış. tsc 0 · vitest 726/726 ·
+eslint (2 dosya) 0 · commit 1062471 YEREL.
 not: LOCAL-FIRST PRESENCE (2026-10-14, son istek): "aktiflik herşeyi supabase den seçiyo ama bile bilceği bişeyse benim aktif olup olmadığım bişey yazıp yazmadım sabitleyip sabitlemediğim gibi bunlar bilgisiyarımda yapılır sonra gidecekse yüklencekse yüklenir bölece daha hızlı olur".
 
 - KENDİ ÇEVRIMİÇİ DURUMU: sekme odaklı + kullanıcı etkileşimi (fare/klavye/dokunma/kaydırma) ile yerel hesaplanır (anlık, ağ gecikmesi YOK).
@@ -143,6 +157,75 @@ not: LOCAL-FIRST PRESENCE (2026-10-14, son istek): "aktiflik herşeyi supabase d
   bicimlendirdi (1952 satir; tirnak stili + girinti, davranis ayni) → CSS metnini
   string ile esleyen 2 test tirnak-bagimsiz hale getirildi (`theme-contrast.test.ts`
   satir ~361, `scrollable-tabs.test.ts`).
+
+## Bu tur (2026-10-16, SOHBET: YANIT/ALINTI + TIK MANTIGI)
+
+Kullanici 2 istek verdi; ikisi de kapandi: (1) mesaj **yanitlama** (alinti) akisi
+bastan calisir hale gelsin, (2) mesaj durum **tikleri** dogru mantiga cevrilsin
+(gonderildi/iletildi/okundu; YESIL kullanma) + eski yanlis "okundu"
+kayitlarini duzeltecek migration/script yazilsin.
+
+**KOK NEDEN (olculdu, tikler):** `GET /api/chat?conversationId=X` mesajlari
+cekerken `markRead(conversationId)` + `markDelivered(conversationId)` cagiriyordu
+ve `chat-db.ts`'teki bu iki sorguda **`sender_id` filtresi YOKTU** → kullanici
+KENDI sohbetini acinca KENDI mesajlari "okundu" damgasi aliyordu (alici mesaji
+hic gormemisken gonderende cift mavi tik). Ek olarak istemci mesaji iyimser
+eklerken sunucu damgasiz satiri dogrudan cift tikle gosterebiliyordu.
+
+**Kararlar / duzeltmeler:**
+
+1. `markDelivered`/`markRead` imzalarina ZORUNLU `viewerId` eklendi +
+   `.neq('sender_id', viewerId)`; `GET`ten `markRead` TAMAMEN cikarildi, yeni
+   `action: 'read'` POST'u eklendi. Istemci yalniz (a) sohbet acik, (b) sekme
+   gorunur, (c) mesaj listesi gorunur alanda (IntersectionObserver), (d) karsi
+   taraftan okunmamis mesaj VARSA cagirir → yoklama bosa POST atmaz.
+2. Tik karari saf modulde: `chat-ticks.ts` — `TICK_PENDING_COLOR`
+   (`text-primary-fg/60`, soluk gri) = gonderildi/teslim edildi,
+   `TICK_READ_COLOR` (`text-sky-300`) = okundu; YESIL/SARI hic yok (negatif
+   testle sabitlendi). `tickFor(m, { pending, failed })` → saat / kirmizi unlem.
+   `state` alani eklendi; liste tiki AYNI karardan (`tickForFlags`) gecer ama
+   rengi `TICK_LIST_COLORS`ten secilir — balon mavi oldugu icin `sky-300` seffaf
+   liste zemininde okunmazdi.
+3. Yanit ozeti kurali SAF `lib/chat-reply.ts`'e tasindi (sunucu + istemci ayni
+   kurali kullanir; `chat-db.ts` sunucu Supabase istemcisi icerdigi icin
+   istemciden deger olarak import EDILEMEZ): `toReplyPreview` metni 150 karaktere
+   kirpar, SILINMIS mesajin metni/dosyasi ALINTIYA TASINMAZ (guvenlik),
+   `missingReplyPreview` fiziksel silinmis hedef icin "silindi" der.
+4. `listMessages` → `attachReplyPreviews`: tum `reply_to_id`'ler TEK `in()`
+   sorgusunda (N+1 yok); hic yanit yokken alan yine `null`'a normalestirilir.
+5. `sendMessage` `replyToId`'yi sohbetle DOGRULAR (baska sohbetin mesajina yanit
+   dusurulur; mesaj kaybolmaz, yanitsiz yazilir).
+6. Arayuz: hover'da yanit oku (ayni mesaj menusunu acar — ikinci menu
+   YAZILMADI), sag tik menusunde "Yanitla", mobilde saga kaydirma
+   (`use-swipe-reply.ts`, esik 60px, dikey niyet iptal, `navigator.vibrate(10)`,
+   `transform` dogrudan yazilir — React state'i YOK). Giriş ustu onizleme
+   (gonderen rengine gore sabit serit, kendim icin mavi, `line-clamp-2`, X/Esc,
+   sohbet degisince temizlenir, `data-testid="chat-reply-preview"`). Balon ici
+   alinti blogu (tiklayinca kaynaga gider). Ayrica iyimser gonderim: mesaj once
+   "saat" durumunda girer, hata olursa kirmizi unlem + "Tekrar dene" — tik
+   HICBIR ZAMAN dogrudan cift tikle baslamaz.
+7. Migration/onarim: `supabase/chat.sql` sonuna (a) `add column if not exists
+reply_to_id / delivered_at / read_at` + kismi indeks, (b) eski yanlis
+   damgalari temizleyen onarim betigi eklendi (kesin imkansiz satirlar +
+   kaynagi guvenilmez damgalar; yeni kod dogrusunu yeniden yazar →
+   kendini iyilestirir).
+
+**KANIT:** `tsc --noEmit` **0** · `vitest run` **773/773 (65 dosya)** ·
+`eslint --max-warnings 0` (13 degisen dosya) **0** · dev `/chat` HTTP **200** ·
+`POST /api/chat action:read` girissiz **401**.
+Yeni test dosyalari: `src/lib/chat-reply.test.ts` (11),
+`src/components/chat/use-swipe-reply.test.ts` (8); guncellenenler:
+`chat-ticks.test.ts` (yeni renk/state sozlesmesi), `chat-db.test.ts` (neq/insert
+kaydi + yanit ozeti + yanit dogrulama testleri), `chat.test.ts` (yeni
+2026-10-16 sozlesme bloklari), `chat.admin.test.tsx` (iyimser gonderimle bos
+sohbet CTA'si DOM'dan kalkar).
+**KANIT YOK:** gercek tarayicida tiklayarak dogrulama — BrowserOS neo bagli
+degil (`neo_*` araclari oturumda yok) → baska araca DUSULMEDI; kanit jsdom +
+kaynak sozlesmesi + HTTP olcumu. Kullanici tarayicida denemeli.
+
+**BEKLEYEN KULLANICI EYLEMI (bu tur):** `supabase/chat.sql`i SQL Editor'de bir
+kez calistir (kolonlar + eski yanlis damga onarimi). Kod canliya cikmadan
+calistirmak yeterlidir; tekrar calistirmak zararsizdir.
 
 ## Bu tur (2026-10-13, /ADMIN ERISIM HATASI + ILK GERCEK TARAYICI DOGRULAMASI)
 
