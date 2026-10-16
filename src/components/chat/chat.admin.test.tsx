@@ -537,7 +537,13 @@ describe('yazma sinyali ve boş sohbet', () => {
     expect(button.className).toContain('cursor-pointer')
 
     fireEvent.click(button)
-    await waitFor(() => expect(button.hasAttribute('disabled')).toBe(true))
+    /*
+      İYİMSER GÖNDERİM (2026-10-16): mesaj hemen listeye girer → boş sohbet
+      kapısı kapanır ve CTA DOM'dan kalkar. Çift gönderim yine imkânsız:
+      `send` ikinci çağrıda `sending` kapısından döner (aşağıda tek POST
+      olduğu doğrulanır).
+    */
+    await waitFor(() => expect(button.isConnected).toBe(false))
 
     deferred.resolve?.({
       ok: true,
@@ -560,6 +566,9 @@ describe('yazma sinyali ve boş sohbet', () => {
       expect(sent).toBeTruthy()
       // DİL: tr sözlüğü → "Merhaba 👋" (ayrı gönderme mantığı yok, `send` kullanılır).
       expect(JSON.parse(String(sent?.[1]?.body)).text).toBe('Merhaba 👋')
+      // Tek gönderim: ikinci tıklama olsa bile `sending` kapısı geçilmez.
+      expect(spy.mock.calls.filter(([, init]) => init?.method === 'POST'
+        && String(init.body).includes('conversationId'))).toHaveLength(1)
     })
   })
 })

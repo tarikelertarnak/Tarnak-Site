@@ -35,17 +35,20 @@ const CODE = SRC
   .replace(/\/\/.*$/gm, '')
 
 describe('chat arayüz sözleşmesi', () => {
-  it('tik: gönderildi/teslim → sarı, okundu → yeşil; inline SVG ikonlar', () => {
+  it('tik: gönderildi/iletildi → soluk gri, okundu → mavi; yeşil/sarı YOK', () => {
     // İkon + renk kararı saf modülde (chat-ticks.test.ts onu tek tek doğrular);
     // bileşenin işi yalnızca o kararı render etmek.
-    // 2026-10-13: ikon importu çok satıra bölündü (Mic/Paperclip/Send/Sticker
-    // eklendi) → kalıp virgül/boşluk değişimine dayanıklı hâle getirildi.
     expect(SRC).toMatch(/import \{[^}]*TickReadIcon[^}]*TickSentIcon[^}]*\} from '@\/components\/ui\/icons'/)
-    expect(SRC).toContain('tickFor(m)')
+    expect(SRC).toContain('tickFor(m, { pending: m._pending, failed: m._failed })')
+    // saat = gönderiliyor; çift tik = okundu, tek tik = gönderildi/iletildi
+    expect(SRC).toMatch(/m\._pending\s*\? <ClockIcon/)
     expect(SRC).toMatch(/tick\.double \? <TickReadIcon[^>]*\/> : <TickSentIcon/)
     expect(SRC).toMatch(/className=\{cn\('inline-flex shrink-0', tick\.color\)\}/)
-    // Renk bileşende SABİT yazılmaz (tek kaynak lib/chat-ticks.ts).
-    expect(SRC).not.toMatch(/text-(amber|green)-\d/)
+    // Renk bileşende SABİT yazılmaz (tek kaynak lib/chat-ticks.ts): sarı/yeşil
+    // hiç yok. Amber/yeşil ailesi YALNIZ alıntı şeridi paletinde (QUOTE_ACCENTS)
+    // geçebilir — o blok ayrı tutulup geri kalan kaynakta aranır (2026-10-16).
+    const withoutPalette = CODE.replace(/QUOTE_ACCENTS = \[[\s\S]*?\n\]/, '')
+    expect(withoutPalette).not.toMatch(/text-(amber|green|yellow)-\d/)
     // Iconify'a dönüş yok: tikler inline SVG (boş ikon sorununa karşı) ve
     // her mesajda ağdan çekilmez.
     expect(SRC).not.toContain('@iconify/react')
@@ -77,12 +80,20 @@ describe('chat arayüz sözleşmesi', () => {
     expect(SRC).toMatch(/remove\('me'\)|remove\("me"\)/)
   })
 
-  it('yanıt (reply) akışı: kaynak mesaja gitme', () => {
+  it('yanıt (reply) akışı: önizleme + kaynak mesaja gitme', () => {
     expect(SRC).toContain('setReplyTo')
     expect(SRC).toContain('replyToId')
+    // Giriş üstü önizleme çubuğu ve balon içi alıntı bloğu AYNI kaynaktan
+    // beslenir (`replyLive` → sunucudan gelen `reply_to` özeti).
+    expect(SRC).toContain('const replyLive = useMemo(')
+    expect(SRC).toContain('quoteAccent(')
+    expect(SRC).toContain('data-testid="chat-reply-preview"')
     // kaynak mesaja kaydırma — MESAJ ALANI içinde (`scrollIntoView` ataları
-    // (sayfayı da) kaydırdığı için 2026-10-13'te kaldırıldı)
-    expect(SRC).toMatch(/scrollToMessage/)
+    // (sayfayı da) kaydırdığı için 2026-10-13'te kaldırıldı). 2026-10-16:
+    // `scrollToMessage` → `jumpToMessage` oldu (kaydırma + vurgu flash'ı).
+    expect(SRC).toMatch(/function jumpToMessage\(id: string\)/)
+    // her mesaj çapalanabilir olsun
+    expect(SRC).toMatch(/id=\{`msg-\$\{m\.id\}`\}/)
   })
 
   it('sabitlenen mesaj 📌 ile işaretlenir; herkes sabitleyebilir', () => {
@@ -154,7 +165,9 @@ describe('chat arayüz sözleşmesi', () => {
     expect(SRC).toContain('helloMessage')
     // Gönderim SÜRERKEN kilit: çift tıklamada iki mesaj gitmez.
     expect(SRC).toMatch(/disabled=\{sending\}/)
-    expect(SRC).not.toMatch(/text-amber/)
+    // Sarı/yeşil uyarı tonu YOK (tek istisna alıntı şeridi paleti).
+    const withoutPalette = CODE.replace(/QUOTE_ACCENTS = \[[\s\S]*?\n\]/, '')
+    expect(withoutPalette).not.toMatch(/text-amber/)
   })
 
   it('mesaj bilgisi paneli: Okundu · Teslim edildi · Tarih', () => {
@@ -253,8 +266,11 @@ describe('chat arayüz sözleşmesi', () => {
       expect(SRC).toContain('CHAT_PANEL_MIN')
       expect(SRC).toContain('CHAT_PANEL_MAX')
       expect(SRC).toMatch(/aria-orientation="vertical"/)
-      // genişlik CSS değişkeniyle panele geçer
-      expect(SRC).toContain('md:w-[var(--chat-panel-w)]')
+      // genişlik CSS değişkeniyle panele geçer — TÜM genişliklerde (2026-10-15:
+      // mobilde de sürüklenebilir; eskiden `md:` önekiyle yalnız masada etkindi).
+      expect(SRC).toContain('w-[var(--chat-panel-w)]')
+      // tutamaç hiçbir koşulda gizlenmez (KOMPAKT modda da görünür).
+      expect(SRC).not.toMatch(/separator[\s\S]{0,400}hidden/)
     })
 
     it('sohbet tam ekranı kaplar (eski 760px / 68svh / max-w-3xl sınırı yok)', () => {
@@ -310,11 +326,15 @@ describe('chat arayüz sözleşmesi', () => {
       // 2026-10-13 (SON istek): "Ekran ne kadar küçük olursa olsun geniş
       // ekrandaki iki panelli düzen korunsun … tam ekran liste görünümü
       // tamamen kaldırılsın." Yani: `md:hidden` kaplama, X kapatma ve
-      // `absolute inset-0` yok; genişlik `clamp(72px,28vw,300px)` + md'de
-      // sürüklenebilir `--chat-panel-w`.
+      // `absolute inset-0` yok.
+      // 2026-10-15: mobilde de `--chat-panel-w` ile sürüklenebilir (eski
+      // `clamp(72px,28vw,300px)` kaldırıldı — sürükleme mobilde çalışmıyordu).
       expect(SRC).not.toContain('absolute inset-0 z-40')
       expect(SRC).not.toContain('md:static')
-      expect(SRC).toContain('w-[clamp(72px,28vw,300px)] md:w-[var(--chat-panel-w)]')
+      // Artık TÜM genişliklerde CSS değişkeni kullanılır (mobil de dahil).
+      expect(SRC).toContain('w-[var(--chat-panel-w)]')
+      // `clamp()` mobilde artık yok — sürükleme mobilde çalışsın diye.
+      expect(SRC).not.toContain('clamp(72px,28vw,300px)')
       // KOMPAKT mod 72px'e iner (avatar sütunu) — genişlik geçişi animasyonlu.
       expect(SRC).toContain('\'w-[72px]\'')
       expect(SRC).toContain('transition-[width] duration-200')
@@ -481,7 +501,7 @@ describe('chat arayüz sözleşmesi', () => {
       expect(CODE).not.toContain('scrollIntoView')
       expect(CODE).toContain('box.scrollTo({ top: box.scrollHeight')
       expect(CODE).toContain('ref={listRef}')
-      expect(CODE).toContain('function scrollToMessage(')
+      expect(CODE).toContain('function jumpToMessage(id: string)')
     })
 
     it('seçili kişi satırı belli olur (mavi jeton tonu)', () => {
@@ -498,6 +518,106 @@ describe('chat arayüz sözleşmesi', () => {
       // (@lobehub/ui ThemeProvider → sarı) geçerli olur. (Yorumda anılması
       // serbest; KURAL olmadığını doğruluyoruz.)
       expect(CSS).not.toMatch(/input::selection\s*[,{]/)
+    })
+  })
+
+  /*
+    2026-10-16 KULLANICI İSTEKLERİ — WhatsApp benzeri yanıt (alıntı) + tik
+    mantığı. Kaynak sözleşmesi: istendiği halde sessizce kaybolmasın.
+       1. "mesajı yanıtlama, alıntı"
+       2. "tikleri düzelt: gönderildi/iletildi/okundu — yeşil KULLANMA"
+  */
+  describe('yanıt (alıntı) akışı — 2026-10-16', () => {
+    it('gönderim `replyToId`yi API\'ye taşır (yanıt kaydedilir)', () => {
+      expect(SRC).toContain('replyToId')
+      // metin gönderiminde gövdeye konur
+      expect(SRC).toMatch(/body: JSON\.stringify\(\{ conversationId, text, replyToId \}\)/)
+      // medya da yanıtlanabilir — taslakta bekleyen yanıt düşmez
+      expect(SRC).toMatch(/replyToId: target\?\.id/)
+    })
+
+    it('yanıt 3 yoldan başlatılır: hover butonu, sağ tık menüsü, sağa kaydırma', () => {
+      // (a) mesaj menüsünde "Yanıtla"
+      expect(SRC).toContain('label={labels.reply}')
+      // (b) hover ok butonu aynı menüyü açar — ikinci menü yazılmaz
+      expect(SRC).toContain('data-testid="chat-reply-button"')
+      expect(SRC).toMatch(/onReply=\{\(\) => \{ startReply\(menu\.message\.id\)/)
+      // (c) mobil: kaydırarak yanıtla (tek kapsayıcıya takılan olay tabanlı hook)
+      expect(SRC).toContain('useSwipeReply(startReply)')
+      expect(SRC).toContain('data-reply-hint')
+      // dokunmatikte dikey kaydırma bozulmaz
+      expect(SRC).toContain('touch-pan-y')
+    })
+
+    it('seçilince giriş alanına odaklanır', () => {
+      expect(SRC).toMatch(/const startReply = useCallback\(\(messageId: string\) => \{[\s\S]{0,600}inputRef\.current\?\.focus\(\)/)
+    })
+
+    it('alıntıya tıklayınca kaynak mesaja gidip ~2 sn vurgulanır', () => {
+      expect(SRC).toContain('jumpToMessage')
+      expect(SRC).toContain('msg-flash')
+      expect(SRC).toMatch(/const FLASH_MS = 1_900/)
+      // bulunamazsa bildirim
+      expect(SRC).toContain('chat.replyNotFound')
+      expect(SRC).toContain('role="button"')
+      expect(SRC).toContain('aria-label={t(\'chat.replyJump\')}')
+    })
+
+    it('giriş üstü önizleme: ✕ ve Esc ile kapanır, sohbet değişince temizlenir', () => {
+      expect(SRC).toContain('data-testid="chat-reply-preview"')
+      expect(SRC).toContain('t(\'chat.cancelReply\')')
+      expect(SRC).toMatch(/e\.key === 'Escape'[\s\S]{0,120}setReplyTo\(null\)/)
+      // sohbet değişince temizlenir
+      expect(SRC).toMatch(/useEffect\(\(\) => \{\s*\n\s*setReplyTo\(null\)\s*\n\s*\}, \[conversationId\]\)/)
+    })
+
+    it('alıntı bloğu silinen hedefte "silindi" der (içerik sızmaz)', () => {
+      expect(SRC).toContain('chat.deletedMessage')
+      // sunucudan gelen özet kullanılır — istemci yeniden hesaplamaz
+      expect(SRC).toContain('replyLive.deleted_for_all')
+    })
+  })
+
+  describe('tik mantığı — 2026-10-16 (yeşil YOK)', () => {
+    it('durum TEK kaynaktan türer: balon + sohbet listesi aynı fonksiyonu kullanır', () => {
+      expect(SRC).toContain('tickFor(m, { pending: m._pending, failed: m._failed })')
+      // liste önizlemesindeki tik de AYNI karar fonksiyonundan geçer
+      expect(SRC).toContain('tickForFlags(')
+      expect(SRC).toMatch(/p\.lastMessage\?\.mine/)
+      // renk yere göre seçilir (balon mavi, liste şeffaf) — ama karar tek.
+      expect(SRC).toContain('TICK_LIST_COLORS')
+    })
+
+    it('iyimser mesaj asla doğrudan çift tikle başlamaz (önce saat)', () => {
+      expect(SRC).toContain('_pending: true')
+      expect(SRC).toMatch(/m\._pending\s*\? <ClockIcon/)
+    })
+
+    it('başarısız gönderim kırmızı ünlem + "Tekrar dene"', () => {
+      expect(SRC).toContain('_failed: true')
+      expect(SRC).toContain('data-testid="chat-retry"')
+      expect(SRC).toContain('chat.retrySend')
+    })
+
+    it('okundu damgası yalnız sekme GÖRÜNÜR + liste GÖRÜNÜR + alıcı iken atılır', () => {
+      // Gönderen kendi mesajını okundu yapamaz: sunucu ucu da `viewerId` ile
+      // hariç tutar; istemci yalnız karşı taraftan okunmamış mesaj varsa çağırır.
+      expect(SRC).toMatch(/document\.visibilityState !== 'visible'/)
+      expect(SRC).toContain('listVisible')
+      expect(SRC).toMatch(/action: 'read'/)
+      // mesaj GERÇEKTEN görünür alanda mı (kaydırma ile ölçülür)
+      expect(SRC).toContain('IntersectionObserver')
+    })
+
+    it('durum adı ekran okuyucuya duyurulur (tooltip + aria-label)', () => {
+      expect(SRC).toMatch(/title=\{t\(tick\.labelKey\)\}/)
+      expect(SRC).toMatch(/aria-label=\{t\(tick\.labelKey\)\}/)
+    })
+
+    it('vurgu flash CSS\'i tanımlı ve balon zeminini EZMEZ', () => {
+      const CSS = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8')
+      expect(CSS).toContain('@keyframes msg-flash')
+      expect(CSS).toContain('.msg-flash')
     })
   })
 })

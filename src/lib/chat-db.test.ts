@@ -29,6 +29,9 @@ function take() {
 const calls = {
   update: [] as unknown[][],
   is: [] as unknown[][],
+  neq: [] as unknown[][],
+  in: [] as unknown[][],
+  insert: [] as unknown[][],
   delete: [] as unknown[][],
   eq: [] as unknown[][],
   lt: [] as unknown[][],
@@ -43,7 +46,10 @@ function makeQuery() {
     calls.select.push(a)
     return q
   }
-  q.insert = () => q
+  q.insert = (...a: unknown[]) => {
+    calls.insert.push(a)
+    return q
+  }
   q.upsert = (...a: unknown[]) => {
     calls.upsert.push(a)
     return q
@@ -66,11 +72,18 @@ function makeQuery() {
     calls.is.push(a)
     return q
   }
+  q.neq = (...a: unknown[]) => {
+    calls.neq.push(a)
+    return q
+  }
   q.lt = (...a: unknown[]) => {
     calls.lt.push(a)
     return q
   }
-  q.in = () => q
+  q.in = (...a: unknown[]) => {
+    calls.in.push(a)
+    return q
+  }
   q.maybeSingle = () => Promise.resolve(take())
   q.single = () => Promise.resolve(take())
   q.then = (res: (v: unknown) => unknown, rej?: (e: unknown) => unknown) =>
@@ -94,6 +107,7 @@ const {
   resolveChatIdentity,
   setImportant,
   setPinned,
+  sendMessage,
   siteOwnerId,
 } = await import('@/lib/chat-db')
 
@@ -101,6 +115,9 @@ function reset(...r: Array<{ data?: unknown, error?: unknown, count?: number | n
   push(...(r.length ? r : [{ data: null, error: null }]))
   calls.update = []
   calls.is = []
+  calls.neq = []
+  calls.in = []
+  calls.insert = []
   calls.delete = []
   calls.eq = []
   calls.lt = []
@@ -125,15 +142,27 @@ describe('chat · tablo yoksa çökmez', () => {
 describe('chat · teslim / okundu', () => {
   it('markDelivered yalnızca teslim edilmemişleri hedefler', async () => {
     reset()
-    await markDelivered('c1')
+    await markDelivered('c1', 'u2')
     expect(calls.update.length).toBeGreaterThan(0)
     expect(calls.is).toContainEqual(['delivered_at', null])
   })
 
   it('markRead yalnızca okunmamışları hedefler', async () => {
     reset()
-    await markRead('c1')
+    await markRead('c1', 'u2')
     expect(calls.is).toContainEqual(['read_at', null])
+  })
+
+  /*
+    KÖK NEDEN DÜZELTMESİ (2026-10-16): eskiden bu iki sorguda `sender_id`
+    filtresi YOKTU → gönderen kendi sohbetini açınca kendi mesajları da
+    "okundu" oluyordu ve alıcı hiç görmemişken çift mavi tik görünüyordu.
+  */
+  it('markDelivered/markRead GÖNDERENİ hariç tutar (kendi mesajım asla okunmaz)', async () => {
+    reset()
+    await markDelivered('c1', 'u1')
+    await markRead('c1', 'u1')
+    expect(calls.neq.filter(([c, v]) => c === 'sender_id' && v === 'u1')).toHaveLength(2)
   })
 })
 
@@ -199,6 +228,139 @@ describe('chat · silinen mesaj içeriği sızmaz', () => {
     const [m] = await listMessages('c1', true)
     expect(m.text).toBe('GİZLİ metin')
     expect(m.file_url).toBe('/uploads/chat/secret.png')
+  })
+})
+
+/**
+ * YANIT ÖZETİ (2026-10-16 kullanıcı isteği: "mesajları çekerken yanıtlanan
+ * mesajın kısa özeti (gönderen adı, metin ilk ~150 karakter, medya türü,
+ * silinmiş mi) birlikte dönsün").
+ */
+describe('chat · yanıtlanan mesajın özeti', () => {
+  const replied = {
+    id: 'm2',
+    conversation_id: 'c1',
+    sender_id: 'u2',
+    sender_name: 'Osman',
+    text: 'yanıtlanan metin',
+    kind: 'text',
+    file_url: null,
+    file_name: null,
+    file_type: null,
+    file_size: null,
+    audio_duration: null,
+    reply_to_id: 'm1',
+    delivered_at: null,
+    read_at: null,
+    pinned: false,
+    pinned_at: null,
+    deleted_for_all: false,
+    deleted_by: null,
+    deleted_at: null,
+    created_at: '2026-10-02T00:00:00Z',
+  }
+
+  it('yanıt özeti gönderen adı + metinle gelir', async () => {
+    reset(
+      { data: [replied] },
+      { data: [{ id: 'm1', sender_id: 'u1', sender_name: 'Ali', text: 'kaynak', kind: 'text', file_name: null, file_url: null, deleted_for_all: false }] },
+    )
+    const [m] = await listMessages('c1', false)
+    expect(m.reply_to).toEqual({
+      id: 'm1',
+      sender_id: 'u1',
+      sender_name: 'Ali',
+      text: 'kaynak',
+      kind: 'text',
+      file_name: null,
+      file_url: null,
+      deleted: false,
+    })
+  })
+
+  it('metin 150 karaktere kırpılır', async () => {
+    const long = 'a'.repeat(400)
+    reset(
+      { data: [replied] },
+      { data: [{ id: 'm1', sender_id: 'u1', sender_name: 'Ali', text: long, kind: 'text', file_name: null, file_url: null, deleted_for_all: false }] },
+    )
+    const [m] = await listMessages('c1', false)
+    expect(m.reply_to?.text).toHaveLength(150)
+  })
+
+  it('sİLİNMİŞ kaynağın metni/dosyası TAŞINMAZ, "silindi" işareti döner', async () => {
+    reset(
+      { data: [replied] },
+      { data: [{ id: 'm1', sender_id: 'u1', sender_name: 'Ali', text: 'GİZLİ', kind: 'image', file_name: 'secret.png', file_url: '/uploads/chat/secret.png', deleted_for_all: true }] },
+    )
+    const [m] = await listMessages('c1', false)
+    expect(m.reply_to?.deleted).toBe(true)
+    expect(m.reply_to?.text).toBeNull()
+    expect(m.reply_to?.file_url).toBeNull()
+  })
+
+  it('kaynak hiç bulunamazsa (fiziksel silinmiş) yanıt bloğu kaybolmaz', async () => {
+    reset({ data: [replied] }, { data: [] })
+    const [m] = await listMessages('c1', false)
+    expect(m.reply_to?.deleted).toBe(true)
+    expect(m.reply_to?.id).toBe('m1')
+  })
+
+  it('yanıt yoksa ek sorgu yapılmaz', async () => {
+    const plain = { ...replied, reply_to_id: null }
+    reset({ data: [plain] })
+    const [m] = await listMessages('c1', false)
+    expect(m.reply_to).toBeNull()
+    expect(calls.in).toHaveLength(0)
+  })
+})
+
+/**
+ * YANIT DOĞRULAMASI (2026-10-16 kullanıcı isteği): "sunucu bu id'nin aynı
+ * sohbete ait olduğunu doğrulasın".
+ */
+describe('chat · gönderimde yanıt doğrulaması', () => {
+  const saved = {
+    id: 'm9',
+    conversation_id: 'c1',
+    sender_id: 'u1',
+    sender_name: 'Ali',
+    text: 'cevap',
+    kind: 'text',
+    file_url: null,
+    file_name: null,
+    file_type: null,
+    file_size: null,
+    audio_duration: null,
+    reply_to_id: 'm1',
+    delivered_at: null,
+    read_at: null,
+    pinned: false,
+    pinned_at: null,
+    deleted_for_all: false,
+    deleted_by: null,
+    deleted_at: null,
+    created_at: '2026-10-03T00:00:00Z',
+  }
+
+  it('bAŞKA sohbetin mesajına yanıt DÜŞÜRÜLÜR (mesaj yine gönderilir)', async () => {
+    reset({ data: null }, { data: saved }, { data: null })
+    await sendMessage({ conversationId: 'c1', senderId: 'u1', senderName: 'Ali', text: 'cevap', replyToId: 'baska-sohbetin-mesaji' })
+    // doğrulama aynı VE doğru sohbeti sordu
+    expect(calls.eq).toContainEqual(['conversation_id', 'c1'])
+    expect(calls.insert[0][0]).toEqual(expect.objectContaining({ reply_to_id: null }))
+  })
+
+  it('aYNI sohbetteki mesaja yanıt KORUNUR', async () => {
+    reset({ data: { id: 'm1' } }, { data: saved }, { data: null })
+    await sendMessage({ conversationId: 'c1', senderId: 'u1', senderName: 'Ali', text: 'cevap', replyToId: 'm1' })
+    expect(calls.insert[0][0]).toEqual(expect.objectContaining({ reply_to_id: 'm1' }))
+  })
+
+  it('yanıt id verilmezse doğrulama sorgusu YAPILMAZ', async () => {
+    reset({ data: saved }, { data: null })
+    await sendMessage({ conversationId: 'c1', senderId: 'u1', senderName: 'Ali', text: 'cevap' })
+    expect(calls.insert[0][0]).toEqual(expect.objectContaining({ reply_to_id: null }))
   })
 })
 
