@@ -11,6 +11,13 @@
  *    erişilebilirlik ihlali (WCAG 2.3.3 Animation from Interactions).
  *    Kullanıcı sistem ayarından kapatmışsa içerik ANINDA görünür.
  *
+ *    DİKKAT (2026-10-16): tercih `useReducedMotionSafe` ile okunur. `motion`'ın
+ *    `useReducedMotion`'ı istemcide render sırasında gerçek değeri okur,
+ *    sunucuda `null` döner → doğrudan kullanılırsa sunucu `motion.div` +
+ *    `opacity:0`, istemci düz `<div>` basıyordu: React sunucu attribute'larını
+ *    düzeltmediği için sayfa içeriği görünmez kalıyordu (hydration hatası +
+ *    iç içe `useId` kayması). Güvenli sarmalayıcı tercihi mount sonrası uygular.
+ *
  * 2) `stagger` seçeneği: liste halindeki kartlar kademeli belirir.
  *    Varsayılan 0 → davranış eskisiyle aynı, mevcut çağrılar bozulmaz.
  *
@@ -19,7 +26,8 @@
 
 import type { HTMLMotionProps } from 'motion/react'
 import type { ReactNode } from 'react'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion } from 'motion/react'
+import { useReducedMotionSafe } from '@/hooks/use-reduced-motion-safe'
 
 export interface FadeUpSectionProps extends Omit<
   HTMLMotionProps<'div'>,
@@ -78,7 +86,7 @@ export function FadeUpSection({
   stagger = 0,
   ...rest
 }: FadeUpSectionProps) {
-  const azalt = useReducedMotion()
+  const azalt = useReducedMotionSafe()
 
   // Hareket kapatıysa: ne kaydırma ne gecikme — içerik olduğu gibi.
   // Motion'a özgü prop'lar (style/animate/initial…) HTML div'ine uymaz,
@@ -140,7 +148,7 @@ export function FadeUpItem({
   children: ReactNode
   className?: string
 } & HTMLMotionProps<'div'>) {
-  const azalt = useReducedMotion()
+  const azalt = useReducedMotionSafe()
 
   if (azalt) {
     return <div className={className}>{children}</div>

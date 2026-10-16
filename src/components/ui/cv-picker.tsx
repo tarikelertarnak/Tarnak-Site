@@ -122,11 +122,6 @@ export function CvPicker({
                 className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm text-foreground/80 no-underline transition-colors hover:bg-primary/10 hover:text-primary"
               >
                 <span className="flex min-w-0 items-center gap-1.5">
-                  {c.lang === locale && (
-                    <span className="shrink-0 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-primary">
-                      {t('about.cvSuggested')}
-                    </span>
-                  )}
                   <span className="truncate">{c.label}</span>
                 </span>
                 <DownloadIcon size={14} className="shrink-0 opacity-60" />

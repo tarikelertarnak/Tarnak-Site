@@ -5,8 +5,9 @@ import type {
   Testimonial,
   TimelineItem,
 } from '@/lib/phase6'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion } from 'motion/react'
 import Link from 'next/link'
+import { useReducedMotionSafe } from '@/hooks/use-reduced-motion-safe'
 
 /**
  * Ek bölüm bileşenleri
@@ -71,7 +72,7 @@ export function ServicesSection({
   ctaLabel: string
   ctaHref: string
 }) {
-  const azalt = useReducedMotion()
+  const azalt = useReducedMotionSafe()
   if (items.length === 0)
 return null
 
