@@ -34,11 +34,11 @@ Roaming\npm altindaki pnpm kisayolu bozuktu → pnpm.exe tam yol kullan
 
 ## Current
 
-phase: SOHBET — YANIT/ALINTI (reply) + TİK MANTIĞI (gönderildi/iletildi/okundu) step: TAMAMLANDI (yerel; push/deploy YOK)
-prev_phase: SOHBET — LOCAL-FIRST PRESENCE + HEADER BRAND HOVER + CHAT PANEL RESIZE (HER ZAMAN) step: TAMAMLANDI (commit da1fe5f; push yok)
+phase: SOHBET — ADMİN HERKESİ GÖRÜR + KENDİMLE SOHBET TİKİ + ÇEVRİMİÇİLİK (2026-10-16) step: TAMAMLANDI (yerel; push/deploy YOK)
+prev_phase: SOHBET — YANIT/ALINTI (reply) + TİK MANTIĞI (gönderildi/iletildi/okundu) step: TAMAMLANDI (commit 4e47248 + 853576b + 34c554b; push yok)
 deployment: d71b6d48 (https://tarikelertarnak.pages.dev) — canli site ESKI BUILD (deploy kullanici onayinda) free_plan: Workers 10ms CPU
-branch: faz-1-guvenlik last_commit: yerel (ayrinti: LOG.md [CHAT-011..013]; push/deploy ASLA otomatik)
-running_processes: next dev (turbopack) :3000 — KULLANICININ; bu turda degisiklikleri SERVIS ETTIGI yeniden olculdu (gercek Chromium e2e + API probe) → bayat modul grafigi belirtisi yok
+branch: faz-1-guvenlik last_commit: yerel (ayrinti: LOG.md [CHAT-015]; push/deploy ASLA otomatik)
+running_processes: next dev (turbopack) :3000 — KULLANICININ; /chat HTTP 200 ile servis ettigi dogrulandi
 not: HEADER BRAND HOVER — TEK BÜTÜN (2026-10-15, commit 1062471): kullanıcının
 "tıklama alanı ve hover tek bütün olarak çalışsın" isteği. İlk uygulama
 span-başına `hover:` idi → logo/boşluk üzerine gelince hiçbir şey olmuyordu.
@@ -157,6 +157,64 @@ not: LOCAL-FIRST PRESENCE (2026-10-14, son istek): "aktiflik herşeyi supabase d
   bicimlendirdi (1952 satir; tirnak stili + girinti, davranis ayni) → CSS metnini
   string ile esleyen 2 test tirnak-bagimsiz hale getirildi (`theme-contrast.test.ts`
   satir ~361, `scrollable-tabs.test.ts`).
+
+## Bu tur (2026-10-16, ADMİN HERKESİ GÖRÜR + KENDİMLE SOHBET + ÇEVRİMİÇİLİK)
+
+Kullanici 3 sikâyet verdi (tek mesaj): (1) "ben adminim neden bütün herkesi
+görmüyorum ... bütün kullanicilari görebilmeliyim sonuçta adminim", (2) "kendime
+mesaj gönderiyom tek tik nasil kala bilir kendime atinca kendim görmüyomuyum
+düzelt onu", (3) "kendim nasil çevrim disi ola biliyom düzelt". Ucu de kapandi.
+
+**KOK NEDENLER (olculdu, kod okunarak + testle sabitlendi):**
+
+1. **Admin herkesi gormuyordu** — sunucu ucu (`api/chat/users`) admin'e ZATEN
+   tum profilleri donuyordu (`canSeeAllPeers`); gizleyen yer ISTEMCI suzgeciydi:
+   `p.id === selfId ? isAdmin : (!isAdmin || !!p.hasConversation)` → admin icin
+   "karsi taraf" dalinda `!!hasConversation` araniyordu, yani HIC YAZMAMIS kayit
+   listede yoktu. (2026-10-13'te "kayit olup hic yazmayan kisi paneli
+   doldurmasin" denmisti; 2026-10-16 istegi bunu admin icin DEGISTIRDI.)
+   → `isAdmin ? true : p.id !== selfId && !!p.hasConversation`. Siralama zaten
+   guvenli: sohbetsiz kayit `peerRank` 4/5 (online/diger) → gercek sohbetler
+   (rank 2) ustte kalir.
+2. **Kendimle sohbette tek gri tik** — iki ayri hata birdendi:
+   (a) `direct_key` ayristirmasi `.find(part => part !== me)` kendi sohbetimde
+   (`<id>|<id>`) HICBIR SEY bulamiyordu → kendi satirim sohbet verisini
+   (onizleme, rozet, son mesaj, tik) kaybediyordu;
+   (b) tik damgasi sunucudan hic gelmiyordu, cunku `markRead`/`markDelivered`
+   goruntuleyicinin KENDI mesajini haric tutar (`.neq('sender_id', viewerId)`) —
+   2026-10-16'da tiklerin yalan olmasini engelleyen duzeltmenin dogal sonucu.
+   Kendimle sohbette ALICI DA BENIM → karar yerel: `TickOverride.selfChat`.
+   Tik kaynagi TEK kaldi: `chat-ticks.ts:styleFor` (failed → pending → selfChat →
+   read → delivered → sent). `selfChat` balonda (`tickFor(m, {..., selfChat})`)
+   ve sohbet listesinde (`tickForFlags(p.lastMessage, { selfChat })`) AYNI
+   sekilde kullanilir.
+3. **Kendi noktam kirmiziya dusuyordu** — iki katmanli kok neden:
+   (a) yerel kural "30 sn etkilesim yoksa çevrimdisi" idi (`LOCAL_ONLINE_TTL_MS`
+   - fare/klavye/scroll dinleyicileri) → uzun mesaji okurken kendi noktam
+     kirmizi; (b) sunucu senkronu **5 dk** ama `presenceOf` tazelik penceresi
+     **60 sn** (`PRESENCE_ONLINE_MS`) → nabiz pencereler ARASINDA kaciyordu, yani
+     HERKES herkese çevrimdisi gorunuyordu. → (a) yerel kural tek soruya indi:
+     **sekme gorunur mu** (`document.hidden`); tiklama dinleyicileri SILINDI
+     (sadece her kaydirmada bosa calisiyorlardi); (b) `SYNC_INTERVAL_MS` 30 sn
+     (= pencerenin yarisi: tek nabiz kaybi tolere edilir) + baglanir baglanmaz
+     `syncToServer(true)` ("buradayim" boslukta görünmesin). Sekme gorunur olunca
+     nokta ANINDA yesile donsun diye `setNow(Date.now())`.
+
+**KANIT:** `tsc --noEmit` **0** · `vitest run` **783/783 (65 dosya)** ·
+`eslint --max-warnings 0` (5 dosya) **0** · dev `/chat` HTTP **200**.
+Yeni testler: `chat-ticks.test.ts` +4 (selfChat: pending/failed kazanir, damgasiz
+mesaj cift mavi, selfChat'siz kural degismez) · `chat.admin.test.tsx` +1
+(GERCEK RENDER: kendi sohbetim `<id>|<id>` + damgasiz mesaj → balonda
+`aria-label` = "Okundu", yesil YOK) ve "sohbetsiz kayit artik GORUNUR" iddiasina
+cevrildi · `chat.test.ts` +5 kaynak sozlesmesi (admin suzgeci, `byPeer` self
+dallanmasi, selfChat kullanimi, `!document.hidden`, "nabiz araligi < tazelik
+penceresi" INVARIANTI: iki sabiti koddan okuyup karsilastirir).
+Negatif kontrol: `chat-ticks.test.ts` "selfChat verilmezse kural DEGISMEZ" →
+eski davranis (tek soluk tik) hala dogrulanir; DOM testi bayragi kaldirinca
+"Okundu" yerine "Gönderildi" beklentisiyle kirilir.
+
+**KANIT YOK:** gercek tarayicida tiklayarak dogrulama — BrowserOS neo bagli
+degil (`neo_*` araclari oturumda yok) → baska araca DUSULMEDI.
 
 ## Bu tur (2026-10-16, SOHBET: YANIT/ALINTI + TIK MANTIGI)
 

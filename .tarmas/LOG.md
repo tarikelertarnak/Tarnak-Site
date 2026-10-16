@@ -2356,3 +2356,72 @@ reply_to_id / delivered_at / read_at` + kismi indeks, (b) eski yanlis
 
 `supabase/chat.sql` SQL Editor'de bir kez calistirilmali (kolonlar + eski yanlis
 damga onarimi). Tekrar calistirmak zararsizdir.
+
+---
+
+## 2026-10-16 — ADMİN HERKESİ GÖRÜR + KENDİMLE SOHBET TİKİ + ÇEVRİMİÇİLİK [CHAT-015]
+
+**Kullanici 3 sikâyet (tek mesaj):** (1) "ben adminim neden bütün herkesi
+görmüyorum ... bütün kullanicilari görebilmeliyim sonuçta adminim", (2) "kendime
+mesaj gönderiyom tek tik nasil kala bilir kendime atinca kendim görmüyomuyum
+düzelt onu", (3) "kendim nasil çevrim disi ola biliyom düzelt".
+
+### Olculen kok nedenler
+
+1. **Admin herkesi gormuyordu — gizleyen yer ISTEMCIYDI.** Sunucu ucu
+   (`GET /api/chat/users`) admin'e ZATEN tüm profilleri döner
+   (`canSeeAllPeers(sessionUser)` dalı). Ama `chat.tsx` süzgeci
+   `p.id === selfId ? isAdmin : (!isAdmin || !!p.hasConversation)` admin için
+   "karsi taraf" dalında `hasConversation` arıyordu → hiç yazmamış kayıt listede
+   YOK. (2026-10-13'te "kayıt olup hiç yazmayan kişi paneli doldurmasın"
+   denmişti; 2026-10-16 isteği bunu admin için DEĞİŞTİRDİ.)
+2. **Kendimle sohbette tek gri tik — iki hata birdendi:**
+   (a) `direct_key` ayrıştırması `.find(part => part !== me)` kendi sohbetimde
+   (`<id>|<id>`) hiçbir şey bulamıyordu → kendi satırım sohbet verisini
+   (önizleme, rozet, son mesaj tiki) kaybediyordu;
+   (b) damga sunucudan hiç gelmiyordu; çünkü `markRead`/`markDelivered`
+   görüntüleyicinin KENDİ mesajını hariç tutar (`.neq('sender_id', viewerId)`) —
+   yani CHAT-014'te tiklerin yalan olmasını engelleyen düzeltmenin doğal sonucu.
+   Kendimle sohbette ALICI DA BENİM → karar yerel olmalı.
+3. **Kendi noktam kırmızıya düşüyordu — iki katmanlı:**
+   (a) yerel kural "30 sn etkileşim yoksa çevrimdışı" (`LOCAL_ONLINE_TTL_MS` +
+   fare/klavye/scroll dinleyicileri) → uzun bir mesajı okurken kendi noktam
+   kırmızı; (b) sunucu senkronu **5 dk** ama `presenceOf` tazelik penceresi
+   **60 sn** (`PRESENCE_ONLINE_MS`) → nabız pencereler ARASINDA kaçıyordu, yani
+   HERKES herkese çevrimdışı görünüyordu.
+
+### Duzeltmeler
+
+- `visiblePeers` → `isAdmin ? true : p.id !== selfId && !!p.hasConversation`.
+  Sıralama güvenli: sohbetsiz kayıt `peerRank` 4/5 → gerçek sohbetler (rank 2)
+  üstte kalır.
+- `byPeer` eşlemesi:
+  `parts.find(part => part !== me) ?? (parts[0] === me ? me : undefined)` →
+  kendi sohbetim artık liste verisini taşır.
+- Tik kararı TEK kaynakta kaldı (`lib/chat-ticks.ts:styleFor`): yeni
+  `TickOverride.selfChat` → failed > pending > **selfChat (read=true)** > read >
+  delivered > sent. Balonda `tickFor(m, { pending, failed, selfChat })`, listede
+  `tickForFlags(p.lastMessage, { selfChat: p.id === selfId })`.
+- **Çevrimiçilik = SEKME GÖRÜNÜRLÜĞÜ** (`document.hidden`).
+  `LOCAL_ONLINE_TTL_MS` + `lastActivity` + `activityTimerRef` + tıklama/tuş/
+  dokunma/kaydırma dinleyicileri SİLİNDİ (yalnız her kaydırmada boşa
+  çalışıyorlardı; çevrimdışı kararına etkileri yoktu çünkü render
+  tetiklemiyorlardı).
+- `SYNC_INTERVAL_MS` 5 dk → **30 sn** (= tazelik penceresinin yarısı; tek nabız
+  kaybı tolere edilir) + bağlanır bağlanmaz `syncToServer(true)` ("buradayım").
+- Sekmeye dönünce nokta ANINDA yeşil olsun diye `setNow(Date.now())` (ref tek
+  başına render tetiklemez; 10 sn'lik saat tiki beklenirdi).
+
+### Kapilar / kanit
+
+- `tsc --noEmit` **0** · `vitest run` **783/783 (65 dosya)** ·
+  `eslint --max-warnings 0` (5 dosya) **0** · dev `/chat` HTTP **200**.
+- Yeni testler: `chat-ticks.test.ts` +4 (selfChat: damgasız mesaj çift mavi,
+  pending/failed kazanır, selfChat'siz kural DEĞİŞMEZ = negatif kontrol),
+  `chat.admin.test.tsx` +1 **gerçek render** (kendi sohbetim `<id>|<id>` +
+  damgasız mesaj → balonda `aria-label` = Okundu, yeşil yok) ve eski "sohbetsiz
+  kayıt görünmemeli" iddiası "GÖRÜNÜR"e çevrildi (kullanıcı isteği),
+  `chat.test.ts` +5 kaynak sözleşmesi + **invariant testi**: `SYNC_INTERVAL_MS`
+  (koddan okunur) `PRESENCE_ONLINE_MS`ten (chat-peers.ts) KÜÇÜK olmalı.
+- **KANIT YOK:** gerçek tarayıcıda tıklayarak doğrulama — BrowserOS neo bağlı
+  değil (`neo_*` araçları oturumda yok) → başka araca DÜŞÜLMEDİ.
