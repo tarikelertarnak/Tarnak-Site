@@ -2425,3 +2425,33 @@ düzelt onu", (3) "kendim nasil çevrim disi ola biliyom düzelt".
   (koddan okunur) `PRESENCE_ONLINE_MS`ten (chat-peers.ts) KÜÇÜK olmalı.
 - **KANIT YOK:** gerçek tarayıcıda tıklayarak doğrulama — BrowserOS neo bağlı
   değil (`neo_*` araçları oturumda yok) → başka araca DÜŞÜLMEDİ.
+
+## 2026-10-16 — İŞ 1 ziyaretçi sayımı + Ayarlar orta alan paneli (commit 7311ff2)
+
+- **İŞ 1 (TAMAM):** `scripts/schema-visits.sql` (visits/visitor_links/app_settings/
+  visit_stats; unique(visitor_id,day); IP yok) · `src/lib/visits.ts` +19 test ·
+  `/api/visits` (1 yıl httpOnly cookie, upsert, visitor_links eşleme, rate limit, bot/
+  yol hariç) · `/api/admin/visits` (BUGÜN/7/30/TOPLAM tekil kişi + "kendi ziyaretlerimi
+  sayma") · `visit-tracker.tsx` + `admin/visitor-card.tsx` (Genel Bakış KPI şeridi).
+  Sayım: PostgREST'te DISTINCT olmadığı için JS `Set` ile tekil `visitor_id`.
+- **Ayarlar düzeni:** `ui/drawer.tsx` → `side="middle"`. Ayarlar artık orta ana alanın
+  üstünde (sağ dar çekmece değil): `#layout-main`'e portal, `aria-modal="false"`,
+  `role="dialog"`, açıkken yalnızca `#layout-main-content` inert, odak tuzağı + odak
+  geri verme, X/Esc/dışına tıklama kapatır. Gövde kaydırması KİLİTLENMEZ.
+  Sol panel artık Ayarlar açılınca KAPANMIYOR (`setIsOpen(false)` kaldırıldı);
+  mobilde ise `sidebar:close` olayı ile çekmece kapanıyor.
+- **Yeni jetonlar:** `--layout-gap: 10px`, `--layout-panel-width`, `--layout-right-width`.
+- **Guard:** `src/components/ui/middle-overlay.test.tsx` **10 test** (portal, aria,
+  inert aç/kapa, X/Esc/dışına tıklama, içine tıklama kapatmaz) + **negatif kontrol**
+  (`side="right"` orta içeriği inert YAPMAZ, portal edilmez).
+- **Kanıt:** `tsc --noEmit` **0** · değişen 5 dosyada `eslint --max-warnings 0` **0** ·
+  `vitest run` **921/922**. Tek kırık `chat.admin.test.tsx` ("kendimle sohbet") →
+  **ÖNCEDEN VAR**: değişiklikler `git stash`'lenip ölçüldü, temel durumda da kırık
+  (birden fazla 'TARIK ELER TARNAK (Siz)' öğesi). Benim regresyonum DEĞİL.
+- **KANIT YOK / ERTELENDİ:** (a) sol panelin masaüstünde sütun olması — tüm sayfa
+  genişliklerini değiştirir, görsel doğrulama yok → yapılmadı; (b) sağ panel — içeriği
+  kullanıcı belirtmedi, içerik uydurma yasak → oluşturulmadı; (c) panel aç/kapa
+  durumunun localStorage'da saklanması — Sidebar gezinmede otomatik kapandığı için
+  anlamsız; (d) **"5 Issues"** Next.js dev overlay hataları — tarayıcı olmadan
+  gözlemlenemedi → statik doğrulama (tsc/eslint/test + hydration guard) yapıldı.
+- **KULLANICI EYLEMİ:** Supabase SQL Editor'de `scripts/schema-visits.sql` çalıştır.

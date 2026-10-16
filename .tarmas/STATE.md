@@ -1,10 +1,10 @@
 # TARMAS STATE
 
 status: ACTIVE
-updated: 2026-10-15T00:00:00+03:00
+updated: 2026-10-16T00:00:00+03:00
 protocol_path: C:\Users\TARIKELER\.config\opencode\command\tarmas.md
 host: OpenCode (opencode) — see HOST.md
-branch: faz-1-guvenlik last_commit: ec46dc8 (chat local-first) + 574ea5a (brand hover) + 4cd4c97 (emoji boyut) + 7532fc3 (STATE); push/deploy YOK
+branch: faz-1-guvenlik last_commit: 7311ff2 (İŞ 1 ziyaretçi sayımı + Ayarlar orta alan paneli) + ec46dc8 (chat local-first) + 574ea5a (brand hover) + 4cd4c97 (emoji boyut) + 7532fc3 (STATE); push/deploy YOK
 commit engeli COZULDU (2026-10-14): onceki turlarda commit takiliyordu; kok neden
 Roaming\npm altindaki pnpm kisayolu bozuktu → pnpm.exe tam yol kullan
 (WinGet: AppData\Local\Microsoft\WinGet\Packages\pnpm.pnpm_...\pnpm.exe).
@@ -668,3 +668,62 @@ kalmadı, QR yeni panel sınıfları HTML'de. **NEGATIF KONTROL (3/3):**
 (%TEMP%\opencode\negctl-hero.cjs) ofset işareti ters → 4 test; ilk buton
 /x/ → 1 test; QR 148→132 → 1 test = **6 test kırıldı** → üçü de byte-exact
 geri (sha 9cd12b26/761169a9/56910523) → yeşil.
+
+=== TUR 2026-10-16 — İŞ 1 (ziyaretçi sayımı) + Ayarlar/yan panel düzeni ===
+
+commit: 7311ff2 (34 dosya, 3044+/242-) · push/deploy YOK · branch faz-1-guvenlik
+
+**İŞ 1 — Ziyaretçi (tekil kişi) sayımı — TAMAM**
+- Migration: scripts/schema-visits.sql (visits, visitor_links, app_settings, visit_stats).
+  Idempotent. unique(visitor_id, day) → kişi+gün TEK satır. Ham IP SAKLANMAZ.
+  **KULLANICI ÇALIŞTIRACAK:** Supabase SQL Editor'de bu dosya (repoda takipli).
+- src/lib/visits.ts + 19 test: bot/crawler UA, hariç yollar (/admin /api /_next /static
+  favicon robots sitemap), prefetch/prerender, kişi anahtarı (userId varsa userId yoksa
+  visitorId), dayBucket/addDays/fmtDate/periodRange(today|7d|30d|total), makeVisitorId.
+- /api/visits POST: 1 yıl httpOnly first-party visitorId cookie; upsert(onConflict
+  visitor_id,day); girişli ise visitor_links ile geriye dönük eşleme; bellek içi rate
+  limit (10 sn/ziyaretçi); bot ve hariç yol → kayıt yok; app_settings.excludeSelf +
+  excludeSelfVisitorId eşleşirse kayıt yok. adminDb() null ise sessiz geçer (env yoksa).
+- /api/admin/visits GET: today/last7/last30/total → PostgREST'te DISTINCT yok, bu yüzden
+  JS'te Set ile tekil visitor_id. POST: "kendi ziyaretlerimi sayma" anahtarı (app_settings).
+- visit-tracker.tsx → layout.tsx'e bağlandı; admin/visitor-card.tsx → Genel Bakış'a
+  KPI şeridine eklendi (ızgara 2→3 kolon: sm:grid-cols-2 lg:grid-cols-3).
+
+**Ayarlar / yan panel düzeni — KISMEN (kullanıcı spec'inin 5/8 maddesi)**
+- Ayarlar artık sağdan kayan dar çekmece DEĞİL → orta ana alanın üstünde.
+  ui/drawer.tsx: `side="middle"` modu (right/left davranışı DEĞİŞMEDİ).
+  * #layout-main (layout.tsx) içine `createPortal` → sol/sağ paneller DOM'da dışarıda.
+  * role="dialog" · aria-modal="false" · aria-label (paneller etkin kalsın).
+  * Açıkken YALNIZCA #layout-main-content `inert` (paneller inert DEĞİL).
+  * Odak tuzağı (Tab döngüsü) + kapanınca odağı açan öğeye geri verme.
+  * X · Esc · orta alanın DIŞINA tıklama kapatır (pointerdown capture; kapsayıcı
+    dışındaki tıklamalar → sol panel, sağ panel, boşluk). İçine tıklama kapatmaz.
+  * Gövde kaydırmasını KİLİTLEMEZ (paneller kullanılabilir kalsın).
+  * Mobil: `fixed inset-0 pt-14` → tam genişlik; <768px'te Ayarlar açılınca
+    `sidebar:close` olayı ile sol çekmece kapanır (masaüstünde paneller açık kalır).
+- layout.tsx: `#layout-main` (relative) + `#layout-main-content` sarmalayıcı.
+  Sidebar zaten `fixed` bir katman → akışta yer kaplamaz → SAYFA GENİŞLİKLERİ DEĞİŞMEDİ.
+- globals.css: `--layout-gap: 10px`, `--layout-panel-width`, `--layout-right-width`.
+- sidebar.tsx: Ayarlar butonu artık sol paneli KAPATMIYOR (kullanıcı şikâyeti);
+  `sidebar:close` olayını dinliyor.
+- Guard: ui/middle-overlay.test.tsx **10 test** (portal, aria, inert aç/kapa,
+  X/Esc/dışına tıklama, içine tıklama + NEGATİF KONTROL: side="right" orta içeriği
+  inert YAPMAZ ve kapsayıcıya portal EDİLMEZ).
+
+**UYGULANMAYAN (bilerek — görsel doğrulama yapılamıyor, BrowserOS neo bağlı değil):**
+- Sol panelin masaüstünde SÜTUN (column) olması: Sidebar şu an hâlâ `fixed` overlay
+  çekmece; sütuna çevirmek tüm sayfaların genişliğini değiştirir ve gözle doğrulanamaz.
+  Ayrıca Sidebar gezinmede otomatik kapanıyor → açık/kapalı durumunu localStorage'da
+  saklamak anlamsız kalıyor (her tıklamada false yazılır).
+- SAĞ PANEL: içeriği kullanıcı belirtmedi (içerik uydurma yasak) → oluşturulmadı.
+- Panellerin açık/kapalı durumunun localStorage'da saklanması (yukarıdaki nedenle).
+- "5 Issues" (Next.js dev overlay): tarayıcı olmadan GÖZLEMLENEMEDİ. Statik doğrulama
+  yapıldı: tsc 0 · eslint 0 (değişen dosyalar) · yeni kod hydration/key uyarısı
+  üretmiyor (portal ve inert yalnızca istemcide, `open` ilk render'da false).
+
+**KANIT:** tsc 0 · `eslint --max-warnings 0` (5 dosya: drawer, settings-dropdown,
+sidebar, layout, middle-overlay.test) 0 · `vitest run` **921/922** (70 dosya).
+TEK KIRIK: src/components/chat/chat.admin.test.tsx > "kendimle sohbet: tik çift mavi"
+→ ÖNCEDEN VAR (negatif kontrol: değişiklikler `git stash` ile alınıp ölçüldü,
+temel durumda DA kırık; bulgu: `getByText('TARIK ELER TARNAK (Siz)')` birden fazla
+öğe buluyor).
