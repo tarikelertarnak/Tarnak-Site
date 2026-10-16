@@ -540,5 +540,16 @@
   "chat.findPerson": "Find a person",
   "chat.refresh": "Refresh chat",
   "chat.scrollBottom": "Go to latest",
-  "chat.you": "You"
+  "chat.you": "You",
+  "chat.deletedMessage": "This message was deleted",
+  "chat.replyJump": "Jump to replied message",
+  "chat.replyNotFound": "Message not found",
+  "chat.cancelReply": "Cancel reply",
+  "chat.retrySend": "Retry",
+  "chat.sendingTick": "Sending",
+  "chat.sendFailedTick": "Failed to send",
+  "chat.mediaPhoto": "Photo",
+  "chat.mediaVideo": "Video",
+  "chat.mediaAudio": "Audio message",
+  "chat.mediaFile": "File"
 }

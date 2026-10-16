@@ -3,15 +3,20 @@
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
 import type { ChatMessageRow } from '@/lib/chat-db'
 import type { Presence, PresenceState } from '@/lib/chat-peers'
+import type { TickStyle } from '@/lib/chat-ticks'
 import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { EmojiPicker } from '@/components/chat/emoji-picker'
+import { useSwipeReply } from '@/components/chat/use-swipe-reply'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import {
+  ClockIcon,
+  ErrorIcon,
   MenuIcon,
   MicIcon,
   PaperclipIcon,
+  ReplyIcon,
   SendIcon,
   StickerIcon,
   TickReadIcon,
@@ -24,7 +29,8 @@ import {
   sortPeers,
   typingLabel,
 } from '@/lib/chat-peers'
-import { tickFor } from '@/lib/chat-ticks'
+import { replyPlaceholderKey, replySenderLabel, toReplyPreview } from '@/lib/chat-reply'
+import { TICK_LIST_COLORS, tickFor, tickForFlags } from '@/lib/chat-ticks'
 import { helloMessage } from '@/lib/greeting'
 import { MenuHeader, MenuItem, menuPoint, MenuSurface, useLongPress } from './context-menu'
 
@@ -98,6 +104,52 @@ function isNarrowScreen() {
 function areaMenuAt(x: number, y: number) {
   return { kind: 'area' as const, x, y }
 }
+
+/**
+ * İSTEMCİ TARAFI MESAJ (2026-10-16): sunucu satırı + iyimser gönderim durumu.
+ * `_pending` → saat ikonu, `_failed` → kırmızı ünlem + "Tekrar dene".
+ * Sunucudan gelen satırlarda ikisi de yoktur.
+ */
+type UiMessage = ChatMessageRow & { _pending?: boolean, _failed?: boolean }
+
+/**
+ * ALINTI ŞERİDİ RENGİ (kullanıcı isteği: "gönderene göre SABİT renk; kendi
+ * mesajın için mavi"). Renk gönderen id'sinin karmasından seçilir → aynı kişi
+ * her zaman aynı renkte görünür. Kendi mesajlarım (ve kendi alıntılarım) sitenin
+ * mavi vurgusunu (`--tprimary`) kullanır.
+ */
+const QUOTE_ACCENTS = [
+  { bar: 'border-pink-400', text: 'text-pink-400' },
+  { bar: 'border-amber-400', text: 'text-amber-400' },
+  { bar: 'border-emerald-400', text: 'text-emerald-400' },
+  { bar: 'border-violet-400', text: 'text-violet-400' },
+  { bar: 'border-teal-400', text: 'text-teal-400' },
+  { bar: 'border-rose-400', text: 'text-rose-400' },
+  { bar: 'border-indigo-400', text: 'text-indigo-400' },
+  { bar: 'border-orange-400', text: 'text-orange-400' },
+]
+
+/**
+ * Alıntı şeridi/başlık rengi.
+ * `onOwnBubble`: alıntı KENDİ mavi balonumun içindeyse mavi şerit görünmez —
+ * orada balonun metin renginin yarı saydam hâli kullanılır (okunur kalır).
+ */
+function quoteAccent(senderId: string, isMine: boolean, onOwnBubble: boolean) {
+  if (onOwnBubble) {
+    return { bar: 'border-primary-fg/70', text: 'text-primary-fg/90' }
+  }
+  if (isMine) {
+    return { bar: 'border-primary', text: 'text-primary' }
+  }
+  let hash = 0
+  for (let i = 0; i < senderId.length; i++) {
+    hash = (hash * 31 + senderId.charCodeAt(i)) >>> 0
+  }
+  return QUOTE_ACCENTS[hash % QUOTE_ACCENTS.length]
+}
+
+/** Kaydırma sonrası vurgulanan mesajın parlaması (ms). */
+const FLASH_MS = 1_900
 
 /**
  * YEREL ÇEVRIMİÇİ DURUMU (local-first, 2026-10-14).
@@ -201,7 +253,7 @@ interface PeerRow extends Peer {
  */
 export function Chat({ nextPath = '/chat' }: ChatProps) {
   const { t, locale } = useT()
-  const [messages, setMessages] = useState<ChatMessageRow[]>([])
+  const [messages, setMessages] = useState<UiMessage[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
@@ -226,6 +278,16 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   const [forwardMsg, setForwardMsg] = useState<ChatMessageRow | null>(null)
   const [infoMsg, setInfoMsg] = useState<ChatMessageRow | null>(null)
   const [confirmMsg, setConfirmMsg] = useState<ChatMessageRow | null>(null)
+  /** Kaydırılıp vurgulanan mesaj (aynı mesaja tekrar tıklanınca animasyon yeniden oynar). */
+  const [flashId, setFlashId] = useState<string | null>(null)
+  /** Kısa bilgi bildirimi ("Mesaj bulunamadı" vb.) — kendiliğinden kaybolur. */
+  const [notice, setNotice] = useState<string | null>(null)
+  /**
+   * Mesaj listesi görünür alanda mı (2026-10-16): "okundu" damgası YALNIZCA
+   * sekme görünürken VE liste ekrandayken atılır — arka plandaki sekme
+   * kendiliğinden okundu saymaz (kullanıcı isteği).
+   */
+  const [listVisible, setListVisible] = useState(false)
   const [showEmoji, setShowEmoji] = useState(false)
   /**
    * Liste paneli GENİŞ mi (2026-10-13 kullanıcı isteği: "hamburger tam ekran
@@ -274,6 +336,31 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   const isAuthenticated = !!session
   const currentUserId = session?.id ?? ''
   const isAdmin = session?.role === 'admin'
+  /** Sohbet kimliğim: "bu mesaj benim mi?" kararı sunucunun verdiği kimlikle verilir. */
+  const myId = selfId || currentUserId
+
+  /**
+   * CANLI yanıt hedefi: seçim anındaki kopya yerine LİSTEDEKİ güncel satır
+   * tercih edilir. Böylece yanıtlanan mesaj sonradan silinirse alıntı bloğu ve
+   * giriş üstü önizleme anında "Bu mesaj silindi"ye döner (kullanıcı isteği);
+   * satır listeden tamamen düşmüşse seçim anındaki kopya kullanılır.
+   */
+  const replyLive = useMemo(
+    () => (replyTo ? messages.find(m => m.id === replyTo.id) ?? replyTo : null),
+    [replyTo, messages],
+  )
+
+  /** Yanıtlamayı başlat (menü, hover oku, kaydırma — hepsi buraya gelir). */
+  const startReply = useCallback((messageId: string) => {
+    const row = messages.find(m => m.id === messageId)
+    if (!row || row.deleted_for_all) {
+      return
+    }
+    setReplyTo(row)
+    // Kullanıcı isteği: "seçince giriş alanına otomatik odaklan".
+    inputRef.current?.focus()
+  }, [messages])
+  const swipeReply = useSwipeReply(startReply)
 
   /**
    * KİŞİ LİSTESİ (2026-10-11; yetki 2026-10-12'de herkese açıldı).
@@ -704,15 +791,32 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     box.scrollTo({ top: box.scrollHeight, behavior: smooth ? 'smooth' : 'auto' })
   }
 
-  /** Yanıtlanan mesaja git — kaydırma yine yalnız mesaj alanında. */
-  function scrollToMessage(id: string) {
-    const el = document.getElementById(`m-${id}`)
+  /**
+   * Yanıtlanan mesaja git — kaydırma yine YALNIZ mesaj alanında.
+   *
+   * `scrollIntoView` BİLEREK kullanılmaz: belge kaydırılabilirse ATALARIN
+   * HEPSİNİ kaydırır (bkz. `scrollToBottom` notu, 2026-10-13 ölçümü) ve sayfa
+   * zıplar. Onun yerine hedef, kapsayıcı içinde ORTALANIR — istenen davranış
+   * (`block: 'center'`) aynı, yan etkisi yok.
+   *
+   * Varışta mesaj ~2 sn mavi tona parlar (`msg-flash`, CSS) ve bildirim
+   * kaybolur. Mesaj listede yoksa "Mesaj bulunamadı" bildirimi gösterilir.
+   */
+  function jumpToMessage(id: string) {
+    const el = document.getElementById(`msg-${id}`)
     const box = listRef.current
     if (!el || !box) {
+      setNotice(t('chat.replyNotFound'))
       return
     }
     const delta = el.getBoundingClientRect().top - box.getBoundingClientRect().top
-    box.scrollTo({ top: box.scrollTop + delta - 40, behavior: 'smooth' })
+    box.scrollTo({
+      top: box.scrollTop + delta - (box.clientHeight - el.clientHeight) / 2,
+      behavior: 'smooth',
+    })
+    // Aynı mesaja tekrar tıklanınca animasyon YENİDEN oynasın: önce temizle.
+    setFlashId(null)
+    requestAnimationFrame(() => setFlashId(id))
   }
 
   /** Bir kişiye tıklanınca doğrudan sohbeti açar (idempotent). */
@@ -728,9 +832,10 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     setActivePeerId(peerId)
     /*
       ROZET SIFIRLANIR (kullanıcı isteği: "sohbeti açınca okunmamış sıfırlansın,
-      rozet kaysın"). Sunucu tarafı da okundu işaretler (`GET /api/chat` →
-      `markRead`); liste 2 sn'de bir tazelendiği için sunucudan da 0 gelir —
-      buradaki sıfırlama yalnız ANINDA görünmesini sağlar (yeni yoklama yok).
+      rozet kaysın"). 2026-10-16: okundu damgası artık `GET`te DEĞİL, alıcı
+      sohbeti açık + sekme görünür + mesaj görünür alanda iken ayrı bir
+      `action: 'read'` isteğiyle atılır (kendi mesajımı okundu yapmaz); buradaki
+      sıfırlama yalnız rozetin ANINDA düşmesini sağlar.
     */
     setPeers(prev => prev && prev.some(p => p.id === peerId && p.unread)
       ? prev.map(p => (p.id === peerId ? { ...p, unread: 0 } : p))
@@ -834,16 +939,18 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   /** Panel sürüklemesi (pointer) — desen: `components/sidebar.tsx`. */
   const startResize = useCallback((e: ReactPointerEvent<HTMLDivElement>) => {
     e.preventDefault()
-    // Katlanmış (KOMPAKT 72px) panelde de tutamaç aktiftir (2026-10-15
-    // kullanıcı isteği: "her zaman değiştirilebilsin"): sürükleme paneli
-    // açar ve başlangıç GÖRÜNÜR genişlik (72px) üzerinden hesaplanır.
+    // Katlanmış (KOMPAKT 72px) panelde de tutamaç aktiftir: sürükleme paneli
+    // açar ve başlangıç GÖRÜNÜR genişlik (72px) üzerinden hesaplar.
     if (!panelOpen)
       setPanelOpen(true)
     const startX = e.clientX
     const startWidth = panelOpen ? panelWidth : 72
+    const isMobile = window.innerWidth < 768
+    const minW = isMobile ? 72 : CHAT_PANEL_MIN
+    const maxW = isMobile ? 300 : CHAT_PANEL_MAX
     const move = (ev: PointerEvent) => {
       setPanelWidth(
-        Math.min(CHAT_PANEL_MAX, Math.max(CHAT_PANEL_MIN, startWidth + ev.clientX - startX)),
+        Math.min(maxW, Math.max(minW, startWidth + ev.clientX - startX)),
       )
     }
     const up = () => {
@@ -861,10 +968,13 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       return
     }
     e.preventDefault()
-    // Katlanmış panelde ok tuşu da paneli açar (tutamaç her durumda işler).
+    // Katlanmış panelde ok tuşu da paneli açar.
     if (!panelOpen)
       setPanelOpen(true)
-    setPanelWidth(w => Math.min(CHAT_PANEL_MAX, Math.max(CHAT_PANEL_MIN, w + step)))
+    const isMobile = window.innerWidth < 768
+    const minW = isMobile ? 72 : CHAT_PANEL_MIN
+    const maxW = isMobile ? 300 : CHAT_PANEL_MAX
+    setPanelWidth(w => Math.min(maxW, Math.max(minW, w + step)))
   }
 
   /*
@@ -927,7 +1037,16 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         setError(json.message ?? 'Sohbet yüklenemedi.')
         return
       }
-      setMessages(json.messages ?? [])
+      /*
+        Sunucu listesi YEREL (iyimser) satırlarla birleştirilir: gönderim
+        sürerken gelen yoklama, "saat" durumundaki mesajı ekrandan DÜŞÜRMESİN
+        (sunucu onu ancak POST bitince döndürür).
+      */
+      setMessages((prev) => {
+        const server = (json.messages ?? []) as UiMessage[]
+        const local = prev.filter(m => (m._pending || m._failed) && !server.some(s => s.id === m.id))
+        return local.length ? [...server, ...local] : server
+      })
       setError(null)
     }
     catch {
@@ -968,6 +1087,96 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     scrollToBottom(true)
   }, [messages.length])
 
+  /*
+    ── OKUNDU DAMGASI (2026-10-16) ──────────────────────────────────────────
+    Kullanıcı isteği: "readAt yalnızca alıcı o sohbeti açıkken, pencere odakta
+    ve mesaj görünür alana girdiğinde set edilsin. Sekme arka plandaysa okundu
+    sayılmasın."
+
+    Sunucu artık mesaj çekilirken okundu İŞARETLEMEZ; damga buradan istenir.
+    Üç kapı: (1) sohbet açık, (2) sekme görünür, (3) mesaj listesi görünür
+    alanda. Karşı taraftan okunmamış mesaj YOKSA istek hiç gönderilmez →
+    yoklama her 2 sn'de bir boşa POST atmaz (kendini sınırlar: `read_at`
+    dönünce koşul kendiliğinden kapanır).
+  */
+  useEffect(() => {
+    if (!conversationId || !isAuthenticated || !listVisible) {
+      return
+    }
+    const pending = messages.some(m => m.sender_id !== myId && !m.read_at)
+    if (!pending) {
+      return
+    }
+    const report = () => {
+      if (document.visibilityState !== 'visible') {
+        return
+      }
+      void fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'read', conversationId }),
+      })
+    }
+    report()
+    document.addEventListener('visibilitychange', report)
+    return () => document.removeEventListener('visibilitychange', report)
+  }, [conversationId, isAuthenticated, listVisible, messages, myId])
+
+  /** Mesaj listesi görünür alanda mı — okundu damgasının üçüncü kapısı. */
+  useEffect(() => {
+    const box = listRef.current
+    if (!box || typeof IntersectionObserver === 'undefined') {
+      setListVisible(true)
+      return
+    }
+    const obs = new IntersectionObserver(
+      entries => setListVisible(entries.some(e => e.isIntersecting)),
+      { threshold: 0.1 },
+    )
+    obs.observe(box)
+    return () => obs.disconnect()
+  }, [conversationId])
+
+  /** Vurgu animasyonu biter → sınıf kalkar (aynı mesaja tekrar tıklanınca yeniden oynar). */
+  useEffect(() => {
+    if (!flashId) {
+      return
+    }
+    const id = setTimeout(() => setFlashId(null), FLASH_MS)
+    return () => clearTimeout(id)
+  }, [flashId])
+
+  /** Bilgi bildirimi kendiliğinden kaybolur. */
+  useEffect(() => {
+    if (!notice) {
+      return
+    }
+    const id = setTimeout(() => setNotice(null), 2_500)
+    return () => clearTimeout(id)
+  }, [notice])
+
+  /**
+   * Esc → yanıtlamayı iptal et (kullanıcı isteği). Menülerin kendi Esc
+   * dinleyicisi ayrıdır; ikisi birlikte kapanabilir (zararsız).
+   */
+  useEffect(() => {
+    if (!replyTo) {
+      return
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setReplyTo(null)
+      }
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [replyTo])
+
+  /** Sohbet değişince yanıt hedefi TEMİZLENİR (kullanıcı isteği). */
+  useEffect(() => {
+    setReplyTo(null)
+  }, [conversationId])
+
   /**
    * Emojiyi metin alanında İMLECİN bulunduğu yere ekler, odak alanda kalır
    * (2026-10-12 kullanıcı isteği). Taslağın sonuna eklemek imleci bozardı.
@@ -992,39 +1201,96 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   /**
    * Mesaj gönderir. `override` verilirse taslak yerine o metin gider (boş
    * sohbetteki "Merhaba de!" düğmesi bunu kullanır — AYRI gönderme mantığı
-   * yazılmaz). Gönderim başarılı olunca yazma durumu HEMEN temizlenir.
+   * yazılmaz).
+   *
+   * İYİMSER (2026-10-16 kullanıcı isteği): mesaj önce YEREL olarak "saat"
+   * durumunda listeye girer, sunucu yanıtı gelince gerçek satırla değiştirilir;
+   * hata olursa kırmızı ünlem + "Tekrar dene" olur. Böylece tik HİÇBİR ZAMAN
+   * doğrudan çift tikle başlamaz (kullanıcının şikâyeti: hiç görülmemiş mesajda
+   * çift mavi tik).
    */
   async function send(override?: string) {
     const text = (override ?? draft).trim()
-    if ((!text && !replyTo) || sending || !conversationId) {
+    const target = replyLive
+    // Boş metin GÖNDERİLMEZ: yanıt hedefi seçili olsa bile içeriksiz bir mesaj
+    // yazılmaz (medya `uploadFile` yolundan gider).
+    if (!text || sending || !conversationId) {
       return
     }
+    const tmpId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const optimistic: UiMessage = {
+      id: tmpId,
+      conversation_id: conversationId,
+      sender_id: myId,
+      sender_name: '',
+      text: text || null,
+      kind: 'text',
+      file_url: null,
+      file_name: null,
+      file_type: null,
+      file_size: null,
+      audio_duration: null,
+      reply_to_id: target?.id ?? null,
+      reply_to: target ? toReplyPreview(target) : null,
+      delivered_at: null,
+      read_at: null,
+      pinned: false,
+      pinned_at: null,
+      deleted_for_all: false,
+      deleted_by: null,
+      deleted_at: null,
+      created_at: new Date().toISOString(),
+      _pending: true,
+    }
+    setMessages(prev => [...prev, optimistic])
+    if (!override) {
+      setDraft('')
+    }
+    setReplyTo(null)
     setSending(true)
+    await deliver(tmpId, text, target?.id)
+    setSending(false)
+  }
+
+  /**
+   * Tek bir metin mesajının sunucuya teslimi. İlk gönderim ile "Tekrar dene"
+   * AYNI yolu kullanır (ikinci bir gönderme mantığı yazılmaz).
+   */
+  async function deliver(tmpId: string, text: string, replyToId?: string) {
+    if (!conversationId) {
+      return
+    }
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId, text, replyToId: replyTo?.id }),
+        body: JSON.stringify({ conversationId, text, replyToId }),
       })
       const json = await res.json()
       if (res.ok && json.success) {
-        setMessages(prev => [...prev, json.data])
-        if (!override) {
-          setDraft('')
-        }
-        setReplyTo(null)
+        setMessages(prev => prev.map(m => (m.id === tmpId
+          ? { ...json.data, reply_to: m.reply_to ?? null }
+          : m)))
         stopTyping()
+        return
       }
-      else {
-        setError(json.message ?? 'Gönderilemedi.')
-      }
+      fail(tmpId, json.message)
     }
     catch {
-      setError('Gönderilemedi.')
+      fail(tmpId)
     }
-    finally {
-      setSending(false)
-    }
+  }
+
+  /** Teslim edilemeyen mesajı "başarısız" işaretle (silinmez; tekrar denenebilir). */
+  function fail(tmpId: string, message?: string) {
+    setMessages(prev => prev.map(m => (m.id === tmpId ? { ...m, _pending: false, _failed: true } : m)))
+    setError(message ?? t('chat.sendFailed'))
+  }
+
+  /** Başarısız mesajı yeniden gönder (kullanıcı isteği: "kırmızı ünlem + Tekrar dene"). */
+  async function retry(m: UiMessage) {
+    setMessages(prev => prev.map(x => (x.id === m.id ? { ...x, _failed: false, _pending: true } : x)))
+    await deliver(m.id, m.text ?? '', m.reply_to_id ?? undefined)
   }
 
   async function uploadFile(file: File) {
@@ -1054,6 +1320,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       const isAudio = savedType.startsWith('audio/')
       const isImage = savedType.startsWith('image/')
       const isVideo = savedType.startsWith('video/')
+      const target = replyLive
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1061,11 +1328,14 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           conversationId,
           kind: isAudio ? 'audio' : isVideo ? 'video' : isImage ? 'image' : 'file',
           file: upJson.file,
+          // Medya da YANITLANABİLİR (2026-10-16) — taslakta bekleyen yanıt düşmez.
+          replyToId: target?.id,
         }),
       })
       const json = await res.json()
       if (res.ok && json.success) {
-        setMessages(prev => [...prev, json.data])
+        setMessages(prev => [...prev, { ...json.data, reply_to: target ? toReplyPreview(target) : null }])
+        setReplyTo(null)
       }
       else {
         // Hata BANT olarak görünür (sohbet kapanmaz) — 2026-10-12.
@@ -1290,15 +1560,15 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       {/* ── SOL: kime yazmak istiyorum (kişi listesi) ──
           İKİ PANEL HER GENİŞLİKTE YAN YANA (2026-10-13 kullanıcı isteği: "tam
           ekran liste görünümü tamamen kaldırılsın"). Genişlik:
-            · `md` altı  → `clamp(72px, 28vw, 300px)` (esnek; 480px altında
-              kullanıcı isteğiyle KOMPAKT başlar),
-            · `md` ve üstü → sürüklenebilir `--chat-panel-w` (kullanıcı ayarı).
+            · TÜM ekranlarda → `--chat-panel-w` (sürüklenebilir, kullanıcı ayarı).
+              Mobilde (<md) sınırlar 72–300px, masada 240–560px (startResize/
+              resizeByKey içinde viewport'a göre uygulanır).
           KOMPAKT modda genişlik 72px'e iner; genişlik geçişi 200ms animasyonlu. */}
       <aside
         className={cn(
           'flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-foreground/10 bg-background transition-[width] duration-200 ease-out',
           panelOpen
-            ? 'w-[clamp(72px,28vw,300px)] md:w-[var(--chat-panel-w)]'
+            ? 'w-[var(--chat-panel-w)]'
             : 'w-[72px]',
         )}
       >
@@ -1396,6 +1666,15 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                                 `last_sender_name`den gelir (sunucu her gönderimde
                                 yazar); hiç mesaj yoksa boş durum metni gösterilir.
                               */}
+                              {/*
+                                LİSTE TİKİ (2026-10-16 kullanıcı isteği: "sohbet
+                                listesindeki tikler de aynı kaynaktan türesin").
+                                Son mesaj BENİMSEM durumu `tickForFlags` ile AYNI
+                                karardan geçer — balondaki tikle asla çelişmez.
+                              */}
+                              {p.lastMessage?.mine && (
+                                <ListTick tick={tickForFlags(p.lastMessage)} t={t} />
+                              )}
                               {p.preview
                                 ? `${p.previewSender ? `@${p.previewSender} · ` : ''}${p.preview}`
                                 : t('chat.empty')}
@@ -1508,13 +1787,45 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
             {error}
           </p>
         )}
+        {/* KISA BİLDİRİM (2026-10-16): "Mesaj bulunamadı" gibi — kendiliğinden
+            kaybolur (`notice` zamanlayıcısı yukarıda). */}
+        {notice && (
+          <p role="status" className="border-b border-foreground/10 bg-foreground/5 px-4 py-2 text-xs text-foreground-500">
+            {notice}
+          </p>
+        )}
 
-        {/* mesajlar — kaydırma BURADA olur, sayfada değil (bkz. scrollToBottom) */}
+        {/* mesajlar — kaydırma BURADA olur, sayfada değil (bkz. scrollToBottom).
+            `touch-pan-y`: yatay jest tarayıcıya bırakılmaz (kaydırarak yanıtla
+            için), dikey kaydırma normal çalışır (kullanıcı isteği). İki olay
+            kaynağı (uzun basma menüsü + kaydırarak yanıtla) TEK kapsayıcıda
+            elle birleştirilir — spread sırası birini ezerdi. */}
         <div
           ref={listRef}
-          className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 py-4"
+          className="min-h-0 flex-1 touch-pan-y space-y-2 overflow-y-auto px-4 py-4"
           onContextMenu={onAreaContextMenu}
-          {...messageLongPress}
+          onPointerDown={(e) => {
+            messageLongPress.onPointerDown(e)
+            swipeReply.onPointerDown(e)
+          }}
+          onPointerMove={(e) => {
+            messageLongPress.onPointerMove(e)
+            swipeReply.onPointerMove(e)
+          }}
+          onPointerUp={(e) => {
+            // uzun basma iptali argümansız; kaydırma "bıraktı mı?" kararına bakar
+            messageLongPress.onPointerUp()
+            swipeReply.onPointerUp(e)
+          }}
+          onPointerCancel={() => {
+            messageLongPress.onPointerCancel()
+            swipeReply.onPointerCancel()
+          }}
+          onPointerLeave={() => {
+            messageLongPress.onPointerLeave()
+            swipeReply.onPointerLeave()
+          }}
+          onClickCapture={messageLongPress.onClickCapture}
         >
           {!threadOpen && (
             <p className="pt-10 text-center text-sm text-foreground-500">{t('chat.selectPerson')}</p>
@@ -1539,9 +1850,9 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
             </div>
           )}
           {threadOpen && messages.map((m, i) => {
-            const mine = m.sender_id === (selfId || currentUserId)
+            const mine = m.sender_id === myId
           const replied = replyTo?.id === m.id
-          const tick = mine ? tickFor(m) : null
+          const tick = mine ? tickFor(m, { pending: m._pending, failed: m._failed }) : null
           /*
             GÖNDEREN SATIRI (2026-10-13 kullanıcı isteği): balonun üstünde küçük
             "@kullanıcı" satırı durur. ART ARDA gelen aynı gönderenin mesajlarında
@@ -1550,12 +1861,41 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
             kendi adını okumak gürültüdür.
           */
           const showSender = !mine && (i === 0 || messages[i - 1]?.sender_id !== m.sender_id)
+          /*
+            ALINTI BLOĞU (2026-10-16 kullanıcı isteği): balonun içinde, mesaj
+            metninin ÜSTÜNDE. Metin sunucudan `reply_to` özetiyle gelir; silinmiş
+            mesajın metni hiç gönderilmez → "Bu mesaj silindi" yazılır.
+            Renk gönderene göre SABİT (kendi mesajımda mavi).
+          */
+          const quote = m.reply_to ?? null
+          const quoteMine = !!quote && quote.sender_id === myId
+          const quoteAcc = quote ? quoteAccent(quote.sender_id, quoteMine, mine) : null
+          const quoteText = quote
+            ? (quote.deleted
+                ? t('chat.deletedMessage')
+                : quote.text || t(replyPlaceholderKey(quote.kind)))
+            : ''
           return (
             <div
               key={m.id}
+              id={`msg-${m.id}`}
               data-replied={replied || undefined}
-              className={cn('flex flex-col', mine ? 'items-end' : 'items-start')}
+              className={cn(
+                'relative flex flex-col rounded-xl',
+                mine ? 'items-end' : 'items-start',
+                // Vurgu: alıntıya tıklanınca kaydırılan mesaj ~2 sn parlar.
+                flashId === m.id && 'msg-flash',
+              )}
             >
+              {/* Kaydırma sırasında beliren yanıt oku (mobil) — `useSwipeReply`
+                  opacity/scale'i doğrudan yazar (her karede render olmasın). */}
+              <span
+                data-reply-hint=""
+                aria-hidden="true"
+                className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 text-primary opacity-0"
+              >
+                <ReplyIcon size={18} />
+              </span>
               {showSender && (
                 <span className="mb-0.5 px-1 text-[10px] text-foreground-500">
                   @
@@ -1563,57 +1903,144 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                 </span>
               )}
               <div
-                data-message-id={m.id}
-                onContextMenu={(e) => {
-                  // Menü İMLECİN konumunda (eskiden tam ekran ortalanmış diyalogdu).
-                  // `stopPropagation`: kapsayıcının BOŞ ALAN menüsü üzerine yazmasın.
-                  e.preventDefault()
-                  e.stopPropagation()
-                  setMenu({ kind: 'message', message: m, ...menuPoint(e) })
-                }}
-                onClick={() => replied && scrollToMessage(m.id)}
                 className={cn(
-                  'max-w-[80%] cursor-default rounded-2xl px-3 py-2 text-sm',
-                  mine ? 'bg-primary text-primary-fg' : 'bg-foreground/10 text-foreground',
-                  replied && 'ring-2 ring-primary',
+                  'group/msg flex min-w-0 max-w-[80%] items-center gap-1',
+                  mine ? 'flex-row-reverse' : 'flex-row',
                 )}
               >
-                {/* yanıt önizlemesi */}
-                <span id={`m-${m.id}`} className="block" />
-                {m.kind === 'image' && m.file_url && (
-                  // Sohbet görselleri kullanıcı yüklemesi; next/image gerekmez.
-                  <img src={m.file_url} alt={m.file_name ?? ''} className="mb-1 max-h-48 rounded-lg" />
-                )}
-                {m.kind === 'audio' && m.file_url && (
-                  <audio controls src={m.file_url} className="mb-1 max-w-full" />
-                )}
-                {m.kind === 'video' && m.file_url && (
-                  <video controls src={m.file_url} className="mb-1 max-h-48 rounded-lg" />
-                )}
-                {m.kind === 'file' && m.file_url && (
-                  <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="mb-1 underline">
-                    📎
-{' '}
-{m.file_name}
-                  </a>
-                )}
-                {m.deleted_for_all
-                  ? <em className="opacity-70">{t('chat.deletedByYou')}</em>
-                  : (
-                      <>
-                        {m.pinned && <span className="mr-1">📌</span>}
-                        <span>{m.text}</span>
-                      </>
-                    )}
-                {/* tikler — ikon/renk kararı `lib/chat-ticks.ts`te (saf + testli) */}
-                <span className="ml-2 inline-flex items-center gap-0.5 align-middle text-[10px]">
-                  <span>{new Date(m.created_at).toLocaleTimeString('tr', { hour: '2-digit', minute: '2-digit' })}</span>
-                  {tick && (
-                    <span className={cn('inline-flex shrink-0', tick.color)} role="img" aria-label={t(tick.labelKey)}>
-                      {tick.double ? <TickReadIcon size={14} /> : <TickSentIcon size={14} />}
-                    </span>
+                <div
+                  data-message-id={m.id}
+                  onContextMenu={(e) => {
+                    // Menü İMLECİN konumunda (eskiden tam ekran ortalanmış diyalogdu).
+                    // `stopPropagation`: kapsayıcının BOŞ ALAN menüsü üzerine yazmasın.
+                    e.preventDefault()
+                    e.stopPropagation()
+                    setMenu({ kind: 'message', message: m, ...menuPoint(e) })
+                  }}
+                  onClick={() => replied && jumpToMessage(m.id)}
+                  className={cn(
+                    'min-w-0 max-w-full rounded-2xl px-3 py-2 text-sm',
+                    mine ? 'bg-primary text-primary-fg' : 'bg-foreground/10 text-foreground',
+                    replied && 'ring-2 ring-primary',
                   )}
-                </span>
+                >
+                  {quote && quoteAcc && (
+                    <button
+                      type="button"
+                      role="button"
+                      aria-label={t('chat.replyJump')}
+                      title={t('chat.replyJump')}
+                      onClick={(e) => {
+                        // Balonun kendi tıklaması (vurgu halkası) ile karışmasın.
+                        e.stopPropagation()
+                        jumpToMessage(quote.id)
+                      }}
+                      className={cn(
+                        'mb-1 flex w-full min-w-0 cursor-pointer items-stretch gap-2 overflow-hidden rounded-md border-l-2 py-1 pr-1 pl-2 text-left transition-colors',
+                        quoteAcc.bar,
+                        mine ? 'bg-black/20 hover:bg-black/30' : 'bg-foreground/10 hover:bg-foreground/20',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className={cn('block truncate text-[11px] font-semibold', quoteAcc.text)}>
+                          {/*
+                            Gönderen adı SİLİNMİŞ alıntıda da yazılır: gizlenmesi
+                            gereken İÇERİKTİR, kimin yazdığı değil. Aksi hâlde
+                            alıntının üstünde boş bir satır kalırdı.
+                          */}
+                          {replySenderLabel(quote, myId, t('chat.you'))}
+                        </span>
+                        <span className={cn(
+                          'line-clamp-2 text-[11px] break-words',
+                          quote.deleted ? 'italic opacity-70' : 'opacity-90',
+                        )}
+                        >
+                          {quoteText}
+                        </span>
+                      </span>
+                      {!quote.deleted && quote.kind === 'image' && quote.file_url && (
+                        <img src={quote.file_url} alt="" className="size-9 shrink-0 rounded-sm object-cover" />
+                      )}
+                    </button>
+                  )}
+                  {m.kind === 'image' && m.file_url && (
+                    // Sohbet görselleri kullanıcı yüklemesi; next/image gerekmez.
+                    <img src={m.file_url} alt={m.file_name ?? ''} className="mb-1 max-h-48 rounded-lg" />
+                  )}
+                  {m.kind === 'audio' && m.file_url && (
+                    <audio controls src={m.file_url} className="mb-1 max-w-full" />
+                  )}
+                  {m.kind === 'video' && m.file_url && (
+                    <video controls src={m.file_url} className="mb-1 max-h-48 rounded-lg" />
+                  )}
+                  {m.kind === 'file' && m.file_url && (
+                    <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="mb-1 underline">
+                      📎
+                      {' '}
+                      {m.file_name}
+                    </a>
+                  )}
+                  {m.deleted_for_all
+                    ? <em className="opacity-70">{t('chat.deletedByYou')}</em>
+                    : (
+                        <>
+                          {m.pinned && <span className="mr-1">📌</span>}
+                          <span className="break-words">{m.text}</span>
+                        </>
+                      )}
+                  {/* tikler — durum kararı `lib/chat-ticks.ts`te (saf + testli):
+                      soluk tek tik = gönderildi · soluk çift tik = iletildi
+                      (alıcı çevrimdışıysa BURADA KALIR) · mavi çift tik = okundu.
+                      Saat = gönderiliyor, kırmızı ünlem = başarısız (tekrar dene). */}
+                  <span className="ml-2 inline-flex items-center gap-0.5 align-middle text-[10px]">
+                    <span>{new Date(m.created_at).toLocaleTimeString('tr', { hour: '2-digit', minute: '2-digit' })}</span>
+                    {tick && (m._failed
+                      ? (
+                          <button
+                            type="button"
+                            data-testid="chat-retry"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              void retry(m)
+                            }}
+                            title={t('chat.retrySend')}
+                            aria-label={t('chat.retrySend')}
+                            className={cn('inline-flex shrink-0 cursor-pointer items-center', tick.color)}
+                          >
+                            <ErrorIcon size={14} />
+                          </button>
+                        )
+                      : (
+                          <span
+                            className={cn('inline-flex shrink-0', tick.color)}
+                            role="img"
+                            title={t(tick.labelKey)}
+                            aria-label={t(tick.labelKey)}
+                          >
+                            {m._pending
+                              ? <ClockIcon size={12} />
+                              : tick.double ? <TickReadIcon size={14} /> : <TickSentIcon size={14} />}
+                          </span>
+                        ))}
+                  </span>
+                </div>
+                {/* HOVER OKU (2026-10-16 kullanıcı isteği: "mesaja hover edince
+                    küçük bir ok/menü butonu çıksın"). Sağ tıkla AYNI menüyü
+                    açar — ikinci bir menü yazılmaz. */}
+                <button
+                  type="button"
+                  data-testid="chat-reply-button"
+                  aria-label={t('chat.reply')}
+                  title={t('chat.reply')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const r = e.currentTarget.getBoundingClientRect()
+                    setMenu({ kind: 'message', message: m, x: r.left, y: r.bottom + 4 })
+                  }}
+                  className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 opacity-0 transition-opacity group-hover/msg:opacity-100 hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100"
+                >
+                  <ReplyIcon size={16} />
+                </button>
               </div>
             </div>
           )
@@ -1626,14 +2053,44 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
             alt güvenli alan kadar içeriden boşluk bırakır. */}
         {threadOpen && (
           <div className="shrink-0 border-t border-foreground/10 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        {replyTo && (
-          <div className="mb-2 flex items-center justify-between rounded-lg bg-foreground/10 px-3 py-1.5 text-xs">
-            <span className="truncate">
-{t('chat.replyingTo')}
-{' '}
-{replyTo.text || replyTo.file_name}
-</span>
-            <button type="button" onClick={() => setReplyTo(null)} className="cursor-pointer px-2">
+        {/* YANIT ÖNİZLEMESİ (2026-10-16 kullanıcı isteği). Giriş çubuğunun
+            ÜSTÜNDE, onunla AYNI genişlikte/hizada (aynı kapsayıcı içinde).
+            Sol renkli dikey çizgi gönderene göre sabittir; kendi mesajım için
+            "Sen" yazar. Medya varsa küçük önizleme/etiket çıkar. Esc, ✕ veya
+            gönderim kapatır; sohbet değişince temizlenir. */}
+        {replyLive && (
+          <div
+            data-testid="chat-reply-preview"
+            className={cn(
+              'mb-2 flex items-center gap-2 rounded-lg border-l-2 py-1.5 pr-1 pl-3 text-xs',
+              quoteAccent(replyLive.sender_id, replyLive.sender_id === myId, false).bar,
+              'bg-foreground/10',
+            )}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[11px] font-semibold text-primary">
+                {replySenderLabel(replyLive, myId, t('chat.you'))}
+              </p>
+              <p className={cn(
+                'line-clamp-2 text-[11px] break-words text-foreground-500',
+                replyLive.deleted_for_all && 'italic',
+              )}
+              >
+                {replyLive.deleted_for_all
+                  ? t('chat.deletedMessage')
+                  : (replyLive.text || t(replyPlaceholderKey(replyLive.kind)))}
+              </p>
+            </div>
+            {!replyLive.deleted_for_all && replyLive.kind === 'image' && replyLive.file_url && (
+              <img src={replyLive.file_url} alt="" className="size-9 shrink-0 rounded-sm object-cover" />
+            )}
+            <button
+              type="button"
+              onClick={() => setReplyTo(null)}
+              aria-label={t('chat.cancelReply')}
+              title={t('chat.cancelReply')}
+              className="shrink-0 cursor-pointer rounded-full px-2 py-1 text-foreground-500 hover:bg-foreground/10 hover:text-foreground"
+            >
               ✕
             </button>
           </div>
@@ -1800,7 +2257,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           x={menu.x}
           y={menu.y}
           onClose={() => setMenu(null)}
-          onReply={() => { setReplyTo(menu.message); setMenu(null) }}
+          onReply={() => { startReply(menu.message.id); setMenu(null) }}
           onCopy={() => copy(menu.message.text ?? '')}
           onForward={() => { setForwardMsg(menu.message); setMenu(null) }}
           onPin={() => { act('pin', { messageId: menu.message.id, pinned: !menu.message.pinned }); setMenu(null) }}
@@ -1920,6 +2377,30 @@ function ChatSkeleton({ label }: { label: string }) {
         />
       ))}
     </div>
+  )
+}
+
+/**
+ * LİSTE TİKİ (2026-10-16). Karar `tickForFlags`ten gelir — balondaki tikle aynı
+ * kaynak. Renk ise `TICK_LIST_COLORS`ten seçilir: balon mavi olduğu için
+ * oradaki renkler şeffaf liste zemininde okunmaz.
+ */
+function ListTick({ tick, t }: {
+  tick: TickStyle
+  t: (key: string) => string
+}) {
+  const label = t(tick.labelKey)
+  return (
+    <span
+      role="img"
+      title={label}
+      aria-label={label}
+      className={cn('mr-1 inline-flex shrink-0 align-middle', TICK_LIST_COLORS[tick.state])}
+    >
+      {tick.state === 'sending'
+        ? <ClockIcon size={11} />
+        : tick.double ? <TickReadIcon size={13} /> : <TickSentIcon size={13} />}
+    </span>
   )
 }
 

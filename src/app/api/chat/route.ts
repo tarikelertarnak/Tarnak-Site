@@ -91,9 +91,17 @@ export async function GET(req: Request) {
     }
     const admin = user.role === 'admin'
     const messages = await listMessages(conversationId, admin)
-    // sohbeti açan kullanıcı okumuştur → ✓ (okundu)
-    await markRead(conversationId)
-    await markDelivered(conversationId)
+    /*
+      TESLİM damgası: mesajları ÇEKTİM → karşı tarafın mesajları bana ulaştı.
+      `chatId` verilir; KENDİ mesajlarım teslim edildi sayılmaz (2026-10-16 kök
+      neden düzeltmesi: eskiden filtre yoktu → gönderen kendi mesajını da
+      "okundu" yapıyordu ve alıcı hiç görmemişken çift mavi tik görünüyordu).
+
+      OKUNDU ARTIK BURADA İŞARETLENMEZ: okundu, alıcının sohbeti gerçekten
+      AÇIK + SEKME GÖRÜNÜR + mesaj ekranda olmasına bağlıdır; istemci bunu
+      ayrı bir `action: 'read'` çağrısıyla bildirir.
+    */
+    await markDelivered(conversationId, chatId)
     return NextResponse.json({ success: true, messages })
   }
   catch (e) {
@@ -169,6 +177,25 @@ export async function POST(req: Request) {
       const raw = body?.state
       const force = body?.force === true
       await touchPresence(chatId, isPresenceState(raw) ? raw : null, force)
+      return NextResponse.json({ success: true })
+    }
+
+    /*
+      OKUNDU BİLDİRİMİ (2026-10-16 kullanıcı isteği). İstemci YALNIZCA şu
+      koşullarda çağırır: sohbet açık + sekme görünür (`visibilityState ===
+      'visible'`) + mesajlar ekranda. Sunucu `sender_id` filtresiyle yalnız
+      BAŞKASININ mesajlarını işaretler → gönderen kendi mesajını asla
+      "okundu" yapamaz. `chat.send` izni istenmez: okumak göndermek değildir.
+    */
+    if (action === 'read') {
+      const convId = typeof body?.conversationId === 'string' ? body.conversationId : ''
+      if (!convId) {
+        return NextResponse.json({ success: false, message: 'Sohbet gerekli.' }, { status: 400 })
+      }
+      if (!(await isParticipant(convId, chatId))) {
+        return NextResponse.json({ success: false, message: 'Erişim yok.' }, { status: 403 })
+      }
+      await markRead(convId, chatId)
       return NextResponse.json({ success: true })
     }
 

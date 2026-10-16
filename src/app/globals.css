@@ -596,6 +596,30 @@ html[data-theme='light'] ::-webkit-scrollbar-thumb {
   display: none;
 }
 
+/* Yanıtlanan mesaja gidişte VURGU (2026-10-16 kullanıcı isteği): "vardığında o
+   mesaj ~1,5-2 sn vurgulansın (arka plan mavi tonuna flash, sonra fade-out)".
+   Sınıf mesaj SATIRINA (balonun dış kabı) eklenir: satırın kendi zemini yoktur,
+   bu yüzden animasyon balonun mavi zeminine dokunmaz — son karede şeffafa
+   inerken balon rengi aynen kalır. Aynı mesaja tekrar tıklanınca sınıf
+   sıfırlanıp yeniden eklendiği için animasyon BAŞTAN oynar (`chat.tsx`). */
+@keyframes msg-flash {
+  0% {
+    background-color: color-mix(in srgb, var(--tprimary) 55%, transparent);
+  }
+
+  45% {
+    background-color: color-mix(in srgb, var(--tprimary) 35%, transparent);
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}
+
+.msg-flash {
+  animation: msg-flash 1.9s ease-out;
+}
+
 /* Emoji seçici (emoji-picker-element, 2026-10-12; boyut 2026-10-13): kütüphanenin
    `:host` değişkenleri sitenin tasarım jetonlarına bağlanır — koyu zemin, kenarlık
    ve mavi vurgu. Değerler tek kaynaktan (`--tsurface-*`, `--tfg-*`, `--tprimary`),

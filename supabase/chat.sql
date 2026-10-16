@@ -143,3 +143,73 @@ alter table public.chat_conversations add column if not exists important boolean
 alter table public.chat_conversations add column if not exists last_preview text;
 alter table public.chat_conversations add column if not exists last_sender_name text;
 alter table public.chat_conversations add column if not exists deleted_retention text not null default '30 days';
+
+-- ============================================================================
+-- YANIT (alıntı) + TİK DAMGALARI — şema tamamlama (2026-10-16)
+--
+-- `create table if not exists` ZATEN KURULU tabloya sütun eklemez → bu üç sütun
+-- eski kurulumlarda eksik olabilir. Eklenince kod çalışır (kod eksik sütunda
+-- hata verir / sessizce yanıtsız yazar).
+-- ============================================================================
+alter table public.chat_messages add column if not exists reply_to_id uuid
+  references public.chat_messages(id) on delete set null;
+alter table public.chat_messages add column if not exists delivered_at timestamptz;
+alter table public.chat_messages add column if not exists read_at      timestamptz;
+
+-- Yanıt hedefini toplu çekerken (`in (id)`) kullanılan indeks.
+create index if not exists chat_messages_reply_to_idx
+  on public.chat_messages (reply_to_id) where reply_to_id is not null;
+
+-- ============================================================================
+-- ESKİ YANLIŞ "OKUNDU/TESLİM EDİLDİ" KAYITLARININ ONARIMI (2026-10-16)
+--
+-- KÖK NEDEN (ölçüldü): `GET /api/chat?conversationId=X` her çağrıldığında
+-- `markRead(conversationId)` / `markDelivered(conversationId)` çalışıyordu ve
+-- bu sorgularda `sender_id` filtresi YOKTU. Sonuç: bir kullanıcı KENDİ sohbetini
+-- açınca KENDİ gönderdiği mesajlar da "okundu" damgası alıyordu → alıcı mesajı
+-- hiç görmemişken gönderende ÇİFT MAVİ TİK görünüyordu.
+--
+-- ONARIM MANTIĞI: geçmiş damgaların hangisinin "kendi kendine" yazıldığı ayırt
+-- EDİLEMEZ (eski kod ikisini de filtresiz yazdı). Bu yüzden ikisi de temizlenir;
+-- YENİ kod damgaları yeniden ve DOĞRU yoldan yazar (alıcı mesajı çekince
+-- `delivered_at`, alıcı sohbeti açık + sekme görünür + mesaj görünür alanda
+-- iken `read_at`) — yani betik kendi kendini iyileştirir.
+--
+-- MALİYET / SINIR: alıcının bir daha AÇMAYACAĞI eski mesajlar tek gri tikte
+-- (gönderildi) kalır. Bu doğrudur: "görüldü" bilgisi güvenilir değildi.
+-- Betiği YENİ kod canlıya çıktıktan SONRA bir kez çalıştır. Tekrar çalıştırmak
+-- zararsızdır; yalnızca yeni doğru damgaları da sıfırlar (alıcı görünce
+-- yeniden damgalanır).
+-- ============================================================================
+
+-- (a) KESİN İMKÂNSIZ satırlar: teslim edilmeden okunmuş olamaz.
+update public.chat_messages
+   set read_at = null
+ where read_at is not null
+   and delivered_at is null;
+
+-- (b) KESİN İMKÂNSIZ satırlar: mesaj kendi oluşturulma anından ÖNCE teslim
+--     edilmiş / okunmuş olamaz (saat kayması ve eski hatalı yazımlar).
+update public.chat_messages
+   set read_at = null
+ where read_at is not null
+   and read_at < created_at;
+
+update public.chat_messages
+   set delivered_at = null
+ where delivered_at is not null
+   and delivered_at < created_at;
+
+-- (c) Kaynağı güvenilmez damgalar (bkz. yukarıdaki kök neden). Ayırt edilemediği
+--     için tümü temizlenir; doğrusu yeni kodla yeniden yazılır.
+update public.chat_messages
+   set read_at = null,
+       delivered_at = null
+ where read_at is not null
+    or delivered_at is not null;
+
+-- DOĞRULAMA: temizlik sonrası damga sayıları 0 olmalı; ardından alıcı sohbeti
+-- açtıkça `delivered_at`, mesajı görünce `read_at` dolmaya başlar.
+--   select count(*) filter (where delivered_at is not null) as teslim,
+--          count(*) filter (where read_at is not null)      as okundu
+--     from public.chat_messages;

@@ -421,6 +421,17 @@ const ja: Record<string, string> = {
   'chat.deliveredAt': 'Delivered',
   'chat.notRead': 'Not read',
   'chat.notDelivered': 'Not delivered',
+  'chat.deletedMessage': 'This message was deleted',
+  'chat.replyJump': 'Jump to replied message',
+  'chat.replyNotFound': 'Message not found',
+  'chat.cancelReply': 'Cancel reply',
+  'chat.retrySend': 'Retry',
+  'chat.sendingTick': 'Sending',
+  'chat.sendFailedTick': 'Failed to send',
+  'chat.mediaPhoto': 'Photo',
+  'chat.mediaVideo': 'Video',
+  'chat.mediaAudio': 'Audio message',
+  'chat.mediaFile': 'File',
 }
 
 export default ja

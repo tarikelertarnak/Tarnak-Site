@@ -1031,3 +1031,27 @@ export function TickReadIcon({ size = 14, className }: IconProps) {
     </svg>
   )
 }
+
+/**
+ * Yanıtla oku (2026-10-16 kullanıcı isteği: "mesaja hover edince küçük bir
+ * ok/menü butonu çıksın"). Konturlu (stroke) — tiklerin dolu stilinden kasıtlı
+ * farklı: tik "durum", ok "eylem".
+ */
+export function ReplyIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <polyline points="9 17 4 12 9 7" />
+      <path d="M20 18v-2a4 4 0 0 0-4-4H4" />
+    </svg>
+  )
+}
+
+/** Gönderiliyor (saat) — iyimser mesajın ilk hâli. */
+export function ClockIcon({ size = 14, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  )
+}

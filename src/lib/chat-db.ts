@@ -1,4 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import type { ReplyPreview } from '@/lib/chat-reply'
+import { missingReplyPreview, toReplyPreview } from '@/lib/chat-reply'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
@@ -57,7 +59,22 @@ export interface ChatMessageRow {
   deleted_by: string | null
   deleted_at: string | null
   created_at: string
+  /**
+   * Yanıtlanan mesajın ÖZETİ (2026-10-16 kullanıcı isteği: "gönderilen mesajda
+   * alıntı görünsün"). `listMessages` doldurur; tek sorguyla toplanır (N+1 yok).
+   * Yanıt değilse `null`/yok.
+   */
+  reply_to?: ReplyPreview | null
 }
+
+/**
+ * Balonun içindeki alıntı bloğu için gereken en az bilgi. Gönderen adı + kısa
+ * metin + medya türü + silinmiş mi. Silinmiş mesajın METNİ gönderilmez
+ * (içerik sızmaz) — `deleted: true` yeter, arayüz "Bu mesaj silindi" yazar.
+ *
+ * Kural `lib/chat-reply.ts`te (saf, istemciyle paylaşılır).
+ */
+export type { ReplyPreview } from '@/lib/chat-reply'
 
 export interface Participant {
   user_id: string
@@ -363,6 +380,27 @@ export interface SendMessageInput {
 
 export async function sendMessage(input: SendMessageInput): Promise<ChatMessageRow> {
   const client = db()
+  /*
+    YANIT DOĞRULAMASI (2026-10-16 kullanıcı isteği: "sunucu bu id'nin aynı
+    sohbete ait olduğunu doğrulasın"). Başka sohbetin mesajına yanıt vermek
+    (var olan id'yi tahmin ederek) engellenir; geçersiz id gönderimi DÜŞÜRÜR
+    ama mesajı kaybetmez (yanıtsız normal mesaj olarak yazılır).
+  */
+  let replyToId: string | null = input.replyToId ?? null
+  if (replyToId) {
+    const check = await client
+      .from('chat_messages')
+      .select('id')
+      .eq('id', replyToId)
+      .eq('conversation_id', input.conversationId)
+      .maybeSingle()
+    if (check.error && isMissingTable(check.error)) {
+      throw new ChatSchemaMissing()
+    }
+    if (!check.data) {
+      replyToId = null
+    }
+  }
   const row = {
     conversation_id: input.conversationId,
     sender_id: input.senderId,
@@ -374,7 +412,7 @@ export async function sendMessage(input: SendMessageInput): Promise<ChatMessageR
     file_type: input.file?.type ?? null,
     file_size: input.file?.size ?? null,
     audio_duration: input.audioDuration ?? null,
-    reply_to_id: input.replyToId ?? null,
+    reply_to_id: replyToId,
   }
   const res = await client
     .from('chat_messages')
@@ -506,42 +544,97 @@ export async function listMessages(
   // Normal kullanıcıya SİLİNMİŞ mesajın içeriği MASKELENİR: "Bu mesajı
   // sildiniz" gösterilir, gerçek metin/dosya SIZMAZ. Admin retention
   // penceresi boyunca gerçek içeriği görmeye devam eder.
-  if (isAdmin) {
-    return rows
-  }
-  return rows.map(m =>
-    m.deleted_for_all
-      ? {
-          ...m,
-          text: null,
-          file_url: null,
-          file_name: null,
-          file_type: null,
-          file_size: null,
-          audio_duration: null,
-        }
-      : m,
-  )
+  const visible = isAdmin
+    ? rows
+    : rows.map(m =>
+        m.deleted_for_all
+          ? {
+              ...m,
+              text: null,
+              file_url: null,
+              file_name: null,
+              file_type: null,
+              file_size: null,
+              audio_duration: null,
+            }
+          : m,
+      )
+  // Yanıtlanan mesajın özeti (2026-10-16) — tek sorgu, N+1 yok.
+  return attachReplyPreviews(visible)
 }
 
-/** Teslim edildi ✓✓: mesaj alıcıya ulaştı. */
-export async function markDelivered(conversationId: string): Promise<void> {
+/**
+ * Teslim edildi ✓✓: mesaj alıcıya ulaştı.
+ *
+ *  `viewerId` ZORUNLU (2026-10-16 kök neden düzeltmesi): eskiden filtre yoktu,
+ *  yani sohbeti AÇAN GÖNDEREN kendi mesajlarını da "teslim edildi" işaretliyordu.
+ *  Artık kişi yalnızca BAŞKASININ mesajlarını teslim edilmiş sayar.
+ */
+export async function markDelivered(conversationId: string, viewerId: string): Promise<void> {
   const client = db()
   await client
     .from('chat_messages')
     .update({ delivered_at: new Date().toISOString() })
     .eq('conversation_id', conversationId)
+    .neq('sender_id', viewerId)
     .is('delivered_at', null)
 }
 
-/** Okundu ✓: sohbetin tüm mesajları okundu. */
-export async function markRead(conversationId: string): Promise<void> {
+/**
+ * Okundu ✓✓ (mavi): sohbeti AÇIK ve GÖRÜNÜR durumda okuyan katılımcının
+ * karşı tarafa ait mesajları okundu işaretlenir.
+ *
+ *  `viewerId` ZORUNLU (2026-10-16 kök neden düzeltmesi): eskiden filtre yoktu →
+ *  gönderen kendi sohbetini açınca kendi mesajları "okundu" oluyordu ve alıcı
+ *  çevrimdışıyken bile çift mavi tik görünüyordu.
+ */
+export async function markRead(conversationId: string, viewerId: string): Promise<void> {
   const client = db()
   await client
     .from('chat_messages')
     .update({ read_at: new Date().toISOString() })
     .eq('conversation_id', conversationId)
+    .neq('sender_id', viewerId)
     .is('read_at', null)
+}
+
+/**
+ * Yanıtlanan mesajların ÖZETİNİ tek sorguda toplayıp satırlara iliştirir
+ * (2026-10-16). N+1 yok: tüm `reply_to_id`'ler tek `in()` sorgusunda çekilir.
+ *
+ * Yanıt hedefi bulunamazsa (fiziksel silinmiş) `deleted: true` döner — arayüz
+ * "Bu mesaj silindi" yazar, alıntı kaybolmaz.
+ *
+ * Hata durumunda özet İLİŞTİRİLMEZ ama mesaj listesi yine döner: alıntı
+ * önizlemesi kaybı mesajların görünmesini engellememeli.
+ */
+async function attachReplyPreviews(rows: ChatMessageRow[]): Promise<ChatMessageRow[]> {
+  const ids = [...new Set(rows.map(r => r.reply_to_id).filter((v): v is string => !!v))]
+  if (ids.length === 0) {
+    // Hiç yanıt yoksa ek sorgu yapılmaz; alan yine de NORMALLEŞTİRİLİR
+    // (`undefined` değil `null`) — istemci `reply_to === null` varsayar.
+    return rows.map(r => ({ ...r, reply_to: null }))
+  }
+  const client = db()
+  const res = await client
+    .from('chat_messages')
+    .select('id, sender_id, sender_name, text, kind, file_name, file_url, deleted_for_all')
+    .in('id', ids)
+  if (res.error) {
+    // Alıntı özeti kaybı mesajların görünmesini engellememeli.
+    return rows.map(r => ({ ...r, reply_to: null }))
+  }
+  type Row = Pick<ChatMessageRow,
+    'id' | 'sender_id' | 'sender_name' | 'text' | 'kind' | 'file_name' | 'file_url' | 'deleted_for_all'>
+  const found = new Map((res.data as Row[]).map(r => [r.id, r]))
+  return rows.map(r => ({
+    ...r,
+    reply_to: r.reply_to_id
+      ? (found.has(r.reply_to_id)
+          ? toReplyPreview(found.get(r.reply_to_id)!)
+          : missingReplyPreview(r.reply_to_id))
+      : null,
+  }))
 }
 
 /**
