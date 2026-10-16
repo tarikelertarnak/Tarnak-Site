@@ -152,25 +152,39 @@ function quoteAccent(senderId: string, isMine: boolean, onOwnBubble: boolean) {
 const FLASH_MS = 1_900
 
 /**
- * YEREL ÇEVRIMİÇİ DURUMU (local-first, 2026-10-14).
+ * YEREL ÇEVRIMİÇİ DURUMU (local-first, 2026-10-14; kural 2026-10-16'da
+ * DEĞİŞTİ).
  *
- * Sunucudan gelen `lastSeenAt` yerine, SEKME ODAĞI + KULLANICI ETKILEŞİMİ
- * ile yerel olarak hesaplanır. Sunucuya senkron:
+ * Sunucudan gelen `lastSeenAt` yerine, SEKME GÖRÜNÜRLÜĞÜ ile yerel olarak
+ * hesaplanır. Sunucuya senkron:
  *   - Sekme kapanırken / gizlenirken (pagehide, visibilitychange)
- *   - Periyodik (5 dk bir) — sadece "hala buradayım" demek için
+ *   - Periyodik nabız — sadece "hala buradayım" demek için
  *   - Yazma durumu değiştiğinde (typing start/stop)
+ *
+ * KULLANICI ŞİKÂYETİ (2026-10-16): "kendim nasıl çevrimdışı olabiliyorum?"
+ * İki hata birdendi:
+ *   1. Yerel kural "30 sn etkileşim yoksa çevrimdışı" idi → uzun mesajı okurken
+ *      veya videoyu izlerken kendi noktam kırmızıya düşüyordu. Artık çevrimdışı
+ *      olmanın TEK yolu sekmenin gizlenmesi/kapanmasıdır (WhatsApp Web modeli).
+ *   2. Sunucu senkronu 5 dk'ydı, `presenceOf` tazelik penceresi 60 sn (bkz.
+ *      `chat-peers.ts: PRESENCE_ONLINE_MS`) → nabız iki pencere arasında
+ *      kaçıyor, HERKES herkese çevrimdışı görünüyordu. Nabız artık pencereden
+ *      küçük (`SYNC_INTERVAL_MS`).
  *
  * Bu sayede:
  *   - 2 sn'de bir `/api/chat/users` çekmek YOK (liste POLL_MS kaldırıldı)
  *   - Yeşil nokta anında tepki verir (ağ gecikmesi yok)
- *   - Sunucu yükü %90+ azalır
  */
-const LOCAL_ONLINE_TTL_MS = 30_000 // yerel "çevrimiçi" sayılma penceresi (30 sn)
-const SYNC_INTERVAL_MS = 5 * 60 * 1000 // sunucuya periyodik senkron (5 dk)
+/*
+  Nabız aralığı `presenceOf` tazelik penceresinden (60 sn) KÜÇÜK olmalı: bir
+  nabız kaybolsa (ağ/sleep) bile karşı taraf beni çevrimiçi görmeye devam eder.
+  30 sn = pencere/2 → tek kayıp toleransı, sunucuya dakikada 2 küçük güncelleme.
+*/
+const SYNC_INTERVAL_MS = 30_000
 
 interface LocalPresenceState {
+  /** SEKME GÖRÜNÜR mü? (2026-10-16: "son etkileşim zamanı" DEĞİL.) */
   isOnline: boolean
-  lastActivity: number
   presenceState: PresenceState | null
 }
 
@@ -400,7 +414,14 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     const convs: ConversationLite[] = convsJson?.success ? convsJson.conversations ?? [] : []
     const byPeer = new Map<string, ConversationLite>()
     for (const c of convs) {
-      const other = c.direct_key?.split('|').find(part => part !== me)
+      const parts = (c.direct_key ?? '').split('|')
+      /*
+        KENDİMLE SOHBET (`<id>|<id>`, 2026-10-16 kullanıcı şikâyeti): "karşı
+        taraf" YOKTUR — satırın sahibi yine benim. Eski `.find(part !== me)`
+        hiçbir şey bulamıyordu → kendi sohbetim liste verisini (önizleme,
+        rozet, son mesaj tiki) tamamen kaybediyordu.
+      */
+      const other = parts.find(part => part !== me) ?? (parts[0] === me ? me : undefined)
       if (other) {
         byPeer.set(other, c)
       }
@@ -432,42 +453,34 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   }, [currentUserId])
 
   /*
-    YEREL ÇEVRIMİÇİ DURUMU + YAZMA SİNYALİ (local-first, 2026-10-14).
+    YEREL ÇEVRIMİÇİ DURUMU + YAZMA SİNYALİ (local-first, 2026-10-14; kural 2026-10-16'da değişti).
 
-    Sunucudan gelen `lastSeenAt` yerine, SEKME ODAĞI + KULLANICI ETKILEŞİMİ
-    ile yerel olarak hesaplanır. Sunucuya senkron:
+    Çevrimiçi kararı SEKME GÖRÜNÜRLÜĞÜNE bağlıdır (zaman aşımına DEĞİL): sekme
+    gizlenince/kapanınca çevrimdışı, görünür olduğu sürece çevrimiçi.
+    Sunucuya senkron:
       - Sekme kapanırken / gizlenirken (pagehide, visibilitychange)
-      - Periyodik (5 dk bir) — sadece "hala buradayım" demek için
+      - Periyodik nabız (`SYNC_INTERVAL_MS`) — "hala buradayım"
       - Yazma durumu değiştiğinde (typing start/stop)
-
-    Bu sayede:
-      - 2 sn'de bir `/api/chat/users` çekmek YOK (liste POLL_MS kaldırıldı)
-      - Yeşil nokta anında tepki verir (ağ gecikmesi yok)
-      - Sunucu yükü %90+ azalır
   */
   const localPresenceRef = useRef<LocalPresenceState>({
+    // Gerçek değer bağlanma (mount) anında `document.hidden`dan yazılır.
     isOnline: true,
-    lastActivity: Date.now(),
     presenceState: null,
   })
   const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const activityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   /** Yazma sinyalinin son gönderim zamanı (throttle) + "durdu" zamanlayıcısı. */
   const typingSentAt = useRef(0)
   const typingIdle = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  /** Yerel aktiviteyi tazeler (fare/klavye/odak). */
+  /**
+   * Etkileşim (tıklama/tuş/dokunma/kaydırma/odak): yerel durumu "çevrimiçi"ye
+   * tazeler. Çevrimdışı kararı artık buraya BAĞLI DEĞİL — sekme gizlenmedikçe
+   * çevrimdışı olunmaz (kullanıcı şikâyeti 2026-10-16: "kendim nasıl çevrimdışı
+   * olabiliyorum?"; eski 30 sn'lik hareketsizlik kuralı, uzun bir mesajı okurken
+   * kendi noktamı kırmızıya düşürüyordu).
+   */
   const markActivity = useCallback(() => {
-    const now = Date.now()
-    localPresenceRef.current.lastActivity = now
     localPresenceRef.current.isOnline = true
-    if (activityTimerRef.current) {
-      clearTimeout(activityTimerRef.current)
-    }
-    // 30 sn aktivite yoksa yerel olarak offline say
-    activityTimerRef.current = setTimeout(() => {
-      localPresenceRef.current.isOnline = false
-    }, LOCAL_ONLINE_TTL_MS)
   }, [])
 
   /** Sunucuya presence gönder (debounced, sadece durum değişiminde veya periyodik). */
@@ -541,8 +554,11 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         syncToServer(true) // offline oluyoruz, sunucuyu bilgilendir
         stopSyncTimer()
       }
- else {
+      else {
         markActivity()
+        // Nokta ANINDA yeşile dönsün: `isOnline` bir ref, tek başına render
+        // tetiklemez (10 sn'lik saat tiki düzeltirdi).
+        setNow(Date.now())
         startSyncTimer()
       }
     }
@@ -553,34 +569,29 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       navigator.sendBeacon('/api/chat', new Blob([JSON.stringify({ action: 'presence', state: null })], { type: 'application/json' }))
       stopSyncTimer()
     }
-    const onFocus = () => markActivity()
-    const onUserActivity = () => markActivity()
 
     document.addEventListener('visibilitychange', onVisibilityChange)
     window.addEventListener('pagehide', onPageHide)
-    window.addEventListener('focus', onFocus)
-    // Kullanıcı etkileşimleri: tıklama, tuş basma, dokunma, kaydırma
-    window.addEventListener('click', onUserActivity, { passive: true })
-    window.addEventListener('keydown', onUserActivity, { passive: true })
-    window.addEventListener('touchstart', onUserActivity, { passive: true })
-    window.addEventListener('scroll', onUserActivity, { passive: true })
 
-    // Başlangıçta online olarak işaretle ve senkron başlat
-    markActivity()
-    startSyncTimer()
+    /*
+      BAŞLANGIÇ: sekme görünürse çevrimiçi + nabız açık, gizliyse çevrimdışı ve
+      nabız KAPALI (arka planda açılan sekme kimseyi "çevrimiçi" göstermesin).
+      Görünürlüğü izleyen etkileşim dinleyicileri KALDIRILDI (2026-10-16):
+      çevrimiçi/çevrimdışı kararı yalnız sekme görünürlüğüdür, tıklama değil —
+      dinleyiciler yalnızca her kaydırmada boşa çalışıyordu.
+    */
+    localPresenceRef.current.isOnline = !document.hidden
+    if (!document.hidden) {
+      // Bağlanır bağlanmaz "buradayım": ilk periyodik nabız 30 sn sonra gelir,
+      // o boşlukta liste beni çevrimdışı gösterirdi.
+      void syncToServer(true)
+      startSyncTimer()
+    }
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       window.removeEventListener('pagehide', onPageHide)
-      window.removeEventListener('focus', onFocus)
-      window.removeEventListener('click', onUserActivity)
-      window.removeEventListener('keydown', onUserActivity)
-      window.removeEventListener('touchstart', onUserActivity)
-      window.removeEventListener('scroll', onUserActivity)
       stopSyncTimer()
-      if (activityTimerRef.current) {
-        clearTimeout(activityTimerRef.current)
-      }
     }
   }, [markActivity, syncToServer, startSyncTimer, stopSyncTimer])
 
@@ -1492,19 +1503,19 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
     Takma ad, kullanıcı adı VE gerçek ad birlikte aranır — takma ad konulsa
     bile gerçek ad kaybolmaz (kullanıcı isteği).
 
-    PANEL SÜZGECİ (2026-10-13 kullanıcı istekleri):
-      · "bir grupta yer almayıp sadece benimle konuşabilen kişi görünmesin" →
-      YÖNETİCİ listesinde, henüz SOBETİ olmayan kayıtlar görünmez: satır ilk
-      mesajla (ileride grupla) belirir. Kayıt olup hiç yazmayan kişi paneli
-      doldurmaz. Normal kullanıcıda bu kural UYGULANMAZ — onun listesindeki tek
-      satır site sahibidir; gizlenirse kimseye yazamazdı.
-      · "kullanıcı kendisiyle de konuşamasın" + "admin kendisini görsün,
-      kendisiyle konuşabilsin" (son istek, öncekini DEĞİŞTİRDİ): KENDİ SATIRIM
-      yalnız YÖNETİCİYE görünür ve sohbeti olmasa da görünür — satır ilk
-      tıklamada sohbeti açar (`openWith`). Normal kullanıcı kendisiyle konuşmaz.
+    PANEL SÜZGECİ (2026-10-13; 2026-10-16 kullanıcı isteğiyle DEĞİŞTİ):
+      · YÖNETİCİ (site sahibi/admin) → kayıtlı HERKES görünür, sohbeti olmayan
+      kayıtlar DA. Kullanıcı: "ben adminim neden bütün herkesi görmüyorum ve
+      bütün kullanıcıları görebilmeliyim sonuçta adminim". Eski kural ("kayıt
+      olup hiç yazmayan kişi paneli doldurmaz") admin için kaldırıldı: satır ilk
+      tıklamada sohbeti açar (`openWith`). Sunucu zaten admin'e tüm profilleri
+      döner (`api/chat/users`) — gizleyen yer BURASIYDI.
+      · NORMAL KULLANICI → yalnız kendisiyle konuşabileceği kişi (site sahibi,
+      sunucu süzer). Kendi satırı görünmez: kendisiyle konuşamaz
+      (`openWith` kapısı) ve "Siz" satırı ona bir şey ifade etmez.
   */
   const visiblePeers = orderedPeers
-    .filter(p => (p.id === selfId ? isAdmin : (!isAdmin || !!p.hasConversation)))
+    .filter(p => (isAdmin ? true : p.id !== selfId && !!p.hasConversation))
     .filter((p) => {
       if (!q) {
         return true
@@ -1514,6 +1525,12 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       )
     })
   const activePeer = orderedPeers.find(p => p.id === activePeerId) ?? null
+  /**
+   * KENDİMLE SOHBET mi (2026-10-16 kullanıcı şikâyeti)? Açık sohbetin karşı
+   * tarafı BENİMSEM: alıcı da ben olduğum için tik kararı yerel olarak "okundu"
+   * kabul eder (bkz. `lib/chat-ticks.ts` → `TickOverride.selfChat`).
+   */
+  const selfChat = !!selfId && activePeerId === selfId
   const threadOpen = !!conversationId
   /**
    * Yazma alanı doluluk kararı (2026-10-13): yalnız BOŞLUK yazmak "yazdı"
@@ -1673,7 +1690,10 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                                 karardan geçer — balondaki tikle asla çelişmez.
                               */}
                               {p.lastMessage?.mine && (
-                                <ListTick tick={tickForFlags(p.lastMessage)} t={t} />
+                                <ListTick
+                                  tick={tickForFlags(p.lastMessage, { selfChat: p.id === selfId })}
+                                  t={t}
+                                />
                               )}
                               {p.preview
                                 ? `${p.previewSender ? `@${p.previewSender} · ` : ''}${p.preview}`
@@ -1852,7 +1872,9 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           {threadOpen && messages.map((m, i) => {
             const mine = m.sender_id === myId
           const replied = replyTo?.id === m.id
-          const tick = mine ? tickFor(m, { pending: m._pending, failed: m._failed }) : null
+          const tick = mine
+            ? tickFor(m, { pending: m._pending, failed: m._failed, selfChat })
+            : null
           /*
             GÖNDEREN SATIRI (2026-10-13 kullanıcı isteği): balonun üstünde küçük
             "@kullanıcı" satırı durur. ART ARDA gelen aynı gönderenin mesajlarında

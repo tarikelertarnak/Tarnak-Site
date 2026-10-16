@@ -268,7 +268,7 @@ describe('admin kullanıcı menüsü', () => {
           users: [
             // kendi satırım: TAM ADIM (takma adım değil) — ek dile göre eklenir
             { id: 'me-1', username: 'tarnak', fullName: 'TARIK ELER TARNAK', nickname: 'Tarnak', avatarUrl: null },
-            // kayıtlı ama hiç sohbeti yok → listelenmez
+            // kayıtlı, hiç sohbeti yok → 2026-10-16'dan beri yönetici listesinde GÖRÜNÜR
             { id: 'u-9', username: 'yenikayit', fullName: 'Yeni Kayıt', avatarUrl: null },
             // sohbeti var → listelenir
             { id: 'u-1', username: 'ayse', fullName: 'Ayşe Yılmaz', nickname: 'Ayşecik', avatarUrl: null },
@@ -291,7 +291,13 @@ describe('admin kullanıcı menüsü', () => {
     const me = screen.getByText('TARIK ELER TARNAK (Siz)')
     expect(screen.queryByText('Tarnak'), 'takma adım gösterilmemeli').toBeNull()
     expect(screen.getByText('Ayşecik')).not.toBeNull()
-    expect(screen.queryByText('Yeni Kayıt'), 'sohbetsiz kayıt görünmemeli').toBeNull()
+    /*
+      2026-10-16 (kullanıcı, YENİ istek — öncekini DEĞİŞTİRDİ): "ben adminim
+      neden bütün herkesi görmüyorum ve bütün kullanıcıları görebilmeliyim
+      sonuçta adminim". Sohbeti OLMAYAN kayıt artık yönetici listesinde GÖRÜNÜR
+      (eskiden gizlenirdi: "sohbetsiz kayıt görünmemeli").
+    */
+    expect(screen.getByText('Yeni Kayıt'), 'sohbetsiz kayıt da görünür (admin)').not.toBeNull()
     expect(screen.queryByText(/henüz başka kullanıcı yok/i)).toBeNull()
 
     // Kendisiyle KONUŞABİLİR: satır tıklanınca kendi id'mle "open" gider.
@@ -670,5 +676,105 @@ describe('mesaj gönderen satırı', () => {
     expect(screen.getAllByText('@ayse').length).toBe(1)
     // Kendi mesajımda gönderen satırı yok.
     expect(screen.queryByText('@tarikelertarnak')).toBeNull()
+  })
+})
+
+/**
+ * KENDİMLE SOHBET (2026-10-16 kullanıcı şikâyeti): "kendime mesaj gönderiyorum
+ * tek tik nasıl kalabiliyor kendime atınca kendim görmüyomuyum düzelt onu".
+ *
+ * Bu sohbette gönderen = alıcı = ben olduğum için sunucu damgası
+ * (`delivered_at`/`read_at`) hiç gelmez — tik kararı yerel olarak "okundu"
+ * kabul eder. KANIT: damgasız mesajda saat DEĞİL, çift mavi tik (Okundu).
+ */
+describe('kendimle sohbet: tik çift mavi olur', () => {
+  const selfMsg = {
+    id: 'm-self',
+    conversation_id: 'c-me-1',
+    sender_id: 'me-1',
+    sender_name: 'tarikelertarnak',
+    text: 'kendime not',
+    kind: 'text',
+    file_url: null,
+    file_name: null,
+    file_type: null,
+    file_size: null,
+    audio_duration: null,
+    reply_to_id: null,
+    delivered_at: null,
+    read_at: null,
+    pinned: false,
+    pinned_at: null,
+    deleted_for_all: false,
+    deleted_by: null,
+    deleted_at: null,
+    created_at: new Date().toISOString(),
+  }
+
+  async function renderSelfChat() {
+    const spy = mockFetch((url, init) => {
+      if (url.includes('/api/admin/session')) {
+        return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
+      }
+      if (url.includes('/api/chat/users')) {
+        return jsonResponse({
+          success: true,
+          chatId: 'me-1',
+          users: [{ id: 'me-1', username: 'tarnak', fullName: 'TARIK ELER TARNAK', nickname: null, avatarUrl: null }],
+        })
+      }
+      if (url === '/api/chat' && !init?.method) {
+        // Kendi sohbetim: `direct_key = "<id>|<id>"` (karşı taraf YOK) + son
+        // mesaj damgasız → liste tiki de çift mavi olmalı.
+        return jsonResponse({
+          success: true,
+          conversations: [
+            {
+              id: 'c-me-1',
+              direct_key: 'me-1|me-1',
+              important: null,
+              favorite: null,
+              blocked: null,
+              updated_at: new Date().toISOString(),
+              last_preview: 'kendime not',
+              last_sender_name: 'tarikelertarnak',
+              last: {
+                sender_id: 'me-1',
+                delivered_at: null,
+                read_at: null,
+                created_at: new Date().toISOString(),
+              },
+            },
+          ],
+        })
+      }
+      if (url.includes('conversationId=') && !init?.method) {
+        return jsonResponse({ success: true, messages: [selfMsg] })
+      }
+      return jsonResponse({ success: true, conversation: { id: 'c-me-1' }, messages: [] })
+    })
+    render(
+      <LocaleProvider detectedLocale="tr">
+        <Chat />
+      </LocaleProvider>,
+    )
+    await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
+    return spy
+  }
+
+  it('sohbet açılınca damgasız kendi mesajım ÇİFT MAVİ (Okundu) görünür', async () => {
+    await renderSelfChat()
+
+    // Kendi satırım artık SOHBET VERİSİNİ de taşır (eskiden kaybolurdu).
+    fireEvent.click(screen.getByText('TARIK ELER TARNAK (Siz)'))
+    await waitFor(() => expect(screen.getByText('kendime not')).not.toBeNull())
+
+    // Tik: okundu etiketi (saat "Gönderiliyor" değil). Balon içinde aranır —
+    // kişi satırındaki Durum noktası da `role="img"` taşır.
+    const tick = document.querySelector('#msg-m-self [role="img"][aria-label]')
+    expect(tick?.getAttribute('aria-label')).toBe(dictionaries.tr!['chat.readAt'])
+    expect(tick?.getAttribute('aria-label')).not.toBe(dictionaries.tr!['chat.sendingTick'])
+    // YEŞİL yok: okundu rengi mavi ailesinden.
+    expect(tick?.className).not.toMatch(/green|emerald|lime|amber|yellow/)
   })
 })

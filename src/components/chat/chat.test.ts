@@ -39,7 +39,7 @@ describe('chat arayüz sözleşmesi', () => {
     // İkon + renk kararı saf modülde (chat-ticks.test.ts onu tek tek doğrular);
     // bileşenin işi yalnızca o kararı render etmek.
     expect(SRC).toMatch(/import \{[^}]*TickReadIcon[^}]*TickSentIcon[^}]*\} from '@\/components\/ui\/icons'/)
-    expect(SRC).toContain('tickFor(m, { pending: m._pending, failed: m._failed })')
+    expect(SRC).toContain('tickFor(m, { pending: m._pending, failed: m._failed, selfChat })')
     // saat = gönderiliyor; çift tik = okundu, tek tik = gönderildi/iletildi
     expect(SRC).toMatch(/m\._pending\s*\? <ClockIcon/)
     expect(SRC).toMatch(/tick\.double \? <TickReadIcon[^>]*\/> : <TickSentIcon/)
@@ -464,11 +464,13 @@ describe('chat arayüz sözleşmesi', () => {
           2. SON istek: "Admin kendisini görsün kendisiyle konuşa bilsin ama
              ismi TARIK ELER TARNAK (Siz) görünsün — bu 'Siz' hangi dildeysen
              ona çevrilir ve ismin SONUNA eklenir".
-        Net davranış: kendi satırım YÖNETİCİDE görünür (sohbeti olmasa da),
-        normal kullanıcıda hiç görünmez; sohbetsiz kayıt yönetici listesinde
-        yine görünmez.
+        Net davranış (2026-10-16 GÜNCELLENDİ): "ben adminim neden bütün herkesi
+        görmüyorum, bütün kullanıcıları görebilmeliyim sonuçta adminim" →
+        YÖNETİCİ kayıtlı HERKESİ görür, sohbeti olmayan kayıtlar DA (aşağıdaki
+        "bütün kullanıcılar" testi). Normal kullanıcıda davranış aynı: kendi
+        satırı görünmez, yalnız konuşabileceği kişiyi görür.
       */
-      expect(CODE).toMatch(/p\.id === selfId \? isAdmin : \(!isAdmin \|\| !!p\.hasConversation\)/)
+      expect(CODE).toMatch(/isAdmin \? true : p\.id !== selfId && !!p\.hasConversation/)
       // Kendi satırımda TAKMA ADIM değil TAM ADIM + yerelleşmiş parantezli ek.
       expect(CODE).toMatch(/p\.id === selfId\s*\? `\$\{p\.fullName \|\| p\.username\} \(\$\{you\}\)`/)
       expect(CODE).toContain('t(\'chat.you\')')
@@ -580,7 +582,7 @@ describe('chat arayüz sözleşmesi', () => {
 
   describe('tik mantığı — 2026-10-16 (yeşil YOK)', () => {
     it('durum TEK kaynaktan türer: balon + sohbet listesi aynı fonksiyonu kullanır', () => {
-      expect(SRC).toContain('tickFor(m, { pending: m._pending, failed: m._failed })')
+      expect(SRC).toContain('tickFor(m, { pending: m._pending, failed: m._failed, selfChat })')
       // liste önizlemesindeki tik de AYNI karar fonksiyonundan geçer
       expect(SRC).toContain('tickForFlags(')
       expect(SRC).toMatch(/p\.lastMessage\?\.mine/)
@@ -618,6 +620,51 @@ describe('chat arayüz sözleşmesi', () => {
       const CSS = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8')
       expect(CSS).toContain('@keyframes msg-flash')
       expect(CSS).toContain('.msg-flash')
+    })
+  })
+
+  describe('admin herkesi görür · kendimle sohbet · kendi çevrimiçiliğim — 2026-10-16', () => {
+    it('yönetici sohbeti OLMAYAN kayıtları da görür ("bütün kullanıcıları görebilmeliyim")', () => {
+      expect(CODE).toMatch(/isAdmin \? true : p\.id !== selfId && !!p\.hasConversation/)
+      // Sunucu zaten admin'e TÜM profilleri döner — gizleyen yer İSTEMCİYDİ.
+      const API = readFileSync(join(process.cwd(), 'src/app/api/chat/users/route.ts'), 'utf8')
+      expect(API).toContain('canSeeAllPeers')
+      expect(API).toMatch(/canSeeAllPeers\(sessionUser\)/)
+    })
+
+    it('kendi sohbetim (`<id>|<id>`) liste verisini KAYBETMEZ', () => {
+      // "karşı taraf" bulunamazsa satırın sahibi benim. Eski `.find(part !== me)`
+      // kendi sohbetimde hiçbir şey bulamıyordu → önizleme/rozet/tik kayıptı.
+      expect(CODE).toContain('const other = parts.find(part => part !== me) ?? (parts[0] === me ? me : undefined)')
+    })
+
+    it('kendimle sohbette tik ÇİFT MAVİ olur (tek gri tikte takılı kalmaz)', () => {
+      // Kullanıcı: "kendime mesaj gönderiyorum tek tik nasıl kalabiliyor".
+      expect(CODE).toContain('const selfChat = !!selfId && activePeerId === selfId')
+      // balon tiki + liste tiki AYNI karardan geçer
+      expect(CODE).toContain('failed: m._failed, selfChat')
+      expect(CODE).toContain('tickForFlags(p.lastMessage, { selfChat: p.id === selfId })')
+    })
+
+    it('kendi noktam kırmızı olmaz: çevrimiçilik SEKME GÖRÜNÜRLÜĞÜNE bağlı', () => {
+      // Kullanıcı: "kendim nasıl çevrimdışı olabiliyorum?" — eski kural "30 sn
+      // etkileşim yoksa çevrimdışı" idi; artık tek çevrimdışı yolu sekmenin
+      // gizlenmesi/kapanması.
+      expect(SRC).not.toContain('LOCAL_ONLINE_TTL_MS')
+      expect(CODE).toContain('localPresenceRef.current.isOnline = !document.hidden')
+    })
+
+    it('nabız aralığı sunucunun tazelik penceresinden KÜÇÜK (yoksa herkes çevrimdışı görünür)', () => {
+      // Kök neden (2026-10-16): nabız 5 dk'da bir, `presenceOf` penceresi 60 sn
+      // → nabız pencereler arasında kaçıyordu.
+      const PEERS = readFileSync(join(process.cwd(), 'src/lib/chat-peers.ts'), 'utf8')
+      const num = (src: string, re: RegExp) =>
+        Number(re.exec(src)?.[1]?.replace(/_/g, ''))
+      const sync = num(CODE, /const SYNC_INTERVAL_MS = ([\d_]+)/)
+      const freshness = num(PEERS, /PRESENCE_ONLINE_MS = ([\d_]+)/)
+      expect(sync).toBeGreaterThan(0)
+      expect(freshness).toBeGreaterThan(0)
+      expect(sync).toBeLessThan(freshness)
     })
   })
 })

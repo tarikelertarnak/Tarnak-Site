@@ -75,6 +75,16 @@ export const TICK_FAILED_COLOR = 'text-red-300'
 export interface TickOverride {
   pending?: boolean
   failed?: boolean
+  /**
+   * KENDİMLE SOHBET (`<id>|<id>`, 2026-10-16 kullanıcı şikâyeti: "kendime mesaj
+   * gönderiyorum tek tik nasıl kalabiliyor, kendime atınca kendim görmüyor
+   * muyum?"). Bu sohbette ALICI DA BENİM: mesajı gönderdiğim an okuyan taraf
+   * benim → teslim/okundu damgası sunucudan HİÇ gelmez (`markRead` görüntüleyici
+   * kendi mesajını damgalamaz, yoksa gönderen kendi mesajını "okundu" yapardı).
+   * Bekleyen/başarısız durumlar yine ÖNCE gelir: gönderim bitmemişse saat/bang
+   * gösterilir; damga değil.
+   */
+  selfChat?: boolean
 }
 
 /**
@@ -111,6 +121,12 @@ function styleFor(read: boolean, delivered: boolean, override?: TickOverride): T
   }
   if (override?.pending) {
     return { double: false, color: TICK_SENDING_COLOR, labelKey: 'chat.sendingTick', state: 'sending' }
+  }
+  // Kendimle sohbette okundu BİLİNİR (alıcı da benim, mesajlar gözümün
+  // önünde) — sunucu damgası beklenmez, yoksa tek gri tikte takılı kalır.
+  if (override?.selfChat) {
+    read = true
+    delivered = true
   }
   if (read) {
     return { double: true, color: TICK_READ_COLOR, labelKey: 'chat.readAt', state: 'read' }

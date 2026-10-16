@@ -99,3 +99,39 @@ describe('tickFor — iyimser gönderim', () => {
     expect(tickFor(optimistic).color).not.toBe(TICK_READ_COLOR)
   })
 })
+
+/**
+ * KENDİMLE SOHBET (2026-10-16 kullanıcı şikâyeti: "kendime mesaj gönderiyorum
+ * tek tik nasıl kalabiliyor, kendime atınca kendim görmüyor muyum?").
+ *
+ * Bu sohbette GÖNDEREN = ALICI = görüntüleyici. Sunucu kendi mesajımı
+ * damgalamaz (yoksa gönderen kendi mesajını "okundu" yapar → tikler yalan olur,
+ * bkz. `chat-db.ts: markRead`), bu yüzden teslim/okundu bilgisi YEREL olarak
+ * "okundu" kabul edilir. Tek gri tikte takılı kalmaz.
+ */
+describe('tickFor — kendimle sohbet (selfChat)', () => {
+  it('damgasız mesaj bile ÇİFT MAVİ tik (okundu) olur', () => {
+    const t = tickFor({ delivered_at: null, read_at: null }, { selfChat: true })
+    expect(t.color).toBe(TICK_READ_COLOR)
+    expect(t.double).toBe(true)
+    expect(t.labelKey).toBe('chat.readAt')
+    expect(t.state).toBe('read')
+  })
+
+  it('gönderim SÜRERKEN saat kalır (sunucuya ulaşmadan okundu denmez)', () => {
+    const t = tickFor({ delivered_at: null, read_at: null }, { pending: true, selfChat: true })
+    expect(t.color).toBe(TICK_SENDING_COLOR)
+    expect(t.state).toBe('sending')
+  })
+
+  it('gönderim BAŞARISIZSA kırmızı ünlem kazanır', () => {
+    const t = tickFor({ delivered_at: null, read_at: null }, { failed: true, selfChat: true })
+    expect(t.color).toBe(TICK_FAILED_COLOR)
+    expect(t.state).toBe('failed')
+  })
+
+  it('selfChat verilmezse kural DEĞİŞMEZ (normal sohbet bozulmadı)', () => {
+    expect(tickFor({ delivered_at: null, read_at: null }).color).toBe(TICK_PENDING_COLOR)
+    expect(tickFor({ delivered_at: null, read_at: null }).double).toBe(false)
+  })
+})
