@@ -766,7 +766,20 @@ describe('kendimle sohbet: tik çift mavi olur', () => {
     await renderSelfChat()
 
     // Kendi satırım artık SOHBET VERİSİNİ de taşır (eskiden kaybolurdu).
-    fireEvent.click(screen.getByText('TARIK ELER TARNAK (Siz)'))
+    //
+    // NEDEN `getAllByText` (2026-10-17, dalgalanan test düzeltmesi): bu
+    // senaryoda kendi sohbetimde BİR mesaj var, yani adım hem kişi
+    // listesindeki satırda hem mesaj balonunun gönderen alanında yazıyor →
+    // `getByText` "found multiple elements" ile düşüyordu (kod değişmeden
+    // 4 koşunun 2'sinde). Tıklanacak olan LİSTEDEKİ satır: balondaki ad
+    // tıklanabilir bir ataya sahip değil. Yanlış öğe tıklanırsa alttaki
+    // 'kendime not' iddiası düşer — yani sessizce geçemez.
+    const adaylar = screen.getAllByText('TARIK ELER TARNAK (Siz)')
+    const satir = adaylar
+      .map(el => el.closest('button,[role="button"],li,[tabindex]'))
+      .find(Boolean)
+    expect(satir, 'kişi listesinde tıklanabilir satır bulunmalı').toBeTruthy()
+    fireEvent.click(satir!)
     await waitFor(() => expect(screen.getByText('kendime not')).not.toBeNull())
 
     // Tik: okundu etiketi (saat "Gönderiliyor" değil). Balon içinde aranır —
