@@ -282,7 +282,7 @@ export function Drawer({
                 })}
             className={
               isMiddle
-                ? `absolute inset-[var(--layout-gap)] flex flex-col overflow-hidden rounded-2xl border ${PANEL_SURFACE_BORDER} ${PANEL_SURFACE} shadow-2xl shadow-black/40 outline-none`
+                ? `absolute inset-[var(--layout-gap)] mx-auto max-w-2xl flex flex-col overflow-hidden rounded-2xl border ${PANEL_SURFACE_BORDER} ${PANEL_SURFACE} shadow-2xl shadow-black/40 outline-none`
                 : `absolute top-0 ${side === 'right' ? 'right-0' : 'left-0'} flex h-full w-full ${width} flex-col border-${side === 'right' ? 'l' : 'r'} ${PANEL_SURFACE_BORDER} ${PANEL_SURFACE} shadow-2xl shadow-black/40 outline-none`
             }
           >
