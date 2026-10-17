@@ -1,478 +1,116 @@
-import { ContactQuickMenu } from '@/components/contact-quick-menu'
+import { AboutPageView } from '@/components/about/about-page-view'
 import { Navigation } from '@/components/navigation'
 import {
   CertificatesSection,
   TimelineSection,
 } from '@/components/phase6-sections'
-import { Button } from '@/components/ui/button'
-import {
-  BriefcaseIcon,
-  ChevronRightIcon,
-  CodeIcon,
-  GithubIcon,
-  HeartIcon,
-  ShieldIcon,
-  StarIcon,
-  UserIcon,
-} from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
-import { getStaticLocale, getStaticLocalizedContent } from '@/lib/i18n-server'
+import { paragraphs, parseAboutPage, pickLocalized } from '@/lib/about-page'
+import { getContent, getContentSourceStatus } from '@/lib/content'
+import { getStaticLocalizedContent } from '@/lib/i18n-server'
 import { parsePhase6 } from '@/lib/phase6'
 
-// 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
+/**
+ * `/about` sayfası (2026-10-17).
+ *
+ * Biyografi artık kaynak kodda DEĞİL: `site_content.content->'aboutPage'`
+ * alanından okunur, admin panelinden (Profil & Hakkımda → Hakkımda Sayfası)
+ * düzenlenir. Şema: `src/lib/about-page.ts`, seed: `supabase/about-page.sql`.
+ *
+ * Bu dosyada eskiden `TIMELINE` / `FOCUS` / `VALUES` sabitleri vardı; içinde
+ * onaylanmamış tarihler (2019-2024+) ve uydurma iddialar (CTF, bug bounty,
+ * pentest, "Sistem Mimarı") bulunuyordu. Hepsi KALDIRILDI ve yerine yedek
+ * metin KONULMADI — içerik yoksa sayfa yerelleştirilmiş boş durum gösterir.
+ *
+ * 2026-10-03: ISR kaldırıldı — `force-static` kalır (Workers Free 10 ms CPU).
+ * Dil istemcide çözülür (`AboutPageView` → `useLocale()`), bu yüzden sayfayı
+ * dinamik yapmaya gerek yok.
+ */
 export const dynamic = 'force-static'
 
 export async function generateMetadata() {
-  const locale = await getStaticLocale()
-  const isEn = locale === 'en'
+  /*
+   * Açıklama İÇERİKTEN türetilir (uydurma unvan yazılmaz): giriş metninin
+   * ilk paragrafı. İçerik yoksa yalnızca ad/marka yazılır.
+   */
+  const content = await getContent()
+  const aboutPage = parseAboutPage(content.aboutPage)
+  const ilkParagraf = paragraphs(pickLocalized(aboutPage?.intro, 'tr'))[0] ?? ''
+  const aciklama
+    = ilkParagraf.length > 0
+      ? ilkParagraf.slice(0, 180)
+      : 'TARIK ELER (TARNAK) — kişisel site: projeler, yazılar ve iletişim.'
+  const baslik = pickLocalized(aboutPage?.title, 'tr') || 'HAKKIMDA'
+
   return {
-    title: isEn
-      ? 'About — TARIK ELER - TARNAK'
-      : 'Hakkımda — TARIK ELER - TARNAK',
-    description: isEn
-      ? 'TARIK ELER (Tarnak) — Web developer & creator. I build projects with Next.js, TypeScript and AI. My history, skills and motivation.'
-      : 'TARIK ELER (Tarnak) — Web developer & creator. Next.js, TypeScript ve yapay zeka üzerine projeler geliştiriyorum. Geçmişim, yeteneklerim ve motivasyonum.',
+    title: `${baslik} — TARIK ELER - TARNAK`,
+    description: aciklama,
     alternates: { canonical: '/about' },
     openGraph: {
-      title: isEn
-        ? 'About — TARIK ELER - TARNAK'
-        : 'Hakkımda — TARIK ELER - TARNAK',
-      description: isEn
-        ? 'TARIK ELER (Tarnak) — Web developer & creator building projects with Next.js, TypeScript and AI.'
-        : 'TARIK ELER (Tarnak) — Next.js, TypeScript ve yapay zeka üzerine projeler geliştiren web geliştirici.',
+      title: `${baslik} — TARIK ELER - TARNAK`,
+      description: aciklama,
       url: '/about',
       type: 'profile',
     },
   }
 }
 
-const TIMELINE = [
-  {
-    year: '2019',
-    title: 'İlk adımlar',
-    body: 'HTML, CSS ve JavaScript ile basit web sayfaları yazarak başladım. Statik siteler ve küçük JavaScript oyunları ilk projelerimdi.',
-    icon: CodeIcon,
-  },
-  {
-    year: '2020',
-    title: 'Framework keşfi',
-    body: 'React ve Node.js öğrendim. Kişisel projeler için SPA mimarisi, REST API ve JWT auth kavramlarını deneyimledim.',
-    icon: BriefcaseIcon,
-  },
-  {
-    year: '2021',
-    title: 'TypeScript & Next.js',
-    body: 'TypeScript ile tip güvenli kod yazımına geçtim. Next.js ile SEO-dostu, hızlı, full-stack uygulamalar geliştirmeye başladım.',
-    icon: StarIcon,
-  },
-  {
-    year: '2022',
-    title: 'Açık kaynak & ilk yayınlar',
-    body: 'GitHub\'da açık kaynak projeler yayınladım. Topluluk katkıları ve issue tracker üzerinden geri bildirim alarak büyüdüm.',
-    icon: GithubIcon,
-  },
-  {
-    year: '2023',
-    title: 'Yapay zeka & modern stack',
-    body: 'OpenAI API, LLM entegrasyonları ve AI destekli uygulamalar geliştirdim. Supabase, Tailwind v4, HeroUI ile modern stack\'e geçtim.',
-    icon: HeartIcon,
-  },
-  {
-    year: '2024+',
-    title: 'Siber güvenlik & sürekli öğrenme',
-    body: 'CTF yarışmaları ve bug bounty programlarına katılıyorum. Pentest araçları yazıyor, güvenlik odaklı projeler geliştiriyorum.',
-    icon: ShieldIcon,
-  },
-]
-
-const TIMELINE_EN: typeof TIMELINE = [
-  {
-    year: '2019',
-    title: 'First steps',
-    body: 'I started by writing simple web pages with HTML, CSS and JavaScript. Static sites and small JavaScript games were my first projects.',
-    icon: CodeIcon,
-  },
-  {
-    year: '2020',
-    title: 'Framework discovery',
-    body: 'I learned React and Node.js. I experimented with SPA architecture, REST APIs and JWT auth for personal projects.',
-    icon: BriefcaseIcon,
-  },
-  {
-    year: '2021',
-    title: 'TypeScript & Next.js',
-    body: 'I switched to type-safe code with TypeScript. I started building fast, SEO-friendly full-stack apps with Next.js.',
-    icon: StarIcon,
-  },
-  {
-    year: '2022',
-    title: 'Open source & first releases',
-    body: 'I published open source projects on GitHub. I grew through community contributions and feedback via issue trackers.',
-    icon: GithubIcon,
-  },
-  {
-    year: '2023',
-    title: 'AI & modern stack',
-    body: 'I built OpenAI API and LLM integrations, and AI-powered apps. I moved to a modern stack with Supabase, Tailwind v4 and HeroUI.',
-    icon: HeartIcon,
-  },
-  {
-    year: '2024+',
-    title: 'Cybersecurity & continuous learning',
-    body: 'I participate in CTF competitions and bug bounty programs. I write pentest tools and develop security-focused projects.',
-    icon: ShieldIcon,
-  },
-]
-
-const FOCUS = [
-  {
-    title: 'Modern Web',
-    body: 'Next.js, TypeScript, React 19 ve modern build araçlarıyla production-ready uygulamalar.',
-  },
-  {
-    title: 'Yapay Zeka',
-    body: 'LLM entegrasyonları, prompt engineering, AI destekli editörler ve otomasyon araçları.',
-  },
-  {
-    title: 'Açık Kaynak',
-    body: 'GitHub üzerinden paylaştığım projeler — script executor, AI jailbreak, code editor ve daha fazlası.',
-  },
-  {
-    title: 'Siber Güvenlik',
-    body: 'Pentest, CTF, bug bounty. Zafiyet analizi ve güvenli yazılım geliştirme pratikleri.',
-  },
-]
-
-const FOCUS_EN: typeof FOCUS = [
-  {
-    title: 'Modern Web',
-    body: 'Production-ready apps with Next.js, TypeScript, React 19 and modern build tools.',
-  },
-  {
-    title: 'Artificial Intelligence',
-    body: 'LLM integrations, prompt engineering, AI-powered editors and automation tools.',
-  },
-  {
-    title: 'Open Source',
-    body: 'Projects I share on GitHub — script executor, AI jailbreak, code editor and more.',
-  },
-  {
-    title: 'Cybersecurity',
-    body: 'Pentest, CTF, bug bounty. Vulnerability analysis and secure software development practices.',
-  },
-]
-
-const VALUES = [
-  { label: 'Sürekli öğrenme', desc: 'Teknoloji durmadan değişiyor, ben de.' },
-  { label: 'Sade çözümler', desc: 'Laziness as a feature — az kod, çok iş.' },
-  {
-    label: 'Açık kaynak',
-    desc: 'Bildiklerimi paylaşır, başkalarından öğrenirim.',
-  },
-  {
-    label: 'Güvenlik odaklı',
-    desc: 'Yazdığım her şeyin güvenli olduğundan emin olurum.',
-  },
-  {
-    label: 'Hız',
-    desc: 'Düşünce → ürün arasındaki süreyi minimuma indiririm.',
-  },
-  {
-    label: 'Tutarlılık',
-    desc: 'Detaylara önem veririm; UI/UX bütünü bir hikaye anlatır.',
-  },
-]
-
-const VALUES_EN: typeof VALUES = [
-  {
-    label: 'Continuous learning',
-    desc: 'Technology keeps changing, and so do I.',
-  },
-  {
-    label: 'Simple solutions',
-    desc: 'Laziness as a feature — less code, more work done.',
-  },
-  { label: 'Open source', desc: 'I share what I know and learn from others.' },
-  {
-    label: 'Security first',
-    desc: 'I make sure everything I write is secure.',
-  },
-]
-
 export default async function AboutPage() {
   const content = await getStaticLocalizedContent()
-  // Ek bölümler — içerik şemasından okunur, boşsa hiçbir şey render edilmez
+  const aboutPage = parseAboutPage(content.aboutPage)
+  // "Kayıt yok" ile "okuma başarısız" ayrı gösterilir (bkz. getContentSourceStatus).
+  const readFailed = getContentSourceStatus().supabase === 'error'
+
+  /*
+   * GitHub adresi AYARLARDAN gelir (admin: Site Ayarları → GitHub repo /
+   * sosyal medya). Bileşende sabitlenmez; ayar boşsa bilinen profil
+   * adresine düşülür.
+   */
+  const sosyalGithub = content.social.find(
+    s => s?.href?.includes('github.com') || s?.name?.toLowerCase() === 'github',
+  )?.href
+  const githubUrl
+    = content.nav.githubRepo || sosyalGithub || 'https://github.com/tarikelertarnak'
+
+  // Ek bölümler (zaman çizelgesi + sertifikalar) — içerik yoksa render EDİLMEZ.
   const phase6 = parsePhase6(
     (content as unknown as Record<string, unknown>).phase6,
   )
   const timelineItems = phase6?.timeline?.items.filter(i => i.title) ?? []
   const certificateItems = phase6?.certificates?.items.filter(i => i.name) ?? []
-  const locale = await getStaticLocale()
-  const isEn = locale === 'en'
-  const { about } = content
-  const profile = content.profile
-  const timeline = isEn ? TIMELINE_EN : TIMELINE
-  const focus = isEn ? FOCUS_EN : FOCUS
-  const values = isEn ? VALUES_EN : VALUES
 
   return (
-    <div className="min-h-screen w-full relative">
+    <div className="relative min-h-screen w-full">
       <Navigation />
-      <main id="main" className="w-full">
-        {/* Hero */}
-        {/*
-          Hero / eylem satırı. `pb-0`: alt boşluk artık içerideki
-          `h-[var(--section-gap)]` div'i ile veriliyor — Section'ın kendi
-          `pb-12`'si ile TOPLANINCA 88px oluyordu (ölçülen değer), yani
-          boşluk ÇİFT KAYNAKLIydı ve hedef 24px'in 3.6 katıydı.
-        */}
-        <Section className="flex-col pt-28 sm:pt-32 pb-0" id="about">
-          <div className="mx-auto w-full max-w-3xl text-center">
-            <h1 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
-              <UserIcon size={36} className="inline-block" />
-              {about.subtitle}
-            </h1>
-            {about.description && (
-              <p className="mt-4 text-base text-foreground/60 sm:text-lg">
-                {about.description}
-              </p>
-            )}
+      <AboutPageView
+        aboutPage={aboutPage}
+        readFailed={readFailed}
+        githubUrl={githubUrl}
+      />
 
-            {/*
-              BÖLÜM BOŞLUĞU — ÜST (2026-10-06, kullanıcı kuralı: "başlık ile
-              butonlar arasındaki boşluk, butonlar ile içerik arasındaki
-              boşlukla AYNI olsun").
+      {timelineItems.length > 0 && (
+        <>
+          <div aria-hidden className="h-[var(--section-gap)]" />
+          <Section className="flex-col pb-0">
+            <TimelineSection
+              title={phase6?.timeline?.title}
+              items={timelineItems}
+            />
+          </Section>
+        </>
+      )}
 
-              Ölçüm (1440px): başlık→buton 32px, buton→kart 88px → dengesiz.
-              Buton satırı ayrıca kendi `mt-8`'ini taşıyordu; o kaldırıldı
-              (aksi halde çift boşluk olurdu). Artık İKİ taraf da tek
-              kaynaktan: `--section-gap`.
-            */}
-            <div aria-hidden className="h-[var(--section-gap)]" />
-
-            {/*
-              EYLEM SATIRI (2026-10-06, kullanıcı: "hakkımdaki daha fazla
-              ile iletişim bilgileri de olsun").
-
-              Ana sayfadaki `AboutSection` zaten "Daha Fazlası" +
-              "İletişim Bilgileri" satırını taşıyor; `/about/` sayfasında
-              eşdeğer satır yoktu. Aynı iki bileşen, aynı sınıflar —
-              ana sayfa = tek kaynak, sayfalar arası ayrışma yok.
-              "Daha Fazlası" `/about/`'in kendisine gider (oradan
-              içeriğin tamamı okunur), "İletişim Bilgileri" açılır menüyü
-              açar.
-            */}
-            <div className="flex w-full flex-wrap items-center justify-center gap-3">
-              <Button
-                color="primary"
-                href="/about/"
-                className="h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
-                endContent={<ChevronRightIcon size={15} className="shrink-0" />}
-              >
-                {/*
-                  Sunucu bileşeni olduğu için `t()` yok; ana sayfadaki
-                  `about.more` etiketinin aynısı elle kullanılıyor.
-                */}
-                {isEn ? 'Learn more' : 'Daha Fazlası'}
-              </Button>
-              <ContactQuickMenu content={content} />
-            </div>
-
-            {/* BÖLÜM BOŞLUĞU — ALT (buton → sonraki `framed` Section) */}
-            <div aria-hidden className="h-[var(--section-gap)]" />
-          </div>
-        </Section>
-
-        {/* About me description */}
-        <Section className="flex-col pb-12 sm:pb-16" framed>
-          <div className="mx-auto w-full max-w-3xl">
-            <div className="rounded-2xl border border-surface-border bg-background p-6 sm:p-8">
-              <h2 className="mb-4 text-2xl font-bold text-foreground sm:text-3xl">
-                {isEn ? 'Hello, I\'m Tarık.' : 'Merhaba, ben Tarık.'}
-              </h2>
-              <div className="space-y-4 text-sm leading-relaxed text-foreground/75 sm:text-base">
-                <p>
-                  {isEn ? (
-                    <>
-                      {profile.title}
-. I build projects with Next.js, TypeScript
-                      and AI — end to end, from design to deploy. Writing code
-                      isn't just a job to me; it's the most enjoyable way to
-                      solve problems.
-</>
-                  ) : (
-                    <>
-                      {profile.title}
-. Next.js, TypeScript ve yapay zeka üzerine
-                      projeler geliştiriyorum — tasarımdan deploy'a kadar uçtan
-                      uca. Kod yazmak benim için sadece bir iş değil, problem
-                      çözmenin en keyifli hali.
-</>
-                  )}
-                </p>
-                <p>{about.whoText}</p>
-                <p>
-                  {isEn ? (
-                    <>
-                      I publish open source projects, take part in
-{' '}
-                      <span className="text-primary">cybersecurity</span>
-{' '}
-                      communities and keep learning new things. I use TARNAK (my
-                      own brand) to produce content and contribute to the
-                      developer community.
-                    </>
-                  ) : (
-                    <>
-                      Açık kaynak projeler yayınlıyor,
-{' '}
-                      <span className="text-primary">siber güvenlik</span>
-{' '}
-                      topluluklarında yer alıyor ve sürekli yeni şeyler
-                      öğreniyorum. TARNAK'ı (kendi markamı) özellikle Türkçe
-                      içerik üretmek ve Türk geliştirici topluluğuna katkıda
-                      bulunmak için kullanıyorum.
-                    </>
-                  )}
-                </p>
-              </div>
-            </div>
-          </div>
-        </Section>
-
-        {/* Focus areas */}
-        <Section className="flex-col pb-12 sm:pb-16" framed>
-          <div className="mx-auto w-full max-w-5xl">
-            <h2 className="mb-6 text-center text-2xl font-bold text-foreground sm:text-3xl">
-              {isEn ? 'Areas I Focus On' : 'Üzerinde Çalıştığım Alanlar'}
-            </h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {focus.map(f => (
-                <div
-                  key={f.title}
-                  className="rounded-2xl border border-surface-border bg-background p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5"
-                >
-                  <h3 className="mb-2 text-base font-semibold text-foreground">
-                    {f.title}
-                  </h3>
-                  <p className="text-sm text-foreground/60">{f.body}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Section>
-
-        {/* Timeline / Journey */}
-        <Section className="flex-col pb-12 sm:pb-16" framed>
-          <div className="mx-auto w-full max-w-3xl">
-            <h2 className="mb-8 text-center text-2xl font-bold text-foreground sm:text-3xl">
-              {isEn ? 'My Journey' : 'Yolculuğum'}
-            </h2>
-            <ol className="relative space-y-8 border-l-2 border-foreground-200/10 pl-6 sm:pl-8">
-              {timeline.map((item) => {
-                const Icon = item.icon
-                return (
-                  <li key={item.year} className="relative">
-                    <span className="absolute -left-[34px] sm:-left-[42px] top-0 flex h-7 w-7 items-center justify-center rounded-full border-2 border-foreground-200/15 bg-background text-primary sm:-left-[42px]">
-                      <Icon size={14} />
-                    </span>
-                    <p className="text-xs font-bold uppercase tracking-wider text-primary">
-                      {item.year}
-                    </p>
-                    <h3 className="mt-1 text-lg font-semibold text-foreground">
-                      {item.title}
-                    </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-foreground/65">
-                      {item.body}
-                    </p>
-                  </li>
-                )
-              })}
-            </ol>
-          </div>
-        </Section>
-
-        {/* Values */}
-        <Section className="flex-col pb-16 sm:pb-24" framed>
-          <div className="mx-auto w-full max-w-4xl">
-            <h2 className="mb-6 text-center text-2xl font-bold text-foreground sm:text-3xl">
-              {isEn ? 'My Values' : 'Değerlerim'}
-            </h2>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {values.map(v => (
-                <div
-                  key={v.label}
-                  className="rounded-2xl border border-surface-border bg-background px-5 py-4"
-                >
-                  <h3 className="mb-1 text-sm font-bold text-primary">
-                    {v.label}
-                  </h3>
-                  <p className="text-sm text-foreground/65">{v.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Section>
-
-        {/* CTA */}
-        <Section className="flex-col pb-24 sm:pb-32" framed>
-          <div className="mx-auto w-full max-w-2xl text-center">
-            <h2 className="text-2xl font-black text-foreground sm:text-3xl">
-              {isEn ? 'Let\'s work together.' : 'Birlikte çalışalım.'}
-            </h2>
-            <p className="mt-3 text-sm text-foreground/60 sm:text-base">
-              {isEn
-                ? 'Have a project idea, a job offer, or just want to say hello — reach out. I am always open to feedback and questions.'
-                : 'Bir proje fikrin, iş teklifi ya da sadece merhaba demek için bana ulaş. Geri bildirim ve sorulara her zaman açığım.'}
-            </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href="https://github.com/tarikelertarnak"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-              >
-                <GithubIcon size={16} />
-                {isEn ? 'Follow on GitHub' : 'GitHub\'da Takip Et'}
-              </a>
-              <a
-                href="/contact/"
-                className="inline-flex items-center gap-2 rounded-lg border border-foreground-200/15 bg-background px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-primary/40 hover:text-primary"
-              >
-                {isEn ? 'Get in Touch' : 'İletişime Geç'}
-              </a>
-            </div>
-          </div>
-        </Section>
-
-        {/* ── Ek bölümler — zaman çizelgesi + sertifikalar ────────────────
-            İçerik UYDURULMADI: `content.phase6.timeline.items` ve
-            `certificates.items` boşken bu blok render EDİLMEZ. Kullanıcı
-            admin panelinden doldurunca bölümler kendiliğinden belirir. */}
-        {timelineItems.length > 0 && (
-          <>
-            <div aria-hidden className="h-[var(--section-gap)]" />
-            <Section className="flex-col pb-0">
-              <TimelineSection
-                title={phase6?.timeline?.title}
-                items={timelineItems}
-              />
-            </Section>
-          </>
-        )}
-
-        {certificateItems.length > 0 && (
-          <>
-            <div aria-hidden className="h-[var(--section-gap)]" />
-            <Section className="flex-col pb-0">
-              <CertificatesSection
-                title={phase6?.certificates?.title}
-                items={certificateItems}
-              />
-            </Section>
-          </>
-        )}
-      </main>
+      {certificateItems.length > 0 && (
+        <>
+          <div aria-hidden className="h-[var(--section-gap)]" />
+          <Section className="flex-col pb-0">
+            <CertificatesSection
+              title={phase6?.certificates?.title}
+              items={certificateItems}
+            />
+          </Section>
+        </>
+      )}
     </div>
   )
 }

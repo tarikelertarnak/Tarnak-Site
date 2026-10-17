@@ -1,6 +1,7 @@
 import type { SiteContent } from '@/lib/content'
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
+import { aboutPageSchema } from '@/lib/about-page'
 import { getPosts } from '@/lib/blog'
 import { getMessages } from '@/lib/chat'
 import { getContent, saveContent } from '@/lib/content'
@@ -56,10 +57,37 @@ export async function POST(req: Request) {
     )
   }
 
+  /*
+   * `/about` içeriği (2026-10-17) — güvenilir sınır burada doğrulanır:
+   * anahtarlar benzersiz + kebab-case, alanlar sınırlı uzunlukta. Panel de
+   * aynı şemayı kullanır ama arayüz doğrulaması güvenlik sınırı DEĞİLDİR.
+   */
+  if (parsed.data.aboutPage !== undefined) {
+    const aboutSonuc = aboutPageSchema.safeParse(parsed.data.aboutPage)
+    if (!aboutSonuc.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Hakkımda içeriği geçersiz.',
+          details: aboutSonuc.error.issues,
+        },
+        { status: 400 },
+      )
+    }
+  }
+
   // CV is not edited in the admin panel — keep the current value when saving
   const current = await getContent()
   const contentToSave: Record<string, unknown> = {
     ...parsed.data,
+    /*
+     * `phase6` (ek bölümler) ve `aboutPage` (hakkımda) — istemci göndermezse
+     * MEVCUT değer korunur. `contentSchema` bu alanları eskiden tanımadığı
+     * için Zod onları sessizce siliyor, her içerik kaydetmede veri
+     * KAYBOLUYORDU.
+     */
+    phase6: parsed.data.phase6 ?? current.phase6,
+    aboutPage: parsed.data.aboutPage ?? current.aboutPage,
     about: {
       ...parsed.data.about,
       // `cv.href` panelde duzenlenebilir; gonderilmediyse MEVCUT degeri koru.

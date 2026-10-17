@@ -260,6 +260,16 @@ export const contentSchema = z.object({
   footer: z.object({
     copyright: textField,
   }),
+  /**
+   * Ek bölümler + `/about` içeriği.
+   *
+   * ⚠️ Bunlar `contentSchema`'da TANIMLI DEĞİLSE Zod onları PARSE SIRASINDA
+   * SESSİZCE SİLER ve kaydetme bu alanları yok eder (sessiz veri kaybı).
+   * `z.unknown()` ile şemadan geçirilir; ayrıntılı doğrulama kendi
+   * modüllerinde (`phase6Schema`, `aboutPageSchema`) yapılır.
+   */
+  phase6: z.unknown().optional(),
+  aboutPage: z.unknown().optional(),
 })
 
 export type ContentInput = z.infer<typeof contentSchema>

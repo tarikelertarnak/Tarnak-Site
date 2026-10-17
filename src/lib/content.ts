@@ -339,6 +339,18 @@ export interface SiteContent {
    * düşürmez, ilgili bölüm boş sayılır.
    */
   phase6?: unknown
+  /**
+   * `/about` sayfasının içeriği (2026-10-17).
+   *
+   * Şema `src/lib/about-page.ts`'te; `aboutPageSchema` ile doğrulanır.
+   *
+   * Neden yeni anahtar: `/about` sayfasındaki biyografi (hayalet tarihler,
+   * uydurma istatistikler) TypeScript sabitlerine gömülüydü ve admin
+   * panelinden değiştirilemiyordu. Artık içeriğin TEK kaynağı bu alandır —
+   * kaynak koda fallback YOKTUR. Yoksa/boşsa sayfa yerelleştirilmiş boş
+   * durum gösterir.
+   */
+  aboutPage?: unknown
 }
 
 const bundledContent = bundledContentJson as Partial<SiteContent>
@@ -397,9 +409,30 @@ async function getSupabaseAdmin() {
   })
 }
 
+/**
+ * İçerik kaynağının durumu (2026-10-17).
+ *
+ * Neden: "okuma başarısız" ile "kayıt yok" AYNI ŞEY DEĞİLDİR. `getContent()`
+ * hataları yutup paketlenmiş JSON'a düştüğü için çağıran taraf ikisini ayırt
+ * edemiyordu; boş içerik gösterip hatayı başarı saymak sessiz veri kaybına
+ * yol açar. Sayfalar (örn. `/about`) bu bayrağa bakıp hata durumu gösterir.
+ * Yalnız `site_content` okumasını izler.
+ */
+export interface ContentSourceStatus {
+  supabase: 'ok' | 'missing' | 'error' | 'unconfigured'
+  error?: string
+}
+
+let contentSourceStatus: ContentSourceStatus = { supabase: 'unconfigured' }
+
+export function getContentSourceStatus(): ContentSourceStatus {
+  return contentSourceStatus
+}
+
 async function readSupabaseContent(): Promise<Partial<SiteContent> | null> {
   const supabase = await getSupabaseAdmin()
   if (!supabase) {
+    contentSourceStatus = { supabase: 'unconfigured' }
     return null
   }
   try {
@@ -408,16 +441,28 @@ async function readSupabaseContent(): Promise<Partial<SiteContent> | null> {
       .select('content')
       .eq('id', 'main')
       .maybeSingle()
-    if (error || !data?.content) {
+    if (error) {
+      contentSourceStatus = { supabase: 'error', error: error.message }
+      return null
+    }
+    if (!data?.content) {
+      contentSourceStatus = { supabase: 'missing' }
       return null
     }
     const content = data.content as Record<string, unknown>
     // Boş satır (tablo yeni oluşturulmuşsa) diskten okunmalı.
-    return Object.keys(content).length > 0
-      ? (content as Partial<SiteContent>)
-      : null
+    if (Object.keys(content).length === 0) {
+      contentSourceStatus = { supabase: 'missing' }
+      return null
+    }
+    contentSourceStatus = { supabase: 'ok' }
+    return content as Partial<SiteContent>
   }
- catch {
+ catch (error) {
+    contentSourceStatus = {
+      supabase: 'error',
+      error: error instanceof Error ? error.message : String(error),
+    }
     return null
   }
 }

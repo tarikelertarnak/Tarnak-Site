@@ -15,6 +15,7 @@ import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
+import { AboutPageEditor } from '@/components/admin/about-page-editor'
 import { ChatPanel } from '@/components/admin/chat-panel'
 import { DataManager } from '@/components/admin/data-manager'
 import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
@@ -30,6 +31,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
+import { aboutPageErrors, normalizeAboutPage } from '@/lib/about-page'
 import { clientFetchUserRepos } from '@/lib/github-client'
 import { SECTION_SPECS } from '@/lib/section-fields'
 
@@ -167,6 +169,22 @@ return
     setSaving(true)
     setStatus(null)
     const payload = override ?? content
+    /*
+     * Hakkımda içeriği kaydetmeden ÖNCE doğrulanır (2026-10-17): çift anahtar
+     * veya boş başlık varsa istek hiç gönderilmez — sunucu da aynı kuralları
+     * uygular (bkz. /api/admin/content), bu yalnızca hızlı geri bildirim.
+     */
+    const aboutHatalar = aboutPageErrors(
+      normalizeAboutPage(payload.aboutPage),
+    )
+    if (aboutHatalar.length > 0) {
+      setSaving(false)
+      setStatus({
+        type: 'error',
+        text: `Hakkımda sayfası kaydedilemedi: ${aboutHatalar[0]}`,
+      })
+      return
+    }
     try {
       const res = await fetch('/api/admin/content', {
         method: 'POST',
@@ -1678,6 +1696,12 @@ mesaj
         </SubSection>
         <SubSection title="Hakkımda" icon="mdi:information-outline">
           {aboutPane}
+        </SubSection>
+        <SubSection title="Hakkımda Sayfası (/about)" icon="mdi:card-account-details-outline">
+          <AboutPageEditor
+            value={content.aboutPage}
+            onChange={aboutPage => setContent(prev => ({ ...prev, aboutPage }))}
+          />
         </SubSection>
         </div>
       ),
