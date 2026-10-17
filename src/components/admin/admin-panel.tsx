@@ -692,7 +692,7 @@ return prev
               </Grid>
             </ItemCard>
           ))}
-          <AddButton onPress={addNavItem} label="Menü Öğesi Ekle" />
+          <AddButton onPress={addNavItem} label="Menü Öğesi Düzenle" />
         </div>
       </PanelCard>
       <PanelCard title="İletişim Bölümü">
@@ -1018,7 +1018,7 @@ return prev
               </Grid>
             </ItemCard>
           ))}
-          <AddButton onPress={addInterest} label="İlgi Alanı Ekle" />
+          <AddButton onPress={addInterest} label="İlgi Alanı Düzenle" />
         </div>
       </PanelCard>
       <PanelCard title="Siber Güvenlik Bölümü">
@@ -1089,7 +1089,7 @@ return prev
               </Grid>
             </ItemCard>
           ))}
-          <AddButton onPress={addSecurityTool} label="Araç Ekle" />
+          <AddButton onPress={addSecurityTool} label="Araç Düzenle" />
         </div>
       </PanelCard>
       <PanelCard title="CV (Özgeçmiş)">
@@ -1211,7 +1211,7 @@ return prev
                   { role: '', company: '', period: '', description: '' },
                 ],
               } as any)}
-            label="Deneyim Ekle"
+            label="Deneyim Düzenle"
           />
         </div>
         <div className="mt-4 space-y-2">
@@ -1297,7 +1297,7 @@ return prev
                   { role: '', company: '', period: '', description: '' },
                 ],
               } as any)}
-            label="Eğitim Ekle"
+            label="Eğitim Düzenle"
           />
         </div>
       </PanelCard>
@@ -1353,7 +1353,7 @@ return prev
               </Grid>
             </ItemCard>
           ))}
-          <AddButton onPress={addSocial} label="Sosyal Medya Ekle" />
+          <AddButton onPress={addSocial} label="Sosyal Medya Düzenle" />
         </div>
       </PanelCard>
     </div>
@@ -1541,14 +1541,14 @@ return prev
               </div>
             </ItemCard>
           ))}
-          <AddButton onPress={addProject} label="Proje Ekle" />
+          <AddButton onPress={addProject} label="Proje Düzenle" />
         </div>
       </PanelCard>
 
       <PanelCard title={`GitHub Repoları (${githubRepos.length})`}>
         <p className="mb-3 text-xs text-foreground-500">
           GitHub hesabındaki public repo'lar. 'Eksik' olanlar sitede
-          görünmüyor — tek tıkla ekleyebilirsin. Ekledikten sonra Kaydet'e
+          görünmüyor — tek tıkla ekleyebilirsin. Düzenledikten sonra Kaydet'e
           bas.
         </p>
         {githubRepos.length === 0 ? (
@@ -1600,7 +1600,7 @@ fork ·
                       onClick={() => addGithubRepo(repo)}
                       className="shrink-0 h-8 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-fg hover:bg-primary/90"
                     >
-                      Ekle
+                      Düzenle
                     </button>
                   )}
                   <a
