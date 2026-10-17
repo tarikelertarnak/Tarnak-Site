@@ -31,6 +31,33 @@ export interface ButtonProps {
   'as'?: 'a' | 'button' | ComponentType<unknown> | string
 }
 
+/**
+ * `solid` + `primary` butonun görünümü — TEK kaynak (2026-10-17).
+ *
+ * NEDEN: hero/split butonları (`hero-button-style.ts`) `border-primary-fg`
+ * çerçevesi ve `rounded-md` (8px) köşesiyle çizilirken LobeButton tabanlı
+ * butonlar CANLI ÖLÇÜMDE (CDP, koyu tema) `border-width: 0px` ve
+ * `border-radius: 0px` çıkıyordu — aynı sayfada iki farklı buton dili.
+ * Kullanıcının istediği referans hero dili: mavi zemin + zıt renk (açık
+ * temada siyah, koyu temada beyaz) 1px kenarlık.
+ *
+ * Kayma YOK: kenarlık ve radius her durumda sabittir, hover/active yalnızca
+ * renk değiştirir (`hover:!bg-primary/90`). Geometriye dokunan hover
+ * utility'si (translate/scale/h-/py-/border-2) BİLEREK yok.
+ *
+ * `isIconOnly` istisnası: ikon butonları `shape="circle"` ile yuvarlak
+ * kalır — `!rounded-md` onların şeklini bozardı.
+ */
+export function primarySolidClass(isIconOnly = false): string {
+  return [
+    '!bg-primary !text-primary-fg !opacity-100 !border !border-primary-fg',
+    'hover:!bg-primary/90 dark:!bg-primary/80 dark:hover:!bg-primary/70',
+    isIconOnly ? '' : '!rounded-md',
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
 export function Button({
   children,
   color = 'default',
@@ -78,7 +105,7 @@ export function Button({
   // gerekmiyor çünkü token zaten tema ile değişiyor.
   const masterClass
     = variant === 'solid' && color === 'primary'
-      ? '!bg-primary !text-primary-fg !opacity-100 hover:!bg-primary/90 dark:!bg-primary/80 dark:hover:!bg-primary/70'
+      ? primarySolidClass(isIconOnly)
       : ''
 
   // Force the text/border color so bordered/ghost buttons stay visible in light theme too.

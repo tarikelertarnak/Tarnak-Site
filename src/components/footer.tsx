@@ -7,6 +7,7 @@ import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { ArrowUpRightIcon, ChevronUpIcon } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
+import { scrollToTop } from '@/lib/scroll'
 import { buildSiteNavigation } from '@/lib/site-navigation'
 
 /**
@@ -151,7 +152,7 @@ export function Footer({ content }: { content: SiteContent }) {
               */}
               <button
                 type="button"
-                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                onClick={() => scrollToTop()}
                 className="group inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm text-foreground-500 transition-colors hover:text-primary focus-visible:outline-none"
               >
                 <ChevronUpIcon

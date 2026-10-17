@@ -18,6 +18,7 @@ import { LoadMoreButton } from '@/components/ui/load-more-button'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { StarRating } from '@/components/ui/star-rating'
+import { scrollToElement } from '@/lib/scroll'
 import { useRowPagination } from '@/lib/use-row-pagination'
 
 type SortKey = 'newest' | 'oldest' | 'az' | 'za' | 'views'
@@ -154,18 +155,13 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
   })
 
   /**
-   * "Daha Az Göster" (2026-10-13): listeyi ilk hâline döndürür ve listenin
-   * başına kaydırır (grid üstünde `scroll-mt-24` var → üst çubuğun altında
-   * kalır). Projeler bölümü ile aynı davranış.
+   * "Daha Az Göster" (2026-10-13, ortak yardımcıya bağlandı): listeyi ilk
+   * hâline döndürür ve listenin başına YUMUŞAK kaydırır. Projeler bölümü ile
+   * aynı ofset ve hareket tercihi (`lib/scroll`).
    */
   const collapseAndScroll = () => {
     collapse()
-    gridRef.current?.scrollIntoView({
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ? 'auto'
-        : 'smooth',
-      block: 'start',
-    })
+    scrollToElement(gridRef.current)
   }
 
   const dateFmt = (date: string) =>

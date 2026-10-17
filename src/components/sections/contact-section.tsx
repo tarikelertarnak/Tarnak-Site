@@ -20,6 +20,7 @@ import {
 import { Section, SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { useContactForm } from '@/hooks/use-contact-form'
+import { scrollToElement } from '@/lib/scroll'
 import { HONEYPOT_FIELD } from '@/lib/validations'
 
 /**
@@ -110,10 +111,12 @@ export function ContactSection({ content }: { content: SiteContent }) {
     e.preventDefault()
     const result = await submitForm()
     if (result && result !== 'ok') {
-      // Focus the missing/invalid field
+      // Eksik/geçersiz alana odaklan. `preventScroll` ŞART: aksi hâlde
+      // tarayıcı odaklarken ANINDA kaydırır ve yumuşak kaydırma
+      // başlamadan iptal olur (kullanıcı sıçrama görür).
       const el = fieldRefs[result]?.current
-      el?.focus()
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el?.focus({ preventScroll: true })
+      scrollToElement(el)
     }
   }
 

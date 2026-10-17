@@ -22,6 +22,7 @@ import {
 import { Section } from '@/components/ui/section'
 import { heroScrollTop } from '@/lib/hero-scroll'
 import { parsePhase6 } from '@/lib/phase6'
+import { scrollToY } from '@/lib/scroll'
 import { SITE_URL } from '@/lib/site-url'
 
 const container: Variants = {
@@ -279,13 +280,9 @@ export function HeroSection({
             const section = document.getElementById('about')?.closest('section')
             if (!section)
               return
-            window.scrollTo({
-              top: heroScrollTop(section),
-              behavior: window.matchMedia('(prefers-reduced-motion: reduce)')
-                .matches
-                ? 'auto'
-                : 'smooth',
-            })
+            // Kaydırma tek yardımcıdan geçer: yumuşaklık + hareket tercihi
+            // (`lib/scroll`), konum hero-scroll hesabından.
+            scrollToY(heroScrollTop(section))
           }}
           variants={item}
           initial="hidden"

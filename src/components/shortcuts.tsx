@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { scrollByY } from '@/lib/scroll'
 
 /**
  * Klavye kısayolları (2026-10-05, kullanıcı isteği).
@@ -177,12 +178,12 @@ export const GLOBAL_SHORTCUTS: ShortcutSpec[] = [
     ctrl: true,
     key: 'ArrowUp',
     label: 'Yukarı kaydır',
-    run: () => window.scrollBy({ top: -400, behavior: 'smooth' }),
+    run: () => scrollByY(-400),
   },
   {
     ctrl: true,
     key: 'ArrowDown',
     label: 'Aşağı kaydır',
-    run: () => window.scrollBy({ top: 400, behavior: 'smooth' }),
+    run: () => scrollByY(400),
   },
 ]

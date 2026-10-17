@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useLocale } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { ChevronUpIcon } from '@/components/ui/icons'
+import { scrollToTop } from '@/lib/scroll'
 
 export function ScrollToTop() {
   const { locale } = useLocale()
@@ -35,7 +36,7 @@ export function ScrollToTop() {
     <button
       type="button"
       aria-label={isEn ? 'Scroll to top' : 'Yukarı dön'}
-      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      onClick={() => scrollToTop()}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(

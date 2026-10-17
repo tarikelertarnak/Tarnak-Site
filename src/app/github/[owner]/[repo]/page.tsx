@@ -208,14 +208,6 @@ export default async function GithubRepoPage({
                     <p className="text-sm text-foreground/60">
                       Bu proje için vaka çalışması henüz yazılmadı.
                     </p>
-                    <p className="mt-2 text-xs text-foreground/40">
-                      TODO: admin paneli → Projeler →
-{' '}
-{repo}
-{' '}
-→ kısa özet /
-                      problem / çözüm / sonuç
-</p>
                   </div>
                 )}
             </div>

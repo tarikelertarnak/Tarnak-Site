@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
+import { scrollToTop } from '@/lib/scroll'
 
 export function TopBar() {
   const { t } = useT()
@@ -83,7 +84,7 @@ export function TopBar() {
                   && window.location.pathname === '/'
                 ) {
                   e.preventDefault()
-                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                  scrollToTop()
                 }
               }}
               className={`group flex items-center gap-2 font-bold tracking-tight whitespace-nowrap ${

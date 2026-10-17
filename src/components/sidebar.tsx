@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
 import { PANEL_SURFACE, PANEL_SURFACE_BORDER } from '@/lib/panel-surface'
+import { scrollToTop } from '@/lib/scroll'
 
 /* ─── Navigation Items ─────────────────────────────────────── */
 
@@ -317,7 +318,7 @@ setIsOpen(false)
             typeof window !== 'undefined'
             && window.location.pathname === '/'
           ) {
-            window.scrollTo({ top: 0, behavior: 'smooth' })
+            scrollToTop()
           }
         }}
         className={`group flex items-center gap-2.5 ${PANEL_SURFACE_BORDER} px-5 py-4`}

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { LoadMoreButton } from '@/components/ui/load-more-button'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { clientFetchUserRepos } from '@/lib/github-client'
+import { scrollToElement } from '@/lib/scroll'
 import { useRowPagination } from '@/lib/use-row-pagination'
 
 /** All sort types — the direction is embedded in the option itself (no separate ASC/DESC buttons needed). */
@@ -318,18 +319,14 @@ return false
   })
 
   /**
-   * "Daha Az Göster" (2026-10-13): listeyi ilk hâline döndürür ve listenin
-   * başına kaydırır. Kaydırma hedefi grid'in kendisi; üstünde `scroll-mt-24`
-   * var → başlık sabit üst çubuğun altında kalır.
+   * "Daha Az Göster" (2026-10-13, ortak yardımcıya bağlandı): listeyi ilk
+   * hâline döndürür ve listenin başına YUMUŞAK kaydırır. Kaydırma hedefi
+   * grid'in kendisi; konum `lib/scroll` ile hesaplanır → sayfayı kaydıran
+   * `scrollIntoView` tuzağına düşmez ve hareket azaltma tercihi korunur.
    */
   const collapseAndScroll = () => {
     collapse()
-    gridRef.current?.scrollIntoView({
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ? 'auto'
-        : 'smooth',
-      block: 'start',
-    })
+    scrollToElement(gridRef.current)
   }
 
   return (

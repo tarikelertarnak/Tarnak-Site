@@ -307,10 +307,20 @@ body {
   overflow-x: hidden;
 }
 
-/* Sabit header yüksekliği kadar boşluk — çapa linkleri (#projects, #contact)
-   header'ın altına hizalansın */
+/* Sabit üst çubuk yüksekliği + çapa hedefiyle arada kalan nefes payı.
+   TEK kaynak: `src/lib/scroll.ts` (HEADER_HEIGHT/SCROLL_GAP) ve
+   `src/lib/hero-scroll.ts` (HERO_SCROLL_BAR/HERO_SCROLL_GAP) bu değerleri
+   kullanır. Burada başka yere sabit yazma. */
+:root {
+  --header-height: 80px;
+  --scroll-offset: 16px;
+}
+
+/* Sabit header yüksekliği kadar boşluk — çapa linkleri (#projects, #contact,
+   /about#...) header'ın hemen altına, 16px nefes payıyla hizalansın.
+   Değer `calc()` ile tek yerden türer: 80 + 16 = 96px. */
 [id] {
-  scroll-margin-top: 88px;
+  scroll-margin-top: calc(var(--header-height) + var(--scroll-offset));
 }
 
 /* Hareket azaltma tercihi olan kullanıcılar için animasyonları kapat */

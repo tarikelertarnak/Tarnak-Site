@@ -443,6 +443,15 @@ async function readSupabaseContent(): Promise<Partial<SiteContent> | null> {
       .maybeSingle()
     if (error) {
       contentSourceStatus = { supabase: 'error', error: error.message }
+      /*
+       * Teşhis logu (sır YOK — yalnız tablo/izin mesajı). En sık iki neden:
+       * `supabase/site-content.sql` çalıştırılmadı (PGRST205) veya servis
+       * rolü anahtarı yanlış (401/403). Sessizce boş içerik gösterip
+       * "kaydedildi" demek yerine görünür olsun.
+       */
+      console.error(
+        `[content] site_content okunamadı: ${error.message} — supabase/site-content.sql çalıştırıldı mı?`,
+      )
       return null
     }
     if (!data?.content) {
