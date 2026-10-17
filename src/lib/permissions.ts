@@ -159,6 +159,85 @@ export const ALL_PERMISSION_IDS: string[] = PERMISSION_GROUPS.flatMap(g =>
 const VALIDS = new Set(ALL_PERMISSION_IDS)
 const ROLES = new Set(ROLE_PRESETS.map(r => r.id))
 
+// ─────────────────────────────────────────────────────────────
+// Normal kullanıcı VARSAYILAN yetkileri (2026-10-17)
+//
+// KÖK NEDEN (kullanıcı raporu: "tüm kullanıcılarda Özel Yetkiler hepsi
+// kapalı"): etkin yetki = `ROLE_PRESETS ∪ permissions[]` idi ve normal
+// kullanıcının `permissions[]` dizisi BOŞ geliyordu → 19 yetkinin 18'i
+// kapalı görünüyordu. Artık normal kullanıcının kendi işini görebilmesi
+// için gereken haklar VARSAYILAN AÇIK.
+//
+// Kural: üyenin kendi işini yapabilmesi için gerekenler açık; başkasına
+// veya siteye dokunan (silme, yönetim, admin paneli) haklar kapalı.
+// Override (`profiles.permission_overrides`) her zaman bu değeri ezer.
+// ─────────────────────────────────────────────────────────────
+export const PERMISSION_DEFAULTS: Record<string, boolean> = {
+  // Mesajlar — sohbetin çekirdek hakları.
+  'chat.send': true,
+  'chat.read': true,
+  'chat.delete': false, // silme yetkisi; varsayılan kapalı
+  // Dosyalar — yükleyip görebilsin, silemesin.
+  'files.upload': true,
+  'files.view': true,
+  'files.delete': false,
+  // Konum — kişisel veri; sahip paylaştıkça görünür.
+  'location.view': false,
+  // Blog — normal üye için tamamen kapalı.
+  'blog.view': false,
+  'blog.create': false,
+  'blog.edit': false,
+  'blog.delete': false,
+  // Projeler — görebilir, değiştiremez.
+  'projects.view': true,
+  'projects.create': false,
+  'projects.edit': false,
+  'projects.delete': false,
+  // Kullanıcı yönetimi — normal üye için kapalı.
+  'users.view': false,
+  'users.manage': false,
+  'users.delete': false,
+  // Yönetim paneli — normal üye için kapalı.
+  'panel.admin': false,
+  'panel.settings': false,
+}
+
+/** Varsayılan olarak AÇIK gelen yetki kimlikleri. */
+export const DEFAULT_GRANTED_IDS: string[] = Object.entries(PERMISSION_DEFAULTS)
+  .filter(([, on]) => on)
+  .map(([id]) => id)
+
+/**
+ * Kullanıcıya özel GEÇERSİZ KILMA. `{ 'files.upload': false }` gibi.
+ * Boş nesne = "hepsi varsayılanla".
+ */
+export type PermissionOverrides = Record<string, boolean>
+
+/**
+ * `profiles.permission_overrides` (jsonb) veya eski `permissions` (text[])
+ * kolonundan override haritası üretir.
+ *
+ * Eski biçimde yalnız `true` verilebildiği için dizi elemanları `true`
+ * kabul edilir — böylece eski elle verilmiş yetkiler korunur.
+ */
+export function normalizeOverrides(raw: unknown): PermissionOverrides {
+  const out: PermissionOverrides = {}
+  if (Array.isArray(raw)) {
+    for (const id of raw) {
+      if (typeof id === 'string' && VALIDS.has(id))
+        out[id] = true
+    }
+    return out
+  }
+  if (raw && typeof raw === 'object') {
+    for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (VALIDS.has(id))
+        out[id] = Boolean(v)
+    }
+  }
+  return out
+}
+
 /**
  * Rollerin görünen adı — `ROLE_PRESETS` etiketleri tek dilli (TR).
  * Panel/UI birden çok dilde çalıştığı için gösterim adı ayrı tutulur;
@@ -218,10 +297,24 @@ export function expandPermissionPattern(pattern: string): string[] {
   return isValidPermission(pattern) ? [pattern] : []
 }
 
-/** Effective permission set from roles + individual permissions (admin always has all). */
+/**
+ * Etkin yetki listesi.
+ *
+ * Sıra ÖNEMLİ:
+ *   1. rol preset'leri        (`ROLE_PRESETS`)
+ *   2. normal kullanıcı varsayılanları (`PERMISSION_DEFAULTS` — yalnız `true`)
+ *   3. eski biçimde elle eklenmiş yetkiler (`extra`, `permissions[]`)
+ *   4. KULLANICIYA ÖZEL GEÇERSİZ KILMA (`overrides` — hem açar hem kapatır)
+ *   5. admin rolü dokunulmaz: her şey açık (override bile kapatamaz)
+ *
+ * 3. adım bilinçli olarak OVERRIDE'DAN ÖNCE: override kaydı olmayan her şey
+ * varsayılanla ya da eski elle verilmiş değerle gider ("Varsayılana dön" =
+ * override'ı silmek).
+ */
 export function effectivePermissions(
   roles: string[],
   extra: string[] = [],
+  overrides?: unknown,
 ): string[] {
   const set = new Set<string>()
   for (const r of roles) {
@@ -232,9 +325,19 @@ export function effectivePermissions(
       for (const id of expandPermissionPattern(pattern)) set.add(id)
     }
   }
+  for (const [id, on] of Object.entries(PERMISSION_DEFAULTS)) {
+    if (on && isValidPermission(id))
+      set.add(id)
+  }
   for (const id of extra) {
     if (isValidPermission(id))
       set.add(id)
+  }
+  for (const [id, on] of Object.entries(normalizeOverrides(overrides))) {
+    if (on)
+      set.add(id)
+    else
+      set.delete(id)
   }
   // Admin protection: anyone with the admin role always has full permissions.
   if (roles.includes('admin')) {

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { MAX_UPLOAD_BYTES, saveUploadedFile } from '@/lib/chat'
 import { checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { getSessionUser, hasSessionPermission } from '@/lib/supabase/session'
+import { getUploadQuota, quotaError } from '@/lib/user-quota'
 
 export async function POST(req: Request) {
   // File upload is only available to logged-in users with the files.upload permission
@@ -17,6 +18,24 @@ export async function POST(req: Request) {
     return NextResponse.json(
       { success: false, message: 'Dosya yükleme yetkin yok.' },
       { status: 403 },
+    )
+  }
+
+  /*
+    KOTA (2026-10-17): normal kullanıcının TOPLAM yükleme sınırı var
+    (varsayılan 1 MB). Kullanım `chat_messages`'tan toplanır — dosya
+    silinince düşer. Site sahibi/admin kotasız.
+    ÖNCE ucuz "zaten dolu" kontrolü: gövdeyi ayrıştırmadan reddeder.
+  */
+  const quota = await getUploadQuota(sessionUser)
+  if (
+    !quota.unlimited
+    && quota.limitBytes !== null
+    && quota.usedBytes >= quota.limitBytes
+  ) {
+    return NextResponse.json(
+      { success: false, message: quotaError(quota, 0) },
+      { status: 413 },
     )
   }
 
@@ -50,6 +69,12 @@ export async function POST(req: Request) {
       { success: false, message: 'Dosya çok büyük. En fazla 10 MB yükleyebilirsin.' },
       { status: 400 },
     )
+  }
+
+  // Kesin kota kontrolü — boyut ancak gövde ayrıştırıldıktan sonra bilinir.
+  const overQuota = quotaError(quota, file.size)
+  if (overQuota) {
+    return NextResponse.json({ success: false, message: overQuota }, { status: 413 })
   }
 
   try {

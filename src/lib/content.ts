@@ -106,6 +106,12 @@ export interface ProjectItem {
   /** Fork count if GitHub repo */
   forks?: number
   /**
+   * Görünürlük: `true` veya belirsizse sitede görünür, `false` ise gizli.
+   */
+  visible?: boolean
+  isVisible?: boolean
+  hidden?: boolean
+  /**
    * Öne çıkan proje. `true` olanlar listenin EN ÜSTÜNDE,
    * seçili sıralamadan BAĞIMSIZ olarak sabitlenir. En fazla 3 tanesi
    * uygulanır (listenin en üstündeki 3 işaretli proje).

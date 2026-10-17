@@ -1,17 +1,42 @@
 'use client'
 
-import type { AdminUserRow, UserLimits } from '@/app/api/admin/users/route'
+import type {
+  AdminUserRow,
+  PermissionOverrides,
+} from '@/lib/admin/users-shared'
 import { Icon } from '@iconify/react'
 import { Popover } from '@lobehub/ui/base-ui'
 import { useCallback, useEffect, useState } from 'react'
+import { LimitsEditor } from '@/components/admin/limits-editor'
+import { PermissionEditor } from '@/components/admin/permission-editor'
+import { UserEditForm } from '@/components/admin/user-edit-form'
+import {
+  formatDateTime,
+  UserInspectPanel,
+} from '@/components/admin/user-inspect-panel'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import {
-  ALL_PERMISSION_IDS,
-  PERMISSION_GROUPS,
-  ROLE_PRESETS,
-} from '@/lib/permissions'
+import { ROLE_PRESETS } from '@/lib/permissions'
+
+/**
+ * "Hesap Sahipleri / Kullanıcı Yönetimi".
+ *
+ * İki satırlı kart:
+ *   Satır 1 — avatar, kullanıcı adı (kalın), rol rozetleri, e-posta (soluk),
+ *             "Kayıt: … · Son giriş: …"
+ *   Satır 2 — komut butonları (ikon + etiket, mobilde kaydırılır)
+ *
+ * Yetki modeli (2026-10-17):
+ *   · Normal kullanıcının yetkileri VARSAYILAN AÇIK (mesaj, dosya, proje
+ *     görüntüleme); tehlikeli olanlar kapalı. "Özel Yetkiler" anahtarları
+ *     artık ETKİN değeri gösterir, kayıt yalnızca sapanları tutar.
+ *   · Limitler: 1 MB toplam yükleme, sınırsız mesaj.
+ *   · Site Sahibi satırında Roller/Yetkiler/Limitler/Admin Yap/Sil RENDER
+ *     EDİLMEZ; yalnız Şifre Sıfırla + Düzenle, yalnız site sahibinin
+ *     kendisine görünür. Sunucu da aynı kuralları zorlar.
+ *   · Yalnız Site Sahibi "İncele" görür (sunucuda `role === owner`).
+ */
 
 type Banner = { type: 'success' | 'error', text: string } | null
 
@@ -30,8 +55,18 @@ const roleBadge: Record<string, { label: string, cls: string }> = {
   'user': { label: 'User', cls: 'bg-white/10 text-foreground-500' },
 }
 
+/**
+ * Görüntüleyen "site sahibi" mi?
+ * `admin:` önekli oturum = `/login` ana anahtarı (admin.json). Bu hesabın
+ * `profiles` satırı yok; sahip eşdeğeri sayılır (bkz. API route açıklaması).
+ */
+function isOwnerViewer(viewer: { id: string, isOwner: boolean } | null): boolean {
+  return !!viewer && (viewer.isOwner || viewer.id.startsWith('admin:'))
+}
+
 export function UsersPanel() {
   const [users, setUsers] = useState<AdminUserRow[] | null>(null)
+  const [viewer, setViewer] = useState<{ id: string, isOwner: boolean } | null>(null)
   const [banner, setBanner] = useState<Banner>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
   // Edit popovers
@@ -39,26 +74,28 @@ export function UsersPanel() {
   const [permsFor, setPermsFor] = useState<AdminUserRow | null>(null)
   const [limitsFor, setLimitsFor] = useState<AdminUserRow | null>(null)
   const [draftRoles, setDraftRoles] = useState<string[]>([])
-  const [draftPerms, setDraftPerms] = useState<string[]>([])
-  const [draftLimits, setDraftLimits] = useState<UserLimits>({})
+  const [draftOverrides, setDraftOverrides] = useState<PermissionOverrides>({})
   const [resetFor, setResetFor] = useState<string | null>(null)
   const [newPassword, setNewPassword] = useState('')
+  // Drawers
+  const [editFor, setEditFor] = useState<string | null>(null)
+  const [inspectFor, setInspectFor] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/users')
+      const res = await fetch('/api/admin/users', { cache: 'no-store' })
       const data = await res.json()
       if (res.ok && data.success) {
         setUsers(data.users)
       }
- else {
+      else {
         setBanner({
           type: 'error',
           text: data.message || 'Kullanıcılar yüklenemedi.',
         })
       }
     }
- catch {
+    catch {
       setBanner({
         type: 'error',
         text: 'Kullanıcılar yüklenemedi (ağ hatası).',
@@ -68,6 +105,14 @@ export function UsersPanel() {
 
   useEffect(() => {
     load()
+    fetch('/api/admin/session', { cache: 'no-store' })
+      .then(r => r.json())
+      .then((data) => {
+        if (data?.user) {
+          setViewer({ id: data.user.id, isOwner: !!data.user.isOwner })
+        }
+      })
+      .catch(() => {})
   }, [load])
 
   const act = async (userId: string, init: RequestInit) => {
@@ -80,14 +125,14 @@ export function UsersPanel() {
         setBanner({ type: 'success', text: 'Güncellendi.' })
         load()
       }
- else {
+      else {
         setBanner({ type: 'error', text: data.message || 'İşlem başarısız.' })
       }
     }
- catch {
+    catch {
       setBanner({ type: 'error', text: 'İşlem başarısız (ağ hatası).' })
     }
- finally {
+    finally {
       setBusyId(null)
     }
   }
@@ -99,14 +144,14 @@ export function UsersPanel() {
       body: JSON.stringify(payload),
     })
 
-  // Open the role popover
   const openRoles = (u: AdminUserRow) => {
     setDraftRoles([...u.roles])
     setRolesFor(u)
   }
   const saveRoles = () => {
-    if (!rolesFor)
-return
+    if (!rolesFor) {
+      return
+    }
     mutate(rolesFor.id, {
       action: 'setRoles',
       userId: rolesFor.id,
@@ -116,51 +161,41 @@ return
   }
 
   const openPerms = (u: AdminUserRow) => {
-    setDraftPerms([...u.permissions])
+    setDraftOverrides({ ...u.permissionOverrides })
     setPermsFor(u)
   }
   const savePerms = () => {
-    if (!permsFor)
-return
+    if (!permsFor) {
+      return
+    }
     mutate(permsFor.id, {
       action: 'setPermissions',
       userId: permsFor.id,
-      permissions: draftPerms,
+      overrides: draftOverrides,
     })
     setPermsFor(null)
   }
 
-  const openLimits = (u: AdminUserRow) => {
-    setDraftLimits({
-      fileMaxMb: u.limits.fileMaxMb ?? null,
-      dailyMessages: u.limits.dailyMessages ?? null,
-    })
-    setLimitsFor(u)
-  }
-  const saveLimits = () => {
-    if (!limitsFor)
-return
-    const clean: UserLimits = {}
-    if (draftLimits.fileMaxMb !== null && draftLimits.fileMaxMb !== undefined) {
-      clean.fileMaxMb = Number(draftLimits.fileMaxMb)
-    }
-    if (
-      draftLimits.dailyMessages !== null
-      && draftLimits.dailyMessages !== undefined
-    ) {
-      clean.dailyMessages = Number(draftLimits.dailyMessages)
-    }
-    mutate(limitsFor.id, {
-      action: 'setLimits',
-      userId: limitsFor.id,
-      limits: clean,
-    })
+  const saveLimits = (
+    userId: string,
+    limits: { maxTotalUploadBytes: number | null, maxMessages: number | null },
+  ) => {
+    mutate(userId, { action: 'setLimits', userId, limits })
     setLimitsFor(null)
   }
 
-  // Legacy admin toggle: add/remove admin from the roles set
+  /** Admin rolünü aç/kapat — onay ister. */
   const toggleAdmin = (u: AdminUserRow) => {
     const has = u.roles.includes('admin')
+    const label = u.username || u.email || u.id
+    const ok = window.confirm(
+      has
+        ? `${label} kullanıcısının adminliği kaldırılsın mı?`
+        : `${label} kullanıcısı admin yapılsın mı?`,
+    )
+    if (!ok) {
+      return
+    }
     const roles = has
       ? u.roles.filter(r => r !== 'admin')
       : [...u.roles.filter(r => r !== 'user'), 'admin']
@@ -170,6 +205,9 @@ return
   const resetPassword = (u: AdminUserRow) => {
     if (!newPassword.trim() || newPassword.length < 6) {
       setBanner({ type: 'error', text: 'Yeni şifre en az 6 karakter olmalı.' })
+      return
+    }
+    if (!window.confirm(`${u.username || u.email || u.id} için şifre sıfırlansın mı?`)) {
       return
     }
     mutate(u.id, {
@@ -191,6 +229,8 @@ return
     }
     act(u.id, { method: 'DELETE' })
   }
+
+  const ownerViewer = isOwnerViewer(viewer)
 
   return (
     <div className="space-y-4 pt-4">
@@ -218,10 +258,11 @@ return
         <div className="border-b border-white/10 px-4 py-3">
           <p className="text-sm font-semibold">Hesap Sahipleri</p>
           <p className="text-xs text-foreground-500">
-            Roller hazır gruplardır; tek kullanıcıya birden fazla rol
-            verilebilir. Preset dışı yetkiler için &quot;Özel Yetkiler&quot;
-            kullanılır. Site sahibi hesabı kilitlidir — hiç kimse değiştiremez
-            veya silemez.
+            Normal kullanıcıda mesaj, dosya ve proje görüntüleme yetkileri
+            VARSAYILAN AÇIK; silme ve yönetim yetkileri kapalı. Sapan ayarlar
+            &quot;Özel Yetkiler&quot;te işaretlenir. Site sahibi hesabı
+            kilitlidir — kimse (sahibin kendisi dahil) rolünü, yetkisini,
+            limitini değiştiremez veya silemez.
           </p>
         </div>
         {users === null ? (
@@ -233,16 +274,21 @@ return
         ) : (
           <ul className="divide-y divide-white/5">
             {users.map((u) => {
-              const locked = u.isOwner
+              const isSelf = viewer?.id === u.id
+              /*
+                SİTE SAHİBİ SATIRI: Roller / Özel Yetkiler / Limitler /
+                Admin Yap / Sil RENDER EDİLMEZ. Yalnız Şifre Sıfırla +
+                Düzenle ve yalnız site sahibi kendi satırına bakarken.
+                Sunucu da aynı kuralları zorlar (403).
+              */
+              const showRow2 = u.isOwner ? ownerViewer : true
               return (
-                <li
-                  key={u.id}
-                  className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center"
-                >
+                <li key={u.id} className="flex flex-col gap-2 px-4 py-3">
+                  {/* ── Satır 1: kimlik ─────────────────────────── */}
                   <div className="flex min-w-0 flex-1 items-center gap-3">
                     {u.avatarUrl ? (
-                      // Avatar URL'leri kullanici tarafindan (OAuth) gelir —
-                      // next/image optimizasyonu gerekmiyor, `<img>` bilincli.
+                      // Avatar URL'leri kullanıcı tarafından (OAuth) gelir —
+                      // next/image optimizasyonu gerekmiyor, `<img>` bilinçli.
                       <img
                         src={u.avatarUrl}
                         alt=""
@@ -256,17 +302,18 @@ return
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold">
+                      <p className="flex flex-wrap items-center gap-1.5 text-sm font-bold">
                         <span className="truncate">{u.username || '—'}</span>
-                        {locked && (
+                        {u.isOwner && (
                           <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-300">
                             🔒 Site Sahibi
                           </span>
                         )}
                         {u.roles.map((r) => {
                           const b = roleBadge[r]
-                          if (!b)
-return null
+                          if (!b) {
+                            return null
+                          }
                           return (
                             <span
                               key={r}
@@ -278,359 +325,285 @@ return null
                         })}
                       </p>
                       <p className="truncate text-xs text-foreground-500">
-                        {u.fullName ? `${u.fullName} · ` : ''}
                         {u.email || 'e-posta yok'}
+                        {u.fullName ? ` · ${u.fullName}` : ''}
                         {u.phone ? ` · ☎ ${u.phone}` : ''}
                       </p>
                       <p className="truncate text-[11px] text-foreground-500/70">
                         Kayıt:
 {' '}
-                        {u.createdAt
-                          ? new Date(u.createdAt).toLocaleString('tr-TR')
-                          : '—'}
-                        {u.lastSignIn
-                          ? ` · Son giriş: ${new Date(u.lastSignIn).toLocaleString('tr-TR')}`
-                          : ''}
-                        {u.limits.fileMaxMb != null
-                          && ` · Dosya ≤ ${u.limits.fileMaxMb}MB`}
-                        {u.limits.dailyMessages != null
-                          && ` · Günlük mesaj ≤ ${u.limits.dailyMessages}`}
+{formatDateTime(u.createdAt)}
+                        {' · '}
+Son giriş:
+{formatDateTime(u.lastSignIn)}
                       </p>
                     </div>
                   </div>
-                  <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                    <Popover
-                      placement="bottomRight"
-                      open={rolesFor?.id === u.id}
-                      onOpenChange={(open: boolean) =>
-                        !open && setRolesFor(null)}
-                      trigger="click"
-                      content={(
-                        <div className="w-64 px-1 py-2">
-                          <p className="mb-2 text-xs font-semibold text-foreground-500">
-                            Roller (birden fazla seçilebilir)
-                          </p>
-                          <div className="flex flex-col gap-1">
-                            {ROLE_PRESETS.map(r => (
-                              <label
-                                key={r.id}
-                                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-xs transition-colors ${
-                                  draftRoles.includes(r.id)
-                                    ? 'border-primary/40 bg-primary/10'
-                                    : 'border-foreground-200/10 hover:border-foreground-200/30'
-                                }`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="accent-[var(--primary)]"
-                                  checked={draftRoles.includes(r.id)}
-                                  onChange={(e) => {
-                                    const id = r.id
-                                    if (e.target.checked) {
-                                      setDraftRoles(prev =>
-                                        prev.includes(id)
-                                          ? prev
-                                          : [...prev, id],
-                                      )
-                                    }
- else {
-                                      setDraftRoles(prev =>
-                                        prev.filter(x => x !== id),
-                                      )
-                                    }
-                                  }}
-                                />
-                                <span className="flex flex-col">
-                                  <span className="font-semibold">
-                                    {r.label}
-                                  </span>
-                                  <span className="text-[10px] text-foreground-500">
-                                    {r.description}
-                                  </span>
-                                </span>
-                              </label>
-                            ))}
-                          </div>
+
+                  {/* ── Satır 2: komutlar ───────────────────────── */}
+                  {showRow2 && (
+                    <div className="flex flex-wrap items-center gap-1.5 border-t border-foreground-200/10 pt-2 sm:flex-nowrap sm:overflow-x-auto">
+                      {u.isOwner ? (
+                        <>
                           <Button
                             size="sm"
-                            color="primary"
-                            className="mt-2 w-full"
+                            variant="bordered"
                             isDisabled={busyId === u.id}
-                            onPress={saveRoles}
+                            onPress={() => setEditFor(u.id)}
                           >
-                            Kaydet
+                            <Icon icon="material-symbols:edit-outline" width={14} />
+                            Düzenle
                           </Button>
-                        </div>
-                      )}
-                    >
-                      <Button
-                        size="sm"
-                        variant="bordered"
-                        isDisabled={locked || busyId === u.id}
-                        onPress={() => openRoles(u)}
-                      >
-                        Roller
-                      </Button>
-                    </Popover>
+                          <Button
+                            size="sm"
+                            variant="bordered"
+                            isDisabled={busyId === u.id}
+                            onPress={() => {
+                              setResetFor(u.id)
+                              setNewPassword('')
+                            }}
+                          >
+                            <Icon icon="material-symbols:lock-reset" width={14} />
+                            Şifre Sıfırla
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="bordered"
+                            isDisabled={busyId === u.id}
+                            onPress={() => setEditFor(u.id)}
+                          >
+                            <Icon icon="material-symbols:edit-outline" width={14} />
+                            Düzenle
+                          </Button>
 
-                    <Popover
-                      placement="bottomRight"
-                      open={permsFor?.id === u.id}
-                      onOpenChange={(open: boolean) =>
-                        !open && setPermsFor(null)}
-                      trigger="click"
-                      content={(
-                        <div className="max-h-[60vh] w-80 overflow-y-auto px-1 py-2">
-                          <div className="mb-2 flex items-center justify-between gap-2">
-                            <p className="text-xs font-semibold text-foreground-500">
-                              Özel Yetkiler (
-{draftPerms.length}
-/
-{ALL_PERMISSION_IDS.length}
-)
-</p>
-                            <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                variant="light"
-                                onPress={() =>
-                                  setDraftPerms([...ALL_PERMISSION_IDS])}
-                              >
-                                Tümünü Seç
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="light"
-                                onPress={() => setDraftPerms([])}
-                              >
-                                Temizle
-                              </Button>
-                            </div>
-                          </div>
-                          {PERMISSION_GROUPS.map((g) => {
-                            const ids = g.permissions.map(p => p.id)
-                            const allOn = ids.every(id =>
-                              draftPerms.includes(id),
-                            )
-                            const someOn = ids.some(id =>
-                              draftPerms.includes(id),
-                            )
-                            return (
-                              <div
-                                key={g.id}
-                                className="mb-2 rounded-xl border border-foreground-200/10 p-2"
-                              >
-                                <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold">
-                                  <input
-                                    type="checkbox"
-                                    className="accent-[var(--primary)]"
-                                    checked={allOn}
-                                    ref={(el) => {
-                                      if (el)
-                                        el.indeterminate = someOn && !allOn
-                                    }}
-                                    onChange={(e) => {
-                                      setDraftPerms(prev =>
-                                        e.target.checked
-                                          ? [...new Set([...prev, ...ids])]
-                                          : prev.filter(
-                                              x => !ids.includes(x),
-                                            ),
-                                      )
-                                    }}
-                                  />
-                                  <Icon
-                                    icon={g.icon}
-                                    width={14}
-                                    className="text-primary"
-                                  />
-                                  {g.label}
-                                </label>
-                                <div className="mt-1.5 flex flex-col gap-0.5 pl-6">
-                                  {g.permissions.map(p => (
+                          {ownerViewer && (
+                            <Button
+                              size="sm"
+                              variant="bordered"
+                              isDisabled={busyId === u.id}
+                              onPress={() => setInspectFor(u.id)}
+                            >
+                              <Icon icon="material-symbols:search" width={14} />
+                              İncele
+                            </Button>
+                          )}
+
+                          <Popover
+                            placement="bottomRight"
+                            open={rolesFor?.id === u.id}
+                            onOpenChange={(open: boolean) =>
+                              !open && setRolesFor(null)}
+                            trigger="click"
+                            content={(
+                              <div className="w-64 px-1 py-2">
+                                <p className="mb-2 text-xs font-semibold text-foreground-500">
+                                  Roller (birden fazla seçilebilir)
+                                </p>
+                                <div className="flex flex-col gap-1">
+                                  {ROLE_PRESETS.map(r => (
                                     <label
-                                      key={p.id}
-                                      className="flex cursor-pointer items-center gap-2 text-xs text-foreground-500 hover:text-foreground"
+                                      key={r.id}
+                                      className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2 py-1.5 text-xs transition-colors ${
+                                        draftRoles.includes(r.id)
+                                          ? 'border-primary/40 bg-primary/10'
+                                          : 'border-foreground-200/10 hover:border-foreground-200/30'
+                                      }`}
                                     >
                                       <input
                                         type="checkbox"
                                         className="accent-[var(--primary)]"
-                                        checked={draftPerms.includes(p.id)}
+                                        checked={draftRoles.includes(r.id)}
                                         onChange={(e) => {
-                                          if (e.target.checked) {
-                                            setDraftPerms(prev =>
-                                              prev.includes(p.id)
+                                          const id = r.id
+                                          setDraftRoles(prev =>
+                                            e.target.checked
+                                              ? prev.includes(id)
                                                 ? prev
-                                                : [...prev, p.id],
-                                            )
-                                          }
- else {
-                                            setDraftPerms(prev =>
-                                              prev.filter(x => x !== p.id),
-                                            )
-                                          }
+                                                : [...prev, id]
+                                              : prev.filter(x => x !== id),
+                                          )
                                         }}
                                       />
-                                      {p.label}
+                                      <span className="flex flex-col">
+                                        <span className="font-semibold">
+                                          {r.label}
+                                        </span>
+                                        <span className="text-[10px] text-foreground-500">
+                                          {r.description}
+                                        </span>
+                                      </span>
                                     </label>
                                   ))}
                                 </div>
+                                <Button
+                                  size="sm"
+                                  color="primary"
+                                  className="mt-2 w-full"
+                                  isDisabled={busyId === u.id}
+                                  onPress={saveRoles}
+                                >
+                                  Kaydet
+                                </Button>
                               </div>
-                            )
-                          })}
+                            )}
+                          >
+                            <Button
+                              size="sm"
+                              variant="bordered"
+                              isDisabled={busyId === u.id}
+                              onPress={() => openRoles(u)}
+                            >
+                              <Icon icon="material-symbols:badge-outline" width={14} />
+                              Roller
+                            </Button>
+                          </Popover>
+
+                          <Popover
+                            placement="bottomRight"
+                            open={permsFor?.id === u.id}
+                            onOpenChange={(open: boolean) =>
+                              !open && setPermsFor(null)}
+                            trigger="click"
+                            content={(
+                              <PermissionEditor
+                                user={u}
+                                draft={draftOverrides}
+                                onChange={setDraftOverrides}
+                                onSave={savePerms}
+                                onReset={() => setDraftOverrides({})}
+                                busy={busyId === u.id}
+                              />
+                            )}
+                          >
+                            <Button
+                              size="sm"
+                              variant="bordered"
+                              isDisabled={busyId === u.id}
+                              onPress={() => openPerms(u)}
+                            >
+                              <Icon icon="material-symbols:key-outline" width={14} />
+                              Özel Yetkiler
+                              {u.overrideCount > 0 && (
+                                <span className="ml-1 rounded-full bg-primary/20 px-1.5 text-[10px] font-bold text-primary">
+                                  {u.overrideCount}
+                                </span>
+                              )}
+                            </Button>
+                          </Popover>
+
+                          <Popover
+                            placement="bottomRight"
+                            open={limitsFor?.id === u.id}
+                            onOpenChange={(open: boolean) =>
+                              !open && setLimitsFor(null)}
+                            trigger="click"
+                            content={(
+                              <LimitsEditor
+                                user={u}
+                                busy={busyId === u.id}
+                                onSave={limits => saveLimits(u.id, limits)}
+                              />
+                            )}
+                          >
+                            <Button
+                              size="sm"
+                              variant="bordered"
+                              isDisabled={busyId === u.id}
+                              onPress={() => setLimitsFor(u)}
+                            >
+                              <Icon icon="material-symbols:speed-outline" width={14} />
+                              Limitler
+                            </Button>
+                          </Popover>
+
+                          {!isSelf && (
+                            <Button
+                              size="sm"
+                              color="primary"
+                              variant="bordered"
+                              isDisabled={busyId === u.id}
+                              onPress={() => toggleAdmin(u)}
+                            >
+                              <Icon
+                                icon={
+                                  u.roles.includes('admin')
+                                    ? 'material-symbols:remove-moderator-outline'
+                                    : 'material-symbols:add-moderator-outline'
+                                }
+                                width={14}
+                              />
+                              {u.roles.includes('admin')
+                                ? 'Adminlikten Al'
+                                : 'Admin Yap'}
+                            </Button>
+                          )}
+                        </>
+                      )}
+
+                      {resetFor === u.id ? (
+                        <>
+                          <Input
+                            variant="faded"
+                            type="password"
+                            placeholder="Yeni şifre (min 6)"
+                            value={newPassword}
+                            onValueChange={setNewPassword}
+                            className="w-40"
+                          />
                           <Button
                             size="sm"
                             color="primary"
-                            className="mt-1 w-full"
                             isDisabled={busyId === u.id}
-                            onPress={savePerms}
+                            onPress={() => resetPassword(u)}
                           >
                             Kaydet
                           </Button>
-                        </div>
-                      )}
-                    >
-                      <Button
-                        size="sm"
-                        variant="bordered"
-                        isDisabled={locked || busyId === u.id}
-                        onPress={() => openPerms(u)}
-                      >
-                        Özel Yetkiler
-                      </Button>
-                    </Popover>
-
-                    <Popover
-                      placement="bottomRight"
-                      open={limitsFor?.id === u.id}
-                      onOpenChange={(open: boolean) =>
-                        !open && setLimitsFor(null)}
-                      trigger="click"
-                      content={(
-                        <div className="w-64 px-1 py-2">
-                          <p className="mb-2 text-xs font-semibold text-foreground-500">
-                            Limitler
-                          </p>
-                          <div className="flex flex-col gap-2">
-                            <label className="flex flex-col gap-1 text-xs">
-                              <span className="text-foreground-500">
-                                Dosya yükleme sınırı (MB) — boş = sınırsız
-                              </span>
-                              <Input
-                                variant="faded"
-                                type="number"
-                                placeholder="örn. 50"
-                                value={String(draftLimits.fileMaxMb ?? '')}
-                                onValueChange={v =>
-                                  setDraftLimits(prev => ({
-                                    ...prev,
-                                    fileMaxMb: v === '' ? null : Number(v),
-                                  }))}
-                              />
-                            </label>
-                            <label className="flex flex-col gap-1 text-xs">
-                              <span className="text-foreground-500">
-                                Günlük mesaj sınırı — boş = sınırsız
-                              </span>
-                              <Input
-                                variant="faded"
-                                type="number"
-                                placeholder="örn. 20"
-                                value={String(draftLimits.dailyMessages ?? '')}
-                                onValueChange={v =>
-                                  setDraftLimits(prev => ({
-                                    ...prev,
-                                    dailyMessages: v === '' ? null : Number(v),
-                                  }))}
-                              />
-                            </label>
-                          </div>
                           <Button
                             size="sm"
-                            color="primary"
-                            className="mt-2 w-full"
-                            isDisabled={busyId === u.id}
-                            onPress={saveLimits}
+                            variant="light"
+                            onPress={() => {
+                              setResetFor(null)
+                              setNewPassword('')
+                            }}
                           >
-                            Kaydet
+                            Vazgeç
                           </Button>
-                        </div>
+                        </>
+                      ) : (
+                        !u.isOwner && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="bordered"
+                              isDisabled={busyId === u.id}
+                              onPress={() => {
+                                setResetFor(u.id)
+                                setNewPassword('')
+                              }}
+                            >
+                              <Icon icon="material-symbols:lock-reset" width={14} />
+                              Şifre Sıfırla
+                            </Button>
+                            {!isSelf && (
+                              <Button
+                                size="sm"
+                                color="danger"
+                                variant="bordered"
+                                isDisabled={busyId === u.id}
+                                onPress={() => remove(u)}
+                              >
+                                <Icon icon="material-symbols:delete-outline" width={14} />
+                                Sil
+                              </Button>
+                            )}
+                          </>
+                        )
                       )}
-                    >
-                      <Button
-                        size="sm"
-                        variant="bordered"
-                        isDisabled={locked || busyId === u.id}
-                        onPress={() => openLimits(u)}
-                      >
-                        Limitler
-                      </Button>
-                    </Popover>
-
-                    {resetFor === u.id ? (
-                      <>
-                        <Input
-                          variant="faded"
-                          type="password"
-                          placeholder="Yeni şifre (min 6)"
-                          value={newPassword}
-                          onValueChange={setNewPassword}
-                          className="w-40"
-                        />
-                        <Button
-                          size="sm"
-                          color="primary"
-                          isDisabled={busyId === u.id}
-                          onPress={() => resetPassword(u)}
-                        >
-                          Kaydet
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="light"
-                          onPress={() => {
-                            setResetFor(null)
-                            setNewPassword('')
-                          }}
-                        >
-                          Vazgeç
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="bordered"
-                          isDisabled={locked || busyId === u.id}
-                          onPress={() => toggleAdmin(u)}
-                        >
-                          {u.roles.includes('admin')
-                            ? 'Adminliği Kaldır'
-                            : 'Admin Yap'}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="bordered"
-                          isDisabled={locked || busyId === u.id}
-                          onPress={() => {
-                            setResetFor(u.id)
-                            setNewPassword('')
-                          }}
-                        >
-                          Şifre Sıfırla
-                        </Button>
-                        <Button
-                          size="sm"
-                          color="danger"
-                          variant="bordered"
-                          isDisabled={locked || busyId === u.id}
-                          onPress={() => remove(u)}
-                        >
-                          Sil
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </li>
               )
             })}
@@ -639,11 +612,25 @@ return null
       </Card>
       <p className="text-xs text-foreground-500">
         Şifreler Supabase tarafında hash&apos;li saklanır — düz metin olarak
-        görüntülenemez; sıfırlama ile yeni şifre belirleyebilirsin. Hakların
-        davranışa bağlanması (mesaj, dosya, blog, proje) modüller üzerinde
-        kademeli olarak uygulanır; rolleri ve özel yetkileri şimdiden
-        atayabilirsin.
+        görüntülenemez. Yetki ve limitler sunucuda zorlanır (arayüzde gizlemek
+        güvenlik sayılmaz). &quot;İncele&quot; yalnız site sahibine görünür ve
+        her açılış denetim kaydına yazılır.
       </p>
+
+      <UserEditForm
+        userId={editFor}
+        onClose={() => setEditFor(null)}
+        onSaved={load}
+      />
+      <UserInspectPanel
+        userId={inspectFor}
+        onClose={() => setInspectFor(null)}
+        onResetPassword={(id) => {
+          setInspectFor(null)
+          setResetFor(id)
+          setNewPassword('')
+        }}
+      />
     </div>
   )
 }

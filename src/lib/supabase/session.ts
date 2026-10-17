@@ -1,7 +1,8 @@
+import type { PermissionOverrides, UserLimits } from '@/lib/admin/users-shared'
 import { cookies } from 'next/headers'
 import { verifySessionToken } from '@/lib/auth'
 import { getAdmin } from '@/lib/content'
-import { effectivePermissions } from '@/lib/permissions'
+import { effectivePermissions, normalizeOverrides } from '@/lib/permissions'
 import { createClient } from '@/lib/supabase/server'
 
 export interface SessionUser {
@@ -15,8 +16,15 @@ export interface SessionUser {
   isOwner: boolean
   /** Roles in profile (raw). */
   roles: string[]
-  /** Computed EFFECTIVE permissions (roles + individual extra permissions; admin = all). */
+  /**
+   * Computed EFFECTIVE permissions: rol preset'leri + normal kullanıcı
+   * varsayılanları + kullanıcıya özel override (admin = hepsi).
+   */
   permissions: string[]
+  /** Kullanıcıya özel geçersiz kılma (yalnız kayıtlı olanlar). */
+  permissionOverrides?: PermissionOverrides
+  /** `profiles.limits` — kota zorlaması için (yükleme/mesaj). */
+  limits?: UserLimits
   /** Profil düzenleme alanları (user_metadata) — hepsi opsiyonel. */
   phone?: string | null
   occupation?: string | null
@@ -76,16 +84,14 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   if (!user) {
     return null
   }
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('username, full_name, avatar_url, role, roles, permissions, is_owner')
-    .eq('id', user.id)
-    .maybeSingle()
+  const profile = await fetchProfile(supabase, user.id)
 
   const rawRoles
     = (profile?.roles as string[] | null)
       ?? (profile?.role === 'admin' ? ['admin'] : profile?.role ? [profile.role] : [])
   const rawExtra = (profile?.permissions as string[] | null) ?? []
+  const overrides = (profile as { permission_overrides?: unknown } | null)
+    ?.permission_overrides
 
   return {
     id: user.id,
@@ -96,7 +102,9 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     role: profile?.role ?? 'user',
     isOwner: Boolean(profile?.is_owner),
     roles: rawRoles,
-    permissions: effectivePermissions(rawRoles, rawExtra),
+    permissions: effectivePermissions(rawRoles, rawExtra, overrides),
+    permissionOverrides: normalizeOverrides(overrides),
+    limits: (profile?.limits ?? {}) as UserLimits,
     phone: user.user_metadata?.phone ?? null,
     occupation: user.user_metadata?.occupation ?? null,
     occupationOther: user.user_metadata?.occupationOther ?? null,
@@ -105,6 +113,53 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     location: user.user_metadata?.location ?? null,
     discord: user.user_metadata?.discord ?? null,
   }
+}
+
+/**
+ * `profiles` satırını okur. `permission_overrides` kolonu migration ile
+ * gelir (`supabase/users-permissions.sql`); uygulanmamışsa sorgu hata verir
+ * → kolonsuz liste ile BİR KEZ daha denenir ve sonuç modül seviyesinde
+ * hatırlanır (her istekte iki sorgu atılmaz).
+ */
+let overridesColumn: boolean | null = null
+
+const PROFILE_COLUMNS
+  = 'username, full_name, avatar_url, role, roles, permissions, is_owner, limits'
+
+interface ProfileRow {
+  username: string | null
+  full_name: string | null
+  avatar_url: string | null
+  role: 'admin' | 'user' | null
+  roles: string[] | null
+  permissions: string[] | null
+  is_owner: boolean | null
+  limits: UserLimits | null
+  permission_overrides?: unknown
+}
+
+async function fetchProfile(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<ProfileRow | null> {
+  if (overridesColumn !== false) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`${PROFILE_COLUMNS}, permission_overrides`)
+      .eq('id', userId)
+      .maybeSingle()
+    if (!error) {
+      overridesColumn = true
+      return data as ProfileRow
+    }
+    overridesColumn = false
+  }
+  const { data } = await supabase
+    .from('profiles')
+    .select(PROFILE_COLUMNS)
+    .eq('id', userId)
+    .maybeSingle()
+  return data as ProfileRow | null
 }
 
 /** Returns true only for admin users. */

@@ -13,12 +13,13 @@ import type {
 import type { GitHubRepo } from '@/lib/github'
 import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
-import { Divider } from 'antd'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { ChatPanel } from '@/components/admin/chat-panel'
 import { DataManager } from '@/components/admin/data-manager'
+import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
 import { OverviewPanel } from '@/components/admin/overview-panel'
+import { PanelCard } from '@/components/admin/panel-card'
 import { ProfilePhotoUploader } from '@/components/admin/profile-photo-uploader'
 import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
 import { SectionsEditor } from '@/components/admin/sections-editor'
@@ -300,39 +301,6 @@ return
     }))
   }
 
-  const setToolbox = (
-    index: number,
-    field: keyof ToolboxItem,
-    value: string,
-  ) => {
-    setContent((prev) => {
-      const toolbox = prev.about.toolbox.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item,
-      )
-      return { ...prev, about: { ...prev.about, toolbox } }
-    })
-  }
-
-  const addToolbox = () => {
-    setContent(prev => ({
-      ...prev,
-      about: {
-        ...prev.about,
-        toolbox: [...prev.about.toolbox, { label: '', type: 'link', href: '' }],
-      },
-    }))
-  }
-
-  const removeToolbox = (index: number) => {
-    setContent(prev => ({
-      ...prev,
-      about: {
-        ...prev.about,
-        toolbox: prev.about.toolbox.filter((_, i) => i !== index),
-      },
-    }))
-  }
-
   const setInterest = (
     index: number,
     field: keyof InterestItem,
@@ -499,6 +467,8 @@ return prev
         forks: repo.forks,
         updatedAt: repo.updatedAt,
         tags: repo.topics ?? [],
+        visible: true,
+        isVisible: true,
       }
       return {
         ...prev,
@@ -960,9 +930,13 @@ return prev
       <PanelCard title="Toolbox (Kullandığım Teknolojiler)">
         <div className="rounded-lg border border-foreground/10 bg-foreground/[0.03] p-3 text-xs text-foreground/60">
           <p>
-            Sitedeki "Kullandığım Teknolojiler" şeridi artık <strong>Veri Yönetimi → Yetenekler</strong> tablosundan
+            Sitedeki "Kullandığım Teknolojiler" şeridi artık
+{' '}
+<strong>Veri Yönetimi → Yetenekler</strong>
+{' '}
+tablosundan
             yönetiliyor (seviye, açıklama ve ikon otomatik algılama ile). Bu bölümdeki eski JSON editörü kaldırıldı.
-          </p>
+</p>
         </div>
       </PanelCard>
       <PanelCard title="İlgi Alanları (Beyond the Code)">
@@ -1541,9 +1515,11 @@ return prev
               </div>
             </ItemCard>
           ))}
-          <AddButton onPress={addProject} label="Proje Düzenle" />
+          <AddButton onPress={addProject} label="Yeni Proje Ekle" />
         </div>
       </PanelCard>
+
+      <GitHubReposAdmin githubRepos={githubRepos} content={content} setContent={setContent} />
 
       <PanelCard title={`GitHub Repoları (${githubRepos.length})`}>
         <p className="mb-3 text-xs text-foreground-500">
@@ -1918,24 +1894,6 @@ function SubSection({
       </h2>
       <div className="pt-4">{children}</div>
     </section>
-  )
-}
-
-function PanelCard({
-  title,
-  children,
-}: {
-  title: string
-  children: ReactNode
-}) {
-  return (
-    <Card className="p-4 sm:p-5 bg-background">
-      <div className="pb-3">
-        <h2 className="text-base sm:text-lg font-semibold">{title}</h2>
-        <Divider className="mt-2" />
-      </div>
-      {children}
-    </Card>
   )
 }
 

@@ -215,7 +215,14 @@ return
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
+    const isVisible = (p: ProjectItem) => {
+      if (p.visible === false || (p as any).isVisible === false || (p as any).hidden === true)
+return false
+      return true
+    }
     const list = allProjects.filter((p) => {
+      if (!isVisible(p))
+return false
       const matchesQuery
         = !q
           || p.title.toLowerCase().includes(q)

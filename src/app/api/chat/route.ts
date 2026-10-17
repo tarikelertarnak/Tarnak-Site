@@ -25,6 +25,7 @@ import {
 import { isPresenceState } from '@/lib/chat-peers'
 import { BODY_LIMITS, checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
 import { getSessionUser, hasSessionPermission, sessionUserName } from '@/lib/supabase/session'
+import { messageQuotaError } from '@/lib/user-quota'
 
 /**
  * Chat API (2026-10-11) — konuşma tabanlı sohbet.
@@ -317,6 +318,12 @@ export async function POST(req: Request) {
       if (!rl.ok) {
         return rateLimitResponse(rl)
       }
+    }
+
+    // Mesaj SİHRİ (kotası) — varsayılan sınırsız; yönetici sınır koyduysa keser.
+    const quotaDenied = await messageQuotaError(user)
+    if (quotaDenied) {
+      return NextResponse.json({ success: false, message: quotaDenied }, { status: 403 })
     }
 
     const senderName = sessionUserName(user) ?? 'bilinmeyen'
