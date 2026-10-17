@@ -6,7 +6,7 @@
     "description": "",
     "exploreLabel": "Projeleri Keşfet",
     "connectLabel": "İletişime Geç",
-    "emoji": "🚀",
+    "emoji": "",
     "stats": [
       {
         "label": "Projects",
@@ -63,9 +63,7 @@
     {
       "name": "Tarnak",
       "href": "https://discord.gg/Fp8WbUw4KB",
-      "icon": "mdi:discord",
-      "label": "Discord Grubu",
-      "value": "Tarnak"
+      "icon": "mdi:discord"
     }
   ],
   "about": {
@@ -192,8 +190,8 @@
   "profile": {
     "firstName": "TARIK",
     "lastName": "ELER",
-    "displayName": "TARIKELER",
-    "nickname": "Tarnak",
+    "displayName": "TARIK ELER",
+    "nickname": "TARNAK",
     "title": "Yazılımcı & Sistem Mimarı",
     "profileImage": "/uploads/profile.png",
     "experience": "",
@@ -218,80 +216,6 @@
     "backgroundImage": ""
   },
   "footer": {
-    "copyright": "TARIKELER"
-  },
-  "resources": {
-    "title": "Kaynaklar",
-    "subtitle": "",
-    "description": "Kullandığım ve faydalı bulduğum araçlar, kütüphaneler ve öğrenme kaynakları.",
-    "groups": []
-  },
-  "phase6": {
-    "availability": {
-      "enabled": false,
-      "label": "",
-      "tone": "available",
-      "href": "/contact/"
-    },
-    "services": {
-      "title": "Hizmetler",
-      "description": "",
-      "items": []
-    },
-    "testimonials": {
-      "title": "Referanslar",
-      "items": []
-    },
-    "timeline": {
-      "title": "Yolculuk",
-      "items": []
-    },
-    "certificates": {
-      "title": "Sertifikalar & Başarılar",
-      "items": []
-    },
-    "uses": {
-      "title": "Ne Kullanıyorum",
-      "description": "",
-      "groups": []
-    },
-    "now": {
-      "updated": "",
-      "learning": [],
-      "building": [],
-      "reading": [],
-      "listening": []
-    },
-    "changelog": {
-      "title": "Değişiklikler",
-      "entries": []
-    },
-    "newsletter": {
-      "enabled": false,
-      "title": "Bülten",
-      "description": "",
-      "provider": ""
-    },
-    "videos": {
-      "channelId": "",
-      "title": "Videolar",
-      "maxItems": 4
-    },
-    "vcard": {
-      "enabled": true,
-      "note": ""
-    },
-    "privacy": {
-      "title": "Gizlilik Politikası",
-      "updated": "",
-      "body": "",
-      "needsLegalReview": true
-    },
-    "kvkk": {
-      "title": "KVKK Aydınlatma Metni",
-      "updated": "",
-      "body": "",
-      "needsLegalReview": true
-    }
+    "copyright": "TARIK ELER"
   }
 }
