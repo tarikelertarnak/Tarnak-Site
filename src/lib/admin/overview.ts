@@ -146,7 +146,7 @@ export async function getOverview(): Promise<OverviewData> {
   }
 
   if (!db) {
-    base.warnings.push('Supabase yapılandırılmamış (SUPABASE_SERVICE_ROLE eksik).')
+    base.warnings.push('Supabase yapılandırılmamış (service-role key eksik).')
     return base
   }
 

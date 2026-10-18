@@ -1,6 +1,6 @@
 import crypto from 'node:crypto'
 
-import { createClient } from '@supabase/supabase-js'
+import { createOptionalAdminClient } from '@/lib/supabase/admin'
 
 /**
  * Reklam sisteminin sunucu tarafi.
@@ -81,11 +81,7 @@ const DEFAULT_SLOTS: AdSlot[] = [
 // Supabase (service_role) — yalnizca sunucu tarafi
 // -------------------------------------------------------------
 function adminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key)
-    return null
-  return createClient(url, key, { auth: { persistSession: false } })
+  return createOptionalAdminClient()
 }
 
 interface AdSlotRow {

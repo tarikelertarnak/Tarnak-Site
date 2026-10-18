@@ -5,7 +5,6 @@ import type {
   UserLimits,
 } from '@/lib/admin/users-shared'
 import type { SessionUser } from '@/lib/supabase/session'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import { writeWithColumnFallback } from '@/lib/admin/data'
 import { getUserUsage, recordAudit } from '@/lib/admin/user-usage'
@@ -19,6 +18,7 @@ import {
 } from '@/lib/permissions'
 import { E164_MAX_DIGITS, normalizePhone } from '@/lib/phone'
 import { guardWrite } from '@/lib/rate-guard'
+import { createOptionalAdminClient } from '@/lib/supabase/admin'
 import { getSessionUser } from '@/lib/supabase/session'
 
 export const dynamic = 'force-dynamic'
@@ -49,17 +49,7 @@ function json(data: unknown, status = 200) {
 }
 
 function adminClient(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key) {
-    return null
-  }
-  return createSupabaseAdmin(url, key, {
-    global: {
-      fetch: (input, init) =>
-        fetch(input, { ...init, signal: AbortSignal.timeout(25_000) }),
-    },
-  })
+  return createOptionalAdminClient()
 }
 
 /**

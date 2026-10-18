@@ -1,6 +1,4 @@
 import type { AboutPage } from '@/lib/about-page'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AboutPageView } from '@/components/about/about-page-view'
@@ -60,15 +58,32 @@ vi.mock('@/components/ui/button', () => ({
         ),
 }))
 
-function seedPage(): AboutPage {
-  const sql = readFileSync(
-    join(process.cwd(), 'supabase', 'about-page.sql'),
-    'utf-8',
-  )
-  const govde = sql.match(/\$about\$([\s\S]*?)\$about\$/)![1]!
-  const parsed = parseAboutPage(JSON.parse(govde))
+function testPage(): AboutPage {
+  const parsed = parseAboutPage({
+    title: { tr: 'HAKKIMDA', en: 'ABOUT ME' },
+    intro: { tr: 'Örnek Türkçe metin.', en: 'Sample English text.' },
+    areas: [{
+      key: 'sample-area',
+      title: { tr: 'Örnek alan', en: 'Sample area' },
+      description: { tr: 'Türkçe açıklama.', en: 'English description.' },
+      period: '',
+    }],
+    journey: [{
+      key: 'sample-journey',
+      title: { tr: 'Örnek adım', en: 'Sample step' },
+      description: { tr: 'Türkçe adım.', en: 'English step.' },
+      period: '',
+    }],
+    values: [{
+      key: 'sample-value',
+      title: { tr: 'Örnek değer', en: 'Sample value' },
+      description: { tr: 'Türkçe değer.', en: 'English value.' },
+      period: '',
+    }],
+    closing: { tr: 'Kapanış Türkçe.', en: 'Closing in English.' },
+  })
   if (!parsed)
-    throw new Error('seed ayrıştırılamadı')
+    throw new Error('test sayfası ayrıştırılamadı')
   return parsed
 }
 
@@ -137,45 +152,43 @@ describe('aboutPageView — boş ve hata durumları', () => {
   })
 
   it('hata bayrağı içerik varken de hata durumu gösterir (sessizce yutulmaz)', () => {
-    ciz({ aboutPage: seedPage(), readFailed: true })
+    ciz({ aboutPage: testPage(), readFailed: true })
     expect(screen.getByText('İçerik yüklenemedi')).toBeTruthy()
     expect(screen.getByText('Tekrar Dene')).toBeTruthy()
     // Biyografi basılmaz: okunamayan veriyi doğruymuş gibi göstermek
     // yanıltıcı olur.
-    expect(screen.queryByText('Web geliştirme')).toBeNull()
+    expect(screen.queryByText('Örnek alan')).toBeNull()
   })
 })
 
 describe('aboutPageView — içerik ve dil', () => {
-  const page = seedPage()
+  const page = testPage()
 
   it('türkçe seçiliyken Türkçe metinleri gösterir', () => {
     ciz({ aboutPage: page })
     expect(
-      screen.getByText('Merhaba, ben Tarık Eler. Dijital dünyada TARNAK adını kullanıyorum.'),
+      screen.getByText('Örnek Türkçe metin.'),
     ).toBeTruthy()
-    expect(screen.getByText('Web geliştirme')).toBeTruthy()
-    expect(screen.getByText('Üzerinde Çalıştığım Alanlar')).toBeTruthy()
-    expect(screen.getByText('Yolculuğum')).toBeTruthy()
-    expect(screen.getByText('Değerlerim')).toBeTruthy()
-    expect(screen.getByText('Açık kaynak')).toBeTruthy()
+    expect(screen.getByText('Örnek alan')).toBeTruthy()
+    expect(screen.getByText('Örnek adım')).toBeTruthy()
+    expect(screen.getByText('Örnek değer')).toBeTruthy()
   })
 
   it('i̇ngilizce seçiliyken İngilizce metinleri gösterir (karışmaz)', () => {
     ciz({ aboutPage: page, locale: 'en' })
     expect(
-      screen.getByText('Hi, I\'m Tarık Eler. I go by TARNAK in the digital world.'),
+      screen.getByText('Sample English text.'),
     ).toBeTruthy()
-    expect(screen.getByText('Areas I Focus On')).toBeTruthy()
-    expect(screen.getByText('My Journey')).toBeTruthy()
-    expect(screen.getByText('My Values')).toBeTruthy()
-    expect(screen.queryByText('Web geliştirme')).toBeNull()
+    expect(screen.getByText('Sample area')).toBeTruthy()
+    expect(screen.getByText('Sample step')).toBeTruthy()
+    expect(screen.getByText('Sample value')).toBeTruthy()
+    expect(screen.queryByText('Örnek alan')).toBeNull()
   })
 
   it('uYDURMA YIL GÖSTERİLMEZ (dönemler boş)', () => {
     ciz({ aboutPage: page })
-    for (const yil of ['2019', '2020', '2021', '2022', '2023', '2024'])
-      expect(screen.queryByText(yil)).toBeNull()
+    expect(screen.queryByText('Örnek adım')).toBeTruthy()
+    expect(screen.queryByText(/20\d{2}/)).toBeNull()
   })
 
   it('gitHub bağlantısı ayardan gelir, localhost içermez', () => {

@@ -1,16 +1,13 @@
 import arcjet, { protectSignup } from '@arcjet/next'
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import env from '@/lib/env'
 import { isMissingColumnError } from '@/lib/postgrest'
 import { clientIp, rateLimit } from '@/lib/rate-limit'
 import { checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
+import { createOptionalAdminClient } from '@/lib/supabase/admin'
 import { contactFormSchema, HONEYPOT_FIELD } from '@/lib/validations'
 
-const supabaseAdmin
-  = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE
-    ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE)
-    : null
+const supabaseAdmin = createOptionalAdminClient()
 
 const aj = env.ARCJET_KEY
   ? arcjet({

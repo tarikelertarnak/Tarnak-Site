@@ -10,10 +10,10 @@
 
 ## Data, files, and realtime
 
-- Supabase JS and SSR are installed. Shared browser/server/middleware clients exist under `src/lib/supabase/`; an admin/service client also exists. Some server modules still construct Supabase clients directly.
+- Supabase JS and SSR are installed. Shared browser/server/middleware clients exist under `src/lib/supabase/`; service-role construction is now centralized in `admin.ts` and accepts `SUPABASE_SERVICE_ROLE_KEY` with the old name as a compatibility fallback.
 - Content starts from `data/content.json` and is merged with Supabase. Chat persistence uses Supabase in `src/lib/chat-db.ts`; legacy JSON persistence code remains in `src/lib/chat.ts`. Visits, permissions, quotas, ads, GitHub, and admin resources each have dedicated modules.
-- SQL is split among `supabase/*.sql` and `scripts/schema-*.sql`, rather than an ordered `supabase/migrations/` directory. Repo instructions document unapplied live schema files for `site_content`, `languages`, `messages.phone`, and visits; live DB changes cannot be confirmed from this workspace alone.
-- Public assets and CVs are currently in `public/`; chat upload handling and profile uploads need code-level review for full Storage migration status. Supabase Realtime usage and cleanup need code-level review before any changes.
+- SQL is split among `supabase/*.sql` and `scripts/schema-*.sql`; an ordered `supabase/migrations/` directory now contains a migration that archives and clears the unverified About copy. Repo instructions documented older schema gaps, but the `site_content` table was live and the about-page data was confirmed by the local runtime.
+- Public assets and CVs are currently in `public/`; the repo contains `public/uploads/profile.png` and one legacy chat attachment. Profile photo uploads use Supabase Storage, while legacy chat uploads and polling remain. Chat has no Supabase Realtime channel subscription yet.
 - Cloudflare Workers deployment is configured through OpenNext. Filesystem writes are not durable there; `content.ts` still has disk fallbacks. This is a known persistence risk when the live `site_content` table is absent.
 
 ## Existing work relevant to the request
@@ -24,10 +24,12 @@
 
 ## Baseline checks (Windows, 2026-10-18)
 
-- `npx tsc --noEmit`: passed.
+- `npx tsc --noEmit`: passed before edits and after the service-role refactor.
 - `npx eslint . --max-warnings 0`: failed on one test title capitalization at `src/components/admin/admin-panel.test.tsx:147` (`test/prefer-lowercase-title`). Repo-wide lint health may differ from the older count in `AGENTS.md`.
 - `npx vitest run`: 78 files and 1,022 tests passed. Stderr includes expected EROFS logs from tests exercising read-only filesystem handling and Node localStorage warnings; one test also emitted a mocked HTTP 500 stack.
-- Build and browser console/Next Issues have not yet been measured in this analysis pass.
+- `npx next build`: passed with Node's `DEP0205` deprecation warning.
+- BrowserOS snapshots loaded `/`, `/projects`, `/blog`, `/about`, `/chat`, and `/credits`; the logged-out `/chat` first displayed its loading status. A Next.js Issues panel was not present in the sampled page DOM; browser console events were not available from the read-only page snapshot.
+- The live About copy was archived outside the repository at `%TEMP%/tarnak-about-page-backup-20261018.json` and cleared from `site_content`, preserving all other site content fields. `supabase/migrations/202610180001_clear_unverified_about_page.sql` retains an idempotent private archive before clearing for other environments.
 
 ## Open concerns before implementation
 

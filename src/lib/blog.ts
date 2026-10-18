@@ -3,7 +3,7 @@ import type { Locale } from '@/lib/i18n'
 import { randomUUID } from 'node:crypto'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
+import { createOptionalAdminClient } from '@/lib/supabase/admin'
 
 const DATA_DIR = path.join(process.cwd(), 'data')
 const BLOG_FILE = path.join(DATA_DIR, 'blog', 'posts.json')
@@ -25,17 +25,7 @@ function localizePost(post: BlogPost, locale: Locale): BlogPost {
  * Service role client — bypasses RLS, server-side only.
  */
 function getSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key) {
-    return null
-  }
-  return createSupabaseAdmin(url, key, {
-    global: {
-      // Prevent page render from waiting 60s+ on weak networks: fall back after 25s
-      fetch: (input, init) => fetch(input, { ...init, signal: AbortSignal.timeout(25_000) }),
-    },
-  })
+  return createOptionalAdminClient()
 }
 
 interface DbPost {

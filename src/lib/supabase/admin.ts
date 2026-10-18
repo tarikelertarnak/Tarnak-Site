@@ -13,15 +13,28 @@ export function createAdminClient(): SupabaseClient {
     return adminClient
   }
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE!
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE!
   if (!url || !serviceKey) {
-    throw new Error('SUPABASE service-role ayarları eksik (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE)')
+    throw new Error('SUPABASE service-role ayarları eksik (NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY)')
   }
   adminClient = createSupabaseClient(url, serviceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
+    global: {
+      fetch: (input, init) =>
+        fetch(input, { ...init, signal: AbortSignal.timeout(25_000) }),
+    },
   })
   return adminClient
+}
+
+/** Service-role istemi gerekmeyen kurulumlarda boş döner; anahtar istemciye aktarılmaz. */
+export function createOptionalAdminClient(): SupabaseClient | null {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL
+    || !(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE)) {
+    return null
+  }
+  return createAdminClient()
 }

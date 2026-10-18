@@ -1,8 +1,8 @@
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 import { cache } from 'react'
+import { createOptionalAdminClient } from '@/lib/supabase/admin'
 import { sanitizeSvg } from '@/lib/svg-sanitize'
 import bundledAdminJson from '../../data/admin.json'
 // Cloudflare Workers has no filesystem — content is baked into the worker
@@ -396,17 +396,7 @@ const CONTENT_CACHE_TTL_MS = 300_000
  * düşer — site çalışmaya devam eder.
  */
 async function getSupabaseAdmin() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key) {
-    return null
-  }
-  return createSupabaseAdmin(url, key, {
-    global: {
-      fetch: (input, init) =>
-        fetch(input, { ...init, signal: AbortSignal.timeout(15_000) }),
-    },
-  })
+  return createOptionalAdminClient()
 }
 
 /**
@@ -549,11 +539,9 @@ export const getContent = cache(async (): Promise<SiteContent> => {
  * If Supabase is not configured or errors, the existing (content.json) data is kept.
  */
 async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key) {
+  const supabase = createOptionalAdminClient()
+  if (!supabase)
     return base
-  }
 
   // TTL cache: don't call Supabase over the network on warm requests
   if (
@@ -562,14 +550,6 @@ async function mergeSupabase(base: SiteContent): Promise<SiteContent> {
   ) {
     return supabaseMergeCache.data ?? base
   }
-
-  const supabase = createSupabaseAdmin(url, key, {
-    global: {
-      // Prevent render from waiting 60s+ on weak networks: fall back after 25s
-      fetch: (input, init) =>
-        fetch(input, { ...init, signal: AbortSignal.timeout(25_000) }),
-    },
-  })
 
   const merged = { ...base }
 

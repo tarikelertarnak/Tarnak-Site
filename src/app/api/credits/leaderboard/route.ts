@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { createOptionalAdminClient } from '@/lib/supabase/admin'
 
 /**
  * GET /api/credits/leaderboard
@@ -30,11 +30,7 @@ const PAGE_SIZE = 1000
 const CACHE_CONTROL = 'public, s-maxage=300'
 
 function adminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key)
-    return null
-  return createClient(url, key, { auth: { persistSession: false } })
+  return createOptionalAdminClient()
 }
 
 export async function GET() {

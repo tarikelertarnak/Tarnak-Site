@@ -1,8 +1,8 @@
 import type { FieldDef, ResourceDef } from '@/lib/admin/resources'
 
-import { createClient } from '@supabase/supabase-js'
 import { writableFieldNames } from '@/lib/admin/resources'
 import { missingColumnFrom } from '@/lib/postgrest'
+import { createOptionalAdminClient } from '@/lib/supabase/admin'
 
 /**
  * Admin veri katmani — ortak yardimcilar.
@@ -16,11 +16,7 @@ import { missingColumnFrom } from '@/lib/postgrest'
  */
 
 export function adminDb() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE
-  if (!url || !key)
-return null
-  return createClient(url, key, { auth: { persistSession: false } })
+  return createOptionalAdminClient()
 }
 
 /**

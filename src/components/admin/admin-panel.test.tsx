@@ -144,7 +144,7 @@ describe('adminPanel', () => {
     expect(document.body.textContent).not.toMatch(/Faz\s*6|phase6/i)
   })
 
-  it('Profil "Ad" alanına yazarken odak alanda KALIR (odak çalınmaz)', () => {
+  it('profil "Ad" alanına yazarken odak alanda kalır (odak çalınmaz)', () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Profil & Hakkımda/ }))
 

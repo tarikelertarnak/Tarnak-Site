@@ -1,9 +1,9 @@
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 /**
  * CV belgeleri — kaynak: Supabase `cvs` tablosu, fallback: content.about.cv.href.
  * Site tarafında tek kaynak; birden fazla kayıt varsa combobox gösterilir.
  */
 import { cache } from 'react'
+import { createOptionalAdminClient } from '@/lib/supabase/admin'
 import bundledContentJson from '../../data/content.json'
 
 export interface CvDoc {
@@ -34,11 +34,9 @@ export const getCvs = cache(async (): Promise<CvDoc[]> => {
   if (cvCache && Date.now() - cvCache.at < CV_CACHE_TTL_MS) {
     return cvCache.data
   }
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const key = process.env.SUPABASE_SERVICE_ROLE
-  if (url && key) {
+  const sb = createOptionalAdminClient()
+  if (sb) {
     try {
-      const sb = createSupabaseAdmin(url, key, { auth: { persistSession: false } })
       const { data, error } = await sb
         .from('cvs')
         .select('id, label, lang, href, sort_order')
