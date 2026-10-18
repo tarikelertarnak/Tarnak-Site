@@ -14,6 +14,7 @@
     "dev:fast": "next dev --turbopack --no-preinstall",
     "build": "next build",
     "opennext:build": "opennextjs-cloudflare build",
+    "pages:build": "opennextjs-cloudflare build && node scripts/pages-copy-worker.cjs",
     "preview": "opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare deploy",
     "lint": "eslint . || true",

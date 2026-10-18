@@ -58,22 +58,18 @@ bu çalışma oturumunda çalıştırılmadı.
 - `data/` — build snapshot'ları ve Puck içerikleri; gerçek iletişim/sohbet kayıtları Supabase'tedir
 - `scripts/` — build/deploy yardımcıları (fetch-github-data, patch-lightningcss, pages-copy-worker)
 
-## Deploy (Cloudflare Pages, direct upload)
+## Deploy (Cloudflare Pages)
 
-Build **Windows'ta yapılamaz** (sharp win32 `.node` loader sorunu) — WSL Linux üzerinde kurulmuştur:
+`master` dalı Cloudflare Pages'e bağlıdır. Cloudflare build command `pnpm pages:build`, output directory `.open-next` olmalıdır. Script OpenNext Worker'ını Pages Advanced Mode için hazırlar, `_routes.json` oluşturur ve statik assetleri yerleştirir. Aynı çıktıyı elle yüklemek için:
 
 ```sh
-# WSL: ~/tarnak-build (projenin rsync kopyası)
 pnpm install --frozen-lockfile
-pnpm opennext:build
-GITHUB_TOKEN= node scripts/pages-copy-worker.cjs   # worker yamaları + _routes.json + flatten
-CI=true npx wrangler@latest pages deploy .open-next --project-name tarikelertarnak --branch master
+pnpm pages:build
+CI=true npx wrangler pages deploy .open-next --project-name tarikelertarnak --branch master
 ```
 
-Notlar:
-
-- Git entegrasyonu (Workers Builds) **devre dışı** — yalnızca direct upload kullanılır, boş deploy/fail check üretilmez.
-- `_routes.json` Pages advanced mode için zorunludur (statik dosyalar worker'a düşmesin).
+- Pages Advanced Mode'da `_worker.js` tüm istekleri ele alır; `_routes.json` statik dosyaları Pages asset sunucusuna yönlendirir.
+- Cloudflare ortam değişkenleri ve KV bağlamaları dashboard'dan yapılandırılır.
 - SEO: `robots.ts` + `sitemap.ts` + JSON-LD (`src/app/layout.tsx`); canonical her zaman `https://tarikelertarnak.pages.dev` (deploy-specific `CF_PAGES_URL` hash'leri asla kullanılmaz).
 
 ## Lisans
