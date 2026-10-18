@@ -164,7 +164,7 @@ if (fs.existsSync(handlerPath)) {
 // Pages' bundler resolves optional/dev-only requires (critters, otel, react-dom
 // development builds) against the output node_modules. OpenNext only copies
 // files actually bundled, so copy these here so the bundler can resolve them.
-function ensureModule(destName, extra) {
+function ensureModule(destName) {
   const dest = path.join(openNextDir, 'server-functions', 'default', 'node_modules', destName);
   if (fs.existsSync(dest)) return;
   const siteRoot = path.resolve(__dirname, '..');
@@ -416,6 +416,14 @@ const routesExclude = [];
     '/credits': 'credits',
     '/donate': 'donate',
     '/github': 'github',
+    '/chat': 'chat',
+    '/changelog': 'changelog',
+    '/gizlilik': 'gizlilik',
+    '/kvkk': 'kvkk',
+    '/login': 'login',
+    '/now': 'now',
+    '/sign': 'sign',
+    '/uses': 'uses',
   };
   const statics = [];
   for (const [route, base] of Object.entries(PAGES)) {
@@ -483,16 +491,14 @@ const routesExclude = [];
   }
 }
 
-// _routes.json: without it, Pages advanced mode (_worker.js present) routes
-// EVERY request into the worker, and static files (CSS/images) 404 — the worker
-// never serves them. Excluding static paths returns those to Pages' asset
-// service. Page routes (/reklam /blog /projects + dynamic) stay on the worker;
-// only extension-based assets, /_next/*, /uploads/* and /cv/* are excluded.
+// Route only real server-rendered paths into the Worker. Unknown paths must
+// reach Pages' asset service so its 404.html is returned instead of invoking
+// the Worker for arbitrary URLs.
 {
   const routesPath = path.join(openNextDir, '_routes.json');
   const routes = {
     version: 1,
-    include: ['/*'],
+    include: ['/admin', '/admin/*', '/api/*', '/auth/*', '/blog/*', '/github/*'],
     exclude: [
       // pages-copy-worker ustunde prerender edilen sayfalar (/, /about, ...)
       // onceki blokta toplandi; onlar da static servise veriliyor.

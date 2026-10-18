@@ -188,6 +188,12 @@ export function Drawer({
       if (dlg && dlg.contains(target)) {
         return
       }
+      // Popovers rendered through a portal still belong to the drawer. Their
+      // DOM is outside both the dialog and layout container, so recognize the
+      // explicit layer marker before treating the pointer as an outside click.
+      if (target instanceof Element && target.closest('[data-drawer-portal]')) {
+        return
+      }
       // Orta alanın (Ayarlar + onay penceresi bu ağacın içinde) tıklamaları: kapatma.
       if (container.contains(target)) {
         return

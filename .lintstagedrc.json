@@ -4,6 +4,6 @@
   "//eslint": "Next 16'da `next lint` kaldırıldı; doğrudan `eslint` çağrılıyor. CI da aynı komutu kullanıyor.",
   "//prettier": "2026-10-10: Prettier TS/TSX/JS için KALDIRILDI. `@antfu/eslint-config` stilleri (`style/*`, `antfu/*`) Prettier ile ÇELİŞİYORDU: prettier `if-newline`/`operator-linebreak`/`arrow-parens` düzenini geri sarıyor, eslint tekrar düzeltiyor → her commit'te flip-flop, commit BOZUK kod kaydediyordu. CI yalnızca `eslint --max-warnings 0` çalıştırdığı için ESLint tek biçim sahibidir. Prettier artık sadece ESLint'in kapsamadığı dosyalarda (json/css/md/yml) çalışır.",
   "*.{ts,tsx}": ["eslint --fix --max-warnings 0"],
-  "*.{js,mjs,cjs,jsx}": ["eslint --fix --max-warnings 0"],
+  "*.{js,mjs,cjs,jsx}": ["eslint --fix --max-warnings 0 --no-warn-ignored"],
   "*.{json,css,md,yml,yaml}": ["prettier --write"]
 }

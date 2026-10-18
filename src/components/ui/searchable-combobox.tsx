@@ -153,6 +153,7 @@ return options
         && createPortal(
           <div
             ref={panelRef as React.RefObject<HTMLDivElement>}
+            data-drawer-portal=""
             style={portalStyle}
             className="z-50 flex w-64 flex-col overflow-hidden rounded-xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/20"
           >

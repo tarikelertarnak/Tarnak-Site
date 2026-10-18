@@ -4,7 +4,7 @@ import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
 import { siteUrl } from '@/lib/site-url'
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-static'
 
 // 2026-09-24 (kullanici istegi): "tarik eler chat" gibi aramalar /chat'e
 // ulasmali. SAYFA ARTIK LOGIN GEREKTIRMIYOR — crawler'lar sayfayi ve metadata'yi
