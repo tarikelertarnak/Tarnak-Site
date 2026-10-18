@@ -1,0 +1,36 @@
+# Initial project analysis
+
+## Stack and structure
+
+- Next.js 16.4.0 App Router, React 19.1.0, strict TypeScript 5.9.3; Tailwind CSS v4 plus Ant Design, HeroUI, LobeHub UI, Emotion, Iconify, and Motion.
+- Theme is light/dark, initialized by `ThemeInitScript`, with shared CSS tokens in `src/app/tokens.css` and `src/app/globals.css`. The master button lives in `src/components/ui/button.tsx`.
+- Routes live in `src/app/`; shared UI in `src/components/`; services, schemas, and Supabase helpers in `src/lib/`; locale dictionaries in `src/i18n/`; static content snapshots in `data/`; SQL in `supabase/` and `scripts/`.
+- UI locale selection is cookie/Accept-Language based, with 25 selectable locales and translated content currently covering tr/en/de/es/fr/ja/pt/ru. There is no locale-prefixed routing.
+- Auth has both a signed `admin_session` flow and Supabase Auth. `src/proxy.ts` handles host checks and conditional Supabase session refresh. Admin API authorization is server-side.
+
+## Data, files, and realtime
+
+- Supabase JS and SSR are installed. Shared browser/server/middleware clients exist under `src/lib/supabase/`; an admin/service client also exists. Some server modules still construct Supabase clients directly.
+- Content starts from `data/content.json` and is merged with Supabase. Chat persistence uses Supabase in `src/lib/chat-db.ts`; legacy JSON persistence code remains in `src/lib/chat.ts`. Visits, permissions, quotas, ads, GitHub, and admin resources each have dedicated modules.
+- SQL is split among `supabase/*.sql` and `scripts/schema-*.sql`, rather than an ordered `supabase/migrations/` directory. Repo instructions document unapplied live schema files for `site_content`, `languages`, `messages.phone`, and visits; live DB changes cannot be confirmed from this workspace alone.
+- Public assets and CVs are currently in `public/`; chat upload handling and profile uploads need code-level review for full Storage migration status. Supabase Realtime usage and cleanup need code-level review before any changes.
+- Cloudflare Workers deployment is configured through OpenNext. Filesystem writes are not durable there; `content.ts` still has disk fallbacks. This is a known persistence risk when the live `site_content` table is absent.
+
+## Existing work relevant to the request
+
+- Existing shared button, scroll, tab strip, visibility switch, admin panel grouping, chat reply/tick/emoji/group features, icon sanitization, and credits list tests indicate several requested features are already implemented. These are not assumed complete until source/runtime checks confirm them.
+- `rg` found `Math.random()` in ad selection and temporary chat IDs; other `setTimeout` matches are mostly UI timers/debounce/typing behavior, not necessarily fake loading. Mock references are primarily test mocks.
+- No `.codegraph/` index or `TaskCreate` tool is available in this checkout/session.
+
+## Baseline checks (Windows, 2026-10-18)
+
+- `npx tsc --noEmit`: passed.
+- `npx eslint . --max-warnings 0`: failed on one test title capitalization at `src/components/admin/admin-panel.test.tsx:147` (`test/prefer-lowercase-title`). Repo-wide lint health may differ from the older count in `AGENTS.md`.
+- `npx vitest run`: 78 files and 1,022 tests passed. Stderr includes expected EROFS logs from tests exercising read-only filesystem handling and Node localStorage warnings; one test also emitted a mocked HTTP 500 stack.
+- Build and browser console/Next Issues have not yet been measured in this analysis pass.
+
+## Open concerns before implementation
+
+- Confirm which schema scripts are applied in the actual Supabase project before writing migrations or changing existing data.
+- Do not replace existing content with fabricated profile/project/blog data. The current repo already contains real content snapshots and user-managed records whose provenance must be preserved.
+- UI runtime checks need the user's `localhost:3000` app or a fresh local server; browser errors are not inferable from static tests.
