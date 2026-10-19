@@ -116,6 +116,19 @@ export function PermissionEditor({
 
   return (
     <div className="max-h-[60vh] w-80 overflow-y-auto px-1 py-2">
+      {/* Kaydet EN ÜSTTE (2026-10-19, kullanıcı isteği: "Kaydet olacak sabit
+          en üstte... illa en aşağı girmek zorunda kalmayalım"). Uzun listede
+          butonu bulmak için dibe inmek gerekiyordu. Alt kopya KALDIRILDI ki
+          iki Kaydet karışmasın. */}
+      <Button
+        size="sm"
+        color="primary"
+        className="mb-2 w-full"
+        isDisabled={busy}
+        onPress={onSave}
+      >
+        Kaydet
+      </Button>
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-foreground-500">
           Özel Yetkiler (
@@ -233,16 +246,6 @@ export function PermissionEditor({
           </div>
         )
       })}
-
-      <Button
-        size="sm"
-        color="primary"
-        className="mt-1 w-full"
-        isDisabled={busy}
-        onPress={onSave}
-      >
-        Kaydet
-      </Button>
     </div>
   )
 }

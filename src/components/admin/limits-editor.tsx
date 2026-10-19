@@ -103,6 +103,18 @@ export function LimitsEditor({
         </Button>
       </div>
 
+      {/* Kaydet EN ÜSTTE (2026-10-19, kullanıcı isteği) — uzun formda dibe
+          inmek gerekiyordu. Alt kopya kaldırıldı. */}
+      <Button
+        size="sm"
+        color="primary"
+        className="mb-3 w-full"
+        isDisabled={busy}
+        onPress={save}
+      >
+        Kaydet
+      </Button>
+
       <div className="mb-3 rounded-lg border border-foreground-200/10 p-2">
         <div className="mb-1 flex justify-between text-[11px] text-foreground-500">
           <span>Toplam yükleme kullanımı</span>
@@ -175,16 +187,6 @@ dosya ·
           </span>
         </label>
       </div>
-
-      <Button
-        size="sm"
-        color="primary"
-        className="mt-2 w-full"
-        isDisabled={busy}
-        onPress={save}
-      >
-        Kaydet
-      </Button>
     </div>
   )
 }

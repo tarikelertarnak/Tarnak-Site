@@ -28,11 +28,14 @@ import { ROLE_PRESETS } from '@/lib/permissions'
  *   Satır 2 — komut butonları (ikon + etiket, mobilde kaydırılır)
  *
  * Yetki modeli (2026-10-17):
- *   · Normal kullanıcının yetkileri VARSAYILAN AÇIK (mesaj, dosya, proje
+ *   · Normal kullanıcının yetkileri varsayılan AÇIK (mesaj, dosya, proje
  *     görüntüleme); tehlikeli olanlar kapalı. "Özel Yetkiler" anahtarları
  *     artık ETKİN değeri gösterir, kayıt yalnızca sapanları tutar.
  *   · Limitler: 1 MB toplam yükleme, sınırsız mesaj.
- *   · Site Sahibi satırında Roller/Yetkiler/Limitler/Admin Yap/Sil RENDER
+ *   · "Admin Yap / Adminlikten Al" butonu YOK (2026-10-19, kullanıcı isteği:
+ *     "roller var zaten Admin Yap butonunu kaldır") — admin rolü yalnız
+ *     Roller popover'ından verilir/alınır.
+ *   · Site Sahibi satırında Roller/Yetkiler/Limitler/Sil RENDER
  *     EDİLMEZ; yalnız Şifre Sıfırla + Düzenle, yalnız site sahibinin
  *     kendisine görünür. Sunucu da aynı kuralları zorlar.
  *   · Yalnız Site Sahibi "İncele" görür (sunucuda `role === owner`).
@@ -184,24 +187,6 @@ export function UsersPanel() {
     setLimitsFor(null)
   }
 
-  /** Admin rolünü aç/kapat — onay ister. */
-  const toggleAdmin = (u: AdminUserRow) => {
-    const has = u.roles.includes('admin')
-    const label = u.username || u.email || u.id
-    const ok = window.confirm(
-      has
-        ? `${label} kullanıcısının adminliği kaldırılsın mı?`
-        : `${label} kullanıcısı admin yapılsın mı?`,
-    )
-    if (!ok) {
-      return
-    }
-    const roles = has
-      ? u.roles.filter(r => r !== 'admin')
-      : [...u.roles.filter(r => r !== 'user'), 'admin']
-    mutate(u.id, { action: 'setRoles', userId: u.id, roles })
-  }
-
   const resetPassword = (u: AdminUserRow) => {
     if (!newPassword.trim() || newPassword.length < 6) {
       setBanner({ type: 'error', text: 'Yeni şifre en az 6 karakter olmalı.' })
@@ -257,13 +242,6 @@ export function UsersPanel() {
       <Card className="bg-background">
         <div className="border-b border-white/10 px-4 py-3">
           <p className="text-sm font-semibold">Hesap Sahipleri</p>
-          <p className="text-xs text-foreground-500">
-            Normal kullanıcıda mesaj, dosya ve proje görüntüleme yetkileri
-            VARSAYILAN AÇIK; silme ve yönetim yetkileri kapalı. Sapan ayarlar
-            &quot;Özel Yetkiler&quot;te işaretlenir. Site sahibi hesabı
-            kilitlidir — kimse (sahibin kendisi dahil) rolünü, yetkisini,
-            limitini değiştiremez veya silemez.
-          </p>
         </div>
         {users === null ? (
           <p className="px-4 py-6 text-sm text-foreground-500">Yükleniyor…</p>
@@ -399,6 +377,17 @@ Son giriş:
                             trigger="click"
                             content={(
                               <div className="w-64 px-1 py-2">
+                                {/* Kaydet EN ÜSTTE (2026-10-19, kullanıcı
+                                    isteği: "sabit en üstte olsun"). */}
+                                <Button
+                                  size="sm"
+                                  color="primary"
+                                  className="mb-2 w-full"
+                                  isDisabled={busyId === u.id}
+                                  onPress={saveRoles}
+                                >
+                                  Kaydet
+                                </Button>
                                 <p className="mb-2 text-xs font-semibold text-foreground-500">
                                   Roller (birden fazla seçilebilir)
                                 </p>
@@ -438,15 +427,6 @@ Son giriş:
                                     </label>
                                   ))}
                                 </div>
-                                <Button
-                                  size="sm"
-                                  color="primary"
-                                  className="mt-2 w-full"
-                                  isDisabled={busyId === u.id}
-                                  onPress={saveRoles}
-                                >
-                                  Kaydet
-                                </Button>
                               </div>
                             )}
                           >
@@ -518,28 +498,6 @@ Son giriş:
                               Limitler
                             </Button>
                           </Popover>
-
-                          {!isSelf && (
-                            <Button
-                              size="sm"
-                              color="primary"
-                              variant="bordered"
-                              isDisabled={busyId === u.id}
-                              onPress={() => toggleAdmin(u)}
-                            >
-                              <Icon
-                                icon={
-                                  u.roles.includes('admin')
-                                    ? 'material-symbols:remove-moderator-outline'
-                                    : 'material-symbols:add-moderator-outline'
-                                }
-                                width={14}
-                              />
-                              {u.roles.includes('admin')
-                                ? 'Adminlikten Al'
-                                : 'Admin Yap'}
-                            </Button>
-                          )}
                         </>
                       )}
 
