@@ -32,9 +32,9 @@ import { ROLE_PRESETS } from '@/lib/permissions'
  *     görüntüleme); tehlikeli olanlar kapalı. "Özel Yetkiler" anahtarları
  *     artık ETKİN değeri gösterir, kayıt yalnızca sapanları tutar.
  *   · Limitler: 1 MB toplam yükleme, sınırsız mesaj.
- *   · "Admin Yap / Adminlikten Al" butonu YOK (2026-10-19, kullanıcı isteği:
- *     "roller var zaten Admin Yap butonunu kaldır") — admin rolü yalnız
- *     Roller popover'ından verilir/alınır.
+ *   · "admin" rolünü açıp kapatan ayrı buton YOK (2026-10-19, kullanıcı
+ *     isteği: "roller var zaten, o butonu kaldır") — admin rolü yalnız
+ *     Roller popover'ındaki `admin` preset'inden verilir/alınır.
  *   · Site Sahibi satırında Roller/Yetkiler/Limitler/Sil RENDER
  *     EDİLMEZ; yalnız Şifre Sıfırla + Düzenle, yalnız site sahibinin
  *     kendisine görünür. Sunucu da aynı kuralları zorlar.
@@ -254,8 +254,8 @@ export function UsersPanel() {
             {users.map((u) => {
               const isSelf = viewer?.id === u.id
               /*
-                SİTE SAHİBİ SATIRI: Roller / Özel Yetkiler / Limitler /
-                Admin Yap / Sil RENDER EDİLMEZ. Yalnız Şifre Sıfırla +
+                SİTE SAHİBİ SATIRI: Roller / Özel Yetkiler / Limitler / Sil
+                RENDER EDİLMEZ. Yalnız Şifre Sıfırla +
                 Düzenle ve yalnız site sahibi kendi satırına bakarken.
                 Sunucu da aynı kuralları zorlar (403).
               */
