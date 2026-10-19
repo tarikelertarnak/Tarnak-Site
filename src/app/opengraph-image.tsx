@@ -18,6 +18,24 @@ export const alt = 'Tarık Eler (Tarnak) — Yazılımcı & Sistem Mimarisi'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
+/*
+ * `force-static` ZORUNLU (2026-10-18 kök neden düzeltmesi).
+ *
+ * Bu route `dynamic` export ETMİYORDU → Next onu istek-zamanlı (dinamik) sayıp
+ * worker bundle'ına dahil ediyordu. Dinamik OG, `next/og` içindeki
+ * `getFallbackFont()`'u çağırıyor ve Next 16.4 bunu MUTLAK DOSYA YOLU ile
+ * import ediyor:
+ *   await import("/home/tarkeler/tarnak-build/.open-next/server-functions/.../Geist-Regular.ttf.bin")
+ * workerd'de dosya sistemi ve mutlak path import YOK → import hiç çözülemiyor,
+ * istek askıda kalıyor ve Workers "code had hung" deyip isteği iptal ediyor
+ * (canlıda /admin ve /api/* için 1101 — ölçülerek doğrulandı).
+ *
+ * `force-static` ile görsel BUILD zamanında tek sefer üretiliyor; @vercel/og
+ * ve font/wasm dosyaları worker bundle'a hiç girmiyor. Görsel zaten istek
+ * başına değişmiyor (JSX + sabit renkler), dolayısıyla davranış aynı kalır.
+ */
+export const dynamic = 'force-static'
+
 export default function OpengraphImage() {
   return new ImageResponse(
     <div

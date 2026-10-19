@@ -43,11 +43,17 @@ export function AboutSection({
   content,
   cvs,
   vcard,
+  hideMoreButton,
 }: {
   content: SiteContent
   cvs: CvDoc[]
   /** Dijital kartvizit ayarları. Verilmezse blok render edilmez. */
   vcard?: VCard
+  /**
+   * `/about` sayfasında bu bölümün kendisi kullanılıyor; orada "/about'a git"
+   * anlamına gelen "Daha Fazlası" butonu anlamsız → gizlenir.
+   */
+  hideMoreButton?: boolean
 }) {
   /**
    * DİLLER KARTI seviye rozeti (2026-10-06, kullanıcı).
@@ -125,18 +131,20 @@ export function AboutSection({
           combobox sağda duruyor.
         */}
         <div className="flex w-full flex-wrap items-center justify-center gap-3">
-          <Button
-            color="primary"
-            href="/about/"
-            // Hero butonlariyla BIREBIR ayni olcak (h-10, rounded-lg, px-4,
-            // gap-2, text-sm font-medium) — "Daha Fazlasi" dugmesi farkli
-            // gorsunmesin diye. `variant="bordered"` yerine dolu: ayni satirda
-            // "Iletisim Bilgileri" (bg-primary) ve hero butonlari duruyor.
-            className="h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
-            endContent={<ChevronRightIcon size={15} className="shrink-0" />}
-          >
-            {t('about.more')}
-          </Button>
+          {!hideMoreButton && (
+            <Button
+              color="primary"
+              href="/about/"
+              // Hero butonlariyla BIREBIR ayni olcak (h-10, rounded-lg, px-4,
+              // gap-2, text-sm font-medium) — "Daha Fazlasi" dugmesi farkli
+              // gorsunmesin diye. `variant="bordered"` yerine dolu: ayni satirda
+              // "Iletisim Bilgileri" (bg-primary) ve hero butonlari duruyor.
+              className="h-10 shrink-0 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
+              endContent={<ChevronRightIcon size={15} className="shrink-0" />}
+            >
+              {t('about.more')}
+            </Button>
+          )}
           <ContactQuickMenu content={content} />
         </div>
         {/*

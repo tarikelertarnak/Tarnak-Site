@@ -22,26 +22,20 @@ try {
 const handlerPath = path.join(openNextDir, 'server-functions', 'default', 'handler.mjs');
 if (fs.existsSync(handlerPath)) {
   let code = fs.readFileSync(handlerPath, 'utf8');
-  // Idempotency: bu script build sonrasi her calistiginda ayni handler.mjs uzerinde
-  // calisir. 2026-10-03'te ikinci calistirmada inject edilen blok baseline'i gormeyip
-  // DUPLICATE import ekliyordu -> wrangler "The symbol __nb_stream has already been
-  // declared" ile 28 hata verip deploy'i durduruyordu.
-  // Karsi onlem: inject ettigimiz marker satiri zaten varsa handler.mjs'e DOKUNMA
-  // (worker.js -> _worker.js kopyasi yukarida zaten yapildi).
-  if (code.includes('globalThis.__iso = [')) {
+  // Idempotency: isomorphic import'lar + ALS kurulumu birlikte inject edilir.
+  // Marker alsMarker'dir (ALS satirinin sonunda), __iso DEGIL: eski enjeksyonlarda
+  // __iso var ama ALS yoktu (1101 kokeni) — __iso kontrolu o dosyayi yanlislikla
+  // "zaten inject" deyip ALS'i atliyordu. Taze build'de ikisi de yoktur.
+  const alsMarker = '/*__TARNAK_ALS__*/';
+  if (code.includes(alsMarker)) {
     console.log('[pages-copy-worker] handler.mjs zaten inject edilmis — atlandi (idempotent)');
   } else {
-  let code = fs.readFileSync(handlerPath, 'utf8');
   // workerd isomorphic require rule: a runtime `require("X")` only resolves when
   // X is ALREADY in the worker's module graph as a live (non-tree-shaken) import.
   // esbuild drops unused imports, so every import must be referenced from a
   // global array with its actual symbol (globalThis.__iso).
   const imported = [];
   let isoRefs = [];
-  if (code.includes('globalThis.__nb')) {
-    code = code.replace(/import \* as __nb_\w+ from "[^"]+";\n/g, '').replace(/globalThis\.__nb = \[[^\]]*\];\n/, '');
-  }
-  // 1) next-server runtime modules (CJS compiled bundles) — force into graph.
   // Only the turbo + base server runtimes are used; importing all 13 ~3.3MB
   // blows the 25MiB Pages bundle limit.
   const NEEDED = new Set(['app-page-turbo.runtime.prod.js', 'app-route-turbo.runtime.prod.js', 'pages-turbo.runtime.prod.js', 'pages-api-turbo.runtime.prod.js', 'server.runtime.prod.js']);
@@ -94,8 +88,61 @@ if (fs.existsSync(handlerPath)) {
     const m = line.match(/^import \* as (\w+) from/);
     if (m && m[1] && !isoRefs.includes(m[1])) nextServerSyms.push(m[1]);
   }
-  const block = imported.join('\n') + `\nglobalThis.__iso = [${[...isoRefs, ...nextServerSyms].join(',')}] || 0;\nimport { createRequire as __crr } from "node:module";\nglobalThis.require = globalThis.require || __crr(import.meta.url);\n`;
+  // 7) AsyncLocalStorage ZORUNLU KURULUMU (2026-10-18, 1101 kök nedeni).
+  //
+  // Next 16 `app-page-turbo.runtime.prod.js` modül yüklenirken
+  // `work-async-storage.external.js` → `async-local-storage.js`'i Çağırıyor ve
+  // bu dosya `createAsyncLocalStorage()` → `maybeGlobalAsyncLocalStorage` (yani
+  // `globalThis.AsyncLocalStorage`) boşsa FakeAsyncLocalStorage döndürüp
+  // `.run()`/`.disable()`'te "Invariant: AsyncLocalStorage accessed in runtime
+  // where it is not available" fırlatıyor. workerd'de bu kırılım worker'ın ilk
+  // istekte ASILMASına (hang) ve 1101'e yol açıyor — TÜM worker rotaları
+  // (/admin, /api/*, /github/*) ölüyor.
+  //
+  // NEDEN node-environment-baseline.js yetermiyor? O dosya
+  // `if (typeof globalThis.AsyncLocalStorage !== 'function')` ile kuruyor,
+  // ama handler.mjs'te `__ns_*` turbo runtime importları BLOKUN BAŞINDA
+  // (satır 1-3), `__ext_server_node_environment_js` (baseline) ARKADA
+  // (satır 6) — yani runtime modül eval edilmeden önce baseline çalışMIYOR.
+  // Bu nedenle ALS'i BURADA, blok içinde, workerd'e gelmeden önce, elle kuruyoruz.
+  // ALS KURULUMU IMPORT SIRASINA BAGLI (2026-10-19 olculdu): next/dist/server/
+  // app-render/async-local-storage.js, modul GOVDESINDE yuklenirken
+  // `const maybeGlobalAsyncLocalStorage = globalThis.AsyncLocalStorage` okuyor
+  // (satir 53). O modul handler.mjs'in turbo-runtime import zincirinden geliyor ve
+  // handler.mjs'in KENDI govdesinden ONCE evaluate ediliyor. Bu yuzden govdeye
+  // yazilan bir atama (onceki yaklasim) HEP gec kaliyordu: /admin, /api/*,
+  // /github/* "Invariant: AsyncLocalStorage accessed in runtime where it is not
+  // available" ile 500. Cozum: ALS'i handler.mjs'in ILK importu olan ayri bir
+  // preload modulunde kurmak. ESM importlari kaynak sirasiyla evaluate edilir ->
+  // preload, turbo runtime'dan once calisir.
+  const alsPreload = 'import \'./__tarnak_als_preload.mjs\';\n';
+  fs.writeFileSync(
+    path.join(path.dirname(handlerPath), '__tarnak_als_preload.mjs'),
+    `${alsMarker}\nimport { AsyncLocalStorage as __ALS } from 'node:async_hooks';\nif (typeof globalThis.AsyncLocalStorage !== 'function') globalThis.AsyncLocalStorage = __ALS;\n`,
+  );
+  const block = `${alsMarker}\n${alsPreload}${imported.join('\n')}\nglobalThis.__iso = [${[...isoRefs, ...nextServerSyms].join(',')}] || 0;\nimport { createRequire as __crr } from "node:module";\nglobalThis.require = globalThis.require || __crr(import.meta.url);\n`;
   code = block + code.replace(/^import\s/m, '// isomorphic imports injected\nimport ');
+  // 2b) OpenNext 1.20.6 x Next 16.4.0 UYUMSUZLUGU (2026-10-19, pristine build'de
+  // de olculdu — bizim yamalarimizdan bagimsiz): OpenNext'in
+  // `createComposableCacheHandlersRule` ast-grep yamasi `const cacheHandlers =
+  // null;` satirini uretemiyor; bundle'da `cacheHandlers` kimligi modul
+  // kapsamindaki `EnsureStaticLevel` enum'una baglaniyor
+  // ({None:0,Shell:1,Prefetch:2,Navigation:3}). Sonuc: her route handler
+  // (/api/*, /auth/*) `Object.entries(enum)` uzerinden
+  // dynamicImport("file:/.next/None") yapiyor ->
+  // 500 "No such module \"file:/.next/None\"".
+  // OpenNext'in KASTETTIGI davranis `cacheHandlers = null` -> dongu HIC calismaz.
+  // Ayni etkiyi dongu govdesini atlayarak veriyoruz. Isimden bagimsiz, dar
+  // kapsamli: yalniz `formatDynamicImportPath` ile baslayan dongu govdesi.
+  {
+    const re = /if\(![\w$]+\)continue;(?=let\{formatDynamicImportPath:)/g;
+    let n = 0;
+    code = code.replace(re, () => {
+      n++;
+      return 'continue;';
+    });
+    console.log(`[pages-copy-worker] legacy cache-handler dongusu devre disi (${n} yer)`);
+  }
   // 3) dev-only/optional requires (react-dom development builds, picocolors...):
   // mark webpackIgnore so the bundler leaves them unresolved; they are only
   // reachable when NODE_ENV !== 'production' or inside try/catch.
@@ -152,6 +199,34 @@ if (fs.existsSync(handlerPath)) {
       console.log(`[pages-copy-worker] neutralized require-hook: ${f}`);
     } else {
       console.log(`[pages-copy-worker] skip (pattern not found): ${f}`);
+    }
+  }
+  // 6) Next 16 `new NextNodeServer()` kurucusu HER istekte `getPreviewProps()`
+  //    çağırıyor; OpenNext'in inlined loadManifest haritası `server/preview-props.json`
+  //    için anahtar taşımıyor -> "Unexpected loadManifest(...preview-props.json) call!"
+  //    -> worker ilk istekte patlıyor (canlıda 1101 = TÜM worker rotalarıölü:
+  //    /admin, /api/*, /auth/*, /blog/[slug], /github/*).
+  //    Build çıktısındaki GERÇEK preview anahtarlarını gömüyoruz. Boş nesne
+  //    değil: `__prerender_bypass` çerezli istekte Next bu alanlarda uzunluk
+  //    karşılaştırması yapıyor.
+  {
+    const propsFile = path.join(outRoot, '.next', 'server', 'preview-props.json');
+    const marker = '/*TARNAK_PREVIEW_PROPS*/';
+    if (fs.existsSync(propsFile) && !code.includes(marker)) {
+      const raw = fs.readFileSync(propsFile, 'utf8').trim();
+      JSON.parse(raw); // bozuksa build en başta patlasın
+      const needle = 'prefetch-hints"))return{}}throw new Error(';
+      const at = code.indexOf(needle);
+      if (at === -1) {
+        console.log('[pages-copy-worker] WARN: loadManifest fallback bulunamadi — preview-props yamasi atlandi');
+      } else {
+        code = code.slice(0, at)
+          + `prefetch-hints"))return{}}if(path2.endsWith("preview-props.json"))return ${raw}${marker};throw new Error(`
+          + code.slice(at + needle.length);
+        console.log('[pages-copy-worker] preview-props manifest gomuldu (Next 16 getPreviewProps -> 1101 fix)');
+      }
+    } else if (!fs.existsSync(propsFile)) {
+      console.log('[pages-copy-worker] WARN: preview-props.json yok — preview yamasi atlandi');
     }
   }
   fs.writeFileSync(handlerPath, code);
@@ -268,23 +343,37 @@ ensureModule('picocolors');
     const repoRoot = path.resolve(__dirname, '..');
     const srcHasMw = ['middleware.ts', 'middleware.tsx', 'middleware.js']
       .some(f => fs.existsSync(path.join(repoRoot, 'src', f)) || fs.existsSync(path.join(repoRoot, f)));
-    if (fs.existsSync(mwDir) && !srcHasMw) {
+    if (!srcHasMw) {
       let sz = 0;
       const w = d => {
         let st; try { st = fs.statSync(d) } catch { return }
         if (st.isDirectory()) { for (const n of fs.readdirSync(d)) w(path.join(d, n)); return }
         sz += st.size;
       };
-      w(mwDir);
+      // IDEMPOTENCY (2026-10-19, olculdu): `_worker.js` bu script'in BASINDA her
+      // calistirmada `worker.js`'ten yeniden kopyalanir (import geri gelir) ama
+      // `middleware/` ikinci kez YOKTUR. Onceki surum bu blogu
+      // `fs.existsSync(mwDir)` ile kapattigi icin 2. calistirmada import
+      // temizlenmiyor, `wrangler pages dev` "Could not resolve
+      // ./middleware/handler.mjs" ile patliyordu. Karar artik mwDir'e degil,
+      // "middleware tutulacak mi" sorusuna bagli.
+      if (fs.existsSync(mwDir)) w(mwDir);
       const workerPath = path.join(openNextDir, '_worker.js');
       if (fs.existsSync(workerPath)) {
-        let code = fs.readFileSync(workerPath, 'utf8');
-        code = code.replace(/^\s*\/\/ @ts-expect-error: Will be resolved by wrangler build\s*\nimport \{ handler as middlewareHandler \} from "\.\/middleware\/handler\.mjs";\s*\n/m, '');
+        const before = fs.readFileSync(workerPath, 'utf8');
+        let code = before;
+        code = code.replace(/^\s*\/\/\s*@ts-expect-error: Will be resolved by wrangler build\s*\nimport \{ handler as middlewareHandler \} from "\.\/middleware\/handler\.mjs";\s*\n/m, '');
         code = code.replace(/const reqOrResp = await middlewareHandler\(request, env, ctx\);/, 'const reqOrResp = request; // middleware yok (src/middleware.ts yok)');
-        fs.writeFileSync(workerPath, code);
+        if (code === before) {
+          console.log('[pages-copy-worker] UYARI: _worker.js middleware importu temizlenemedi (desen degisti?)');
+        } else {
+          fs.writeFileSync(workerPath, code);
+        }
       }
-      fs.rmSync(mwDir, { recursive: true, force: true });
-      trimmed.push(`${(sz / 1048576).toFixed(1)} MB  middleware/  (kaynak middleware.ts yok, no-op)`);
+      if (fs.existsSync(mwDir)) {
+        fs.rmSync(mwDir, { recursive: true, force: true });
+        trimmed.push(`${(sz / 1048576).toFixed(1)} MB  middleware/  (kaynak middleware.ts yok, no-op)`);
+      }
     }
   }
 

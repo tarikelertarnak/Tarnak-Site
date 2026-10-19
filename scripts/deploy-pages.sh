@@ -25,7 +25,9 @@ HOST="https://tarikelertarnak.pages.dev"
 # /chat /admin /sign /api ASLA prime edilmez (kimlik dogrulama gerektirir,
 # cache'lenmemeli). Slash'siz hal 308 redirect doner; prime 308'i basarisiz
 # sayip donguyu yirdigi icin kanonik yollari test ediyoruz.
-PUBLIC_ROUTES=(/ /projects/ /blog/ /about/ /contact/ /credits/ /donate/ /github/)
+# `/github/` (indeks) ROTASI YOK — yalniz /github/[owner]/[repo] var; eski
+# liste onu prime edip her deploy'u sahte FAIL ile bitiriyordu (2026-10-19).
+PUBLIC_ROUTES=(/ /projects/ /blog/ /about/ /contact/ /credits/ /donate/ /github/honojs/hono)
 
 step() { printf '\n\033[1m### %s\033[0m\n' "$1"; }
 
@@ -98,7 +100,14 @@ grep -E '_routes|extracted|idempotent|injected|flattened' /tmp/pcw.log || true
 # ---------------------------------------------------------------- deploy
 step "4/5 Cloudflare Pages deploy"
 export CLOUDFLARE_ACCOUNT_ID="$ACCOUNT"
-export CI=true
+# CI=true wrangler'i non-interactive moda zorluyor ve OAuth kimligi yerine
+# CLOUDFLARE_API_TOKEN istiyor ("In a non-interactive environment, it's
+# necessary to set a CLOUDFLARE_API_TOKEN...") — 2026-10-19'da deploy'u kirdi.
+# WSL'deki gecerli kimlik OAuth (~/.config/.wrangler/config/default.toml, hesap
+# tarikelertarnak@gmail.com); Windows'taki CLOUDFLARE_API_TOKEN ise 401.
+# Bu yuzden CI'yi ve ortamdaki token'i temizliyoruz.
+unset CI
+unset CLOUDFLARE_API_TOKEN
 node node_modules/wrangler/bin/wrangler.js pages deploy .open-next \
   --project-name tarikelertarnak --branch master --commit-dirty=true 2>&1 \
   | grep -E 'Uploaded|Success|Deployment complete|ERROR'

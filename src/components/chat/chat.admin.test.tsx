@@ -248,6 +248,51 @@ describe('admin kullanıcı menüsü', () => {
   })
 
   /*
+    2026-10-19 (kullanıcı raporu: "chat grup listesi kaydırılamıyor"):
+    Gruplar tek satırda `join(', ')` + `truncate` ediliyordu → 2+ gruptan
+    sonrası HİÇ görünmüyordu. Regresyon: çoklu grupta her başlık ayrı satır
+    ve liste kendi kaydırma kabında olmalı. Eski kodda `getByText('Ekip')`
+    bile bulunamaz (tek metin düğümü "Ekip, Tasarım" olurdu).
+  */
+  it('profil kartı: 2+ grup kırpılmaz, kaydırılabilir listede gösterilir', async () => {
+    await renderAdminChat((url, init) => {
+      if (url.includes('/api/chat') && String(init?.body).includes('"action":"profile"')) {
+        return jsonResponse({
+          success: true,
+          profile: {
+            id: 'u-1',
+            username: 'ayse',
+            fullName: 'Ayşe Yılmaz',
+            nickname: 'Ayşecik',
+            avatarUrl: null,
+            bio: null,
+            githubHandle: null,
+            website: null,
+            role: 'user',
+            isOwner: false,
+            createdAt: '2026-01-02T00:00:00.000Z',
+            messageCount: 3,
+            groups: [
+              { conversationId: 'g1', title: 'Ekip' },
+              { conversationId: 'g2', title: 'Tasarım' },
+            ],
+          },
+        })
+      }
+      return jsonResponse({ success: true })
+    })
+
+    fireEvent.contextMenu(screen.getByText('Ayşecik'))
+    fireEvent.click(screen.getByText(/Profilini incele/))
+
+    await waitFor(() => expect(screen.getByText('Ekip')).not.toBeNull())
+    const box = screen.getByText('Ekip').parentElement!
+    expect(screen.getByText('Tasarım').parentElement).toBe(box)
+    expect(box.className).toContain('overflow-y-auto')
+    expect(box.className).toContain('max-h-24')
+  })
+
+  /*
     2026-10-13 (kullanıcı, SON istek): "Admin kendisini görsün kendisiyle
     konuşa bilsin ama ismi şöyle görsün: TARIK ELER TARNAK (Siz) — bu 'Siz'
     hangi dildeysen ona çevrilir ve ismin SONUNA eklenir."

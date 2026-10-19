@@ -2687,10 +2687,22 @@ function ProfileSheet({ peer, t, onClose }: {
                 <dd>{profile.messageCount}</dd>
               </div>
               <div className="flex justify-between gap-3 pb-1.5">
-                <dt className="text-foreground-500">{t('chat.groups')}</dt>
-                <dd className="truncate text-right">
-                  {profile.groups.length ? profile.groups.map(g => g.title).join(', ') : '—'}
-                </dd>
+                <dt className="shrink-0 text-foreground-500">{t('chat.groups')}</dt>
+                {/*
+                  2026-10-19 (kullanici raporu: grup listesi kaydirilamiyor):
+                  tum basliklar tek satirda `join(', ')` + `truncate` ediliyordu
+                  -> 2+ gruptan sonrasi HIC gorunmuyordu (kaydirma yok).
+                  Coklu durumda kendi kaydirma kabi; tek grupta satir ici kaliyor.
+                */}
+                {profile.groups.length > 1
+                  ? (
+                      <dd className="max-h-24 min-w-0 flex-1 space-y-0.5 overflow-y-auto text-right">
+                        {profile.groups.map(g => (
+                          <div key={g.conversationId} className="truncate">{g.title}</div>
+                        ))}
+                      </dd>
+                    )
+                  : <dd className="min-w-0 truncate text-right">{profile.groups[0]?.title ?? '—'}</dd>}
               </div>
             </dl>
             {profile.bio && <p className="mt-3 text-sm text-foreground-500">{profile.bio}</p>}
