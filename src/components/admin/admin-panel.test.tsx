@@ -167,7 +167,8 @@ describe('adminPanel', () => {
   it('github Repoları kartı SADECE BİR kez render edilir (üstteki ölü kopya geri gelmedi)', async () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Sayfa Düzenle/ }))
-    await waitFor(() => expect(screen.getByText('Ek Bölümler')).toBeTruthy())
+    // Sayfa Düzenle artık İÇ SEKMELİ (2026-10-21): varsayılan iç sekme "PROJELER".
+    await waitFor(() => expect(screen.getAllByText('PROJELER').length).toBeGreaterThan(0))
     // Ölü inline kopya silindi (2026-10-20): kartı yalnızca GitHubReposAdmin çizer.
     expect(screen.getAllByTestId('github-repos-admin')).toHaveLength(1)
   })
@@ -185,28 +186,37 @@ describe('adminPanel', () => {
     expect(screen.getByText('Bölüm Başlıkları')).toBeTruthy()
   })
 
-  it('sayfa düzenle sekmesi projeler, blog ve ek bölümleri gösterir (İçerik & Veri kaldırıldı)', async () => {
+  it('sayfa düzenle sekmesi İÇ SEKMELİDİR: PROJELER / BLOG / SAYFA BÖLÜMLERİ / EK BÖLÜMLER', async () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Sayfa Düzenle/ }))
-    await waitFor(() => expect(screen.getByText('Ek Bölümler')).toBeTruthy())
-    expect(screen.getByTestId('sections-editor')).toBeTruthy()
-    const headings = screen
-      .getAllByRole('heading', { level: 2 })
-      .map(h => h.textContent)
-    expect(headings).toContain('Projeler')
-    expect(headings).toContain('Blog Yazıları')
-    expect(headings).toContain('Sayfa Bölümleri')
+    // 2026-10-21 (kullanıcı): "Veri Yönetimi gibi alt gruplar, PROJELER/BLOG
+    // şeklinde büyük harfli". Dört iç sekme etiketi de görünür olmalı.
+    await waitFor(() => expect(screen.getAllByText('PROJELER').length).toBeGreaterThan(0))
+    expect(screen.getByText('BLOG')).toBeTruthy()
+    expect(screen.getByText('SAYFA BÖLÜMLERİ')).toBeTruthy()
+    expect(screen.getByText('EK BÖLÜMLER')).toBeTruthy()
+    // Varsayılan iç sekme PROJELER — bölüm başlıkları kartı görünür.
+    expect(screen.getByText('Bölüm Başlıkları')).toBeTruthy()
     // Veri Yönetimi artık ayrı sekmede; buranın parçası değil.
-    expect(headings).not.toContain('Veri Yönetimi (Tablolar)')
+    expect(screen.queryByText('Veri Yönetimi (Tablolar)')).toBeNull()
   })
 
-  it('sayfa düzenle > sayfa bölümleri kartları tüm sayfa metinlerini içerir (GitHub/Chat/İletişim/Footer)', async () => {
+  it('sayfa düzenle > EK BÖLÜMLER iç sekmesi sections-editor gösterir', async () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Sayfa Düzenle/ }))
-    await waitFor(() => expect(screen.getByText('Sayfa Bölümleri')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('EK BÖLÜMLER')).toBeTruthy())
+    fireEvent.click(screen.getByRole('tab', { name: /EK BÖLÜMLER/ }))
+    await waitFor(() => expect(screen.getByTestId('sections-editor')).toBeTruthy())
+  })
+
+  it('sayfa düzenle > SAYFA BÖLÜMLERİ iç sekmesi tüm sayfa metinlerini içerir (GitHub/Chat/İletişim/Footer)', async () => {
+    renderPanel()
+    fireEvent.click(screen.getByRole('tab', { name: /Sayfa Düzenle/ }))
+    await waitFor(() => expect(screen.getByText('SAYFA BÖLÜMLERİ')).toBeTruthy())
+    fireEvent.click(screen.getByRole('tab', { name: /SAYFA BÖLÜMLERİ/ }))
+    await waitFor(() => expect(screen.getByText('GitHub Bölümü')).toBeTruthy())
     const cards = screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)
     // Kullanıcı isteği: bu kartlar "Site Ayarları"ndan buraya taşındı.
-    expect(cards).toContain('GitHub Bölümü')
     expect(cards).toContain('Chat Bölümü')
     expect(cards).toContain('İletişim Bölümü')
     expect(cards).toContain('Footer')
@@ -234,7 +244,7 @@ describe('adminPanel', () => {
     expect(headings).toContain('Şifre Değiştir')
   })
 
-  it('hero: Emoji/Logo alanı GİTTİ, yerine Logo (dosya/link) + dilli metin alanları geldi', async () => {
+  it('hero: Emoji/Logo alanı GİTTİ, metin alanları panelden KALDIRILDI (2026-10-21)', async () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Site Ayarları/ }))
     await waitFor(() => expect(screen.getByText('Hero (Ana Ekran)')).toBeTruthy())
@@ -242,11 +252,12 @@ describe('adminPanel', () => {
     // Eski ölü alan kaldırıldı (2026-10-20, kullanıcı isteği).
     expect(screen.queryByText('Emoji / Logo')).toBeNull()
     expect(screen.getByText('Logo (dosya yükle veya link)')).toBeTruthy()
-    // Üç metin alanı artık dilli (yanlarında dil seçici combobox var).
-    expect(screen.getByText('Alt Başlık (Tagline)')).toBeTruthy()
-    expect(screen.getByText('Proje Butonu Yazısı')).toBeTruthy()
-    expect(screen.getByText('İletişim Butonu Yazısı')).toBeTruthy()
-    expect(screen.getAllByLabelText('Metnin dili').length).toBe(3)
+    // Kullanıcı isteği (2026-10-21): üç dilli metin alanı + dil combobox'ı
+    // panelden SİLİNDİ. `hero.i18n` verisi korunur ama arayüzü yoktur.
+    expect(screen.queryByText('Alt Başlık (Tagline)')).toBeNull()
+    expect(screen.queryByText('Proje Butonu Yazısı')).toBeNull()
+    expect(screen.queryByText('İletişim Butonu Yazısı')).toBeNull()
+    expect(screen.queryByLabelText('Metnin dili')).toBeNull()
   })
 
   it('kaydetme çubuğu değişiklik yokken GİZLİ, değişince görünür', async () => {

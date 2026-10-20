@@ -897,8 +897,8 @@ async function getDefaultContent(): Promise<SiteContent> {
     about: {
       subtitle: 'ABOUT ME',
       title: 'A Glimpse Into My World',
-      description:
-        'Learn more about me, what I do, and what I\'m passionate about.',
+      // Açıklama kaldırıldı (2026-10-21, kullanıcı isteği).
+      description: '',
       whoTitle: 'Who I Am',
       whoText:
         'I\'m a web developer who loves to code and build things. I\'m passionate about web development, design, and technology.',
@@ -987,12 +987,13 @@ async function getDefaultContent(): Promise<SiteContent> {
     projects: {
       subtitle: 'PROJECTS',
       title: 'All Projects',
-      description: 'Projects I\'ve built and worked on.',
+      // Açıklama kaldırıldı (2026-10-21, kullanıcı isteği) — uydurma metin yazılmaz.
+      description: '',
       items: [],
     },
     github: {
       subtitle: 'GITHUB',
-      title: 'GitHub Sayfam',
+      title: 'GitHub Projects',
       description:
         'My public repositories, pulled live from my GitHub profile.',
     },

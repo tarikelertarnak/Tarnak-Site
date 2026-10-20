@@ -38,6 +38,16 @@ export function isGitHubNotFound(error: unknown): boolean {
   return error instanceof GitHubApiError && error.status === 404
 }
 
+/**
+ * KULLANICI İSTEĞİYLE GİZLENEN DEPOLAR (2026-10-06; taşındı 2026-10-21).
+ *
+ * `Player` GitHub'da gerçek bir depo ama sitenin hiçbir yerinde görünmüyor.
+ * Kural TEK YERDE yaşar: hem istemci sayfaları (`github-client`) hem admin
+ * "Tablolar" sayımı (`admin/overview`) bu kümeyi kullanır — iki yerde
+ * yazılsaydı biri unutulur ve depo geri sızardı.
+ */
+export const EXCLUDED_REPOS = new Set(['Player'])
+
 export function httpsGet(
   url: string,
   headers: Record<string, string>,

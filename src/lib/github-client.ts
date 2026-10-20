@@ -4,21 +4,12 @@ import type {
   GitHubRepo,
   GitHubUserProfile,
 } from '@/lib/github'
+/**
+ * KULLANICI İSTEĞİYLE GİZLENEN DEPOLAR — tek kaynak `lib/github`.
+ */
+import { EXCLUDED_REPOS } from '@/lib/github'
 
 const API_BASE = 'https://api.github.com'
-
-/**
- * KULLANICI İSTEĞİYLE GİZLENEN DEPOLAR (2026-10-06).
- *
- * `Player` GitHub'da gerçek bir depo ama projeler sayfasında
- * görünmek istenmiyor. Filtre TEK YERDE, verinin ÇIKTIĞI noktada
- * uygulanır: hem `/api/github` yanıtını hem `public/github-data.json`
- * snapshot'ını kapsar (ikisi de aşağıdaki `fetchUserData`'dan geçer).
- *
- * Grid tarafında ikinci bir filtre KONULMADI — aynı kural iki yerde
- * yaşarsa biri unutulur ve depo geri sızar.
- */
-const EXCLUDED_REPOS = new Set(['Player'])
 
 /**
  * User profile + repo list.

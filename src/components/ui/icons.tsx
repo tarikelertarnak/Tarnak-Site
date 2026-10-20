@@ -1055,3 +1055,14 @@ export function ClockIcon({ size = 14, className }: IconProps) {
     </svg>
   )
 }
+
+/** Katkıda bulunanlar sayfası başlığı (2026-10-21) — eski elle yazılmış SVG'nin yerine. */
+export function TrophyIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M6 3h12v5a6 6 0 0 1-12 0z" />
+      <path d="M6 5H3v2a3 3 0 0 0 3 3M18 5h3v2a3 3 0 0 1-3 3" />
+      <path d="M12 14v4M8 21h8M10 18h4" />
+    </svg>
+  )
+}

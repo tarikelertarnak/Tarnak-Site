@@ -29,6 +29,8 @@ interface TableStat {
   count: number | null
   status: 'ok' | 'missing' | 'error'
   message?: string
+  /** GitHub repoları gibi TABLO DIŞI ek sayı (bkz. lib/admin/overview.ts). */
+  external?: { label: string, count: number | null, ok: boolean }
 }
 
 type Row = Record<string, unknown>
@@ -324,6 +326,16 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
                   <p className="truncate text-[11px] text-foreground/50">
                     {t.status === 'ok' ? t.description : (t.message || 'okunamadı')}
                   </p>
+                  {/* Tablo dışı kaynak sayısı (ör. GitHub projeleri). Tablo
+                      boşken "0" göstermek sitede görünen projeleri YOK
+                      sayardı — bkz. lib/admin/overview.ts. */}
+                  {t.external && (
+                    <p className="mt-0.5 truncate text-[11px] text-primary">
+                      {t.external.label}
+                      {': '}
+                      {t.external.ok ? (t.external.count ?? 0) : 'okunamadı'}
+                    </p>
+                  )}
                 </div>
                 <span
                   className={cn(

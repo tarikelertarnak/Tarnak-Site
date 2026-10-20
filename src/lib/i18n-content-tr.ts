@@ -83,7 +83,7 @@ export const trContentOverlay: DeepPartial<SiteContent> = {
   },
   github: {
     subtitle: 'GITHUB',
-    title: 'GitHub Sayfam',
+    title: 'GitHub Projeleri',
     description: 'GitHub profilimden canlı çekilen genel depolarım.',
   },
   chat: {

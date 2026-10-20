@@ -3,7 +3,6 @@
 import type { ReactNode } from 'react'
 import type {
   BlogPost,
-  HeroI18nKey,
   InterestItem,
   ProjectItem,
   SiteContent,
@@ -19,7 +18,6 @@ import { AboutPageEditor } from '@/components/admin/about-page-editor'
 import { DataManager } from '@/components/admin/data-manager'
 import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
 import { HeroLogoField } from '@/components/admin/hero-logo-field'
-import { LocaleTextInput } from '@/components/admin/locale-text-input'
 import { OverviewPanel } from '@/components/admin/overview-panel'
 import { PanelCard } from '@/components/admin/panel-card'
 import { ProfilePhotoUploader } from '@/components/admin/profile-photo-uploader'
@@ -241,19 +239,9 @@ return
   const setHero = (field: keyof SiteContent['hero'], value: string) => {
     setContent(prev => ({ ...prev, hero: { ...prev.hero, [field]: value } }))
   }
-  /** Hero'nun dile özel metni (2026-10-20) — bkz. `LocaleTextInput`. */
-  const setHeroI18n = (
-    field: HeroI18nKey,
-    value: Record<string, string>,
-  ) => {
-    setContent(prev => ({
-      ...prev,
-      hero: {
-        ...prev.hero,
-        i18n: { ...prev.hero.i18n, [field]: value },
-      },
-    }))
-  }
+  // setHeroI18n KALDIRILDI (2026-10-21): hero dil combobox'ları panelden
+  // çıkarıldı; `hero.i18n` sözlüğü veri olarak korunur ama panelden her dil
+  // için ayrı metin girilmez.
   const setNav = (field: keyof SiteContent['nav'], value: string) => {
     setContent(prev => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
   }
@@ -603,27 +591,14 @@ return item
               onStatus={setStatus}
             />
           </Field>
-          <Field label="Alt Başlık (Tagline)">
-            <LocaleTextInput
-              value={content.hero.i18n?.tagline ?? {}}
-              onChange={next => setHeroI18n('tagline', next)}
-              placeholder={content.hero.tagline}
-            />
-          </Field>
-          <Field label="Proje Butonu Yazısı">
-            <LocaleTextInput
-              value={content.hero.i18n?.exploreLabel ?? {}}
-              onChange={next => setHeroI18n('exploreLabel', next)}
-              placeholder={content.hero.exploreLabel}
-            />
-          </Field>
-          <Field label="İletişim Butonu Yazısı">
-            <LocaleTextInput
-              value={content.hero.i18n?.connectLabel ?? {}}
-              onChange={next => setHeroI18n('connectLabel', next)}
-              placeholder={content.hero.connectLabel}
-            />
-          </Field>
+          {/*
+            Alt Başlık / Proje Butonu / İletişim Butonu dil combobox'ları
+            KALDIRILDI (2026-10-21, kullanıcı isteği: "şunları sil").
+            Düz TR alanları (hero.tagline / exploreLabel / connectLabel) zaten
+            hero'da düzenlenebiliyor; `hero.i18n` sözlüğü ise HÂLÂ çalışıyor
+            (içerik korunur, başka dillerde varsa gösterilir) — yalnızca panelde
+            dil başına metin girme arayüzü kaldırıldı.
+          */}
         </Grid>
       </PanelCard>
       <PanelCard title="Menü (Navigation)">
@@ -1561,6 +1536,42 @@ tablosundan
     </div>
   )
 
+  /**
+   * "Sayfa Düzenle" sekmesinin gövdesi — İÇ SEKMELİ (2026-10-21, kullanıcı:
+   * "Veri Yönetimi gibi alt gruplar açılsın, PROJELER/BLOG şeklinde olsun").
+   *
+   * NEDEN İÇ SEKME: dört alt bölüm alt alta dizilince sayfa çok uzuyordu ve
+   * hepsinin aynı anda yüklenmesi GEREKMİYORDU. `DataManager`'daki desen
+   * (ScrollableTabs + Tabs + TabLabel) burada da kullanılıyor — panelde tek
+   * bir sekme dili kalır, ikinci bir navigasyon icat edilmez.
+   */
+  const pagesPane = (
+    <PageEditTabs>
+      {{
+        projects: (
+          <PanelCard title="PROJELER">
+            <div className="space-y-4">{projectsPane}</div>
+          </PanelCard>
+        ),
+        blog: (
+          <PanelCard title="BLOG">
+            <div className="space-y-4">{blogPane}</div>
+          </PanelCard>
+        ),
+        sections: (
+          <PanelCard title="SAYFA BÖLÜMLERİ">
+            <div className="space-y-4">{pageSectionsPane}</div>
+          </PanelCard>
+        ),
+        extras: (
+          <PanelCard title="EK BÖLÜMLER">
+            <div className="space-y-4">{sectionsPane}</div>
+          </PanelCard>
+        ),
+      }}
+    </PageEditTabs>
+  )
+
   /** "Veri Yönetimi" sekmesinin gövdesi — tablo CRUD (2026-10-20). */
   const dataPane = (
     <DataManager key={dataResource} initialResource={dataResource} />
@@ -1609,22 +1620,7 @@ tablosundan
     {
       key: 'pages',
       label: <TabLabel icon="mdi:file-document-edit-outline" text="Sayfa Düzenle" />,
-      children: (
-        <div className="min-w-0 space-y-8">
-        <SubSection title="Projeler" icon="mdi:folder-outline">
-          {projectsPane}
-        </SubSection>
-        <SubSection title="Blog Yazıları" icon="mdi:post-outline">
-          {blogPane}
-        </SubSection>
-        <SubSection title="Sayfa Bölümleri" icon="mdi:page-layout-body">
-          {pageSectionsPane}
-        </SubSection>
-        <SubSection title="Ek Bölümler" icon="mdi:view-timeline-outline">
-          {sectionsPane}
-        </SubSection>
-        </div>
-      ),
+      children: <div className="min-w-0">{pagesPane}</div>,
     },
     {
       key: 'settings',
@@ -1822,6 +1818,60 @@ function SubSection({
       </h2>
       <div className="pt-4">{children}</div>
     </section>
+  )
+}
+
+/**
+ * "Sayfa Düzenle" iç sekmeleri (2026-10-21).
+ *
+ * Kullanıcı isteği: Veri Yönetimi'ndeki gibi alt gruplar, ama büyük harfli
+ * isimlerle (PROJELER / BLOG / SAYFA BÖLÜMLERİ / EK BÖLÜMLER). Sekme şeridi
+ * panelin dış sekme şeridiyle AYNI bileşenden (`ScrollableTabs`) gelir ki
+ * taşma davranışı ve ok/nokta kuralları tek yerde kalsın.
+ *
+ * İçerik DİLİ: etiketler sabit büyük harf; ikonlar Iconify'dan (uydurma SVG yok).
+ */
+function PageEditTabs({
+  children,
+}: {
+  children: Record<'projects' | 'blog' | 'sections' | 'extras', ReactNode>
+}) {
+  const [inner, setInner] = useState('projects')
+  const items = [
+    { key: 'projects', label: 'PROJELER', icon: 'mdi:folder-outline' },
+    { key: 'blog', label: 'BLOG', icon: 'mdi:post-outline' },
+    { key: 'sections', label: 'SAYFA BÖLÜMLERİ', icon: 'mdi:page-layout-body' },
+    { key: 'extras', label: 'EK BÖLÜMLER', icon: 'mdi:view-timeline-outline' },
+  ] as const
+
+  return (
+    <div className="min-w-0 pt-4">
+      <ScrollableTabs activeTabKey={inner}>
+        <Tabs
+          size="large"
+          className="w-full min-w-0"
+          classNames={{
+            list: 'max-w-full overflow-x-auto overscroll-x-contain [&::-webkit-scrollbar]:hidden [scrollbar-width:none]',
+            panel: 'min-w-0',
+          }}
+          activeKey={inner}
+          onChange={key => setInner(String(key))}
+          items={items.map(i => ({
+            key: i.key,
+            label: <TabLabel icon={i.icon} text={i.label} />,
+            // İç sekme geçişinde yumuşak beliriş (2026-10-21, kullanıcı:
+            // "animasyonlandırılsın"). `key` sekme değişince animasyonu
+            // yeniden oynatır; `prefers-reduced-motion` globals.css'te
+            // animasyonu nötrler.
+            children: (
+              <div key={i.key} className="admin-pane-in min-w-0">
+                {children[i.key]}
+              </div>
+            ),
+          }))}
+        />
+      </ScrollableTabs>
+    </div>
   )
 }
 

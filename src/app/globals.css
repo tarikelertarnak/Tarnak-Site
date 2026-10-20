@@ -294,6 +294,25 @@ html[data-theme='dark'] {
   background-size: 300%;
 }
 
+/* Admin iç sekme geçişi (2026-10-21, kullanıcı: "animasyonlandırılsın").
+   Sekme gövdesi değişince yumuşak beliriş. `prefers-reduced-motion`
+   bloğu (aşağıda) animation-duration'ı 0.01ms'e indirdiği için hareket
+   hassasiyeti olan kullanıcıda animasyon görünmez. */
+@keyframes admin-pane-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.admin-pane-in {
+  animation: admin-pane-in 0.22s var(--ease-out, ease-out);
+}
+
 html {
   /* Overscroll/boşlukta görünen zemin — tema varsayılanı koyu, class'larla yönetilir */
   background-color: #000000;

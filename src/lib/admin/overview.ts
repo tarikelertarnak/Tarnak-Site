@@ -3,6 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { PersistenceCheck } from '@/lib/persistence'
 import { adminDb, missingColumnFrom } from '@/lib/admin/data'
 import { RESOURCES } from '@/lib/admin/resources'
+import { getContent } from '@/lib/content'
+import { EXCLUDED_REPOS, fetchUserRepos } from '@/lib/github'
 import { checkPersistence } from '@/lib/persistence'
 
 /**
@@ -26,6 +28,16 @@ export interface TableStat {
   count: number | null
   status: 'ok' | 'missing' | 'error'
   message?: string
+  /**
+   * GitHub'dan gelen ek sayı (2026-10-21, kullanıcı: "Projeler 0 diyor ama
+   * GitHub projelerini saymıyor").
+   *
+   * `projects` tablosu boş olabilir; sitede görünen projeler ise GitHub
+   * repolarıdır (`ProjectsGrid` ikisini birleştirir). Panel yalnızca tabloyu
+   * sayınca gerçek durumu YANLIŞ gösteriyordu. Bu alan veri kaynağını
+   * açıkça ayırır: `count` = tablo satırı, `external` = GitHub repoları.
+   */
+  external?: { label: string, count: number | null, ok: boolean }
 }
 
 export interface RecentRow {
@@ -125,6 +137,24 @@ async function safeRows(
   return { rows: [], dropped, error: 'Sorgu başarısız oldu.' }
 }
 
+/**
+ * Sitede gösterilen GitHub kullanıcı adı (`settings.githubUsername`).
+ *
+ * `getContent()` 5 dk'lık modül TTL cache'i kullanır ve Supabase merge'i
+ * zaten içerir — panelde ayrı bir sorgu açmaya gerek yok. Okunamazsa `''`
+ * döner ve GitHub sayımı atlanır (panel GitHub'sız da çalışır).
+ */
+async function readGithubUsername(): Promise<string> {
+  try {
+    const content = await getContent()
+    return (content.settings?.githubUsername ?? '').trim()
+  }
+  catch (error) {
+    console.warn('[admin/overview] GitHub kullanici adi okunamadi:', error)
+    return ''
+  }
+}
+
 export async function getOverview(): Promise<OverviewData> {
   const db = adminDb()
 
@@ -151,20 +181,49 @@ export async function getOverview(): Promise<OverviewData> {
   }
 
   // --- 1) Tablo sayimlari (paralel) -----------------------------------------
-  const tables: TableStat[] = await Promise.all(
-    RESOURCES.map(async (r) => {
-      const { count, status, message } = await countRows(db, r.table, r.idColumn)
-      return {
-        key: r.key,
-        label: r.label,
-        icon: r.icon,
-        description: r.description,
-        count,
-        status,
-        message,
-      }
-    }),
-  )
+  // GitHub repo sayimi da paralel baslatilir — `projects` satirinda
+  // gosterilecek (tablo bos olsa bile sitede gorunen projeler GitHub'dan
+  // gelir). Kendi hatasi tablo sayimlarini ETKILEMEZ (ayri Promise.all).
+  const githubUsername = await readGithubUsername()
+  const githubPromise: Promise<number | null> = githubUsername
+    ? fetchUserRepos(githubUsername)
+        // Gizli depolar (`EXCLUDED_REPOS`) sayılmaz — /projects sayfasıyla
+        // aynı kural, tek kaynaktan (`lib/github`).
+        .then(repos => repos.filter(r => !EXCLUDED_REPOS.has(r.name)).length)
+        .catch((error) => {
+          console.warn('[admin/overview] GitHub repo sayimi basarisiz:', error)
+          return null
+        })
+    : Promise.resolve(null)
+
+  const [tables, githubRepoCount] = await Promise.all([
+    Promise.all(
+      RESOURCES.map(async (r): Promise<TableStat> => {
+        const { count, status, message } = await countRows(db, r.table, r.idColumn)
+        return {
+          key: r.key,
+          label: r.label,
+          icon: r.icon,
+          description: r.description,
+          count,
+          status,
+          message,
+        }
+      }),
+    ),
+    githubPromise,
+  ])
+
+  // `projects` satirini zenginlestir: tablo satiri + GitHub repo sayisi.
+  for (const t of tables) {
+    if (t.key !== 'projects')
+      continue
+    t.external = {
+      label: 'GitHub projeleri',
+      count: githubRepoCount,
+      ok: githubRepoCount !== null,
+    }
+  }
 
   // --- 2) Mesajlar: toplam + okunmamis --------------------------------------
   const messageStat = tables.find(t => t.key === 'messages')

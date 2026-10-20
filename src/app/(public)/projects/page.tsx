@@ -33,25 +33,13 @@ export default async function ProjectsPage() {
       <RememberListPath path="/projects" />
       <main id="main" className="w-full">
         {/*
-            BOŞLUK DENGESİ (2026-10-06, kullanıcı: "üstteki yazılarla
-            alttaki kısımın boşlukları eşit ve ortalanmış olsun").
-
-            Ölçüm (localhost, canlı):
-              projeler : navbar→başlık 157px, başlık→içerik  40px  ← DENGSİZ
-              hakkımda : navbar→başlık 148px, başlık→içerik 136px  ← dengeli
-
-            Sebep: başlık `framed` kutunun İÇİNDEydi; kutunun 40px iç
-            dolgusu başlığın üstüne eklendiği için yukarıdaki boşluk
-            şişiyor, aşağıdaki kalıyordu.
-
-            Çözüm: başlık kendi `Section`'ında (çerçevesiz), içerik ayrı
-            `framed` Section'da — `/about/` ile ana sayfanın yaptığı gibi.
-            İki boşluk artık bağımsız ayarlanabiliyor.
-          */}
-        {/* `pb-16 sm:pb-24 lg:pb-24`: ölçümle ayarlandı — navbar→başlık
-            128px (2026-10-13, breadcrumb kaldırılınca), başlık→çerçeve 136px.
-            `/about/` ile birebir aynı (128/136). */}
-        <Section className="flex-col pt-28 sm:pt-32 pb-16 sm:pb-24 lg:pb-24">
+          BAŞLIK GRUBUN İÇİNDE (2026-10-21, kullanıcı: "PROJECTS yazısı da
+          grubun içinde değil, BLOG'a bak ondan öğren").
+          `/blog` düzeni referans alındı: `SectionTitle` `framed` Section'ın
+          İÇİNDE, içerikle aynı grupta. Boşlukları `--section-gap` verir,
+          elle `pt-*`/`pb-*` yazılmaz.
+        */}
+        <Section className="flex-col pt-28 sm:pt-32 pb-16 sm:pb-20 lg:pb-24" framed>
           <SectionTitle
             title=""
             subTitle={content.projects.subtitle}
@@ -59,10 +47,10 @@ export default async function ProjectsPage() {
             icon={<FolderIcon size={36} className="inline-block" />}
             headingLevel="h1"
             big
+            tightGap
           />
-        </Section>
+          <div aria-hidden className="h-[var(--section-gap)]" />
 
-        <Section className="flex-col pb-16 sm:pb-20 lg:pb-24" framed>
           {/* GitHub Projects button */}
           <FadeUpSection className="w-full">
             <div className="mx-auto flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-3">

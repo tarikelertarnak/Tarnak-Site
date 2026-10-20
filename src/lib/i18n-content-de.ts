@@ -100,7 +100,7 @@ export const deContentOverlay: DeepPartial<SiteContent> = {
     description: '',
   },
   github: {
-    subtitle: 'GitHub Sayfam',
+    subtitle: 'GITHUB',
     title: 'GitHub-Projekte',
     description: 'Meine öffentlichen Repositories, live von meinem GitHub-Profil geladen.',
   },

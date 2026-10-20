@@ -284,7 +284,7 @@ const de: Record<string, string> = {
   'projects.forkCount': 'Anzahl der Forks',
   'projects.found': 'Projekte gefunden',
   'projects.github': 'GitHub-Projekte',
-  'projects.githubBtn': 'GitHub Sayfam',
+  'projects.githubBtn': 'GitHub-Projekte',
   'about.more': 'Mehr',
   'auth.loginUserSub': 'Melden Sie sich mit Ihrem Namen oder Ihrer E-Mail-Adresse an.',
   'projects.latest': 'Neueste',
