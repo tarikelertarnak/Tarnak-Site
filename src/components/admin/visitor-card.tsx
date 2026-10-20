@@ -8,8 +8,6 @@ interface VisitorStats {
   last7: number | null
   last30: number | null
   total: number | null
-  excludeSelf: boolean
-  excludeSelfVisitorId: string | null
 }
 
 /**
