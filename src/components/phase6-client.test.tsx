@@ -30,18 +30,18 @@ function renderWith(locale: 'en' | 'tr', node: React.ReactNode) {
   return render(<LocaleProvider detectedLocale={locale}>{node}</LocaleProvider>)
 }
 
-describe('Phase6EmptyI18n', () => {
-  it('EN: uses bos durumu Ingilizce', () => {
+describe('phase6EmptyI18n', () => {
+  it('eN: uses bos durumu Ingilizce', () => {
     renderWith('en', <Phase6EmptyI18n kind="uses" />)
     expect(screen.getByText('The list of things I use has not been added yet.')).toBeDefined()
   })
 
-  it('TR: uses bos durumu Turkce', () => {
+  it('tR: uses bos durumu Turkce', () => {
     renderWith('tr', <Phase6EmptyI18n kind="uses" />)
     expect(screen.getByText('Kullandıklarım listesi henüz eklenmedi.')).toBeDefined()
   })
 
-  it('EN: now ve changelog Ingilizce', () => {
+  it('eN: now ve changelog Ingilizce', () => {
     renderWith('en', <Phase6EmptyI18n kind="now" />)
     expect(screen.getByText('The now list has not been updated yet.')).toBeDefined()
     cleanup()
@@ -50,7 +50,7 @@ describe('Phase6EmptyI18n', () => {
   })
 
   /* Cevrilmemis TR metin EN modda GORUNMEMELI — asil sikayet buydu. */
-  it('EN modda hicbir TR bos-durum metni sizmaz', () => {
+  it('eN modda hicbir TR bos-durum metni sizmaz', () => {
     const trMetinler = ['listesi henüz', 'güncellenmedi', 'kaydı yok', 'Admin panelinden']
     for (const kind of ['uses', 'now', 'changelog'] as const) {
       renderWith('en', <Phase6EmptyI18n kind={kind} />)
@@ -62,7 +62,7 @@ describe('Phase6EmptyI18n', () => {
   })
 })
 
-describe('Phase6Title', () => {
+describe('phase6Title', () => {
   it('veri varsa onu gosterir (sozluge bakmaz)', () => {
     renderWith('en', <Phase6Title value="Benim Listem" kind="uses" />)
     expect(screen.getByText('Benim Listem')).toBeDefined()

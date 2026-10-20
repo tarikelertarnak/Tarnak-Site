@@ -31,20 +31,20 @@ function renderWith(locale: 'en' | 'tr', node: React.ReactNode) {
   return render(<LocaleProvider detectedLocale={locale}>{node}</LocaleProvider>)
 }
 
-describe('Breadcrumb dil', () => {
-  it('EN: kirintilar Ingilizce', () => {
+describe('breadcrumb dil', () => {
+  it('eN: kirintilar Ingilizce', () => {
     renderWith('en', <Breadcrumb items={CRUMBS['/about']} />)
     expect(screen.getByText('Home')).toBeDefined()
     expect(screen.getByText('About')).toBeDefined()
   })
 
-  it('TR: kirintilar Turkce', () => {
+  it('tR: kirintilar Turkce', () => {
     renderWith('tr', <Breadcrumb items={CRUMBS['/about']} />)
     expect(screen.getByText('Ana sayfa')).toBeDefined()
     expect(screen.getByText('Hakkımda')).toBeDefined()
   })
 
-  it('EN modda hicbir nav TR metni sizmaz', () => {
+  it('eN modda hicbir nav TR metni sizmaz', () => {
     for (const yol of ['/about', '/projects', '/blog', '/contact', '/donate', '/credits']) {
       renderWith('en', <Breadcrumb items={CRUMBS[yol]} />)
       for (const trWord of ['Ana sayfa', 'Projeler', 'Hakkımda', 'İletişim', 'Destek Ol', 'Katkıda']) {
