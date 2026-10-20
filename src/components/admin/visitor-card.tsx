@@ -2,6 +2,7 @@
 
 import { Icon } from '@iconify/react'
 import { useEffect, useState } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface VisitorStats {
   today: number | null
@@ -59,10 +60,22 @@ export function VisitorCard() {
       </div>
 
       {loading
-        ? <span className="text-sm text-foreground/50">Sayılar getiriliyor…</span>
+        ? (
+            <div
+              aria-label="Ziyaret sayıları yükleniyor"
+              className="grid grid-cols-2 gap-1 sm:grid-cols-4"
+            >
+              {['Bugün', '7 gün', '30 gün', 'Toplam'].map(label => (
+                <div key={label} className="flex flex-col items-center gap-1">
+                  <Skeleton className="h-6 w-10" />
+                  <span className="text-[10px] text-foreground/50">{label}</span>
+                </div>
+              ))}
+            </div>
+          )
         : (
             <>
-              <div className="grid grid-cols-4 gap-1 text-center">
+              <div className="grid grid-cols-2 gap-1 text-center sm:grid-cols-4">
                 <div className="flex flex-col">
                   <span className="text-lg font-semibold tabular-nums text-foreground" aria-label="Bugün">
                     {num(stats?.today)}

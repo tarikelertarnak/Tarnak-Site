@@ -921,7 +921,7 @@ tablosundan
                     value={item.type ?? 'link'}
                     onChange={e =>
                       setSecurityTool(index, 'type', e.target.value)}
-                    className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+                    className="h-10 w-full rounded-lg border border-foreground/20 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
                   >
                     <option value="link">Link</option>
                     <option value="command">
@@ -1199,7 +1199,7 @@ tablosundan
                     value={item.icon}
                     onChange={e =>
                       setSocial(index, 'icon', e.target.value)}
-                    className="h-10 w-full rounded-lg border border-[#3F3F46] bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+                    className="h-10 w-full rounded-lg border border-foreground/20 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
                   >
                     <option value="mdi:github">GitHub</option>
                     <option value="mdi:twitter">X / Twitter</option>

@@ -15,6 +15,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command'
 import { CloseIcon, GithubIcon, SearchIcon } from '@/components/ui/icons'
+import { Skeleton } from '@/components/ui/skeleton'
 import { clientFetchUserRepos } from '@/lib/github-client'
 
 // ─── Types ──────────────────────────────────────────────────────────
@@ -287,11 +288,19 @@ export function SearchDialog() {
                     <CommandEmpty>
                       {reposLoading
                         ? (
-                            <div className="flex items-center justify-center py-8">
-                              <div className="h-5 w-5 animate-spin rounded-full border-2 border-foreground-200/20 border-t-primary" />
-                              <span className="ml-2 text-sm text-foreground-500">
-                                {t('common.loading') || 'Loading...'}
-                              </span>
+                            <div
+                              aria-label={t('common.loading') || 'Loading...'}
+                              className="flex flex-col gap-2 py-4"
+                            >
+                              {Array.from({ length: 3 }, (_, i) => (
+                                <div key={i} className="flex items-center gap-3 px-2">
+                                  <Skeleton className="h-8 w-8 shrink-0 rounded-lg" />
+                                  <div className="flex flex-1 flex-col gap-1.5">
+                                    <Skeleton className="h-3.5 w-2/5" />
+                                    <Skeleton className="h-3 w-3/4" />
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           )
                         : (

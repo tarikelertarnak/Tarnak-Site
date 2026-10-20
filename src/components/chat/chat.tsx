@@ -2675,7 +2675,7 @@ function ProfileSheet({ peer, t, onClose }: {
 {peer.username}
 </p>
           </div>
-          <button type="button" onClick={onClose} aria-label={t('common.close')} className="cursor-pointer rounded-lg px-2 py-1 text-sm hover:bg-foreground/10">
+          <button type="button" onClick={onClose} aria-label={t('common.close')} className="cursor-pointer rounded-lg px-2 py-1 text-sm transition-colors hover:bg-foreground/10">
             ✕
           </button>
         </div>

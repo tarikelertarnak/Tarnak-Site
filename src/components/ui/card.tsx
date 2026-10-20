@@ -13,7 +13,7 @@ export function Card({ children, className, ...rest }: { children: ReactNode, cl
     <div
       {...rest}
       className={cn(
-        'flex flex-col relative overflow-hidden rounded-2xl border border-surface-border bg-background transition-colors hover:border-primary/40',
+        'press-feedback flex flex-col relative overflow-hidden rounded-2xl border border-surface-border bg-background transition-colors hover:border-primary/40',
         className,
       )}
     >

@@ -141,6 +141,49 @@ time {
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
+
+/* ── Basma geri bildirimi (2026-10-21) ─────────────────────────
+   Tıklanabilir öğelerin hiçbirinde basıldığında görsel tepki yoktu; kullanıcı
+   tıklamanın kaydedildiğini ancak eylem gerçekleşince anlıyordu. `scale`
+   GEOMETRİYİ değiştirdiği için buton kuralları (§8: "hover/active yalnızca
+   renk değiştirir") gereği butonlara UYGULANMAZ — kapsam bilinçli olarak
+   kart ve link-benzeri yüzeylerle sınırlı. `transform` GPU'da çalışır,
+   layout tetiklemez.
+
+   `touch-action: manipulation`: mobilde 300ms çift-dokunma gecikmesini
+   kaldırır (erişilebilirlik değil, algılanan hız iyileştirmesi). */
+:where(.press-feedback, a.press-feedback):active {
+  transform: scale(0.985);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :where(.press-feedback) {
+    transition: transform var(--duration-fast) var(--ease-out);
+  }
+}
+
+/* Dokunmatik gecikmeyi kaldır — tüm etkileşimli öğelerde. */
+:where(a, button, [role='button'], summary, label[for]) {
+  touch-action: manipulation;
+}
+
+/* ── Bağlantı alt-çizgisi geçişi (2026-10-21) ──────────────────
+   Gövde metni içindeki bağlantılar (markdown, açıklamalar) hover'da
+   anlık alt-çizgi kazanıyordu; yumuşak geçiş için tek kural. Buton
+   görünümlü bağlantılar (bg-primary, buton sınıfları) hariç tutulur. */
+@media (prefers-reduced-motion: no-preference) {
+  :where(p, li, dd, blockquote) a:not([class*='bg-']):not([class*='rounded']) {
+    text-decoration-color: transparent;
+    transition:
+      text-decoration-color var(--duration-base) var(--ease-out),
+      color var(--duration-base) var(--ease-out);
+  }
+
+  :where(p, li, dd, blockquote)
+    a:not([class*='bg-']):not([class*='rounded']):hover {
+    text-decoration-color: currentColor;
+  }
+}
 /* ── Aktif bölüm göstergesi ─────────────────────────────────────
    `ScrollSpy` görünür bölümü `data-active="true"` ile işaretler.
    Burada SADECE görsel vurgu: kenarlık ve metin rengi. Arama motorları

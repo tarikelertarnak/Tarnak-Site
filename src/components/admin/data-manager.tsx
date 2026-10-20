@@ -556,7 +556,7 @@ export function DataManager({ initialResource }: { initialResource?: string } = 
                   <th key={f.name} className="px-3 py-2 text-left font-semibold">
                     <button
                       type="button"
-                      className="inline-flex items-center gap-1 hover:text-foreground"
+                      className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
                       onClick={() => {
                         if (sort === f.name) {
                           setDir(dir === 'asc' ? 'desc' : 'asc')

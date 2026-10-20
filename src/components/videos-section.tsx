@@ -38,7 +38,7 @@ export function VideosSection({
               {video.kapak ? (
                 <img
                   src={video.kapak}
-                  alt=""
+                  alt={video.baslik || ''}
                   loading="lazy"
                   referrerPolicy="no-referrer"
                   className="aspect-video w-full object-cover"

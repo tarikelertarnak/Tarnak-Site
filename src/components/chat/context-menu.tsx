@@ -193,7 +193,7 @@ export function MenuHeader({ text, onClose, closeLabel }: {
         type="button"
         onClick={onClose}
         aria-label={closeLabel}
-        className="shrink-0 cursor-pointer rounded px-1 text-xs hover:bg-foreground/10"
+        className="shrink-0 cursor-pointer rounded px-1 text-xs transition-colors hover:bg-foreground/10"
       >
         ✕
       </button>

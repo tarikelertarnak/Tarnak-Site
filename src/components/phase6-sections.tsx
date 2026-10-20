@@ -319,7 +319,7 @@ return null
         {title || t('sec.certificates')}
       </h2>
 
-      <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+      <ul className="mt-6 grid gap-3 sm:grid-cols-2">
         {dolu.map((c, i) => {
           const govde = (
             <>

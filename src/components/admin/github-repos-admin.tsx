@@ -147,7 +147,7 @@ return prev
                   href={repo.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 text-xs text-foreground-500 hover:text-primary"
+                  className="shrink-0 text-xs text-foreground-500 transition-colors hover:text-primary"
                 >
                   GitHub ↗
                 </a>
