@@ -76,9 +76,6 @@ vi.mock('@/components/admin/overview-panel', () => ({
 vi.mock('@/components/admin/data-manager', () => ({
   DataManager: () => <div data-testid="data-manager" />,
 }))
-vi.mock('@/components/admin/chat-panel', () => ({
-  ChatPanel: () => <div data-testid="chat-panel" />,
-}))
 vi.mock('@/components/admin/sections-editor', () => ({
   SectionsEditor: () => <div data-testid="sections-editor" />,
 }))
@@ -98,7 +95,6 @@ function renderPanel() {
   return render(
     <AdminPanel
       initialContent={content}
-      initialMessages={[]}
       initialBlogPosts={[]}
       username="test@example.com"
       roleLabel="Yönetici"
@@ -139,7 +135,7 @@ describe('adminPanel', () => {
       'Profil & Hakkımda',
       'İçerik & Veri',
       'Site Ayarları',
-      'Mesajlar & Kullanıcılar',
+      'Kullanıcılar',
     ])
     expect(document.body.textContent).not.toMatch(/Faz\s*6|phase6/i)
   })
@@ -201,11 +197,43 @@ describe('adminPanel', () => {
     expect(headings).toContain('Şifre Değiştir')
   })
 
-  it('mesajlar & kullanıcılar sekmesi sohbet panelini ve kullanıcı yönetimini gösterir', async () => {
+  it('hero: Emoji/Logo alanı GİTTİ, yerine Logo (dosya/link) + dilli metin alanları geldi', async () => {
     renderPanel()
-    fireEvent.click(screen.getByRole('tab', { name: /Mesajlar & Kullanıcılar/ }))
-    await waitFor(() => expect(screen.getByTestId('chat-panel')).toBeTruthy())
-    expect(screen.getByTestId('users-panel')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: /Site Ayarları/ }))
+    await waitFor(() => expect(screen.getByText('Hero (Ana Ekran)')).toBeTruthy())
+
+    // Eski ölü alan kaldırıldı (2026-10-20, kullanıcı isteği).
+    expect(screen.queryByText('Emoji / Logo')).toBeNull()
+    expect(screen.getByText('Logo (dosya yükle veya link)')).toBeTruthy()
+    // Üç metin alanı artık dilli (yanlarında dil seçici combobox var).
+    expect(screen.getByText('Alt Başlık (Tagline)')).toBeTruthy()
+    expect(screen.getByText('Proje Butonu Yazısı')).toBeTruthy()
+    expect(screen.getByText('İletişim Butonu Yazısı')).toBeTruthy()
+    expect(screen.getAllByLabelText('Metnin dili').length).toBe(3)
+  })
+
+  it('kaydetme çubuğu değişiklik yokken GİZLİ, değişince görünür', async () => {
+    renderPanel()
+    // Başlangıçta temiz: ne Kaydet ne İptal Et.
+    expect(screen.queryByRole('button', { name: 'İptal Et' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('tab', { name: /Site Ayarları/ }))
+    await waitFor(() => expect(screen.getByText('Hero (Ana Ekran)')).toBeTruthy())
+    const nameInput = screen.getAllByRole('textbox')[0] as HTMLInputElement
+    fireEvent.change(nameInput, { target: { value: 'DEĞİŞTİ' } })
+
+    // Dirty → sabit çubuk (Kaydet + İptal Et) görünür.
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'İptal Et' })).toBeTruthy(),
+    )
+  })
+
+  it('kullanıcılar sekmesi kullanıcı yönetimini gösterir (chat paneli kaldırıldı)', async () => {
+    renderPanel()
+    fireEvent.click(screen.getByRole('tab', { name: /Kullanıcılar/ }))
+    await waitFor(() => expect(screen.getByTestId('users-panel')).toBeTruthy())
+    // "Chat Mesajları" bölümü kaldırıldı — /chat'ten yönetiliyor.
+    expect(screen.queryByTestId('chat-panel')).toBeNull()
   })
 
   it('kaydedilmemiş değişiklik varken sekme değişimi onay ister', async () => {
@@ -218,7 +246,7 @@ describe('adminPanel', () => {
     const firstName = document.querySelector('input') as HTMLInputElement
     fireEvent.change(firstName, { target: { value: 'Değişti' } })
     await waitFor(() =>
-      expect(screen.getByText(/Kaydedilmemiş değişiklikler var/)).toBeTruthy(),
+      expect(screen.getByRole('button', { name: 'İptal Et' })).toBeTruthy(),
     )
 
     fireEvent.click(screen.getByRole('tab', { name: /Genel Bakış/ }))
@@ -237,7 +265,7 @@ describe('adminPanel', () => {
       target: { value: 'Değişti' },
     })
     await waitFor(() =>
-      expect(screen.getByText(/Kaydedilmemiş değişiklikler var/)).toBeTruthy(),
+      expect(screen.getByRole('button', { name: 'İptal Et' })).toBeTruthy(),
     )
     fireEvent.click(screen.getByRole('tab', { name: /Genel Bakış/ }))
     await waitFor(() => expect(screen.getByTestId('overview-panel')).toBeTruthy())

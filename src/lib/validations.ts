@@ -166,6 +166,22 @@ const interestItem = z.object({
   content: z.string().max(1000),
 })
 
+/**
+ * Hero çok dilli alan şeması (2026-10-20).
+ *
+ * ZOD 4 TUZAĞI: `z.object` bilinmeyen anahtarı SESSİZCE SİLER. Bu blok
+ * şemaya yazılmazsa admin'in girdiği tüm diller her kaydetmede kaybolurdu
+ * (AGENTS.md §12'de phase6 için birebir yaşandı). Negatif kontrollü test:
+ * `validations.test.ts`.
+ */
+const heroI18n = z
+  .object({
+    tagline: z.record(z.string().max(50), z.string().max(500)).optional(),
+    exploreLabel: z.record(z.string().max(50), z.string().max(500)).optional(),
+    connectLabel: z.record(z.string().max(50), z.string().max(500)).optional(),
+  })
+  .optional()
+
 export const contentSchema = z.object({
   hero: z.object({
     name: textField,
@@ -175,6 +191,8 @@ export const contentSchema = z.object({
     exploreLabel: textField,
     connectLabel: textField,
     emoji: z.string().max(20),
+    logo: z.string().max(1000).optional(),
+    i18n: heroI18n,
     stats: z.array(z.object({ label: textField, value: textField })),
   }),
   nav: z.object({

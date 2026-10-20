@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import type {
   BlogPost,
-  ChatMessage,
+  HeroI18nKey,
   InterestItem,
   ProjectItem,
   SiteContent,
@@ -16,12 +16,14 @@ import { Tabs } from '@lobehub/ui/base-ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { AboutPageEditor } from '@/components/admin/about-page-editor'
-import { ChatPanel } from '@/components/admin/chat-panel'
 import { DataManager } from '@/components/admin/data-manager'
 import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
+import { HeroLogoField } from '@/components/admin/hero-logo-field'
+import { LocaleTextInput } from '@/components/admin/locale-text-input'
 import { OverviewPanel } from '@/components/admin/overview-panel'
 import { PanelCard } from '@/components/admin/panel-card'
 import { ProfilePhotoUploader } from '@/components/admin/profile-photo-uploader'
+import { SaveBar } from '@/components/admin/save-bar'
 import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
 import { SectionsEditor } from '@/components/admin/sections-editor'
 import { TabLabel } from '@/components/admin/tab-label'
@@ -39,13 +41,11 @@ type SaveStatus = { type: 'success' | 'error', text: string } | null
 
 export function AdminPanel({
   initialContent,
-  initialMessages,
   initialBlogPosts,
   username,
   roleLabel,
 }: {
   initialContent: SiteContent
-  initialMessages: ChatMessage[]
   initialBlogPosts?: BlogPost[]
   username: string
   /** Locale'e göre çevrilmiş rol adı (permissions.roleLabel). */
@@ -53,7 +53,6 @@ export function AdminPanel({
 }) {
   const router = useRouter()
   const [content, setContent] = useState<SiteContent>(initialContent)
-  const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [status, setStatus] = useState<SaveStatus>(null)
   const [saving, setSaving] = useState(false)
   /**
@@ -221,6 +220,19 @@ return
   const setHero = (field: keyof SiteContent['hero'], value: string) => {
     setContent(prev => ({ ...prev, hero: { ...prev.hero, [field]: value } }))
   }
+  /** Hero'nun dile özel metni (2026-10-20) — bkz. `LocaleTextInput`. */
+  const setHeroI18n = (
+    field: HeroI18nKey,
+    value: Record<string, string>,
+  ) => {
+    setContent(prev => ({
+      ...prev,
+      hero: {
+        ...prev.hero,
+        i18n: { ...prev.hero.i18n, [field]: value },
+      },
+    }))
+  }
   const setNav = (field: keyof SiteContent['nav'], value: string) => {
     setContent(prev => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
   }
@@ -271,25 +283,6 @@ return
       ...prev,
       profile: { ...prev.profile, [field]: value },
     }))
-  }
-
-  const clearMessages = async () => {
-    setSaving(true)
-    try {
-      for (const message of messages) {
-        await fetch(`/api/chat?id=${encodeURIComponent(message.id)}`, {
-          method: 'DELETE',
-        })
-      }
-      setMessages([])
-      setStatus({ type: 'success', text: 'Tüm mesajlar silindi.' })
-    }
- catch {
-      setStatus({ type: 'error', text: 'Bir hata oluştu.' })
-    }
- finally {
-      setSaving(false)
-    }
   }
 
   const setNavItem = (
@@ -606,32 +599,32 @@ return prev
               onValueChange={value => setHero('name', value)}
             />
           </Field>
-          <Field label="Emoji / Logo">
-            <Input
-              variant="faded"
-              value={content.hero.emoji}
-              onValueChange={value => setHero('emoji', value)}
+          <Field label="Logo (dosya yükle veya link)">
+            <HeroLogoField
+              value={content.hero.logo ?? ''}
+              onChange={value => setHero('logo', value)}
+              onStatus={setStatus}
             />
           </Field>
           <Field label="Alt Başlık (Tagline)">
-            <Input
-              variant="faded"
-              value={content.hero.tagline}
-              onValueChange={value => setHero('tagline', value)}
+            <LocaleTextInput
+              value={content.hero.i18n?.tagline ?? {}}
+              onChange={next => setHeroI18n('tagline', next)}
+              placeholder={content.hero.tagline}
             />
           </Field>
           <Field label="Proje Butonu Yazısı">
-            <Input
-              variant="faded"
-              value={content.hero.exploreLabel}
-              onValueChange={value => setHero('exploreLabel', value)}
+            <LocaleTextInput
+              value={content.hero.i18n?.exploreLabel ?? {}}
+              onChange={next => setHeroI18n('exploreLabel', next)}
+              placeholder={content.hero.exploreLabel}
             />
           </Field>
           <Field label="İletişim Butonu Yazısı">
-            <Input
-              variant="faded"
-              value={content.hero.connectLabel}
-              onValueChange={value => setHero('connectLabel', value)}
+            <LocaleTextInput
+              value={content.hero.i18n?.connectLabel ?? {}}
+              onChange={next => setHeroI18n('connectLabel', next)}
+              placeholder={content.hero.connectLabel}
             />
           </Field>
         </Grid>
@@ -1623,35 +1616,6 @@ fork ·
     />
   )
 
-  /** Eski "messages" sekmesinin gövdesi — artık bir grubun alt bölümü. */
-  const messagesPane = (
-    <div className="space-y-4 pt-4">
-      <div className="flex flex-row items-center justify-between">
-        <p className="text-sm text-foreground-500">
-          {messages.length}
-{' '}
-mesaj
-</p>
-        {messages.length > 0 && (
-          <Button
-            size="sm"
-            color="danger"
-            variant="bordered"
-            onPress={clearMessages}
-            isLoading={saving}
-          >
-            Tümünü Sil
-          </Button>
-        )}
-      </div>
-      <ChatPanel
-        initialMessages={messages}
-        displayName={content.profile.displayName}
-        onStatus={setStatus}
-      />
-    </div>
-  )
-
   /** Eski "phase6" sekmesinin gövdesi — artık bir grubun alt bölümü. */
   const sectionsPane = (
     <SectionsEditor
@@ -1673,7 +1637,7 @@ mesaj
     </div>
   )
 
-  /** Kullanıcı yönetimi — "Mesajlar & Kullanıcılar" sekmesinin alt bölümü. */
+  /** Kullanıcı yönetimi — "Kullanıcılar" sekmesinin içeriği. */
   const usersPane = (
     <div className="space-y-4 pt-4">
       <UsersPanel />
@@ -1745,12 +1709,9 @@ mesaj
     },
     {
       key: 'people',
-      label: <TabLabel icon="mdi:account-group-outline" text="Mesajlar & Kullanıcılar" />,
+      label: <TabLabel icon="mdi:account-group-outline" text="Kullanıcılar" />,
       children: (
         <div className="min-w-0 space-y-8">
-        <SubSection title="Chat Mesajları" icon="mdi:chat-outline">
-          {messagesPane}
-        </SubSection>
         <SubSection title="Kullanıcı Yönetimi" icon="mdi:account-multiple-outline">
           {usersPane}
         </SubSection>
@@ -1852,12 +1813,6 @@ mesaj
           />
         </ScrollableTabs>
         <div className="mt-6 flex min-w-0 flex-col items-center gap-3">
-          {dirty && (
-            <p className="flex items-center gap-1.5 text-xs font-medium text-amber-400">
-              <Icon icon="mdi:alert-circle-outline" width={14} height={14} />
-              Kaydedilmemiş değişiklikler var.
-            </p>
-          )}
           {status && (
             <div
               className={`w-full text-sm font-medium rounded-lg p-3 flex items-center gap-2 ${
@@ -1878,18 +1833,20 @@ mesaj
               {status.text}
             </div>
           )}
-          <Button
-            color="primary"
-            size="lg"
-            className="w-full sm:w-auto font-semibold"
-            onPress={save}
-            isLoading={saving}
-            isDisabled={saving}
-          >
-            <Icon icon="material-symbols:save" width={20} height={20} />
-            Tüm Değişiklikleri Kaydet
-          </Button>
         </div>
+        {/* Sabit kaydetme çubuğu (2026-10-20, kullanıcı isteği): Kaydet +
+            İptal Et + bilgi, alt kısımda `position: fixed`, değişiklik yoksa
+            gizli. */}
+        <SaveBar
+          dirty={dirty}
+          busy={saving}
+          onSave={() => save()}
+          onCancel={() => {
+            setContent(savedRef.current)
+            setStatus(null)
+          }}
+          info="Kaydedildi! Siteyi yenileyerek değişiklikleri görebilirsin."
+        />
       </div>
     </div>
   )

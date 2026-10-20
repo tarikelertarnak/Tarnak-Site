@@ -152,4 +152,59 @@ describe('contentSchema', () => {
     expect(r.data.social[1].label).toBeUndefined()
     expect(r.data.social[1].value).toBeUndefined()
   })
+
+  /*
+   * Hero cok dilli alanlar (2026-10-20).
+   *
+   * NEGATIF KONTROL: `heroI18n` semaya yazilmazsa zod bilinmeyen anahtari
+   * SESSIZCE siler — admin panelde TR/EN/DE girilen metinler her kaydetmede
+   * kaybolurdu (AGENTS.md §12'de `phase6` icin birebir yasandi). Bu testler
+   * alanin HAYATTA KALDIGINI kanitlar.
+   */
+  it('hero.i18n alanini KORUR — negatif kontrollu regresyon', () => {
+    const input = realContent()
+    const hero = input.hero as Record<string, unknown>
+    hero.i18n = {
+      tagline: { tr: 'Yazilimci', en: 'Programmer', de: 'Programmierer' },
+      exploreLabel: { en: 'Explore' },
+      connectLabel: { en: 'Contact' },
+    }
+
+    const r = contentSchema.safeParse(input)
+    expect(r.success).toBe(true)
+    if (!r.success) {
+      return
+    }
+    // Semada olmadigi icin parse sonrasi KAYBOLURDU.
+    expect(r.data.hero.i18n?.tagline?.en).toBe('Programmer')
+    expect(r.data.hero.i18n?.tagline?.de).toBe('Programmierer')
+    expect(r.data.hero.i18n?.tagline?.tr).toBe('Yazilimci')
+    expect(r.data.hero.i18n?.exploreLabel?.en).toBe('Explore')
+  })
+
+  it('hero.i18n OPSIYONEL — yoksa da gecer', () => {
+    const input = realContent()
+    const hero = input.hero as Record<string, unknown>
+    delete hero.i18n
+
+    const r = contentSchema.safeParse(input)
+    expect(r.success).toBe(true)
+    if (!r.success) {
+      return
+    }
+    expect(r.data.hero.i18n).toBeUndefined()
+  })
+
+  it('hero.logo alanini KORUR', () => {
+    const input = realContent()
+    const hero = input.hero as Record<string, unknown>
+    hero.logo = '/uploads/logo.png'
+
+    const r = contentSchema.safeParse(input)
+    expect(r.success).toBe(true)
+    if (!r.success) {
+      return
+    }
+    expect(r.data.hero.logo).toBe('/uploads/logo.png')
+  })
 })

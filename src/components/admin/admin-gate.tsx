@@ -1,6 +1,6 @@
 'use client'
 
-import type { BlogPost, ChatMessage, SiteContent } from '@/lib/content'
+import type { BlogPost, SiteContent } from '@/lib/content'
 import type { SessionUser } from '@/lib/supabase/session'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
@@ -50,7 +50,7 @@ export function AdminGate() {
     | { kind: 'loading' }
     | { kind: 'anonymous' }
     | { kind: 'forbidden' }
-    | { kind: 'ready', user: SessionUser, content: SiteContent, messages: ChatMessage[], blogPosts: BlogPost[] }
+    | { kind: 'ready', user: SessionUser, content: SiteContent, blogPosts: BlogPost[] }
   >({ kind: 'loading' })
 
   useEffect(() => {
@@ -81,7 +81,6 @@ export function AdminGate() {
         const veri = await fetch('/api/admin/content', { cache: 'no-store' })
         const veriJson = await veri.json().catch(() => null) as {
           content?: SiteContent
-          messages?: ChatMessage[]
           blogPosts?: BlogPost[]
         } | null
 
@@ -97,7 +96,6 @@ export function AdminGate() {
             kind: 'ready',
             user,
             content: veriJson.content,
-            messages: veriJson.messages ?? [],
             blogPosts: veriJson.blogPosts ?? [],
           })
         }
@@ -168,7 +166,6 @@ export function AdminGate() {
     <main id="main" className="min-h-screen w-full px-4 sm:px-6 py-8">
       <AdminPanel
         initialContent={state.content}
-        initialMessages={state.messages}
         initialBlogPosts={state.blogPosts}
         username={state.user.email ?? state.user.username ?? 'admin'}
         roleLabel={roleLabelFor(state.user)}

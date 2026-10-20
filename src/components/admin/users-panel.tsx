@@ -17,6 +17,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Modal } from '@/components/ui/modal'
 import { ROLE_PRESETS } from '@/lib/permissions'
 
 /**
@@ -192,9 +193,6 @@ export function UsersPanel() {
       setBanner({ type: 'error', text: 'Yeni şifre en az 6 karakter olmalı.' })
       return
     }
-    if (!window.confirm(`${u.username || u.email || u.id} için şifre sıfırlansın mı?`)) {
-      return
-    }
     mutate(u.id, {
       action: 'resetPassword',
       userId: u.id,
@@ -216,6 +214,8 @@ export function UsersPanel() {
   }
 
   const ownerViewer = isOwnerViewer(viewer)
+  /** Şifresi sıfırlanacak kullanıcı (popup başlığı için). */
+  const resetUser = users?.find(x => x.id === resetFor) ?? null
 
   return (
     <div className="space-y-4 pt-4">
@@ -377,17 +377,26 @@ Son giriş:
                             trigger="click"
                             content={(
                               <div className="w-64 px-1 py-2">
-                                {/* Kaydet EN ÜSTTE (2026-10-19, kullanıcı
-                                    isteği: "sabit en üstte olsun"). */}
-                                <Button
-                                  size="sm"
-                                  color="primary"
-                                  className="mb-2 w-full"
-                                  isDisabled={busyId === u.id}
-                                  onPress={saveRoles}
-                                >
-                                  Kaydet
-                                </Button>
+                                {/* Kaydet + İptal (2026-10-20, kullanıcı isteği:
+                                    "rollere ... Kaydet yanında İptal olacak"). */}
+                                <div className="mb-2 flex items-center gap-2">
+                                  <Button
+                                    size="sm"
+                                    color="primary"
+                                    className="flex-1"
+                                    isDisabled={busyId === u.id}
+                                    onPress={saveRoles}
+                                  >
+                                    Kaydet
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="light"
+                                    onPress={() => setDraftRoles([...u.roles])}
+                                  >
+                                    İptal Et
+                                  </Button>
+                                </div>
                                 <p className="mb-2 text-xs font-semibold text-foreground-500">
                                   Roller (birden fazla seçilebilir)
                                 </p>
@@ -501,64 +510,33 @@ Son giriş:
                         </>
                       )}
 
-                      {resetFor === u.id ? (
+                      {!u.isOwner && (
                         <>
-                          <Input
-                            variant="faded"
-                            type="password"
-                            placeholder="Yeni şifre (min 6)"
-                            value={newPassword}
-                            onValueChange={setNewPassword}
-                            className="w-40"
-                          />
                           <Button
                             size="sm"
-                            color="primary"
+                            variant="bordered"
                             isDisabled={busyId === u.id}
-                            onPress={() => resetPassword(u)}
-                          >
-                            Kaydet
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="light"
                             onPress={() => {
-                              setResetFor(null)
+                              setResetFor(u.id)
                               setNewPassword('')
                             }}
                           >
-                            Vazgeç
+                            <Icon icon="material-symbols:lock-reset" width={14} />
+                            Şifre Sıfırla
                           </Button>
-                        </>
-                      ) : (
-                        !u.isOwner && (
-                          <>
+                          {!isSelf && (
                             <Button
                               size="sm"
+                              color="danger"
                               variant="bordered"
                               isDisabled={busyId === u.id}
-                              onPress={() => {
-                                setResetFor(u.id)
-                                setNewPassword('')
-                              }}
+                              onPress={() => remove(u)}
                             >
-                              <Icon icon="material-symbols:lock-reset" width={14} />
-                              Şifre Sıfırla
+                              <Icon icon="material-symbols:delete-outline" width={14} />
+                              Sil
                             </Button>
-                            {!isSelf && (
-                              <Button
-                                size="sm"
-                                color="danger"
-                                variant="bordered"
-                                isDisabled={busyId === u.id}
-                                onPress={() => remove(u)}
-                              >
-                                <Icon icon="material-symbols:delete-outline" width={14} />
-                                Sil
-                              </Button>
-                            )}
-                          </>
-                        )
+                          )}
+                        </>
                       )}
                     </div>
                   )}
@@ -589,6 +567,57 @@ Son giriş:
           setNewPassword('')
         }}
       />
+
+      {/* Şifre Sıfırla artık POPUP (2026-10-20, kullanıcı isteği: "Şifre
+          Sıfırla basıldığında Popup olarak açılsın şu anki gibi değil").
+          Eskiden satır içi input açılıyordu. */}
+      <Modal
+        open={resetFor !== null}
+        onClose={() => {
+          setResetFor(null)
+          setNewPassword('')
+        }}
+        title="Şifre Sıfırla"
+      >
+        <div className="flex flex-col gap-3">
+          {/* Şifre sıfırlanacak kullanıcının adı — `users` ilk yüklemede null
+              olabilir; o durumda genel metin. */}
+          <p className="text-sm text-foreground-500">
+            {resetUser
+              ? `"${resetUser.username || resetUser.email || resetUser.id}" için yeni şifre belirle.`
+              : 'Yeni şifre belirle.'}
+          </p>
+          <Input
+            variant="faded"
+            type="password"
+            placeholder="Yeni şifre (min 6)"
+            value={newPassword}
+            onValueChange={setNewPassword}
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              color="primary"
+              className="font-semibold"
+              isDisabled={busyId !== null}
+              onPress={() => {
+                if (resetUser)
+                  resetPassword(resetUser)
+              }}
+            >
+              Şifreyi Sıfırla
+            </Button>
+            <Button
+              variant="light"
+              onPress={() => {
+                setResetFor(null)
+                setNewPassword('')
+              }}
+            >
+              İptal Et
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

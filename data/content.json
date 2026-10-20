@@ -20,7 +20,12 @@
         "label": "Focus",
         "value": "100%"
       }
-    ]
+    ],
+    "i18n": {
+      "tagline": {},
+      "exploreLabel": {},
+      "connectLabel": {}
+    }
   },
   "nav": {
     "ctaLabel": "GitHub",

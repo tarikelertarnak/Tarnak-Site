@@ -21,41 +21,12 @@ import {
 } from '@/components/ui/icons'
 import { Modal } from '@/components/ui/modal'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
-import { LOCALES } from '@/lib/i18n'
+import { LOCALES, NATIVE_NAMES } from '@/lib/i18n'
 
 const MUSIC_KEY = 'site-music-enabled'
 const REDUCE_MOTION_KEY = 'site-reduce-motion'
 const THEME_KEY = 'site-theme'
 const LOCALE_COOKIE = 'site-locale'
-
-/** Native names for each locale, shown in the language picker. */
-const NATIVE_NAMES: Record<Locale, string> = {
-  tr: 'Türkçe',
-  en: 'English',
-  es: 'Español',
-  de: 'Deutsch',
-  ja: '日本語',
-  fr: 'Français',
-  pt: 'Português',
-  ru: 'Русский',
-  it: 'Italiano',
-  zh: '中文',
-  nl: 'Nederlands',
-  pl: 'Polski',
-  ko: '한국어',
-  ar: 'العربية',
-  id: 'Bahasa Indonesia',
-  vi: 'Tiếng Việt',
-  fa: 'فارسی',
-  uk: 'Українська',
-  th: 'ไทย',
-  cs: 'Čeština',
-  hu: 'Magyar',
-  ro: 'Română',
-  sv: 'Svenska',
-  el: 'Ελληνικά',
-  he: 'עברית',
-}
 
 const LOCALES_ALL: readonly Locale[] = [...LOCALES]
 

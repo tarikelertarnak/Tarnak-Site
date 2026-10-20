@@ -53,6 +53,39 @@ export const LOCALES: readonly Locale[] = [
   'he',
 ]
 
+/**
+ * Her dilin KENDİ dilindeki adı — dil seçicilerinde gösterilir
+ * (`settings-dropdown.tsx` + admin `LocaleTextInput`). `LOCALES` ile birlikte
+ * yaşar ki yeni dil eklenince tek yerde tanımlansın.
+ */
+export const NATIVE_NAMES: Record<Locale, string> = {
+  tr: 'Türkçe',
+  en: 'English',
+  es: 'Español',
+  de: 'Deutsch',
+  ja: '日本語',
+  fr: 'Français',
+  pt: 'Português',
+  ru: 'Русский',
+  it: 'Italiano',
+  zh: '中文',
+  nl: 'Nederlands',
+  pl: 'Polski',
+  ko: '한국어',
+  ar: 'العربية',
+  id: 'Bahasa Indonesia',
+  vi: 'Tiếng Việt',
+  fa: 'فارسی',
+  uk: 'Українська',
+  th: 'ไทย',
+  cs: 'Čeština',
+  hu: 'Magyar',
+  ro: 'Română',
+  sv: 'Svenska',
+  el: 'Ελληνικά',
+  he: 'עברית',
+}
+
 /** Right-to-left locales (Arabic, Persian, Hebrew). */
 export const RTL_LOCALES: ReadonlySet<string> = new Set(['ar', 'fa', 'he'])
 

@@ -5,6 +5,7 @@ import type { SiteContent } from '@/lib/content'
 import type { CvDoc } from '@/lib/cv'
 import { TypewriterEffect } from '@lobehub/ui/awesome'
 import { motion } from 'motion/react'
+import { useHeroText } from '@/components/hero-i18n'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
 import { AvailabilityBadge } from '@/components/phase6-sections'
@@ -49,7 +50,13 @@ export function HeroSection({
   content: SiteContent
   cvs: CvDoc[]
 }) {
-  const { name, tagline, description } = content.hero
+  const { name, description } = content.hero
+  // Dile göre çözülen alanlar (2026-10-20): admin panelden girilen dile özel
+  // metin sunucu tabanını EZER. Bkz. `hero-i18n.ts`.
+  const heroText = useHeroText()
+  const tagline = heroText(content.hero.i18n, 'tagline', content.hero.tagline)
+  // Logo kaynağı: admin dosya/link verdiyse o, yoksa gömülü marka SVG'si.
+  const logoSrc = content.hero.logo?.trim()
   // Müsaitlik rozeti (içerik boşsa render edilmez)
   const phase6 = parsePhase6(
     (content as unknown as Record<string, unknown>).phase6,
@@ -120,17 +127,33 @@ export function HeroSection({
             variants={item}
             className="group/logo mb-[clamp(10px,1.8vh,20px)] inline-flex shrink-0 items-center justify-center"
           >
-            <SiteLogo
-              size={224}
-              className={cn(
-                // 2026-10-07: kullanıcı "çok küçük" dedi. 900px yükseklikte
-                // 126px → 162px ölçülüyor; 360×640'de 72px (taşmaz).
-                'h-[clamp(72px,18vh,200px)] w-auto opacity-90 transition-colors duration-300',
-                // Mavi hover — Tailwind `text-primary` butonlarla aynı token.
-                'group-hover/logo:text-primary',
-                'group-focus-visible/logo:text-primary',
-              )}
-            />
+            {logoSrc
+              ? (
+                  // Admin panelden dosya/link verildiyse onu bas (2026-10-20,
+                  // kullanıcı isteği: "Emoji/Logo" alanı gerçek logo kaynağı).
+                  // Kullanıcı URL'si olduğu için next/image değil `<img>`.
+                  <img
+                    src={logoSrc}
+                    alt={content.profile.firstName}
+                    className={cn(
+                      'h-[clamp(72px,18vh,200px)] w-auto object-contain opacity-90',
+                      'transition-opacity duration-300 group-hover/logo:opacity-100',
+                    )}
+                  />
+                )
+              : (
+                  <SiteLogo
+                    size={224}
+                    className={cn(
+                      // 2026-10-07: kullanıcı "çok küçük" dedi. 900px yükseklikte
+                      // 126px → 162px ölçülüyor; 360×640'de 72px (taşmaz).
+                      'h-[clamp(72px,18vh,200px)] w-auto opacity-90 transition-colors duration-300',
+                      // Mavi hover — Tailwind `text-primary` butonlarla aynı token.
+                      'group-hover/logo:text-primary',
+                      'group-focus-visible/logo:text-primary',
+                    )}
+                  />
+                )}
           </motion.a>
 
           {/*
@@ -225,7 +248,7 @@ export function HeroSection({
               startContent={<BriefcaseIcon size={16} />}
               href="/projects/"
             >
-              {t('hero.projects')}
+              {heroText(content.hero.i18n, 'exploreLabel', t('hero.projects'))}
             </Button>
             <Button
               color="primary"
@@ -241,7 +264,7 @@ export function HeroSection({
               startContent={<SendIcon size={16} />}
               href="/contact/"
             >
-              {t('hero.feedback')}
+              {heroText(content.hero.i18n, 'connectLabel', t('hero.feedback'))}
             </Button>
             <Button
               color="primary"

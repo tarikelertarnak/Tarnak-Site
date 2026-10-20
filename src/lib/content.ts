@@ -229,6 +229,18 @@ export interface CvData {
   education: CvEntry[]
 }
 
+/**
+ * Hero'nun ÇOK DİLLİ alanları (2026-10-20, kullanıcı isteği: "her dile özel
+ * metin girilebilsin ve arkada tutsun").
+ *
+ * NEDEN AYRI BLOK: düz alanlar (`hero.tagline` vb.) TR tabanı olarak KALIR;
+ * admin panelden girilen dile özel metinler buraya yazılır. Öncelik:
+ * `hero.i18n[alan][dil]` > düz alan (TR) > `xxContentOverlay` > boş.
+ * Böylece admin hiç girmezse davranış bugünküyle AYNEN aynı (sıfır regresyon).
+ */
+export type HeroI18nKey = 'tagline' | 'exploreLabel' | 'connectLabel'
+export type HeroI18n = Partial<Record<HeroI18nKey, Record<string, string>>>
+
 export interface SiteContent {
   hero: {
     name: string
@@ -238,6 +250,14 @@ export interface SiteContent {
     exploreLabel: string
     connectLabel: string
     emoji: string
+    /**
+     * Hero logo kaynağı (2026-10-20, kullanıcı isteği: eski "Emoji / Logo"
+     * alanı yerine gerçek dosya yükleme / link). Boşsa gömülü marka SVG'si
+     * (`SiteLogo`) basılır.
+     */
+    logo?: string
+    /** Dile özel hero metinleri — bkz. `HeroI18n`. Opsiyonel (geriye uyum). */
+    i18n?: HeroI18n
     stats: { label: string, value: string }[]
   }
   nav: {

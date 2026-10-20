@@ -46,12 +46,11 @@ describe('users-panel: Admin Yap butonu kaldırıldı', () => {
   })
 })
 
-describe('kaydet butonu popover başında', () => {
+describe('kaydet/iptal çubuğu popover ALTINDA', () => {
   /*
-    Popover başlığı ile "Varsayılana dön" AYNI satırdadır (başlık şeridi).
-    Kaydet o şeridin ALTINDA ama içerik listesinin ÜSTÜNDE olmalı — yani
-    ilk içerik kutusundan önce gelmeli. Bu ölçüt "başlıktan önce"den daha
-    doğru: başlığın kendisi zaten en tepededir.
+    2026-10-20, kullanıcı isteği değişti: "Kaydet yanında İptal olacak ve altta
+    position fixed sabit şekilde, değişiklik yapılmadıysa gözükmez". Eskiden
+    Kaydet popover'ın BAŞINDAYDI (2026-10-19); o sözleşme kaldırıldı.
   */
   const cases: Array<[string, string, string]> = [
     ['permission-editor.tsx', 'onPress={onSave}', 'PERMISSION_GROUPS.map'],
@@ -59,24 +58,39 @@ describe('kaydet butonu popover başında', () => {
   ]
 
   for (const [file, onPress, firstContent] of cases) {
-    it(`${file}: Kaydet tek ve ilk içerikten ÖNCE`, () => {
+    it(`${file}: Kaydet+İptal tek ve ilk içerikten SONRA (sticky alt çubuk)`, () => {
       const src = read(file)
-      // Tek Kaydet düğmesi (alt kopya silindi).
+      // Tek Kaydet düğmesi.
       expect(src.match(/>\s*Kaydet\s*</g)?.length).toBe(1)
+      // İptal de var.
+      expect(src).toContain('İptal Et')
+      // Alt çubuk işareti: sticky + değişiklik koşulu.
+      expect(src).toContain('sticky bottom-0')
       const save = src.indexOf(onPress)
       expect(save).toBeGreaterThan(-1)
       const content = src.indexOf(firstContent)
       expect(content).toBeGreaterThan(-1)
-      expect(save).toBeLessThan(content)
+      // Kaydet artık içerikten SONRA gelir.
+      expect(save).toBeGreaterThan(content)
     })
   }
 
-  it('users-panel Roller popoverı: saveRoles tek ve Roller başlığından ÖNCE', () => {
+  it('users-panel Roller popoverı: Kaydet + İptal Et var', () => {
     const src = read('users-panel.tsx')
     expect(src.match(/onPress=\{saveRoles\}/g)?.length).toBe(1)
     const save = src.indexOf('onPress={saveRoles}')
     const title = src.indexOf('Roller (birden fazla seçilebilir)')
     expect(title).toBeGreaterThan(-1)
     expect(save).toBeLessThan(title)
+    // İptal Et, Kaydet ile aynı satır grubunda.
+    expect(src.indexOf('İptal Et', save)).toBeGreaterThan(-1)
+  })
+
+  it('users-panel Şifre Sıfırla artık Modal ile açılır (Satır içi input değil)', () => {
+    const src = read('users-panel.tsx')
+    expect(src).toContain('<Modal')
+    expect(src).toContain('title="Şifre Sıfırla"')
+    // Eski satır içi `window.confirm` kaldırıldı.
+    expect(src).not.toContain('için şifre sıfırlansın mı?')
   })
 })

@@ -94,26 +94,39 @@ export function LimitsEditor({
     setMessages('')
   }
 
+  /**
+   * Değişiklik var mı? (2026-10-20, kullanıcı isteği: kaydetme çubuğu
+   * "değişiklik yapılmadıysa gözükmez"). Form değerleri saklanan limitlerle
+   * karşılaştırılır — popup dışında "İptal" için başlangıç anlık görüntüsü.
+   */
+  const storedMb
+    = storedBytes === null || storedBytes === undefined
+      ? ''
+      : String(storedBytes / 1_048_576)
+  const dirty
+    = uploadMb !== storedMb
+      || uploadUnlimited !== (storedBytes === null)
+      || messages
+      !== (user.limits.maxMessages == null ? '' : String(user.limits.maxMessages))
+      || messagesUnlimited !== (user.limits.maxMessages == null)
+
+  const cancel = () => {
+    setUploadMb(storedMb)
+    setUploadUnlimited(storedBytes === null)
+    setMessages(
+      user.limits.maxMessages == null ? '' : String(user.limits.maxMessages),
+    )
+    setMessagesUnlimited(user.limits.maxMessages == null)
+  }
+
   return (
-    <div className="w-72 px-1 py-2">
+    <div className="max-h-[70vh] w-72 overflow-y-auto px-1 py-2">
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-foreground-500">Limitler</p>
         <Button size="sm" variant="light" onPress={resetDefaults}>
           Varsayılana dön
         </Button>
       </div>
-
-      {/* Kaydet EN ÜSTTE (2026-10-19, kullanıcı isteği) — uzun formda dibe
-          inmek gerekiyordu. Alt kopya kaldırıldı. */}
-      <Button
-        size="sm"
-        color="primary"
-        className="mb-3 w-full"
-        isDisabled={busy}
-        onPress={save}
-      >
-        Kaydet
-      </Button>
 
       <div className="mb-3 rounded-lg border border-foreground-200/10 p-2">
         <div className="mb-1 flex justify-between text-[11px] text-foreground-500">
@@ -187,6 +200,26 @@ dosya ·
           </span>
         </label>
       </div>
+
+      {/* Kaydet + İptal popup'ın ALTINDA sabit; değişiklik yoksa gizli
+          (2026-10-20, kullanıcı isteği). `sticky` — popup kendi kaydırma
+          kutusu içinde, `fixed` viewport'a yapışıp popup'ı terk ederdi. */}
+      {dirty && (
+        <div className="sticky bottom-0 -mx-1 mt-2 flex items-center gap-2 border-t border-foreground-200/10 bg-background/95 px-1 pt-2 backdrop-blur">
+          <Button
+            size="sm"
+            color="primary"
+            className="flex-1"
+            isDisabled={busy}
+            onPress={save}
+          >
+            Kaydet
+          </Button>
+          <Button size="sm" variant="light" isDisabled={busy} onPress={cancel}>
+            İptal Et
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

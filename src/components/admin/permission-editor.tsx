@@ -116,19 +116,6 @@ export function PermissionEditor({
 
   return (
     <div className="max-h-[60vh] w-80 overflow-y-auto px-1 py-2">
-      {/* Kaydet EN ÜSTTE (2026-10-19, kullanıcı isteği: "Kaydet olacak sabit
-          en üstte... illa en aşağı girmek zorunda kalmayalım"). Uzun listede
-          butonu bulmak için dibe inmek gerekiyordu. Alt kopya KALDIRILDI ki
-          iki Kaydet karışmasın. */}
-      <Button
-        size="sm"
-        color="primary"
-        className="mb-2 w-full"
-        isDisabled={busy}
-        onPress={onSave}
-      >
-        Kaydet
-      </Button>
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-semibold text-foreground-500">
           Özel Yetkiler (
@@ -246,6 +233,34 @@ export function PermissionEditor({
           </div>
         )
       })}
+
+      {/* Kaydet + İptal popup'ın ALTINDA sabit (2026-10-20, kullanıcı isteği:
+          "özel yetkilerdeki Kaydet yanında da iptal olacak ve altta position
+          fixed sabit şekilde, değişiklik yapılmadıysa gözükmez"). `sticky`
+          kullanılır: popup zaten kendi kaydırma kutusu içinde; `position:
+          fixed` sayfaya değil viewport'a yapışır ve popup'ı yanlış yerde
+          bırakırdı. Değişiklik yoksa (overrideCount === 0) HİÇ render edilmez. */}
+      {overrideCount > 0 && (
+        <div className="sticky bottom-0 -mx-1 mt-2 flex items-center gap-2 border-t border-foreground-200/10 bg-background/95 px-1 pt-2 backdrop-blur">
+          <Button
+            size="sm"
+            color="primary"
+            className="flex-1"
+            isDisabled={busy}
+            onPress={onSave}
+          >
+            Kaydet
+          </Button>
+          <Button
+            size="sm"
+            variant="light"
+            isDisabled={busy}
+            onPress={onReset}
+          >
+            İptal Et
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
