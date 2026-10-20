@@ -1,16 +1,15 @@
-import type { BreadcrumbItem } from '@/lib/breadcrumb'
+'use client'
+
+import type { BreadcrumbItem, CrumbsI18n } from '@/lib/breadcrumb'
+import { useT } from '@/components/locale-provider'
 import { siteUrl } from '@/lib/site-url'
 
 /**
- * Breadcrumb arayüzü + BreadcrumbList JSON-LD
+ * BreadcrumbList JSON-LD (sunucu — SEO bilinçli sınır, TR kalır).
  *
- * İKİ ŞEYİ TEK YERDE ÜRETİR:
- *  1) Ekranda görünen navigasyon (tıklanabilir `Link`'ler).
- *  2) `<script type="application/ld+json">` içinde `BreadcrumbList`.
- * Ayrı ayrı yazılırsa ikisi zamanla ayrışır (görselde yeni bir kırıntı
- * eklenir ama JSON-LD unutulur) — arama motoru breadcrumb'ı görmez.
- *
- * TASARIM: mevcut kart diliyle uyumlu, küçük, ikincil renkte.
+ * Görünen `Breadcrumb` artık `CrumbsI18n` (labelKey) alıyor; JSON-LD
+ * ise çözülmüş `BreadcrumbItem` bekler. Çağıran `resolveCrumbs` ile
+ * çevirir (statik TR).
  */
 export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
   const jsonLd = {
@@ -35,10 +34,19 @@ export function BreadcrumbJsonLd({ items }: { items: BreadcrumbItem[] }) {
   )
 }
 
-export function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
+/** `labelKey` → görünen etiket. `__raw:` ön ekli değer kullanıcı verisidir. */
+function labelOf(item: CrumbsI18n, t: (k: string) => string): string {
+  return item.labelKey.startsWith('__raw:')
+    ? item.labelKey.slice(6)
+    : t(item.labelKey)
+}
+
+export function Breadcrumb({ items }: { items: CrumbsI18n[] }) {
+  const { t } = useT()
+
   // Tek öğe varsa navigasyon anlamsız — basma.
   if (items.length < 2)
-return null
+    return null
 
   return (
     <nav aria-label="Breadcrumb" className="w-full">
@@ -46,20 +54,20 @@ return null
         {items.map((item, i) => {
           const son = i === items.length - 1
           return (
-            <li key={item.href} className="flex items-center gap-1.5">
+            <li key={`${item.href}#${i}`} className="flex items-center gap-1.5">
               {son ? (
                 <span
                   aria-current="page"
                   className="font-medium text-foreground/80"
                 >
-                  {item.label}
+                  {labelOf(item, t)}
                 </span>
               ) : (
                 <a
                   href={item.href}
                   className="rounded transition-colors duration-200 hover:text-primary"
                 >
-                  {item.label}
+                  {labelOf(item, t)}
                 </a>
               )}
               {!son && (

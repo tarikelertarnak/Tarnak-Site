@@ -1,3 +1,5 @@
+'use client'
+
 import type {
   Availability,
   Certificate,
@@ -7,6 +9,7 @@ import type {
 } from '@/lib/phase6'
 import { motion } from 'motion/react'
 import Link from 'next/link'
+import { useT } from '@/components/locale-provider'
 import { useReducedMotionSafe } from '@/hooks/use-reduced-motion-safe'
 
 /**
@@ -72,6 +75,7 @@ export function ServicesSection({
   ctaLabel: string
   ctaHref: string
 }) {
+  const { t } = useT()
   const azalt = useReducedMotionSafe()
   if (items.length === 0)
 return null
@@ -86,7 +90,7 @@ return null
           id="hizmetler-baslik"
           className="text-2xl font-black tracking-tight sm:text-3xl"
         >
-          {title || 'Hizmetler'}
+          {title || t('sec.services')}
         </h2>
         {description && (
           <p className="mt-3 text-sm text-foreground/60 sm:text-base">
@@ -156,6 +160,7 @@ export function TestimonialsSection({
   title?: string
   items: Testimonial[]
 }) {
+  const { t } = useT()
   // Yalnızca metni dolu kartları göster — isim/rol boşsa kart işe yaramaz.
   const dolu = items.filter(i => i.quote)
   if (dolu.length === 0)
@@ -171,7 +176,7 @@ return null
           id="referanslar-baslik"
           className="text-2xl font-black tracking-tight sm:text-3xl"
         >
-          {title || 'Referanslar'}
+          {title || t('sec.testimonials')}
         </h2>
       </header>
 
@@ -227,6 +232,7 @@ export function TimelineSection({
   title?: string
   items: TimelineItem[]
 }) {
+  const { t } = useT()
   const dolu = items.filter(i => i.title)
   if (dolu.length === 0)
 return null
@@ -240,7 +246,7 @@ return null
         id="zaman-baslik"
         className="text-xl font-black tracking-tight sm:text-2xl"
       >
-        {title || 'Yolculuk'}
+        {title || t('sec.journey')}
       </h2>
 
       <ol className="mt-6 space-y-0">
@@ -296,6 +302,7 @@ export function CertificatesSection({
   title?: string
   items: Certificate[]
 }) {
+  const { t } = useT()
   const dolu = items.filter(i => i.name)
   if (dolu.length === 0)
 return null
@@ -309,7 +316,7 @@ return null
         id="sertifika-baslik"
         className="text-xl font-black tracking-tight sm:text-2xl"
       >
-        {title || 'Sertifikalar & Başarılar'}
+        {title || t('sec.certificates')}
       </h2>
 
       <ul className="mt-5 grid gap-3 sm:grid-cols-2">

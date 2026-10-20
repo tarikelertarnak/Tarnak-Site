@@ -5,8 +5,11 @@ import { CodeCopyEnhancer } from '@/components/code-copy-enhancer'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { RepoVisitCounter } from '@/components/github/repo-visit-counter'
 import { Navigation } from '@/components/navigation'
+import { RepoCaseStudy, RepoSectionTitle, T } from '@/components/repo-i18n'
 import { Section, SectionTitle } from '@/components/ui/section'
+import { resolveCrumbs } from '@/lib/breadcrumb'
 import { fetchRepoDetails } from '@/lib/github'
+import { t } from '@/lib/i18n'
 import { getLocalizedContent } from '@/lib/i18n-server'
 import { renderMarkdown } from '@/lib/markdown'
 import { pageMetadata } from '@/lib/page-metadata'
@@ -82,9 +85,10 @@ export default async function GithubRepoPage({
   const vaka = adminKaydi?.caseStudy
 
   const crumb = [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'Projeler', href: '/projects/' },
-    { label: repo, href: `/github/${owner}/${repo}/` },
+    { labelKey: 'nav.home', href: '/' },
+    { labelKey: 'nav.projects', href: '/projects/' },
+    // Repo adı kullanıcı/veri — çevrilmez.
+    { labelKey: `__raw:${repo}`, href: `/github/${owner}/${repo}/` },
   ]
 
   return (
@@ -93,7 +97,7 @@ export default async function GithubRepoPage({
       <main id="main" className="w-full">
         <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">
           <Breadcrumb items={crumb} />
-          <BreadcrumbJsonLd items={crumb} />
+          <BreadcrumbJsonLd items={resolveCrumbs(crumb, k => t('tr', k))} />
         </div>
 
         {/* ── Başlık + sayılar ─────────────────────────────────────── */}
@@ -116,7 +120,7 @@ export default async function GithubRepoPage({
 ⑂
 {detay.forks}
 </span>
-              <span>{detay.license ?? 'Lisans belirtilmemiş'}</span>
+              <span>{detay.license ?? <T k="repo.licenseNone" />}</span>
               <span>
                 <time dateTime={detay.updatedAt}>
                   {detay.updatedAt.slice(0, 10)}
@@ -141,7 +145,7 @@ export default async function GithubRepoPage({
                 rel="noopener noreferrer"
                 className="inline-flex h-10 items-center rounded-md border border-foreground-200/15 px-3.5 text-[13px] font-medium transition-colors hover:border-primary/50"
               >
-                Canlı demo
+                <T k="repo.liveDemo" />
               </a>
             )}
           </div>
@@ -154,64 +158,14 @@ export default async function GithubRepoPage({
         {/* ── Vaka çalışması ───────────────────────────────────────── */}
         <Section className="flex-col pb-0">
           <FadeUpSection className="mx-auto w-full max-w-3xl">
-            <SectionTitle
-              title="Vaka çalışması"
-              subTitle=""
-              description=""
-              tightGap
+            <RepoSectionTitle k="repo.caseStudy" />
+
+            <RepoCaseStudy
+              summary={vaka?.summary}
+              problem={vaka?.problem}
+              solution={vaka?.solution}
+              outcome={vaka?.outcome}
             />
-
-            <div className="mt-6 space-y-6">
-              {vaka?.summary && (
-                <section>
-                  <h3 className="text-base font-semibold">Kısa özet</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-foreground/75">
-                    {vaka.summary}
-                  </p>
-                </section>
-              )}
-
-              {vaka?.problem && (
-                <section>
-                  <h3 className="text-base font-semibold">Problem</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-foreground/75">
-                    {vaka.problem}
-                  </p>
-                </section>
-              )}
-
-              {vaka?.solution && (
-                <section>
-                  <h3 className="text-base font-semibold">Çözüm</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-foreground/75">
-                    {vaka.solution}
-                  </p>
-                </section>
-              )}
-
-              {vaka?.outcome && (
-                <section>
-                  <h3 className="text-base font-semibold">Sonuç</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-foreground/75">
-                    {vaka.outcome}
-                  </p>
-                </section>
-              )}
-
-              {/* TODO (kullanıcı): admin panelinden bu proje için vaka
-                  çalışması alanlarını doldur. Boş bırakılan her bölüm
-                  burada görünür — uydurma metin yazılmadı. */}
-              {!vaka?.summary
-                && !vaka?.problem
-                && !vaka?.solution
-                && !vaka?.outcome && (
-                  <div className="rounded-xl border border-foreground/10 p-5">
-                    <p className="text-sm text-foreground/60">
-                      Bu proje için vaka çalışması henüz yazılmadı.
-                    </p>
-                  </div>
-                )}
-            </div>
 
             {/* ── Kullanılan teknolojiler ───────────────────────────── */}
             {detay?.topics && detay.topics.length > 0 && (
@@ -219,7 +173,7 @@ export default async function GithubRepoPage({
                 <div aria-hidden className="h-[var(--section-gap)]" />
                 <section>
                   <h3 className="text-base font-semibold">
-                    Kullanılan teknolojiler
+                    <T k="repo.topics" />
                   </h3>
                   <ul className="mt-3 flex flex-wrap gap-2">
                     {detay.topics.map(t => (
@@ -252,15 +206,14 @@ export default async function GithubRepoPage({
               />
             ) : (
               <p className="rounded-xl border border-foreground/10 p-5 text-sm text-foreground/60">
-                README bulunamadı veya yüklenemedi.
-{' '}
+                <T k="repo.readmeMissing" />
                 <a
                   href={githubUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary underline"
+                  className="ml-1 text-primary underline"
                 >
-                  GitHub&apos;de görüntüle
+                  <T k="repo.viewOnGithub" />
                 </a>
               </p>
             )}

@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 
 import { FadeUpItem, FadeUpSection } from '@/components/fade-up-section'
 import { Navigation } from '@/components/navigation'
+import { Phase6EmptyI18n, Phase6Title } from '@/components/phase6-client'
 import { Section } from '@/components/ui/section'
-import { getPhase6, Phase6Empty } from '@/lib/phase6-server'
+import { getPhase6 } from '@/lib/phase6-server'
 
 export const dynamic = 'force-static'
 
@@ -21,10 +22,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const GRUPLAR = [
-  { anahtar: 'learning', baslik: 'Öğrendiklerim' },
-  { anahtar: 'building', baslik: 'Ürettiklerim' },
-  { anahtar: 'reading', baslik: 'Okuduklarım' },
-  { anahtar: 'listening', baslik: 'Dinlediklerim' },
+  { anahtar: 'learning' },
+  { anahtar: 'building' },
+  { anahtar: 'reading' },
+  { anahtar: 'listening' },
 ] as const
 
 export default async function NowPage() {
@@ -44,11 +45,12 @@ export default async function NowPage() {
           <FadeUpSection className="w-full">
             <div className="flex flex-col gap-3">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Şu an
+                <Phase6Title kind="now" />
               </h1>
               {now?.updated ? (
                 <p className="text-sm text-foreground/60">
-                  Son güncelleme:
+                  <Phase6Title labelKey="now.updated" />
+                  {' '}
                   {now.updated}
                 </p>
               ) : null}
@@ -58,9 +60,7 @@ export default async function NowPage() {
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
             {dolu.length === 0 ? (
               <div className="sm:col-span-2">
-                <Phase6Empty title="Şu an listesi henüz güncellenmedi.">
-                  Admin panelinden girildiğinde burada görünecek.
-                </Phase6Empty>
+                <Phase6EmptyI18n kind="now" />
               </div>
             ) : (
               dolu.map(grup => (
@@ -70,7 +70,9 @@ export default async function NowPage() {
                   stagger={0.08}
                 >
                   <div className="flex flex-col gap-3">
-                    <h2 className="text-lg font-semibold">{grup.baslik}</h2>
+                    <h2 className="text-lg font-semibold">
+                      <Phase6Title labelKey={`now.${grup.anahtar}`} />
+                    </h2>
                     <ul className="flex flex-col gap-2">
                       {(now?.[grup.anahtar] ?? []).map((madde, i) => (
                         <FadeUpItem key={i}>

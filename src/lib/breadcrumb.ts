@@ -12,6 +12,19 @@ export interface BreadcrumbItem {
 }
 
 /**
+ * Sözlükten çözülen kırıntı — `label` yerine `labelKey` taşır.
+ *
+ * NEDEN: sunucu her zaman TR bastığı için (`getStaticLocale` sabit 'tr',
+ * kök layout `force-static`) hardcode `label` EN modda kalıcı Türkçe kalıyordu.
+ * `labelKey` istemcide `t()` ile çözülür; JSON-LD'de ise statik TR `label`
+ * kullanılır (metadata bilinçli sınır — SEO sinyali Türkçe kalır).
+ */
+export interface CrumbsI18n {
+  labelKey: string
+  href: string
+}
+
+/**
  * Sayfaların breadcrumb listeleri — TEK dosya (kullanıcı isteği:
  * "adı değişen sayfalar için 301 yönlendirme yapısı (tek dosyada)" ile
  * aynı mantık: bağlantı haritası tek yerde toplanır).
@@ -19,49 +32,66 @@ export interface BreadcrumbItem {
  * Yeni sayfa eklerken buraya bir satır eklemek yeterli; sayfa kendisi
  * `Breadcrumbs` bileşenini render eder.
  */
-export const CRUMBS: Record<string, BreadcrumbItem[]> = {
+export const CRUMBS: Record<string, CrumbsI18n[]> = {
   '/projects': [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'Projeler', href: '/projects' },
+    { labelKey: 'nav.home', href: '/' },
+    { labelKey: 'nav.projects', href: '/projects' },
   ],
   '/blog': [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'Blog', href: '/blog' },
+    { labelKey: 'nav.home', href: '/' },
+    { labelKey: 'nav.blog', href: '/blog' },
   ],
   '/about': [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'Hakkımda', href: '/about' },
+    { labelKey: 'nav.home', href: '/' },
+    { labelKey: 'nav.about', href: '/about' },
   ],
   '/contact': [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'İletişim', href: '/contact' },
+    { labelKey: 'nav.home', href: '/' },
+    { labelKey: 'nav.contact', href: '/contact' },
   ],
   '/donate': [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'Destek Ol', href: '/donate' },
+    { labelKey: 'nav.home', href: '/' },
+    { labelKey: 'nav.donate', href: '/donate' },
   ],
   '/credits': [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'Katkıda Bulunanlar', href: '/credits' },
+    { labelKey: 'nav.home', href: '/' },
+    { labelKey: 'nav.credits', href: '/credits' },
   ],
 }
 
 /** Bir yazının crumb'ı: Ana sayfa > Blog > Yazı başlığı. */
-export function postCrumbs(title: string): BreadcrumbItem[] {
+export function postCrumbs(title: string): CrumbsI18n[] {
   return [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'Blog', href: '/blog' },
-    { label: title, href: '/blog' },
+    { labelKey: 'nav.home', href: '/' },
+    { labelKey: 'nav.blog', href: '/blog' },
+    // Başlık kullanıcı verisidir — çevrilmez.
+    { labelKey: `__raw:${title}`, href: '/blog' },
   ]
 }
 
 /** Bir projenin crumb'ı: Ana sayfa > Projeler > Proje adı. */
-export function projectCrumbs(title: string, href: string): BreadcrumbItem[] {
+export function projectCrumbs(title: string, href: string): CrumbsI18n[] {
   return [
-    { label: 'Ana sayfa', href: '/' },
-    { label: 'Projeler', href: '/projects' },
-    { label: title, href },
+    { labelKey: 'nav.home', href: '/' },
+    { labelKey: 'nav.projects', href: '/projects' },
+    { labelKey: `__raw:${title}`, href },
   ]
+}
+
+/**
+ * Sözlük anahtarlarını çözülmüş etiketlere çevirir (JSON-LD için).
+ * `__raw:` ön ekli değerler (kullanıcı verisi) olduğu gibi geçer.
+ */
+export function resolveCrumbs(
+  items: CrumbsI18n[],
+  t: (k: string) => string,
+): BreadcrumbItem[] {
+  return items.map(i => ({
+    label: i.labelKey.startsWith('__raw:')
+      ? i.labelKey.slice(6)
+      : t(i.labelKey),
+    href: i.href,
+  }))
 }
 
 /**

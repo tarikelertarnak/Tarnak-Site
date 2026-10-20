@@ -1,7 +1,17 @@
 import { Navigation } from '@/components/navigation'
+import { OpenGitHub, OwnerSoon } from '@/components/owner-i18n'
 import { GithubIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
-import { getLocale } from '@/lib/i18n-server'
+
+/**
+ * GitHub sahip sayfası (`/github/[owner]`).
+ *
+ * 2026-10-20: `getLocale()` + `isEn` sunucu dallanması KALDIRILDI —
+ * dynamic route (1102 riski) + `force-static` altında boş cookie yüzünden
+ * TR ziyaretçiye İngilizce basma (ters-hata) sorunlarını birlikte çözüyor.
+ * Metin artık istemcide (`owner-i18n.tsx`).
+ */
+export const dynamic = 'force-static'
 
 export async function generateStaticParams(): Promise<
   Array<{ owner: string }>
@@ -24,8 +34,6 @@ export default async function GithubOwnerPage({
 }: {
   params: Promise<{ owner: string }>
 }) {
-  const locale = await getLocale()
-  const isEn = locale === 'en'
   const { owner } = await params
   const githubUrl = `https://github.com/${owner}`
 
@@ -37,13 +45,12 @@ export default async function GithubOwnerPage({
           <SectionTitle
             title=""
             subTitle={owner}
-            description={
-              isEn
-                ? `Repositories of ${owner} will be listed here soon.`
-                : `${owner} kullanıcısının repo'ları yakında burada listelenecek.`
-            }
+            description=""
             big
           />
+          <p className="mt-4 max-w-md text-center text-sm text-foreground/60">
+            <OwnerSoon owner={owner} />
+          </p>
           <a
             href={githubUrl}
             target="_blank"
@@ -51,7 +58,7 @@ export default async function GithubOwnerPage({
             className="mt-4 inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-foreground/10 px-3 text-sm font-medium text-foreground no-underline transition-colors hover:bg-foreground/20"
           >
             <GithubIcon size={15} />
-            {isEn ? 'Open GitHub' : 'GitHub\'da aç'}
+            <OpenGitHub />
           </a>
         </Section>
       </main>

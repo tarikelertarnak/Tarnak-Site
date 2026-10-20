@@ -3,8 +3,9 @@ import type { Metadata } from 'next'
 import type { LegalBodyProps } from '@/lib/phase6-server'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { Navigation } from '@/components/navigation'
+import { LegalBodyClient } from '@/components/phase6-client'
 import { Section } from '@/components/ui/section'
-import { getPhase6, LegalBody } from '@/lib/phase6-server'
+import { getPhase6 } from '@/lib/phase6-server'
 
 export const dynamic = 'force-static'
 
@@ -51,12 +52,9 @@ export async function LegalPage({
   )
 }
 
-/** `LegalBody`'yi sarmalayan ince katman — `undefined` güvenli. */
+/** `LegalBodyClient`'i sarmalayan ince katman — `undefined` güvenli. */
 function LegalBodyContent({ sayfa }: { sayfa?: LegalBodyProps['page'] }) {
-  if (!sayfa) {
-    return <p className="text-sm text-foreground/60">İçerik henüz eklenmedi.</p>
-  }
-  return <LegalBody page={sayfa} />
+  return <LegalBodyClient page={sayfa} />
 }
 
 export async function legalMetadata(

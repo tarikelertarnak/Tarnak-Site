@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 
 import { FadeUpItem, FadeUpSection } from '@/components/fade-up-section'
 import { Navigation } from '@/components/navigation'
+import { Phase6EmptyI18n, Phase6Title } from '@/components/phase6-client'
 import { Section } from '@/components/ui/section'
-import { getPhase6, Phase6Empty } from '@/lib/phase6-server'
+import { getPhase6 } from '@/lib/phase6-server'
 
 export const dynamic = 'force-static'
 
@@ -37,16 +38,14 @@ export default async function ChangelogPage() {
           <FadeUpSection className="w-full">
             <div className="flex flex-col gap-3">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {log?.title ?? 'Değişiklikler'}
+                <Phase6Title value={log?.title} kind="changelog" />
               </h1>
             </div>
           </FadeUpSection>
 
           <FadeUpSection className="mt-10 flex flex-col gap-6" stagger={0.08}>
             {entries.length === 0 ? (
-              <Phase6Empty title="Henüz değişiklik kaydı yok.">
-                Admin panelinden girildiğinde burada görünecek.
-              </Phase6Empty>
+              <Phase6EmptyI18n kind="changelog" />
             ) : (
               entries.map((entry, i) => (
                 <FadeUpItem key={i}>

@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 
 import { FadeUpItem, FadeUpSection } from '@/components/fade-up-section'
 import { Navigation } from '@/components/navigation'
+import { Phase6EmptyI18n, Phase6Title } from '@/components/phase6-client'
 import { Section } from '@/components/ui/section'
-import { getPhase6, Phase6Empty } from '@/lib/phase6-server'
+import { getPhase6 } from '@/lib/phase6-server'
 
 export const dynamic = 'force-static'
 
@@ -37,7 +38,7 @@ export default async function UsesPage() {
           <FadeUpSection className="w-full">
             <div className="flex flex-col gap-3">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {uses?.title ?? 'Kullandıklarım'}
+                <Phase6Title value={uses?.title} kind="uses" />
               </h1>
               {uses?.description ? (
                 <p className="max-w-2xl text-sm text-foreground/70">
@@ -49,9 +50,7 @@ export default async function UsesPage() {
 
           <div className="mt-10 flex flex-col gap-8">
             {groups.length === 0 ? (
-              <Phase6Empty title="Kullandıklarım listesi henüz eklenmedi.">
-                Admin panelinden içerik girildiğinde burada görünecek.
-              </Phase6Empty>
+              <Phase6EmptyI18n kind="uses" />
             ) : (
               groups.map(group => (
                 <FadeUpSection
