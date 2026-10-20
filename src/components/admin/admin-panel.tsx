@@ -673,126 +673,6 @@ return item
           <AddButton onPress={addNavItem} label="Menü Öğesi Düzenle" />
         </div>
       </PanelCard>
-      <PanelCard title="İletişim Bölümü">
-        <Grid>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.contact.title}
-              onValueChange={value => setContact('title', value)}
-            />
-          </Field>
-          <Field label="Alt Başlık">
-            <Input
-              variant="faded"
-              value={content.contact.subtitle}
-              onValueChange={value => setContact('subtitle', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.contact.description}
-              onValueChange={value => setContact('description', value)}
-            />
-          </Field>
-          <Field label="Buton Altı Yazısı">
-            <Input
-              variant="faded"
-              value={content.contact.footerText}
-              onValueChange={value => setContact('footerText', value)}
-            />
-          </Field>
-          <Field label="Başarı Başlığı">
-            <Input
-              variant="faded"
-              value={content.contact.successTitle}
-              onValueChange={value => setContact('successTitle', value)}
-            />
-          </Field>
-          <Field label="Başarı Metni">
-            <Input
-              variant="faded"
-              value={content.contact.successText}
-              onValueChange={value => setContact('successText', value)}
-            />
-          </Field>
-        </Grid>
-      </PanelCard>
-      <PanelCard title="Footer">
-        <Field label="Telif Hakkı İsmi">
-          <Input
-            variant="faded"
-            value={content.footer.copyright}
-            onValueChange={value => setFooter('copyright', value)}
-          />
-        </Field>
-      </PanelCard>
-      <PanelCard title="GitHub Bölümü">
-        <Grid>
-          <Field label="Alt Başlık">
-            <Input
-              variant="faded"
-              value={content.github.subtitle}
-              onValueChange={value => setGithub('subtitle', value)}
-            />
-          </Field>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.github.title}
-              onValueChange={value => setGithub('title', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.github.description}
-              onValueChange={value => setGithub('description', value)}
-            />
-          </Field>
-          <Field label="GitHub Kullanıcı Adı (projeler otomatik çekilir)">
-            <Input
-              variant="faded"
-              value={content.settings.githubUsername}
-              onValueChange={value =>
-                setSettings('githubUsername', value)}
-            />
-          </Field>
-        </Grid>
-        <p className="mt-3 text-xs text-foreground-500">
-          Kullanıcı adı (örn.
-{' '}
-<span className="font-mono">TARIKTR1099</span>
-          ) yazarsan sitendeki "GitHub Projects" bölümü bu hesabın public
-          repolarını gösterir. Boş bırakırsan bölüm gizlenir.
-        </p>
-      </PanelCard>
-      <PanelCard title="Chat Bölümü">
-        <Grid>
-          <Field label="Alt Başlık">
-            <Input
-              variant="faded"
-              value={content.chat.subtitle}
-              onValueChange={value => setChat('subtitle', value)}
-            />
-          </Field>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.chat.title}
-              onValueChange={value => setChat('title', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.chat.description}
-              onValueChange={value => setChat('description', value)}
-            />
-          </Field>
-        </Grid>
-      </PanelCard>
       <PanelCard title="Arka Plan">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -1550,6 +1430,137 @@ tablosundan
     />
   )
 
+  /**
+   * Sayfa bölümü metinleri (2026-10-20, kullanıcı isteği): "Sayfa Düzenle"
+   * sekmesinde TÜM sayfa metinleri düzenlenebilsin diye bu kartlar "Site
+   * Ayarları"ndan (generalPane) buraya taşındı — Ayarlar artık gerçekten
+   * ayar (hero/menü/tema/sosyal/güvenlik) tutar.
+   */
+  const pageSectionsPane = (
+    <div className="space-y-4">
+      <PanelCard title="GitHub Bölümü">
+        <Grid>
+          <Field label="Alt Başlık">
+            <Input
+              variant="faded"
+              value={content.github.subtitle}
+              onValueChange={value => setGithub('subtitle', value)}
+            />
+          </Field>
+          <Field label="Başlık">
+            <Input
+              variant="faded"
+              value={content.github.title}
+              onValueChange={value => setGithub('title', value)}
+            />
+          </Field>
+          <Field label="Açıklama">
+            <Input
+              variant="faded"
+              value={content.github.description}
+              onValueChange={value => setGithub('description', value)}
+            />
+          </Field>
+          <Field label="GitHub Kullanıcı Adı (projeler otomatik çekilir)">
+            <Input
+              variant="faded"
+              value={content.settings.githubUsername}
+              onValueChange={value =>
+                setSettings('githubUsername', value)}
+            />
+          </Field>
+        </Grid>
+        <p className="mt-3 text-xs text-foreground-500">
+          Kullanıcı adı (örn.
+{' '}
+<span className="font-mono">TARIKTR1099</span>
+          ) yazarsan sitendeki "GitHub Projects" bölümü bu hesabın public
+          repolarını gösterir. Boş bırakırsan bölüm gizlenir.
+        </p>
+      </PanelCard>
+      <PanelCard title="Chat Bölümü">
+        <Grid>
+          <Field label="Alt Başlık">
+            <Input
+              variant="faded"
+              value={content.chat.subtitle}
+              onValueChange={value => setChat('subtitle', value)}
+            />
+          </Field>
+          <Field label="Başlık">
+            <Input
+              variant="faded"
+              value={content.chat.title}
+              onValueChange={value => setChat('title', value)}
+            />
+          </Field>
+          <Field label="Açıklama">
+            <Input
+              variant="faded"
+              value={content.chat.description}
+              onValueChange={value => setChat('description', value)}
+            />
+          </Field>
+        </Grid>
+      </PanelCard>
+      <PanelCard title="İletişim Bölümü">
+        <Grid>
+          <Field label="Başlık">
+            <Input
+              variant="faded"
+              value={content.contact.title}
+              onValueChange={value => setContact('title', value)}
+            />
+          </Field>
+          <Field label="Alt Başlık">
+            <Input
+              variant="faded"
+              value={content.contact.subtitle}
+              onValueChange={value => setContact('subtitle', value)}
+            />
+          </Field>
+          <Field label="Açıklama">
+            <Input
+              variant="faded"
+              value={content.contact.description}
+              onValueChange={value => setContact('description', value)}
+            />
+          </Field>
+          <Field label="Buton Altı Yazısı">
+            <Input
+              variant="faded"
+              value={content.contact.footerText}
+              onValueChange={value => setContact('footerText', value)}
+            />
+          </Field>
+          <Field label="Başarı Başlığı">
+            <Input
+              variant="faded"
+              value={content.contact.successTitle}
+              onValueChange={value => setContact('successTitle', value)}
+            />
+          </Field>
+          <Field label="Başarı Metni">
+            <Input
+              variant="faded"
+              value={content.contact.successText}
+              onValueChange={value => setContact('successText', value)}
+            />
+          </Field>
+        </Grid>
+      </PanelCard>
+      <PanelCard title="Footer">
+        <Field label="Telif Hakkı İsmi">
+          <Input
+            variant="faded"
+            value={content.footer.copyright}
+            onValueChange={value => setFooter('copyright', value)}
+          />
+        </Field>
+      </PanelCard>
+    </div>
+  )
+
   /** "Veri Yönetimi" sekmesinin gövdesi — tablo CRUD (2026-10-20). */
   const dataPane = (
     <DataManager key={dataResource} initialResource={dataResource} />
@@ -1605,6 +1616,9 @@ tablosundan
         </SubSection>
         <SubSection title="Blog Yazıları" icon="mdi:post-outline">
           {blogPane}
+        </SubSection>
+        <SubSection title="Sayfa Bölümleri" icon="mdi:page-layout-body">
+          {pageSectionsPane}
         </SubSection>
         <SubSection title="Ek Bölümler" icon="mdi:view-timeline-outline">
           {sectionsPane}

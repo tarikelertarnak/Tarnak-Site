@@ -195,8 +195,21 @@ describe('adminPanel', () => {
       .map(h => h.textContent)
     expect(headings).toContain('Projeler')
     expect(headings).toContain('Blog Yazıları')
+    expect(headings).toContain('Sayfa Bölümleri')
     // Veri Yönetimi artık ayrı sekmede; buranın parçası değil.
     expect(headings).not.toContain('Veri Yönetimi (Tablolar)')
+  })
+
+  it('sayfa düzenle > sayfa bölümleri kartları tüm sayfa metinlerini içerir (GitHub/Chat/İletişim/Footer)', async () => {
+    renderPanel()
+    fireEvent.click(screen.getByRole('tab', { name: /Sayfa Düzenle/ }))
+    await waitFor(() => expect(screen.getByText('Sayfa Bölümleri')).toBeTruthy())
+    const cards = screen.getAllByRole('heading', { level: 2 }).map(h => h.textContent)
+    // Kullanıcı isteği: bu kartlar "Site Ayarları"ndan buraya taşındı.
+    expect(cards).toContain('GitHub Bölümü')
+    expect(cards).toContain('Chat Bölümü')
+    expect(cards).toContain('İletişim Bölümü')
+    expect(cards).toContain('Footer')
   })
 
   it('veri yönetimi sekmesi tablo CRUD bileşenini gösterir', async () => {
