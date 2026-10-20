@@ -3,8 +3,6 @@
 import { Icon } from '@iconify/react'
 import { useEffect, useState } from 'react'
 
-import { cn } from '@/components/ui/cn'
-
 interface VisitorStats {
   today: number | null
   last7: number | null
@@ -15,8 +13,10 @@ interface VisitorStats {
 }
 
 /**
- * Genel Bakış — Ziyaretçi kartı: 4 sayı (bugün / 7 gün / 30 gün / toplam)
- * ve "kendi ziyaretlerimi sayma" anahtarı.
+ * Genel Bakış — Ziyaretçi kartı: 4 sayı (bugün / 7 gün / 30 gün / toplam).
+ *
+ * "Kendi ziyaretlerimi sayma" anahtarı 2026-10-20'de KALDIRILDI (kullanıcı
+ * isteği) — `visits` tablosu canlıda yok, anahtar zaten işe yaramıyordu.
  *
  * Sayılar `null` olduğunda veri bilinmiyor (tablo yok / migration henüz
  * çalışmamış) — "0" ile karıştırılmaz, "—" gösterilir.
@@ -24,7 +24,6 @@ interface VisitorStats {
 export function VisitorCard() {
   const [stats, setStats] = useState<VisitorStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [toggling, setToggling] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -51,28 +50,6 @@ export function VisitorCard() {
       alive = false
     }
   }, [])
-
-  const toggle = () => {
-    if (!stats || toggling)
-      return
-    const next = !stats.excludeSelf
-    setToggling(true)
-    setError('')
-    fetch('/api/admin/visits', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enable: next }),
-      cache: 'no-store',
-    })
-      .then(async (r) => {
-        const data = await r.json()
-        if (!r.ok)
-          throw new Error(String(data.error ?? 'failed'))
-        setStats(prev => prev ? { ...prev, ...data } : prev)
-      })
-      .catch((e: Error) => setError(e.message))
-      .finally(() => setToggling(false))
-  }
 
   const num = (v: number | null | undefined) => (v === null || v === undefined ? '—' : String(v))
 
@@ -117,22 +94,6 @@ export function VisitorCard() {
               <p className="mt-1 text-[10px] text-foreground/40">
                 Aynı tarayıcı girişli/girişsiz tek kişi sayılır.
               </p>
-
-              <button
-                type="button"
-                onClick={toggle}
-                disabled={toggling}
-                aria-pressed={Boolean(stats?.excludeSelf)}
-                className={cn(
-                  'mt-1.5 rounded-lg border px-2 py-1 text-[11px] transition-colors',
-                  stats?.excludeSelf
-                    ? 'border-primary/40 bg-primary/10 text-primary'
-                    : 'border-foreground/15 text-foreground/70 hover:border-foreground/30',
-                  'disabled:opacity-50',
-                )}
-              >
-                {stats?.excludeSelf ? 'Kendi ziyaretlerim sayılmıyor (kapat)' : 'Kendi ziyaretlerimi sayma'}
-              </button>
               {error && (
                 <p className="mt-1 text-[10px] text-danger">{error}</p>
               )}

@@ -209,6 +209,14 @@ describe('overviewPanel', () => {
     await waitFor(() => expect(screen.getByText('Sunucuya ulaşılamadı.')).toBeTruthy())
   })
 
+  it('ziyaretci kartinda "kendi ziyaretlerimi sayma" butonu YOK (2026-10-20 kaldirildi)', async () => {
+    mockFetch(PAYLOAD)
+    render(<OverviewPanel />)
+
+    await waitFor(() => expect(screen.getByText('Ziyaretçi (tekil kişi)')).toBeTruthy())
+    expect(screen.queryByText(/[Kk]endi ziyaretlerimi/)).toBeNull()
+  })
+
   it('son kayitlari listeler (yayinda/taslak/yeni etiketleriyle)', async () => {
     mockFetch(PAYLOAD)
     render(<OverviewPanel />)

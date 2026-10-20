@@ -35,6 +35,7 @@ import { SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { aboutPageErrors, normalizeAboutPage } from '@/lib/about-page'
 import { clientFetchUserRepos } from '@/lib/github-client'
+import { scrollToElement } from '@/lib/scroll'
 import { SECTION_SPECS } from '@/lib/section-fields'
 
 type SaveStatus = { type: 'success' | 'error', text: string } | null
@@ -85,6 +86,26 @@ return
       .then(setGithubRepos)
       .catch(() => setGithubRepos([]))
     // Load only on mount (repo count rarely changes)
+  }, [])
+
+  /**
+   * GitHub kartındaki "Düzenle": proje formunun bulunduğu "Sayfa Düzenle"
+   * sekmesine geçer ve ilgili karta kaydırır (2026-10-20). Kart ayrı bir
+   * bileşen (GitHubReposAdmin) olduğu için olay üzerinden haberleşiyoruz.
+   */
+  useEffect(() => {
+    const onEditProject = (e: Event) => {
+      const index = (e as CustomEvent<{ index: number }>).detail?.index
+      if (typeof index !== 'number')
+        return
+      setTab('pages')
+      // Sekme paneli çizildikten sonra elemanın DOM'da olmasını bekle.
+      requestAnimationFrame(() => {
+        scrollToElement(document.getElementById(`admin-project-${index}`))
+      })
+    }
+    window.addEventListener('admin:edit-project', onEditProject)
+    return () => window.removeEventListener('admin:edit-project', onEditProject)
   }, [])
 
   /**
@@ -462,32 +483,6 @@ return item
     }))
   }
 
-  const addGithubRepo = (repo: GitHubRepo) => {
-    setContent((prev) => {
-      if (prev.projects.items.some(p => p.title === repo.name))
-return prev
-      const [owner, repoName] = repo.fullName.split('/')
-      const item: ProjectItem = {
-        title: repo.name,
-        notice: '',
-        description: repo.description ?? '',
-        projectLink: `/github/${owner}/${repoName}`,
-        srcLink: repo.url,
-        image: '',
-        stars: repo.stars,
-        forks: repo.forks,
-        updatedAt: repo.updatedAt,
-        tags: repo.topics ?? [],
-        visible: true,
-        isVisible: true,
-      }
-      return {
-        ...prev,
-        projects: { ...prev.projects, items: [item, ...prev.projects.items] },
-      }
-    })
-  }
-
   const setSocial = (index: number, field: keyof SocialItem, value: string) => {
     setContent((prev) => {
       const social = prev.social.map((item, i) =>
@@ -515,8 +510,10 @@ return prev
   const overviewPane = (
     <OverviewPanel
       onNavigate={(key) => {
+        // Genel Bakış'taki tablo kartları "Veri Yönetimi" sekmesine atlar
+        // (2026-10-20: sekme 'content'ten 'data'ya taşındı).
         setDataResource(key)
-        setTab('content')
+        setTab('data')
       }}
     />
   )
@@ -1378,6 +1375,7 @@ tablosundan
           {content.projects.items.map((item, index) => (
             <ItemCard
               key={index}
+              id={`admin-project-${index}`}
               title={`${item.title || `Proje #${index + 1}`}`}
               onRemove={() => removeProject(index)}
             >
@@ -1531,79 +1529,6 @@ tablosundan
       </PanelCard>
 
       <GitHubReposAdmin githubRepos={githubRepos} content={content} setContent={setContent} />
-
-      <PanelCard title={`GitHub Repoları (${githubRepos.length})`}>
-        <p className="mb-3 text-xs text-foreground-500">
-          GitHub hesabındaki public repo'lar. 'Eksik' olanlar sitede
-          görünmüyor — tek tıkla ekleyebilirsin. Düzenledikten sonra Kaydet'e
-          bas.
-        </p>
-        {githubRepos.length === 0 ? (
-          <p className="text-xs text-foreground-500">
-            Repo listesi yükleniyor veya alınamıyor (GitHub kullanıcı adı
-            ayarla: Site › GitHub Kullanıcı Adı).
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {githubRepos.map((repo) => {
-              const inSite = content.projects.items.some(
-                p => p.title === repo.name,
-              )
-              return (
-                <div
-                  key={repo.name}
-                  className="flex flex-row items-center gap-3 rounded-lg border border-foreground-200/10 p-2.5"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-foreground">
-                      {repo.name}
-                    </p>
-                    {repo.description && (
-                      <p className="truncate text-xs text-foreground-500">
-                        {repo.description}
-                      </p>
-                    )}
-                    <p className="mt-0.5 text-[10px] text-foreground-600">
-                      ★
-{' '}
-{repo.stars}
-{' '}
-·
-{' '}
-{repo.forks}
-{' '}
-fork ·
-{' '}
-                      {repo.language ?? '—'}
-                    </p>
-                  </div>
-                  {inSite ? (
-                    <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                      Sitede var
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => addGithubRepo(repo)}
-                      className="shrink-0 h-8 rounded-lg bg-primary px-3 text-xs font-semibold text-primary-fg hover:bg-primary/90"
-                    >
-                      Düzenle
-                    </button>
-                  )}
-                  <a
-                    href={repo.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="shrink-0 text-xs text-foreground-500 hover:text-primary"
-                  >
-                    GitHub ↗
-                  </a>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </PanelCard>
     </div>
   )
 
@@ -1625,12 +1550,12 @@ fork ·
     />
   )
 
-  /** Eski "data" sekmesinin gövdesi — artık bir grubun alt bölümü. */
+  /** "Veri Yönetimi" sekmesinin gövdesi — tablo CRUD (2026-10-20). */
   const dataPane = (
     <DataManager key={dataResource} initialResource={dataResource} />
   )
 
-  /** Eski "settings" sekmesinin gövdesi — artık bir grubun alt bölümü. */
+  /** "Site Ayarları" sekmesinin Şifre & Güvenlik alt bölümü. */
   const securityPane = (
     <div className="space-y-4 pt-4">
       <PasswordCard />
@@ -1671,8 +1596,8 @@ fork ·
       ),
     },
     {
-      key: 'content',
-      label: <TabLabel icon="mdi:file-document-multiple-outline" text="İçerik & Veri" />,
+      key: 'pages',
+      label: <TabLabel icon="mdi:file-document-edit-outline" text="Sayfa Düzenle" />,
       children: (
         <div className="min-w-0 space-y-8">
         <SubSection title="Projeler" icon="mdi:folder-outline">
@@ -1683,9 +1608,6 @@ fork ·
         </SubSection>
         <SubSection title="Ek Bölümler" icon="mdi:view-timeline-outline">
           {sectionsPane}
-        </SubSection>
-        <SubSection title="Veri Yönetimi (Tablolar)" icon="mdi:cog-outline">
-          {dataPane}
         </SubSection>
         </div>
       ),
@@ -1703,6 +1625,17 @@ fork ·
         </SubSection>
         <SubSection title="Şifre & Güvenlik" icon="mdi:shield-lock-outline">
           {securityPane}
+        </SubSection>
+        </div>
+      ),
+    },
+    {
+      key: 'data',
+      label: <TabLabel icon="mdi:table-cog-outline" text="Veri Yönetimi" />,
+      children: (
+        <div className="min-w-0 space-y-8">
+        <SubSection title="Veri Yönetimi (Tablolar)" icon="mdi:table-cog-outline">
+          {dataPane}
         </SubSection>
         </div>
       ),
@@ -1897,15 +1830,17 @@ function Field({ label, children }: { label: string, children: ReactNode }) {
 
 function ItemCard({
   title,
+  id,
   children,
   onRemove,
 }: {
   title: string
+  id?: string
   children: ReactNode
   onRemove: () => void
 }) {
   return (
-    <Card className="p-3 sm:p-4 bg-background">
+    <Card id={id} className="p-3 sm:p-4 bg-background">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-semibold">{title}</p>
         <Button

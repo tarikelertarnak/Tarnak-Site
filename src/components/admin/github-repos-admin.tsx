@@ -98,7 +98,11 @@ fork ·
                       variant="bordered"
                       startContent={<Icon icon="mdi:pencil" width={16} height={16} />}
                       onPress={() => {
-                        // focus logic not needed; admin already has form by title? but we rely on existing addGithubRepo behavior? keep minimal: just ensure edit flow works by calling addGithubRepo? no. better to just indicate edit exists
+                        // "Düzenle" = Sayfa Düzenle sekmesindeki proje formuna
+                        // atla (2026-10-20). Kartta id var; sekme şeridi ve
+                        // panelin kendisi ayrı bileşen olduğu için önce
+                        // sekme değişimi tetiklenir, sonra o karta kaydırılır.
+                        window.dispatchEvent(new CustomEvent('admin:edit-project', { detail: { index: idx } }))
                       }}
                     >
                       Düzenle

@@ -3,13 +3,15 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/components/ui/cn'
 
-export function Card({ children, className }: { children: ReactNode, className?: string }) {
+export function Card({ children, className, ...rest }: { children: ReactNode, className?: string } & React.HTMLAttributes<HTMLDivElement>) {
   // İÇ KART (surface-2): `bg-background` token'ı artık surface-2'yi okuyor,
   // yani kart üstündeki dış gruptan (surface-1) bir katman açıkta.
   // `border-surface-border` hover OLMADAN da kartın çizgisini görünür
   // kılar — aksi halde kart ancak üzerine gelince ayrışıyordu (2026-10-05).
+  // `...rest`: admin `ItemCard` başlığa atlamak için `id` geçirir.
   return (
     <div
+      {...rest}
       className={cn(
         'flex flex-col relative overflow-hidden rounded-2xl border border-surface-border bg-background transition-colors hover:border-primary/40',
         className,

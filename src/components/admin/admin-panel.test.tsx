@@ -76,6 +76,11 @@ vi.mock('@/components/admin/overview-panel', () => ({
 vi.mock('@/components/admin/data-manager', () => ({
   DataManager: () => <div data-testid="data-manager" />,
 }))
+// Gerçek kart yerine işaretli sürüm: "her repoyu TEK kart render eder"
+// sözleşmesini test etmek için (üstteki ölü kopya geri gelmesin).
+vi.mock('@/components/admin/github-repos-admin', () => ({
+  GitHubReposAdmin: () => <div data-testid="github-repos-admin" />,
+}))
 vi.mock('@/components/admin/sections-editor', () => ({
   SectionsEditor: () => <div data-testid="sections-editor" />,
 }))
@@ -127,14 +132,15 @@ describe('adminPanel', () => {
     expect(heading.className).toContain('uppercase')
   })
 
-  it('sekme sayısı 5; geliştirme fazı adı (Faz 6) hiçbir yerde kalmadı', () => {
+  it('sekme sayısı 6; geliştirme fazı adı (Faz 6) hiçbir yerde kalmadı', () => {
     renderPanel()
     const tabs = screen.getAllByRole('tab')
     expect(tabs.map(t => t.textContent)).toEqual([
       'Genel Bakış',
       'Profil & Hakkımda',
-      'İçerik & Veri',
+      'Sayfa Düzenle',
       'Site Ayarları',
+      'Veri Yönetimi',
       'Kullanıcılar',
     ])
     expect(document.body.textContent).not.toMatch(/Faz\s*6|phase6/i)
@@ -158,6 +164,14 @@ describe('adminPanel', () => {
     expect(input.value).toBe('TARIK')
   })
 
+  it('github Repoları kartı SADECE BİR kez render edilir (üstteki ölü kopya geri gelmedi)', async () => {
+    renderPanel()
+    fireEvent.click(screen.getByRole('tab', { name: /Sayfa Düzenle/ }))
+    await waitFor(() => expect(screen.getByText('Ek Bölümler')).toBeTruthy())
+    // Ölü inline kopya silindi (2026-10-20): kartı yalnızca GitHubReposAdmin çizer.
+    expect(screen.getAllByTestId('github-repos-admin')).toHaveLength(1)
+  })
+
   it('genel bakış sekmesinde özet panel görünür', () => {
     renderPanel()
     expect(screen.getByTestId('overview-panel')).toBeTruthy()
@@ -171,17 +185,27 @@ describe('adminPanel', () => {
     expect(screen.getByText('Bölüm Başlıkları')).toBeTruthy()
   })
 
-  it('içerik & veri sekmesi projeler, blog, ek bölümler ve veri yönetimini gösterir', async () => {
+  it('sayfa düzenle sekmesi projeler, blog ve ek bölümleri gösterir (İçerik & Veri kaldırıldı)', async () => {
     renderPanel()
-    fireEvent.click(screen.getByRole('tab', { name: /İçerik & Veri/ }))
-    await waitFor(() => expect(screen.getByTestId('data-manager')).toBeTruthy())
-    expect(screen.getByText('Ek Bölümler')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: /Sayfa Düzenle/ }))
+    await waitFor(() => expect(screen.getByText('Ek Bölümler')).toBeTruthy())
     expect(screen.getByTestId('sections-editor')).toBeTruthy()
     const headings = screen
       .getAllByRole('heading', { level: 2 })
       .map(h => h.textContent)
     expect(headings).toContain('Projeler')
     expect(headings).toContain('Blog Yazıları')
+    // Veri Yönetimi artık ayrı sekmede; buranın parçası değil.
+    expect(headings).not.toContain('Veri Yönetimi (Tablolar)')
+  })
+
+  it('veri yönetimi sekmesi tablo CRUD bileşenini gösterir', async () => {
+    renderPanel()
+    fireEvent.click(screen.getByRole('tab', { name: /Veri Yönetimi/ }))
+    await waitFor(() => expect(screen.getByTestId('data-manager')).toBeTruthy())
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map(h => h.textContent)
     expect(headings).toContain('Veri Yönetimi (Tablolar)')
   })
 
