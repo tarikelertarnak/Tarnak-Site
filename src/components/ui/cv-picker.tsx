@@ -60,8 +60,8 @@ export function CvPicker({
       elle `<div>` + iki `<Button>` yazmak yazildi ve sonuc bozuk oldu:
       LobeButton her parçaya kendi `rounded-lg`/padding'ini dayatıyor, iki
       parça arasında çatlak ve yuvarlak ic koseler kaliyordu. Artik
-      parçalar sade `<a>` — indirme `download` ozniteligi ve yeni sekme
-      `target` semantigi aynen korunuyor.
+      parçalar sade `<a>` — indirme `download` ozniteligi aynen korunuyor;
+      görüntüleme YENI SEKMEDE ACILMAZ (`target` yok, aynı sekme).
       Ikon once, sonra yazi (kullanici istegi): goz simgesi "CV" kelimesinin
       SOLUNDA.
     */
@@ -70,8 +70,6 @@ export function CvPicker({
         parts={[
           {
             href,
-            target: '_blank',
-            rel: 'noopener noreferrer',
             children: (
               <>
                 <EyeIcon size={16} />
@@ -113,19 +111,28 @@ export function CvPicker({
           </div>
           <div className="max-h-56 overflow-y-auto p-1.5">
             {filtered.map(c => (
-              <a
+              <div
                 key={c.id}
-                href={c.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setOpen(false)}
-                className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-sm text-foreground/80 no-underline transition-colors hover:bg-primary/10 hover:text-primary"
+                className="flex w-full items-center gap-1 rounded-lg transition-colors hover:bg-primary/10"
               >
-                <span className="flex min-w-0 items-center gap-1.5">
+                <a
+                  href={c.href}
+                  onClick={() => setOpen(false)}
+                  className="flex min-w-0 flex-1 items-center gap-1.5 rounded-lg px-2.5 py-2 text-sm text-foreground/80 no-underline transition-colors hover:text-primary"
+                >
+                  <EyeIcon size={14} className="shrink-0 opacity-60" />
                   <span className="truncate">{c.label}</span>
-                </span>
-                <DownloadIcon size={14} className="shrink-0 opacity-60" />
-              </a>
+                </a>
+                <a
+                  href={c.href}
+                  download
+                  aria-label={t('about.cvDownload')}
+                  onClick={() => setOpen(false)}
+                  className="mr-1 flex size-7 shrink-0 items-center justify-center rounded-md text-foreground/60 no-underline transition-colors hover:bg-primary/15 hover:text-primary"
+                >
+                  <DownloadIcon size={14} />
+                </a>
+              </div>
             ))}
             {filtered.length === 0 && (
               <p className="px-2.5 py-3 text-center text-xs text-foreground/50">

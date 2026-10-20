@@ -63,7 +63,9 @@
     {
       "name": "Tarnak",
       "href": "https://discord.gg/Fp8WbUw4KB",
-      "icon": "mdi:discord"
+      "icon": "mdi:discord",
+      "label": "Discord",
+      "value": "tarikeler"
     }
   ],
   "about": {

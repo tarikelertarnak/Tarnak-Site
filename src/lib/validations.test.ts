@@ -104,4 +104,52 @@ describe('contentSchema', () => {
     expect(contentSchema.safeParse(null).success).toBe(false)
     expect(contentSchema.safeParse('metin').success).toBe(false)
   })
+
+  /*
+    REGRESYON (2026-10-20): `socialItem` semasinda `label`/`value` YOKTU.
+    `content.ts` → `SocialItem.label?/value?` alanlarini TANIMLIYOR ve
+    `contact-channels.ts:158-160` bunlari override olarak kullaniyor
+    (ör. Discord'un gorunen degeri "tarikeler"). Sema eksik oldugu icin
+    admin panelden HERHANGI bir icerik kaydi bu alanlari sessizce siliyordu
+    — kullaniciya hicbir hata gostermeden (zod4 z.object whitelist tuzagi,
+    AGENTS.md §12'deki `phase6` olayi ile ayni sinif hata).
+  */
+  it('social[] label/value alanlarini KORUR — regresyon', () => {
+    const input = realContent()
+    const social = input.social as Array<Record<string, unknown>>
+    social[0] = { ...social[0], label: 'GitHub Hesabim', value: 'tarikelertarnak' }
+
+    const r = contentSchema.safeParse(input)
+    expect(r.success).toBe(true)
+    if (!r.success) {
+      return
+    }
+    const first = r.data.social[0] as Record<string, unknown>
+    expect(first.label).toBe('GitHub Hesabim')
+    expect(first.value).toBe('tarikelertarnak')
+  })
+
+  it('gercek content.json Discord override i kalici (tarikeler)', () => {
+    const r = contentSchema.safeParse(realContent())
+    expect(r.success).toBe(true)
+    if (!r.success) {
+      return
+    }
+    const discord = r.data.social.find(s => s.icon === 'mdi:discord')
+    expect(discord?.value).toBe('tarikeler')
+  })
+
+  it('label/value OPSIYONEL — yoksa da gecer', () => {
+    const input = realContent()
+    const social = input.social as Array<Record<string, unknown>>
+    social[1] = { name: 'X', href: 'https://x.com/y', icon: 'mdi:twitter' }
+
+    const r = contentSchema.safeParse(input)
+    expect(r.success).toBe(true)
+    if (!r.success) {
+      return
+    }
+    expect(r.data.social[1].label).toBeUndefined()
+    expect(r.data.social[1].value).toBeUndefined()
+  })
 })

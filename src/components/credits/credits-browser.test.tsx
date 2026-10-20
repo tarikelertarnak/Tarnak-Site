@@ -31,8 +31,8 @@ const FILE = join(process.cwd(), 'src/components/credits/credits-browser.tsx')
 const SRC = readFileSync(FILE, 'utf8').replace(/\r\n/g, '\n')
 
 const TEAM = [
-  { name: 'Ekip Üyesi Bir', role: 'Kurucu', roleEn: 'Founder' },
-  { name: 'Ekip Üyesi İki', role: 'Geliştirici', roleEn: 'Developer' },
+  { name: 'Ekip Üyesi Bir', roleKey: 'credits.roleFounder' },
+  { name: 'Ekip Üyesi İki', roleKey: 'credits.roleFounder' },
 ]
 
 const SPONSORS = [

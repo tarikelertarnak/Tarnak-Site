@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 
 import type { LegalBodyProps } from '@/lib/phase6-server'
+import { FadeUpSection } from '@/components/fade-up-section'
 import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
-import { getStaticLocale } from '@/lib/i18n-server'
 import { getPhase6, LegalBody } from '@/lib/phase6-server'
 
 export const dynamic = 'force-static'
@@ -35,14 +35,16 @@ export async function LegalPage({
           id={yol.slice(1)}
           framed
         >
-          <div className="flex flex-col gap-3">
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {sayfa?.title ?? varsayilanBaslik}
-            </h1>
-          </div>
-          <div className="mt-10">
+          <FadeUpSection className="w-full">
+            <div className="flex flex-col gap-3">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                {sayfa?.title ?? varsayilanBaslik}
+              </h1>
+            </div>
+          </FadeUpSection>
+          <FadeUpSection className="mt-10">
             <LegalBodyContent sayfa={sayfa} />
-          </div>
+          </FadeUpSection>
         </Section>
       </main>
     </div>
@@ -62,15 +64,13 @@ export async function legalMetadata(
   baslik: string,
   aciklama: string,
 ): Promise<Metadata> {
-  const isEn = (await getStaticLocale()) === 'en'
-  const title = isEn
-    ? `${baslik} — TARIK ELER - TARNAK`
-    : `${baslik} — TARIK ELER - TARNAK`
-  const desc = isEn ? aciklama : aciklama
+  // Metadata sunucuda sabit TR kalir (getStaticLocale 'tr'); hukuki basliklar
+  // zaten TR metin olarak verilir.
+  const title = `${baslik} — TARIK ELER - TARNAK`
   return {
     title,
-    description: desc,
+    description: aciklama,
     alternates: { canonical: yol },
-    openGraph: { title, description: desc, url: yol, type: 'website' },
+    openGraph: { title, description: aciklama, url: yol, type: 'website' },
   }
 }

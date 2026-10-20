@@ -34,6 +34,15 @@ step() { printf '\n\033[1m### %s\033[0m\n' "$1"; }
 # ---------------------------------------------------------------- senkron
 step "1/5 kaynak senkronu (Windows -> WSL)"
 mkdir -p "$DST"
+# 2026-10-20: `src/` de public/ gibi TAMAMEN silinip yeniden kopyalanir.
+#
+# Neden: yalniz `cp -r` YETMIYOR. Kaynakta SILINEN dosya (ör. bir rota baska
+# yere tasindiginda) WSL kopyasinda KALIYOR, ustune yeni kopya gelince Next
+# "You cannot have two parallel pages that resolve to the same path" ile
+# build'i patlatiyor. Route group tasimasinda (`src/app/(public)/*`)
+# bizzat yasandi. `scripts/` da ayni riski tasir.
+rm -rf "$DST/src" "$DST/scripts"
+mkdir -p "$DST/src" "$DST/scripts"
 cp -r "$SRC_WIN/src/." "$DST/src/"
 cp -r "$SRC_WIN/scripts/." "$DST/scripts/"
 cp "$SRC_WIN/package.json" "$DST/package.json"
@@ -58,7 +67,7 @@ done
 # Dizinleri yerinde BOSALTMak yerine TAMAMEN silip yeniden kuruyoruz:
 # `rm -rf "$DST/public/."` reddediliyor ("refusing to remove '.' or '..'"),
 # `rm -rf "$DST/public"/*` ise nokta ile baslayan dosya adlarini gormezdi.
-rm -rf "$DST/public" "$DST/data"
+rm -rf "$DST/public" "$DST/data" "$DST/.open-next"
 mkdir -p "$DST/public" "$DST/data"
 cp -r "$SRC_WIN/public/." "$DST/public/"
 cp -r "$SRC_WIN/data/." "$DST/data/"

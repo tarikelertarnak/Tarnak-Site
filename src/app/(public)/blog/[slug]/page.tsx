@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { TrackBlogView } from '@/app/blog/[slug]/track-view'
+import { TrackBlogView } from '@/app/(public)/blog/[slug]/track-view'
 import { BackToListButton } from '@/components/back-to-list-button'
 import { CodeCopyEnhancer } from '@/components/code-copy-enhancer'
+import { FadeUpItem, FadeUpSection } from '@/components/fade-up-section'
 import { Navigation } from '@/components/navigation'
 import { ReadingProgress } from '@/components/reading-progress'
 import { getPostBySlug, getPosts } from '@/lib/blog'
@@ -203,40 +204,38 @@ export default async function PostPage({ params }: PostPageProps) {
               }),
             }}
           />
-          <header className="mb-6 flex flex-col gap-2">
-            {' '}
-            <p className="text-xs sm:text-sm text-foreground-500">
-              {' '}
-              {new Date(post.date).toLocaleDateString(
-                locale === 'tr' ? 'tr-TR' : 'en-GB',
-                { day: 'numeric', month: 'long', year: 'numeric' },
+          <FadeUpSection>
+            <header className="mb-6 flex flex-col gap-2">
+              <p className="text-xs sm:text-sm text-foreground-500">
+                {new Date(post.date).toLocaleDateString(
+                  locale === 'tr' ? 'tr-TR' : 'en-GB',
+                  { day: 'numeric', month: 'long', year: 'numeric' },
+                )}
+              </p>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
+                {post.title}
+              </h1>
+              {post.tags && post.tags.length > 0 && (
+                <div className="mt-1 flex flex-row flex-wrap gap-1.5">
+                  {post.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-bold text-primary"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               )}
+            </header>
+          </FadeUpSection>
 {' '}
-            </p>
-{' '}
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">
-              {post.title}
-            </h1>
-{' '}
-            {post.tags && post.tags.length > 0 && (
-              <div className="mt-1 flex flex-row flex-wrap gap-1.5">
-                {post.tags.map(tag => (
-                  <span
-                    key={tag}
-                    className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[11px] font-bold text-primary"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-{' '}
-          </header>
-{' '}
-          <div
-            className="markdown-body text-sm sm:text-base leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
-          />
+          <FadeUpSection>
+            <div
+              className="markdown-body text-sm sm:text-base leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
+            />
+          </FadeUpSection>
 {' '}
           {/*
             İLGİLİ YAZILAR
@@ -244,41 +243,45 @@ export default async function PostPage({ params }: PostPageProps) {
             yakın yazılar. Puanlama `src/lib/post-utils.ts` → `relatedPosts`.
           */}
           {ilgiliYazilar.length > 0 && (
-            <section
-              aria-labelledby="ilgili-yazilar"
+            <FadeUpSection
               className="mt-10 border-t border-foreground/10 pt-8"
+              stagger={0.08}
             >
-              <h2 id="ilgili-yazilar" className="mb-4 text-lg font-bold">
-                {t(locale, 'blog.related')}
-              </h2>
-              <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {ilgiliYazilar.map(ilgili => (
-                  <li key={ilgili.id}>
-                    <Link
-                      href={`/blog/${ilgili.slug}`}
-                      className="block h-full rounded-xl border border-foreground/10 p-4 transition-colors duration-200 hover:border-primary/50"
-                    >
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {postKind(ilgili) === 'til' && (
-                          <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
-                            TIL
-                          </span>
-                        )}
-                        <time
-                          dateTime={ilgili.date}
-                          className="text-xs text-foreground/50"
+              <section aria-labelledby="ilgili-yazilar">
+                <h2 id="ilgili-yazilar" className="mb-4 text-lg font-bold">
+                  {t(locale, 'blog.related')}
+                </h2>
+                <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {ilgiliYazilar.map(ilgili => (
+                    <li key={ilgili.id}>
+                      <FadeUpItem className="h-full">
+                        <Link
+                          href={`/blog/${ilgili.slug}`}
+                          className="block h-full rounded-xl border border-foreground/10 p-4 transition-colors duration-200 hover:border-primary/50"
                         >
-                          {ilgili.date}
-                        </time>
-                      </div>
-                      <p className="mt-1.5 text-sm font-medium leading-snug">
-                        {ilgili.title}
-                      </p>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {postKind(ilgili) === 'til' && (
+                              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                TIL
+                              </span>
+                            )}
+                            <time
+                              dateTime={ilgili.date}
+                              className="text-xs text-foreground/50"
+                            >
+                              {ilgili.date}
+                            </time>
+                          </div>
+                          <p className="mt-1.5 text-sm font-medium leading-snug">
+                            {ilgili.title}
+                          </p>
+                        </Link>
+                      </FadeUpItem>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </FadeUpSection>
           )}
         </article>
 {' '}

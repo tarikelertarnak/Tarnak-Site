@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import type { ProjectItem } from '@/lib/content'
 import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
 import { CodeCopyEnhancer } from '@/components/code-copy-enhancer'
+import { FadeUpSection } from '@/components/fade-up-section'
 import { RepoVisitCounter } from '@/components/github/repo-visit-counter'
 import { Navigation } from '@/components/navigation'
 import { Section, SectionTitle } from '@/components/ui/section'
@@ -152,7 +153,7 @@ export default async function GithubRepoPage({
 
         {/* ── Vaka çalışması ───────────────────────────────────────── */}
         <Section className="flex-col pb-0">
-          <div className="mx-auto w-full max-w-3xl">
+          <FadeUpSection className="mx-auto w-full max-w-3xl">
             <SectionTitle
               title="Vaka çalışması"
               subTitle=""
@@ -233,14 +234,14 @@ export default async function GithubRepoPage({
                 </section>
               </>
             )}
-          </div>
+          </FadeUpSection>
         </Section>
 
         <div aria-hidden className="h-[var(--section-gap)]" />
 
         {/* ── README ───────────────────────────────────────────────── */}
         <Section className="flex-col pb-0">
-          <div className="mx-auto w-full max-w-3xl">
+          <FadeUpSection className="mx-auto w-full max-w-3xl">
             <h2 className="mb-4 text-lg font-bold">README</h2>
             {detay?.readme ? (
               <div
@@ -263,7 +264,7 @@ export default async function GithubRepoPage({
                 </a>
               </p>
             )}
-          </div>
+          </FadeUpSection>
         </Section>
 
         <div aria-hidden className="h-[var(--section-gap)]" />

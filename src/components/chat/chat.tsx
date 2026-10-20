@@ -1460,23 +1460,34 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       Giriş yap diye iki buton vermeli". `next` parametresiyle giriş/kayıt
       sonrası doğrudan bu sohbete dönülür.
     */
+    /*
+      Giriş kapısı — dikey ORTALAMA (2026-10-20 kullanıcı isteği): "kart
+      havada duruyor, altı boş". Kartın 4 kenarı zaten çerçeveliydi; sorun
+      kartın kendi yüksekliği değil, sarmalayıcıda (chat-slot: `flex-1
+      items-stretch`) üstte kalmasıydı. Artık kart `flex-1` kapsayıcı içinde
+      `place-items-center` ile ortalanır (admin ChatPanel'in boş durumu da
+      `justify-center` kullanır — aynı görsel dil). `max-w-md` + çerçeve +
+      `p-10` AYNEN korunur.
+    */
     return (
-      <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-foreground/10 bg-background p-10 text-center">
-        <span className="text-3xl">🔒</span>
-        <p className="text-sm text-foreground-500">{t('chat.loginRequired')}</p>
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href={`/sign?next=${encodeURIComponent(nextPath)}`}
-            className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
-          >
-            {t('chat.registerBtn')}
-          </Link>
-          <Link
-            href={`/login?next=${encodeURIComponent(nextPath)}`}
-            className="inline-flex h-10 items-center rounded-lg border border-primary px-4 text-sm font-medium text-primary no-underline transition-colors hover:bg-primary/10"
-          >
-            {t('chat.loginBtn')}
-          </Link>
+      <div className="grid w-full flex-1 place-items-center">
+        <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-foreground/10 bg-background p-10 text-center">
+          <span className="text-3xl">🔒</span>
+          <p className="text-sm text-foreground-500">{t('chat.loginRequired')}</p>
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href={`/sign?next=${encodeURIComponent(nextPath)}`}
+              className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
+            >
+              {t('chat.registerBtn')}
+            </Link>
+            <Link
+              href={`/login?next=${encodeURIComponent(nextPath)}`}
+              className="inline-flex h-10 items-center rounded-lg border border-primary px-4 text-sm font-medium text-primary no-underline transition-colors hover:bg-primary/10"
+            >
+              {t('chat.loginBtn')}
+            </Link>
+          </div>
         </div>
       </div>
     )

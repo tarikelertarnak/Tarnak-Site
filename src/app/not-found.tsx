@@ -1,11 +1,12 @@
+'use client'
+
 import Link from 'next/link'
+import { useT } from '@/components/locale-provider'
 import { Navigation } from '@/components/navigation'
 import { FileQuestionIcon } from '@/components/ui/icons'
-import { t } from '@/lib/i18n'
-import { getStaticLocale } from '@/lib/i18n-server'
 
-export default async function NotFound() {
-  const locale = await getStaticLocale()
+export default function NotFound() {
+  const { t } = useT()
 
   return (
     <div className="min-h-screen w-full relative">
@@ -16,10 +17,10 @@ export default async function NotFound() {
             Iconify'in `icon-park-outline` setinden alindi. */}
         <FileQuestionIcon size={112} className="text-primary/80" />
         <h1 className="text-2xl sm:text-3xl font-bold">
-          {t(locale, 'notFound.title')}
+          {t('notFound.title')}
         </h1>
         <p className="max-w-md text-foreground-500 text-sm sm:text-base">
-          {t(locale, 'notFound.desc')}
+          {t('notFound.desc')}
         </p>
         <div className="flex flex-col xs:flex-row gap-3">
           <Link
@@ -39,13 +40,13 @@ export default async function NotFound() {
               <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
               <polyline points="9 22 9 12 15 12 15 22" />
             </svg>
-            {t(locale, 'notFound.home')}
+            {t('notFound.home')}
           </Link>
           <Link
             href="/projects"
             className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary/40 px-5 py-2.5 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
           >
-            {t(locale, 'notFound.projects')}
+            {t('notFound.projects')}
             <svg
               viewBox="0 0 24 24"
               width={18}

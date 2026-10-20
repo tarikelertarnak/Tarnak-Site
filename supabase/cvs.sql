@@ -21,3 +21,8 @@ create policy cvs_read on public.cvs for select using (is_active);
 insert into public.cvs (label, lang, href, sort_order)
 values ('Türkçe CV', 'tr', '/cv/tarikeler-cv.pdf', 0)
 on conflict do nothing;
+
+-- İngilizce CV
+insert into public.cvs (label, lang, href, sort_order)
+values ('English CV', 'en', '/cv/tarikeler-en-cv.pdf', 1)
+on conflict do nothing;

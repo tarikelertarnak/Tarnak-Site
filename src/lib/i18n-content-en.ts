@@ -12,7 +12,7 @@ type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]>
 export const enContentOverlay: DeepPartial<SiteContent> = {
   hero: {
     name: 'TARIK ELER',
-    tagline: 'Developer & Systems Architecture',
+    tagline: 'Programmer & Vibe Coder',
     badge: '',
     description:
       'Building modern web experiences with Next.js, TypeScript and AI. I work end-to-end, from design to deployment.',
@@ -135,7 +135,7 @@ export const enContentOverlay: DeepPartial<SiteContent> = {
     lastName: 'ELER',
     displayName: 'TARIKELER',
     nickname: 'Tarnak',
-    title: 'Developer & Systems Architecture',
+    title: 'Programmer & Vibe Coder',
     profileImage: '/uploads/profile.png',
     experience: '',
     firstLanguage: 'Turkish',

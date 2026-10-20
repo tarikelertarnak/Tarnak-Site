@@ -155,7 +155,15 @@ export function FadeUpItem({
   }
 
   return (
-    <motion.div variants={fadeUpItem} className={className} {...rest}>
+    <motion.div
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2, margin: '-50px' }}
+      variants={fadeUpItem}
+      transition={fadeUpItem.show.transition}
+      className={className}
+      {...rest}
+    >
       {children}
     </motion.div>
   )

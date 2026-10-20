@@ -81,4 +81,50 @@ describe('localeProvider', () => {
 
     expect(screen.getByTestId('locale').textContent).toBe('en')
   })
+
+  /*
+    `<html lang>`/`dir` senkronu (2026-10-20).
+
+    REGRESYON: kök layout `force-static` → sunucu HTML'i HER ZAMAN
+    `lang="tr"` basar. İstemci metni EN'e çevirince `lang` "tr" kalıyordu,
+    ve CSS `text-transform: uppercase` + `lang="tr"` birlikte TÜRKÇE
+    büyük-harf kuralını uyguluyordu: `i` → `İ`. Canlıda ölçüldü:
+    `/donate` EN modda tablo başlığı "LİNK" (doğrusu "LINK").
+  */
+  it('<html lang>`i aktif dile gore gunceller — "LİNK" regresyonu', () => {
+    setNavigatorLanguage('en-US')
+    document.documentElement.lang = 'tr' // sunucunun sabit bastigi deger
+
+    render(
+      <LocaleProvider detectedLocale="en">
+        <Probe />
+      </LocaleProvider>,
+    )
+
+    expect(document.documentElement.lang).toBe('en')
+  })
+
+  it('<html dir>`i RTL dillerde rtl yapar (ar/fa/he)', () => {
+    setNavigatorLanguage('ar-SA')
+    render(
+      <LocaleProvider detectedLocale="ar">
+        <Probe />
+      </LocaleProvider>,
+    )
+
+    expect(document.documentElement.dir).toBe('rtl')
+  })
+
+  it('<html dir>`i LTR dillerde ltr yapar', () => {
+    setNavigatorLanguage('en-US')
+    document.documentElement.dir = 'rtl' // onceki sayfadan kalinti
+
+    render(
+      <LocaleProvider detectedLocale="de">
+        <Probe />
+      </LocaleProvider>,
+    )
+
+    expect(document.documentElement.dir).toBe('ltr')
+  })
 })

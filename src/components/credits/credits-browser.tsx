@@ -17,16 +17,14 @@ import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 
 export interface ContributorItem {
   name: string
-  role: string
-  roleEn: string
+  roleKey: string
   roleIcon: 'crown' | 'star' | 'code' | 'heart' | 'shield' | 'palette'
   link?: string
 }
 
 export interface TeamItem {
   name: string
-  role: string
-  roleEn: string
+  roleKey: string
 }
 
 export interface TranslatorItem {
@@ -37,10 +35,8 @@ export interface TranslatorItem {
 }
 
 export interface DonorItem {
-  nameTr: string
-  nameEn: string
-  noteTr: string
-  noteEn: string
+  nameKey: string
+  noteKey: string
 }
 
 export interface LeaderboardEntry {
@@ -225,55 +221,58 @@ setLeaderboard([])
     return sorted.filter(hit)
   }
 
-  const contributorEntries: Entry[] = contributors.map(c => ({
-    key: c.name,
-    name: c.name,
-    searchText: `${c.name} ${c.role} ${c.roleEn}`.toLowerCase(),
-    render: () => (
-      <CreditRow
-        left={c.name
-          .split(' ')
-          .map(w => w[0])
-          .join('')
-          .slice(0, 2)
-          .toUpperCase()}
-        title={c.name}
-        subtitle={(
-          <>
-            <RoleIcon name={c.roleIcon} />
-{' '}
-{isEn ? c.roleEn : c.role}
-          </>
-        )}
-        right={
-          c.link ? (
-            <a
-              href={c.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-foreground-200/15 bg-background px-3 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
-            >
-              {t('credits.visit')}
-              <svg
-                width={12}
-                height={12}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+  const contributorEntries: Entry[] = contributors.map((c) => {
+    const role = t(c.roleKey)
+    return {
+      key: c.name,
+      name: c.name,
+      searchText: `${c.name} ${role}`.toLowerCase(),
+      render: () => (
+        <CreditRow
+          left={c.name
+            .split(' ')
+            .map(w => w[0])
+            .join('')
+            .slice(0, 2)
+            .toUpperCase()}
+          title={c.name}
+          subtitle={(
+            <>
+              <RoleIcon name={c.roleIcon} />
+              {' '}
+              {role}
+            </>
+          )}
+          right={
+            c.link ? (
+              <a
+                href={c.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-foreground-200/15 bg-background px-3 text-xs font-medium text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
               >
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                <polyline points="15 3 21 3 21 9" />
-                <line x1="10" x2="21" y1="14" y2="3" />
-              </svg>
-            </a>
-          ) : undefined
-        }
-      />
-    ),
-  }))
+                {t('credits.visit')}
+                <svg
+                  width={12}
+                  height={12}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" x2="21" y1="14" y2="3" />
+                </svg>
+              </a>
+            ) : undefined
+          }
+        />
+      ),
+    }
+  })
 
   const translatorEntries: Entry[] = translators.map(x => ({
     key: x.lang,
@@ -297,38 +296,45 @@ setLeaderboard([])
     ),
   }))
 
-  const donorEntries: Entry[] = topDonors.map(x => ({
-    key: x.nameTr,
-    name: isEn ? x.nameEn : x.nameTr,
-    searchText: `${x.nameTr} ${x.nameEn} ${x.noteTr} ${x.noteEn}`.toLowerCase(),
-    render: rank => (
-      <CreditRow
-        left={<span className="text-sm font-bold text-primary">{rank}</span>}
-        title={isEn ? x.nameEn : x.nameTr}
-        subtitle={(
-          <a
-            href="/donate"
-            className="font-semibold text-primary underline-offset-2 hover:underline"
-          >
-            {isEn ? x.noteEn : x.noteTr}
-          </a>
-        )}
-      />
-    ),
-  }))
+  const donorEntries: Entry[] = topDonors.map((x) => {
+    const name = t(x.nameKey)
+    const note = t(x.noteKey)
+    return {
+      key: x.nameKey,
+      name,
+      searchText: `${name} ${note}`.toLowerCase(),
+      render: rank => (
+        <CreditRow
+          left={<span className="text-sm font-bold text-primary">{rank}</span>}
+          title={name}
+          subtitle={(
+            <a
+              href="/donate"
+              className="font-semibold text-primary underline-offset-2 hover:underline"
+            >
+              {note}
+            </a>
+          )}
+        />
+      ),
+    }
+  })
 
-  const teamEntries: Entry[] = team.map(x => ({
-    key: x.name,
-    name: x.name,
-    searchText: `${x.name} ${x.role} ${x.roleEn}`.toLowerCase(),
-    render: () => (
-      <CreditRow
-        left={<PersonIcon />}
-        title={x.name}
-        subtitle={isEn ? x.roleEn : x.role}
-      />
-    ),
-  }))
+  const teamEntries: Entry[] = team.map((x) => {
+    const role = t(x.roleKey)
+    return {
+      key: x.name,
+      name: x.name,
+      searchText: `${x.name} ${role}`.toLowerCase(),
+      render: () => (
+        <CreditRow
+          left={<PersonIcon />}
+          title={x.name}
+          subtitle={role}
+        />
+      ),
+    }
+  })
 
   const viewsLine = (count: number) =>
     t('credits.views').replace('{count}', String(count))

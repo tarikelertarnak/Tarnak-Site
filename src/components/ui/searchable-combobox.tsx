@@ -14,7 +14,13 @@ import { usePopoverPosition } from '@/components/ui/use-popover-position'
 
 interface SearchableComboboxOption {
   value: string
-  label: string
+  label: ReactNode
+  /**
+   * Arama için düz metin. `label` ReactNode olduğunda (ör. bayrak + isim)
+   * filtrenin karşılaştıracağı metin burada verilir; yoksa `label` string
+   * kabul edilir. Örn. "🇹🇷 Türkçe" etiketinin `searchText`'i "Türkçe".
+   */
+  searchText?: string
   /** Optional leading icon (flags, etc.) shown in trigger + list. */
   icon?: ReactNode
 }
@@ -41,6 +47,14 @@ interface SearchableComboboxProps {
 function optionsLabel(options: SearchableComboboxOption[], selected: string[]) {
   const found = options.find(o => o.value === selected[0])
   return found ? found.label : ''
+}
+
+/** Filtre metni: `searchText` varsa o, yoksa string `label`. */
+function optionSearchText(o: SearchableComboboxOption): string {
+  if (o.searchText) {
+    return o.searchText
+  }
+  return typeof o.label === 'string' ? o.label : ''
 }
 
 /**
@@ -101,8 +115,10 @@ setOpen(false)
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase()
     if (!needle)
-return options
-    return options.filter(o => o.label.toLowerCase().includes(needle))
+      return options
+    return options.filter(o =>
+      optionSearchText(o).toLowerCase().includes(needle),
+    )
   }, [options, q])
 
   const triggerText = multiple

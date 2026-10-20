@@ -294,7 +294,7 @@ export default async function RootLayout({
                 'logo': `${SITE_URL}/icon-512x512.png`,
                 // Profil "Meslek / Rol" ile TEK değer (2026-10-12 kullanıcı isteği):
                 // ana sayfa alt başlığı, `profile.title` ve yapısal veri aynı metni söyler.
-                'jobTitle': 'Yazılımcı & Sistem Mimarı',
+                'jobTitle': 'Programmer & Vibe Coder',
                 /*
                  * sameAs (kullanıcı isteği): "sosyal linkleri
                  * content dosyasından oku, bilmediğin linki uydurma".

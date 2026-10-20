@@ -104,6 +104,17 @@ const socialItem = z.object({
   name: z.string().max(100),
   href: z.string().max(500),
   icon: z.string().max(200),
+  /*
+    label/value (2026-10-20): şemada YOKTU → admin panelden içerik
+    kaydedildiğinde `contentSchema` bunları SESSİZCE SİLİYORDU (zod4
+    `z.object` bilinmeyen anahtarı düşürür; AGENTS.md §12 aynı tuzak).
+    `content.ts` → `SocialItem.label?/value?` alanlarını TANIMLIYOR ve
+    `contact-channels.ts:158-160` bunları override olarak kullanıyor
+    (ör. Discord `label: 'Discord'`, `value: 'tarikeler'`). Şema eksik
+    olduğu için o override hiçbir kayıtta kalıcı olamıyordu.
+  */
+  label: z.string().max(100).optional(),
+  value: z.string().max(200).optional(),
 })
 
 const projectItem = z.object({

@@ -1,20 +1,17 @@
 import type { Metadata } from 'next'
 
+import { FadeUpItem, FadeUpSection } from '@/components/fade-up-section'
 import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
-import { getStaticLocale } from '@/lib/i18n-server'
 import { getPhase6, Phase6Empty } from '@/lib/phase6-server'
 
 export const dynamic = 'force-static'
 
+// Metadata sunucuda sabit TR kalir (getStaticLocale 'tr'); eskiden burada
+// `isEn` kosulu hep false oldugu icin EN dalina hic girilmiyordu — olu kod.
 export async function generateMetadata(): Promise<Metadata> {
-  const isEn = (await getStaticLocale()) === 'en'
-  const title = isEn
-    ? 'Changelog — TARIK ELER - TARNAK'
-    : 'Değişiklikler — TARIK ELER - TARNAK'
-  const desc = isEn
-    ? 'What changed on this site, newest first.'
-    : 'Bu sitede neler değişti, en yeniden eskiye.'
+  const title = 'Değişiklikler — TARIK ELER - TARNAK'
+  const desc = 'Bu sitede neler değişti, en yeniden eskiye.'
   return {
     title,
     description: desc,
@@ -37,23 +34,26 @@ export default async function ChangelogPage() {
           id="changelog"
           framed
         >
-          <div className="flex flex-col gap-3">
-            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              {log?.title ?? 'Değişiklikler'}
-            </h1>
-          </div>
+          <FadeUpSection className="w-full">
+            <div className="flex flex-col gap-3">
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                {log?.title ?? 'Değişiklikler'}
+              </h1>
+            </div>
+          </FadeUpSection>
 
-          <div className="mt-10 flex flex-col gap-6">
+          <FadeUpSection className="mt-10 flex flex-col gap-6" stagger={0.08}>
             {entries.length === 0 ? (
               <Phase6Empty title="Henüz değişiklik kaydı yok.">
                 Admin panelinden girildiğinde burada görünecek.
               </Phase6Empty>
             ) : (
               entries.map((entry, i) => (
-                <article
-                  key={i}
-                  className="rounded-2xl border border-foreground/10 bg-card/40 p-5"
-                >
+                <FadeUpItem key={i}>
+                  <article
+                    key={i}
+                    className="rounded-2xl border border-foreground/10 bg-card/40 p-5"
+                  >
                   <div className="flex flex-wrap items-baseline gap-3">
                     <h2 className="text-lg font-semibold">{entry.title}</h2>
                     {entry.date ? (
@@ -78,9 +78,10 @@ export default async function ChangelogPage() {
                     </ul>
                   ) : null}
                 </article>
+                </FadeUpItem>
               ))
             )}
-          </div>
+          </FadeUpSection>
         </Section>
       </main>
     </div>

@@ -13,6 +13,7 @@ import {
   LOCALE_COOKIE,
 
   resolveLocale,
+  RTL_LOCALES,
   t,
 } from '@/lib/i18n'
 
@@ -98,6 +99,28 @@ export function LocaleProvider({
     }
     return { locale, pref, detected, setPref }
   }, [pref, router])
+
+  /*
+    `<html lang>`/`<html dir>` senkronu (2026-10-20).
+
+    KÖK NEDEN: kök layout `force-static` olduğu için sunucu HTML'i HER ZAMAN
+    `lang="tr"` basar (`getStaticLocale()` sabit 'tr' — bkz. i18n-server.ts
+    yorumu). İstemci metni EN'e çevirse bile `lang` "tr" kalıyordu.
+
+    Neden ÖNEMLİ — somut, canlıda ölçüldü: CSS `text-transform: uppercase`
+    İLE `lang="tr"` birleşince tarayıcı TÜRKÇE büyük-harf kuralını uygular:
+    `i` → `İ`. `/donate` tablo başlığı EN modda "LİNK" çıkıyordu (doğrusu
+    "LINK"). Yani yalnız kozmetik değil: ekran okuyucu telaffuzu, tireleme
+    ve `lang` tabanlı tüm CSS davranışı yanlış dilde çalışıyordu.
+
+    Ayrıca `dir` RTL dillerde (ar/fa/he) kritik — sunucu "ltr" basıyor.
+    Yalnız DOM niteliği yazılır, içerik/yerleşim değişmez → CLS yok.
+  */
+  useEffect(() => {
+    const root = document.documentElement
+    root.lang = value.locale
+    root.dir = RTL_LOCALES.has(value.locale) ? 'rtl' : 'ltr'
+  }, [value.locale])
 
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
 }

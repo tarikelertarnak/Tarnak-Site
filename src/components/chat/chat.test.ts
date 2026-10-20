@@ -229,13 +229,24 @@ describe('chat arayüz sözleşmesi', () => {
     })
 
     it('/login ve /sign sayfaları ?next= destekler', () => {
+      // 2026-10-20: `?next=` çözümü sayfa gövdesinden `AuthForm`'a taşındı
+      // (sayfalar artık `<AuthForm mode=… />` render ediyor). Davranış aynı:
+      // güvenli yerel yol çözülür, dış/kök değer `/`'a düşer. Sözleşmeyi
+      // davranışın SAHİBİ olan bileşende doğruluyoruz.
+      const form = readFileSync(
+        join(process.cwd(), 'src/components/auth/auth-form.tsx'),
+        'utf8',
+      )
       for (const page of ['login', 'sign']) {
-        const src = readFileSync(join(process.cwd(), `src/app/${page}/page.tsx`), 'utf8')
-        expect(src).toContain('safeNext')
-        expect(src).toContain('searchParams')
-        // giriş sonrası her zaman / veya /admin'e atan ESKİ davranış kalktı
-        expect(src).toMatch(/redirect\(next !== '\/' \? next/)
+        const src = readFileSync(
+          join(process.cwd(), `src/app/${page}/page.tsx`),
+          'utf8',
+        )
+        expect(src).toContain('<AuthForm')
       }
+      expect(form).toContain('useSearchParams')
+      expect(form).toContain("searchParams.get('next')")
+      expect(form).toMatch(/startsWith\('\/'\) && !rawNext\.startsWith\('\/\/'\)/)
     })
   })
 

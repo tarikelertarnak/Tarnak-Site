@@ -3,6 +3,7 @@
 import type { ProjectItem } from '@/lib/content'
 import type { GitHubRepo } from '@/lib/github'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FadeUpItem } from '@/components/fade-up-section'
 import { useLocale, useT } from '@/components/locale-provider'
 import { ProjectCard } from '@/components/projects/project-card'
 import { CloseIcon, SearchIcon } from '@/components/ui/icons'
@@ -428,7 +429,9 @@ return false
           className="grid w-full scroll-mt-24 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6"
         >
           {shown.map(project => (
-            <ProjectCard key={project.title} project={project} />
+            <FadeUpItem key={project.title}>
+              <ProjectCard project={project} />
+            </FadeUpItem>
           ))}
         </div>
       )}

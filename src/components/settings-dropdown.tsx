@@ -360,16 +360,33 @@ return
   ]
 
   // "Otomatik" secilirse hangi dilin kullanilacagini ETIKETIN ICINDE gosteriyoruz:
-  // "Otomatik (Türkçe)". `detected` tarayici dilinden (ve bolgeden) hesaplanan
-  // gercek sonuctur — yani etiket tahmin degil, olculmus deger.
-  const autoLabel = `${t('lang.auto')} (${NATIVE_NAMES[detected]})`
+  // bayrak + isim — "Otomatik (🇹🇷 Türkçe)". `detected` tarayici dilinden (ve
+  // bolgeden) hesaplanan gercek sonuctur; etiket tahmin degil, olculmus deger.
+  // Bayrak `flagIcons`'tan gelir (26 ulke hazir); yoksa yalniz isim gosterilir.
+  // `searchText`: arama JSX etiket yerine bu duz metinle karsilastirilir
+  // ("Türkçe" yazinca bulunur).
+  const AutoFlag = flagIcons[detected]
+  const autoLabel = (
+    <>
+      {t('lang.auto')}
+      {' ('}
+      {AutoFlag && <AutoFlag size={16} className="inline-block align-[-2px]" />}
+      {` ${NATIVE_NAMES[detected]})`}
+    </>
+  )
 
   const localeOptions: {
     value: LocalePref
     icon?: React.ReactNode
-    label: string
+    label: React.ReactNode
+    searchText?: string
   }[] = [
-    { value: 'auto', icon: <AutoIcon size={16} />, label: autoLabel },
+    {
+      value: 'auto',
+      icon: <AutoIcon size={16} />,
+      label: autoLabel,
+      searchText: `${t('lang.auto')} ${NATIVE_NAMES[detected]}`,
+    },
     ...LOCALES_ALL.map((l) => {
       const Flag = flagIcons[l]
       return {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useLocale } from '@/components/locale-provider'
+import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { CheckIcon, CopyIcon } from '@/components/ui/icons'
 
@@ -10,8 +10,7 @@ import { CheckIcon, CopyIcon } from '@/components/ui/icons'
  * confirmation icon for 2 seconds.
  */
 export function CopyButton({ text, className }: { text: string, className?: string }) {
-  const { locale } = useLocale()
-  const isEn = locale === 'en'
+  const { t } = useT()
   const [copied, setCopied] = useState(false)
 
   const copy = async () => {
@@ -26,8 +25,8 @@ export function CopyButton({ text, className }: { text: string, className?: stri
   }
 
   const copiedLabel = copied
-    ? isEn ? 'Copied' : 'Kopyalandı'
-    : isEn ? 'Copy' : 'Kopyala'
+    ? t('donate.copied')
+    : t('donate.copy')
 
   return (
     <button
