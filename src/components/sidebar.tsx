@@ -100,12 +100,6 @@ interface NavItem {
   icon: (props: { size?: number, className?: string }) => React.ReactElement
 }
 
-const SIDEBAR_WIDTH = 325
-/** Kullanıcı isteği 2026-10-11: "yan panel büyüyüp küçültüle bilinmeli". */
-const SIDEBAR_MIN = 260
-const SIDEBAR_MAX = 560
-const SIDEBAR_WIDTH_KEY = 'sidebar:width'
-
 const NAV_LINKS: NavItem[] = [
   { key: 'home', labelKey: 'nav.home', href: '/', icon: HouseIcon },
   { key: 'chat', labelKey: 'nav.chat', href: '/chat', icon: ChatIcon },
@@ -126,6 +120,13 @@ const NAV_LINKS: NavItem[] = [
   },
 ]
 
+/**
+ * Sabit genişlik (2026-10-20, kullanıcı isteği): yan panel artık
+ * "büyüyüp küçülmez". Sürükleme tutamağı, min/max ve localStorage
+ * genişlik hafızası KALDIRILDI.
+ */
+const SIDEBAR_WIDTH = 325
+
 export function Sidebar() {
   const { t } = useT()
   const pathname = usePathname()
@@ -134,53 +135,6 @@ export function Sidebar() {
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
-
-  /*
-    GENİŞLİK (2026-10-11): kullanıcı isteği "yan panel büyüyüp küçültüle
-    bilinmeli". Genişlik sürüklenebilir, sınırlarda kırpılır ve
-    localStorage'da saklanır. `maxWidth` ekranın %85'iyle sınırlanır ki
-    dar ekranda panel "tam kaplamayıp" (kullanıcı şikayeti) her zaman bir
-    kenardan içerik görünsün.
-  */
-  const [width, setWidth] = useState(SIDEBAR_WIDTH)
-
-  useEffect(() => {
-    const saved = Number.parseInt(localStorage.getItem(SIDEBAR_WIDTH_KEY) ?? '', 10)
-    if (Number.isFinite(saved) && saved >= SIDEBAR_MIN && saved <= SIDEBAR_MAX) {
-      setWidth(saved)
-    }
-  }, [])
-
-  const [maxWidth, setMaxWidth] = useState(SIDEBAR_WIDTH)
-
-  const onResizeStart = useCallback((e: React.PointerEvent) => {
-    e.preventDefault()
-    const startX = e.clientX
-    const startW = width
-    const move = (ev: PointerEvent) => {
-      const next = Math.round(startW + (ev.clientX - startX))
-      setWidth(Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, next)))
-    }
-    const up = () => {
-      window.removeEventListener('pointermove', move)
-      window.removeEventListener('pointerup', up)
-      document.body.style.userSelect = ''
-      setWidth((w) => {
-        localStorage.setItem(SIDEBAR_WIDTH_KEY, String(w))
-        return w
-      })
-    }
-    document.body.style.userSelect = 'none'
-    window.addEventListener('pointermove', move)
-    window.addEventListener('pointerup', up)
-  }, [width])
-
-  useEffect(() => {
-    const fit = () => setMaxWidth(Math.max(SIDEBAR_MIN, Math.round(window.innerWidth * 0.85)))
-    fit()
-    window.addEventListener('resize', fit)
-    return () => window.removeEventListener('resize', fit)
-  }, [])
 
   useEffect(() => {
     const handler = () => setIsOpen(o => !o)
@@ -375,7 +329,19 @@ setIsOpen(false)
 
       {/* Primary nav */}
       <div className="flex flex-1 flex-col gap-1 px-3.5 py-5">
-        {NAV_LINKS.map((item) => {
+        {[
+          ...NAV_LINKS,
+          // Admin Panel ana listede, Contributors'ın hemen ardında
+          // (2026-10-20, kullanıcı isteği). Yalnızca admin oturumunda görünür.
+          ...(sessionChecked && sessionUser?.role === 'admin'
+            ? [{
+                key: 'admin',
+                labelKey: 'nav.adminPanel',
+                href: '/admin',
+                icon: PanelIcon,
+              }]
+            : []),
+        ].map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
           return (
@@ -401,16 +367,6 @@ setIsOpen(false)
 
       {/* Bottom: session, settings */}
       <div className="flex flex-col gap-1 px-3.5 py-5">
-        {/* Session-dependent buttons */}
-        {sessionChecked && sessionUser?.role === 'admin' && (
-          <Link
-            href="/admin"
-            className="flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
-          >
-            <PanelIcon size={20} />
-            <span>{t('nav.adminPanel') ?? 'Admin Paneli'}</span>
-          </Link>
-        )}
         {/* Oturum yoksa: Giriş Yap | Kayıt Ol.
             Oturum varsa AYNI yerde profil + çıkış (2026-10-06: profil/çıkış
             üstteki armanın altından buraya taşındı — konum artık giriş/kayıt
@@ -515,7 +471,7 @@ setIsOpen(false)
               animate={{ x: 0 }}
               exit={{ x: -SIDEBAR_WIDTH }}
               transition={{ type: 'spring', stiffness: 360, damping: 34 }}
-              style={{ width, maxWidth }}
+              style={{ width: SIDEBAR_WIDTH, maxWidth: '85vw' }}
               className={cn(
                 'fixed top-0 left-0 z-50 h-full',
                 'border-r border-white/10 bg-[#0a0a0e] shadow-2xl',
@@ -525,33 +481,6 @@ setIsOpen(false)
               aria-label="Sidebar"
             >
               {sidebarInner}
-
-              {/*
-                Büyüme/küçülme tutamağı (2026-10-11). Klavye erişimi de var:
-                ok tuşları genişliği 16px değiştirir.
-              */}
-              <div
-                role="separator"
-                aria-label="Panel genişliğini ayarla"
-                aria-orientation="vertical"
-                tabIndex={0}
-                onPointerDown={onResizeStart}
-                onKeyDown={(e) => {
-                  if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
-                    return
-                  }
-                  e.preventDefault()
-                  setWidth((w) => {
-                    const next = Math.min(
-                      SIDEBAR_MAX,
-                      Math.max(SIDEBAR_MIN, w + (e.key === 'ArrowRight' ? 16 : -16)),
-                    )
-                    localStorage.setItem(SIDEBAR_WIDTH_KEY, String(next))
-                    return next
-                  })
-                }}
-                className="absolute top-0 right-0 h-full w-1.5 cursor-ew-resize touch-none bg-transparent transition-colors hover:bg-primary/50 focus-visible:bg-primary/50 focus-visible:outline-none"
-              />
             </motion.aside>
           </>
         )}
