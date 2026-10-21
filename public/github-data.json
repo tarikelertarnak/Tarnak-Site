@@ -19,43 +19,11 @@
       "forks": 0,
       "watchers": 1,
       "topics": [],
-      "updatedAt": "2026-10-06T15:07:24Z"
-    },
-    {
-      "name": "tarikelertarnak.github.io",
-      "fullName": "tarikelertarnak/tarikelertarnak.github.io",
-      "description": "Personal portfolio website.",
-      "url": "https://github.com/tarikelertarnak/tarikelertarnak.github.io",
-      "language": "HTML",
-      "stars": 3,
-      "forks": 0,
-      "watchers": 3,
-      "topics": ["github-pages", "html", "personal-website", "portfolio"],
-      "updatedAt": "2026-10-05T15:04:14Z"
-    },
-    {
-      "name": "TARIKELER-TARNAK",
-      "fullName": "tarikelertarnak/TARIKELER-TARNAK",
-      "description": "GitHub profile README",
-      "url": "https://github.com/tarikelertarnak/TARIKELER-TARNAK",
-      "language": null,
-      "stars": 3,
-      "forks": 0,
-      "watchers": 3,
-      "topics": [],
-      "updatedAt": "2026-09-24T16:46:42Z"
-    },
-    {
-      "name": "db-public",
-      "fullName": "tarikelertarnak/db-public",
-      "description": "Tarnak OpenCode dagitim paketi (PUBLIC)",
-      "url": "https://github.com/tarikelertarnak/db-public",
-      "language": null,
-      "stars": 1,
-      "forks": 0,
-      "watchers": 1,
-      "topics": [],
-      "updatedAt": "2026-09-24T15:30:56Z"
+      "updatedAt": "2026-10-18T18:50:09Z",
+      "license": "NOASSERTION",
+      "openIssues": 3,
+      "defaultBranch": "master",
+      "archived": false
     },
     {
       "name": "ActivaterWindows",
@@ -67,7 +35,59 @@
       "forks": 0,
       "watchers": 2,
       "topics": [],
-      "updatedAt": "2026-09-24T15:30:56Z"
+      "updatedAt": "2026-10-16T18:38:00Z",
+      "license": "MIT",
+      "openIssues": 0,
+      "defaultBranch": "main",
+      "archived": false
+    },
+    {
+      "name": "tarikelertarnak.github.io",
+      "fullName": "tarikelertarnak/tarikelertarnak.github.io",
+      "description": "Personal portfolio website.",
+      "url": "https://github.com/tarikelertarnak/tarikelertarnak.github.io",
+      "language": "PowerShell",
+      "stars": 3,
+      "forks": 0,
+      "watchers": 3,
+      "topics": ["github-pages", "html", "personal-website", "portfolio"],
+      "updatedAt": "2026-10-16T18:30:39Z",
+      "license": null,
+      "openIssues": 0,
+      "defaultBranch": "main",
+      "archived": false
+    },
+    {
+      "name": "TARIKELER-TARNAK",
+      "fullName": "tarikelertarnak/TARIKELER-TARNAK",
+      "description": "GitHub profile README",
+      "url": "https://github.com/tarikelertarnak/TARIKELER-TARNAK",
+      "language": null,
+      "stars": 3,
+      "forks": 0,
+      "watchers": 3,
+      "topics": [],
+      "updatedAt": "2026-09-24T16:46:42Z",
+      "license": null,
+      "openIssues": 0,
+      "defaultBranch": "main",
+      "archived": false
+    },
+    {
+      "name": "db-public",
+      "fullName": "tarikelertarnak/db-public",
+      "description": "Tarnak OpenCode dagitim paketi (PUBLIC)",
+      "url": "https://github.com/tarikelertarnak/db-public",
+      "language": null,
+      "stars": 1,
+      "forks": 0,
+      "watchers": 1,
+      "topics": [],
+      "updatedAt": "2026-09-24T15:30:56Z",
+      "license": null,
+      "openIssues": 0,
+      "defaultBranch": "main",
+      "archived": false
     },
     {
       "name": "AI-Jailbreak",
@@ -79,7 +99,11 @@
       "forks": 1,
       "watchers": 6,
       "topics": ["ai", "llm", "prompt", "red-team", "security"],
-      "updatedAt": "2026-09-21T04:32:41Z"
+      "updatedAt": "2026-09-21T04:32:41Z",
+      "license": null,
+      "openIssues": 0,
+      "defaultBranch": "main",
+      "archived": false
     },
     {
       "name": "Accentra",
@@ -107,7 +131,11 @@
         "security",
         "workspace"
       ],
-      "updatedAt": "2026-09-09T00:40:32Z"
+      "updatedAt": "2026-09-09T00:40:32Z",
+      "license": "Apache-2.0",
+      "openIssues": 0,
+      "defaultBranch": "main",
+      "archived": false
     },
     {
       "name": "codehub-vsc",
@@ -127,7 +155,11 @@
         "terminal",
         "vscode-extension"
       ],
-      "updatedAt": "2026-09-04T13:24:20Z"
+      "updatedAt": "2026-09-04T13:24:20Z",
+      "license": "MIT",
+      "openIssues": 0,
+      "defaultBranch": "master",
+      "archived": false
     },
     {
       "name": "TarnakLua-Roblox",
@@ -139,7 +171,11 @@
       "forks": 0,
       "watchers": 3,
       "topics": ["game", "lua", "roblox", "scripting"],
-      "updatedAt": "2026-09-04T13:24:18Z"
+      "updatedAt": "2026-09-04T13:24:18Z",
+      "license": null,
+      "openIssues": 0,
+      "defaultBranch": "main",
+      "archived": false
     },
     {
       "name": "Scribd-Download",
@@ -157,7 +193,11 @@
         "pdf",
         "scribd"
       ],
-      "updatedAt": "2026-09-04T13:24:17Z"
+      "updatedAt": "2026-09-04T13:24:17Z",
+      "license": null,
+      "openIssues": 0,
+      "defaultBranch": "main",
+      "archived": false
     },
     {
       "name": "Player",
@@ -178,7 +218,11 @@
         "plugins",
         "video"
       ],
-      "updatedAt": "2026-08-03T16:52:09Z"
+      "updatedAt": "2026-08-03T16:52:09Z",
+      "license": null,
+      "openIssues": 0,
+      "defaultBranch": "main",
+      "archived": false
     }
   ]
 }

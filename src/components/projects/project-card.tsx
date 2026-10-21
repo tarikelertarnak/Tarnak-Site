@@ -1137,6 +1137,33 @@ continue
             </div>
           )}
 
+          {/*
+            Dil + lisans — yalnızca GERÇEKTEN varsa çizilir (uydurma yok).
+            Eskiden `githubRepoToProject` bu iki alanı hiç taşımıyordu, bu
+            yüzden her GitHub kartı etiketsiz görünüyordu (2026-10-21).
+          */}
+          {(project.language || project.license) && (
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-foreground-600">
+              {project.language && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-2 py-0.5 font-medium">
+                  <span
+                    aria-hidden="true"
+                    className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary"
+                  />
+                  {project.language}
+                </span>
+              )}
+              {project.license && project.license !== 'NOASSERTION' && (
+                <span
+                  title={t('projects.license')}
+                  className="inline-flex items-center rounded-full border border-foreground-200/15 bg-background px-2 py-0.5 font-medium"
+                >
+                  {project.license}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Stats */}
           <div className="mt-auto flex flex-row flex-wrap items-center gap-1.5 text-[11px] text-foreground/75">
             {isGithub ? (
@@ -1167,20 +1194,34 @@ continue
               </a>
             )}
 
-            <span
-              className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80"
-              title={t('projects.downloadsTitle')}
-            >
-              <DownloadIcon size={12} />
-              {downloads}
-            </span>
-            <span
-              className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80"
-              title={t('projects.viewsTitle')}
-            >
-              <EyeIcon size={12} />
-              {views}
-            </span>
+          {/*
+            Sayaçlar yalnızca bir değer varsa çizilir. İndirme/görüntüleme
+            `project-stats` ile ZİYARETÇİ BAŞINA yerel tutulur (backend yok),
+            yani ilk ziyarette her kart "0 0" gösteriyordu — bozuk sanılıyordu
+            (2026-10-21). Sıfır "veri yok" demektir, "sıfır tıklandı" değil.
+          */}
+          {(downloads > 0 || views > 0) && (
+            <>
+              {downloads > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80"
+                  title={t('projects.downloadsTitle')}
+                >
+                  <DownloadIcon size={12} />
+                  {downloads}
+                </span>
+              )}
+              {views > 0 && (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full border border-foreground-200/15 bg-background px-1.5 py-0.5 text-foreground/80"
+                  title={t('projects.viewsTitle')}
+                >
+                  <EyeIcon size={12} />
+                  {views}
+                </span>
+              )}
+            </>
+          )}
           </div>
 
           {/* Buttons: Open (GitHub link for repos, project page otherwise) → Download. */}

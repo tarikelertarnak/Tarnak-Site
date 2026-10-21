@@ -49,6 +49,16 @@ async function main() {
       watchers: r.watchers_count,
       topics: r.topics ?? [],
       updatedAt: r.updated_at,
+      /*
+        `fetchUserRepos` (lib/github.ts) ile AYNI alan seti. Statik export
+        (GitHub Pages) bu snapshot'ı okur; burada eksik bırakılan bir alan
+        Cloudflare deploy'unda görünüp Pages'te kaybolurdu (2026-10-21:
+        lisans/issue/varsayılan dal eklendi).
+      */
+      license: r.license?.spdx_id ?? r.license?.name ?? null,
+      openIssues: r.open_issues_count ?? 0,
+      defaultBranch: r.default_branch,
+      archived: r.archived ?? false,
     })),
   }
 

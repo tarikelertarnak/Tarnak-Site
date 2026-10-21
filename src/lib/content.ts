@@ -136,6 +136,12 @@ export interface ProjectItem {
   }
   /** Watch (subscriber) count if GitHub repo */
   watchers?: number
+  /**
+   * Programme dilleri / lisans (yalnizca GitHub depolarinda dolu).
+   * Etiket/liste icin; ikisi de bos olabilir → rozet cizilmez.
+   */
+  language?: string | null
+  license?: string | null
   /** Last update date (ISO). For repos it comes from GitHub updated_at. */
   updatedAt?: string
   /**

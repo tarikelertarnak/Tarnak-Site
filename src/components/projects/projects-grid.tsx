@@ -82,6 +82,8 @@ function githubRepoToProject(repo: GitHubRepo, tr: boolean): ProjectItem {
     watchers: repo.watchers,
     updatedAt: repo.updatedAt,
     tags: repo.topics ?? [],
+    language: repo.language,
+    license: repo.license ?? null,
     ...(GITHUB_DOWNLOAD_OVERRIDES[repo.name] ?? {}),
   }
 }
@@ -384,7 +386,7 @@ return false
             <span className="ml-auto text-sm font-medium text-foreground/70">
               {filtered.length}
 {' '}
-{t('projects.found')}
+{filtered.length === 1 ? t('projects.foundOne') : t('projects.found')}
             </span>
           </div>
 

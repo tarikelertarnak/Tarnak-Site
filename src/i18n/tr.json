@@ -427,6 +427,8 @@
   "projects.clearSelection": "Seçimi temizle",
   "projects.selectItem": "Seç",
   "projects.deselectItem": "Kaldır",
+  "projects.license": "Lisans",
+  "projects.openIssues": "Açık konular",
   "projects.showAll": "Hepsini Gör",
   "projects.showcase": "Proje tanıtım sayfasını aç",
   "projects.showMore": "Daha Fazla Göster",

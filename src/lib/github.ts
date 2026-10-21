@@ -130,6 +130,14 @@ export interface GitHubRepo {
   homepage: string | null
   /** Topic tags (for search/filtering) */
   topics?: string[]
+  /** SPDX id or name; null when the repo has no license file. */
+  license?: string | null
+  /** Open issue count. */
+  openIssues?: number
+  /** Default branch name (used for the ZIP fallback download). */
+  defaultBranch?: string
+  /** true = repo is archived (read-only); the card hides download options for it. */
+  archived?: boolean
 }
 
 export interface GitHubRepoDetails {
@@ -220,27 +228,35 @@ function headers(): Record<string, string> {
   return h
 }
 
-export async function fetchUserRepos(username: string): Promise<GitHubRepo[]> {
-  const res = await ghFetch(
-    `${API_BASE}/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`,
-    { headers: headers(), cache: 'no-store' },
-  )
-  if (!res.ok) {
-    throw new GitHubApiError(res.status, `repos: ${username}`)
-  }
-  const reposRaw = (await res.json()) as Array<{
-    name: string
-    full_name: string
-    description: string | null
-    language: string | null
-    stargazers_count: number
-    forks_count: number
-    watchers_count: number
-    html_url: string
-    updated_at: string
-    homepage: string | null
-    fork: boolean
-  }>
+/** Ham GitHub liste ucu yanıtı (yalnızca kullanılan alanlar). */
+export interface GitHubRawRepo {
+  name: string
+  full_name: string
+  description: string | null
+  language: string | null
+  stargazers_count: number
+  forks_count: number
+  watchers_count: number
+  html_url: string
+  updated_at: string
+  homepage: string | null
+  fork: boolean
+  topics?: string[]
+  default_branch?: string
+  archived?: boolean
+  open_issues_count?: number
+  license?: { spdx_id?: string | null, name?: string | null } | null
+}
+
+/**
+ * Ham liste yanıtını `GitHubRepo[]`'e çevirir (saf fonksiyon).
+ *
+ * 2026-10-21: `topics` (konular), `license`, `openIssues`, `defaultBranch`
+ * ve `archived` ALANI HAYDEDİYORDU → her GitHub kartı etiketsiz ve lisanssız
+ * görünüyordu (Accentra'nın 15 konusu GitHub'da duruyordu). `fork: true`
+ * depolar elenir, sonuç yıldıza göre sıralanır.
+ */
+export function mapGitHubRepos(reposRaw: GitHubRawRepo[]): GitHubRepo[] {
   return reposRaw
     .filter(repo => !repo.fork)
     .map(repo => ({
@@ -254,8 +270,32 @@ export async function fetchUserRepos(username: string): Promise<GitHubRepo[]> {
       url: repo.html_url,
       updatedAt: repo.updated_at,
       homepage: repo.homepage,
+      topics: repo.topics ?? [],
+      license: repo.license?.spdx_id ?? repo.license?.name ?? null,
+      openIssues: repo.open_issues_count ?? 0,
+      defaultBranch: repo.default_branch,
+      archived: repo.archived ?? false,
     }))
     .sort((a, b) => b.stars - a.stars)
+}
+
+export async function fetchUserRepos(username: string): Promise<GitHubRepo[]> {
+  const res = await ghFetch(
+    `${API_BASE}/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`,
+    { headers: headers(), cache: 'no-store' },
+  )
+  if (!res.ok) {
+    throw new GitHubApiError(res.status, `repos: ${username}`)
+  }
+  /*
+    `topics` eskiden istenmiyordu → her kartta 0 etiket (2026-10-21 ölçümü:
+    Accentra'nın 15, codehub-vsc'nin 7 konusu GitHub'da duruyor ama site
+    hiçbirini göstermiyordu). Liste ucu konuları yalnızca istenirse döndürür.
+    Aynı çağrıda lisans/açık issue/varsayılan dal da alınıyor — hepsi listede
+    tek istekte gelir, ek GitHub çağrısı yok.
+  */
+  const reposRaw = (await res.json()) as GitHubRawRepo[]
+  return mapGitHubRepos(reposRaw)
 }
 
 function rewriteMarkdownImages(
