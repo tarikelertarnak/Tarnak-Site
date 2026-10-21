@@ -5,7 +5,6 @@ import { TrackBlogView } from '@/app/(public)/blog/[slug]/track-view'
 import { BackToListButton } from '@/components/back-to-list-button'
 import { CodeCopyEnhancer } from '@/components/code-copy-enhancer'
 import { FadeUpItem, FadeUpSection } from '@/components/fade-up-section'
-import { Navigation } from '@/components/navigation'
 import { ReadingProgress } from '@/components/reading-progress'
 import { getPostBySlug, getPosts } from '@/lib/blog'
 import { t } from '@/lib/i18n'
@@ -136,7 +135,6 @@ export default async function PostPage({ params }: PostPageProps) {
   return (
     <div className="min-h-screen w-full relative">
       {' '}
-      <Navigation />
 {' '}
 <TrackBlogView slug={post.slug} />
 {' '}

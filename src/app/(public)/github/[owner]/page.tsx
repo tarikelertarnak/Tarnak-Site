@@ -1,4 +1,3 @@
-import { Navigation } from '@/components/navigation'
 import { OpenGitHub, OwnerSoon } from '@/components/owner-i18n'
 import { GithubIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
@@ -39,7 +38,6 @@ export default async function GithubOwnerPage({
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <main id="main" className="">
         <Section className="flex-col items-center justify-center pt-32 min-h-[80svh]">
           <SectionTitle

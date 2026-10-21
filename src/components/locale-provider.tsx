@@ -16,6 +16,7 @@ import {
   RTL_LOCALES,
   t,
 } from '@/lib/i18n'
+import { localizeContent } from '@/lib/i18n-content-merge'
 
 interface LocaleContextValue {
   locale: Locale
@@ -150,5 +151,22 @@ export function useT() {
       locale,
     }),
     [locale],
+  )
+}
+
+/**
+ * İçerik VERİSİNİ aktif dile yerelleştirir (2026-10-21).
+ *
+ * KÖK NEDEN: kök layout `force-static` olduğu için sunucu HTML'i her zaman
+ * Türkçe içerik basar (`getStaticLocale()` sabit 'tr'). Footer gibi istemci
+ * bileşenleri `content.hero.tagline`'ı sunucudan olduğu gibi alınca EN
+ * gezinmede Türkçe metin görünüyordu. Sunucudaki `getStaticLocalizedContent`
+ * ile AYNI overlay'i istemcide uygular → tek kaynak, iki taraf.
+ */
+export function useLocalizedContent<T extends object>(content: T): T {
+  const { locale } = useLocale()
+  return useMemo(
+    () => localizeContent(content as never, locale) as T,
+    [content, locale],
   )
 }

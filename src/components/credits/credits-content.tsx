@@ -9,7 +9,6 @@ import {
 import { CreditsBrowser } from '@/components/credits/credits-browser'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
-import { Navigation } from '@/components/navigation'
 import { TrophyIcon } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
 
@@ -18,7 +17,6 @@ export function CreditsContent() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <main id="main" className="w-full">
         {/*
           BLOG düzeniyle hizalandı (2026-10-21, kullanıcı: "CONTRIBUTORS'taki

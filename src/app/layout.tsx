@@ -4,6 +4,7 @@ import nextDynamic from 'next/dynamic'
 import { headers } from 'next/headers'
 import { EmotionStyleRegistry } from '@/components/emotion-style-registry'
 import { LocaleProvider } from '@/components/locale-provider'
+import { Navigation } from '@/components/navigation'
 import { Providers } from '@/components/providers'
 import { ScrollSpy } from '@/components/scroll-spy'
 import { ScrollToTop } from '@/components/scroll-to-top'
@@ -319,7 +320,7 @@ export default async function RootLayout({
                   'TypeScript',
                   'Web Development',
                   'React',
-                  'Yapay Zeka',
+                  'Artificial Intelligence',
                 ],
               },
               {
@@ -374,6 +375,14 @@ export default async function RootLayout({
                 <ScrollSpy />
                 <TopBar />
                 <Sidebar />
+                {/*
+                  Ayarlar penceresi — `settings:open` event'ini dinler.
+                  KÖK LAYOUTTA (2026-10-21): Sidebar her sayfada var ama bu
+                  bileşen eskiden yalnızca birkaç sayfada render ediliyordu,
+                  bu yüzden "Ayarlar" butonu o sayfalarda hiçbir şey açmıyordu.
+                  Burada TEK kez durur; sayfa başına kopya ARTIK YOK.
+                */}
+                <Navigation />
                 <SearchDialog />
                 <ScrollToTop />
                 <VisitTracker />

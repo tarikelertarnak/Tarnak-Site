@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { AuthForm } from '@/components/auth/auth-form'
-import { Navigation } from '@/components/navigation'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -16,7 +15,6 @@ export const dynamic = 'force-static'
 export default function SignupPage() {
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <main
         id="main"
         className="flex min-h-[70svh] w-full flex-col items-center justify-center px-4 pt-16 pb-8"

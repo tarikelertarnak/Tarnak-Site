@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 
 import type { LegalBodyProps } from '@/lib/phase6-server'
 import { FadeUpSection } from '@/components/fade-up-section'
-import { Navigation } from '@/components/navigation'
+import { LegalTitle } from '@/components/legal-title'
 import { LegalBodyClient } from '@/components/phase6-client'
 import { Section } from '@/components/ui/section'
 import { getPhase6 } from '@/lib/phase6-server'
@@ -29,7 +29,6 @@ export async function LegalPage({
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <main id="main" className="w-full">
         <Section
           className="flex-col pt-16 sm:pt-24 lg:pt-36 pb-0"
@@ -39,7 +38,18 @@ export async function LegalPage({
           <FadeUpSection className="w-full">
             <div className="flex flex-col gap-3">
               <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {sayfa?.title ?? varsayilanBaslik}
+                {/*
+                  Başlık: içerik varsa onu, yoksa `nav.*` sözlük anahtarını
+                  İSTEMCİDE çözer (2026-10-21). Kök layout `force-static`
+                  olduğu için sunucu her zaman TR basardı; hukuki sayfa
+                  başlığı EN gezinmede Türkçe kalıyordu.
+                */}
+                {sayfa?.title ?? (
+                  <LegalTitle
+                    i18nKey={anahtar === 'kvkk' ? 'nav.kvkk' : 'nav.privacy'}
+                    fallback={varsayilanBaslik}
+                  />
+                )}
               </h1>
             </div>
           </FadeUpSection>

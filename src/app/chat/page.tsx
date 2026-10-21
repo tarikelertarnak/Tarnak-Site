@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Chat } from '@/components/chat/chat'
-import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
 import { siteUrl } from '@/lib/site-url'
 
@@ -49,7 +48,6 @@ export default function ChatPage() {
       mesaj alanında olur (bkz. `chat.tsx` → `scrollToBottom`).
     */
     <div className="w-full relative">
-      <Navigation />
       <main id="main" className="">
         {/*
             100svh DEĞİL `calc(100svh - 3.5rem)`: üstte Akıştaki TopBar (h-14 =

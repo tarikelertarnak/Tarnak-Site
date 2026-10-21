@@ -3,7 +3,7 @@
 import type { SiteContent } from '@/lib/content'
 import { useMemo } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
-import { useT } from '@/components/locale-provider'
+import { useLocalizedContent, useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { ArrowUpRightIcon, ChevronUpIcon } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
@@ -26,8 +26,10 @@ import { buildSiteNavigation } from '@/lib/site-navigation'
  *    parlaklik veriyordu ve kart diger bolumlerden farkli duruyordu.
  *    Artik hicbir renk katmani yok, yalnizca notr bir ust cerceve.
  */
-export function Footer({ content }: { content: SiteContent }) {
+export function Footer({ content: rawContent }: { content: SiteContent }) {
   const { t } = useT()
+  // Sunucu HTML'i her zaman TR basar (force-static); veriyi aktif dile çevir.
+  const content = useLocalizedContent(rawContent)
 
   // Muzik calari TAM GENISLIKTE bir cubuk olarak ekranin altina sabitlenir
   // (bkz. music-player.tsx: `fixed bottom-0 left-0 right-0`). Acikken footer'in

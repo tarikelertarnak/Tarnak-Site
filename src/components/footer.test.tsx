@@ -26,6 +26,9 @@ const TR: Record<string, string> = {
 
 vi.mock('@/components/locale-provider', () => ({
   useT: () => ({ t: (key: string) => TR[key] ?? key, locale: 'tr' }),
+  // Footer artık veriyi istemcide yerelleştirir (`useLocalizedContent`);
+  // testte TR taban içerik verildiği için kimlik dönüşü yeterli.
+  useLocalizedContent: (content: unknown) => content,
 }))
 
 const CONTENT = {

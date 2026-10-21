@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { FadeUpSection } from '@/components/fade-up-section'
-import { Navigation } from '@/components/navigation'
 import { ProjectsGrid } from '@/components/projects/projects-grid'
 import { RememberListPath } from '@/components/remember-list-path'
 import { FolderIcon, GithubIcon } from '@/components/ui/icons'
@@ -29,7 +28,6 @@ export default async function ProjectsPage() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <RememberListPath path="/projects" />
       <main id="main" className="w-full">
         {/*

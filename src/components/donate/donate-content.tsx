@@ -3,7 +3,6 @@
 import { CopyButton } from '@/components/donate/copy-button'
 import { FadeUpItem, FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
-import { Navigation } from '@/components/navigation'
 import { Section } from '@/components/ui/section'
 
 const METHODS = [
@@ -72,7 +71,6 @@ export function DonateContent() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <main id="main" className="w-full">
         {/* Hero */}
         <Section className="flex-col pt-28 sm:pt-32 pb-12 sm:pb-16" id="donate">

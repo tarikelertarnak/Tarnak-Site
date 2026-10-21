@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useT } from '@/components/locale-provider'
-import { Navigation } from '@/components/navigation'
 import { FileQuestionIcon } from '@/components/ui/icons'
 
 export default function NotFound() {
@@ -10,7 +9,6 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <div className="relative z-10 mx-auto flex w-full max-w-2xl flex-col items-center gap-6 px-4 sm:px-6 py-28 sm:py-36 text-center">
         {/* IconPark "file-question" (outline) — Tarık'in istedigi ikon.
             shadcn/@icons0 registry'si bu projede tanimli olmadigi icin

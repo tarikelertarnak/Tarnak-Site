@@ -1,7 +1,6 @@
-import { Navigation } from '@/components/navigation'
 import { AboutSection } from '@/components/sections/about-section'
-import { getStaticLocalizedContent } from '@/lib/i18n-server'
 import { getCvs } from '@/lib/cv'
+import { getStaticLocalizedContent } from '@/lib/i18n-server'
 import { parsePhase6 } from '@/lib/phase6'
 
 /**
@@ -58,7 +57,6 @@ export default async function AboutPage() {
 
   return (
     <div className="relative min-h-screen w-full">
-      <Navigation />
       <main id="main" className="w-full">
         <AboutSection
           content={content}

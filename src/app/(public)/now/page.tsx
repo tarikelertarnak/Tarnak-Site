@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 
 import { FadeUpItem, FadeUpSection } from '@/components/fade-up-section'
-import { Navigation } from '@/components/navigation'
 import { Phase6EmptyI18n, Phase6Title } from '@/components/phase6-client'
 import { Section } from '@/components/ui/section'
 import { getPhase6 } from '@/lib/phase6-server'
@@ -35,7 +34,6 @@ export default async function NowPage() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <main id="main" className="w-full">
         <Section
           className="flex-col pt-16 sm:pt-24 lg:pt-36 pb-0"

@@ -1,5 +1,4 @@
 import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
-import { Navigation } from '@/components/navigation'
 import { ContactSection } from '@/components/sections/contact-section'
 import { CRUMBS, resolveCrumbs } from '@/lib/breadcrumb'
 import { t } from '@/lib/i18n'
@@ -32,7 +31,6 @@ export default async function ContactPage() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <main id="main" className="w-full">
         {/* Breadcrumb: görünür navigasyon + BreadcrumbList */}
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">

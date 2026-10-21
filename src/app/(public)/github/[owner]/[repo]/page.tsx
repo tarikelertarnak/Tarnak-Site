@@ -4,7 +4,6 @@ import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
 import { CodeCopyEnhancer } from '@/components/code-copy-enhancer'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { RepoVisitCounter } from '@/components/github/repo-visit-counter'
-import { Navigation } from '@/components/navigation'
 import { RepoCaseStudy, RepoSectionTitle, T } from '@/components/repo-i18n'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { resolveCrumbs } from '@/lib/breadcrumb'
@@ -93,7 +92,6 @@ export default async function GithubRepoPage({
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <main id="main" className="w-full">
         <div className="mx-auto w-full max-w-6xl px-4 pt-24 sm:px-6 sm:pt-28">
           <Breadcrumb items={crumb} />

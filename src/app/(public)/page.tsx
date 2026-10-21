@@ -1,5 +1,4 @@
 import { Footer } from '@/components/footer'
-import { Navigation } from '@/components/navigation'
 import {
   ServicesSection,
   TestimonialsSection,
@@ -45,7 +44,6 @@ export default async function Page() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <main id="main" className="w-full">
         <HeroSection content={content} cvs={cvs} />
         <AboutSection content={content} cvs={cvs} vcard={phase6?.vcard} />

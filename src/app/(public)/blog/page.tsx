@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Navigation } from '@/components/navigation'
 import { RememberListPath } from '@/components/remember-list-path'
 import { BlogSection } from '@/components/sections/blog-section'
 import { getPosts } from '@/lib/blog'
@@ -35,7 +34,6 @@ export default async function BlogPage() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <Navigation />
       <RememberListPath path="/blog" />
       <main id="main" className="contents">
         {/*
