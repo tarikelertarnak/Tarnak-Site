@@ -245,7 +245,7 @@ describe('chat arayüz sözleşmesi', () => {
         expect(src).toContain('<AuthForm')
       }
       expect(form).toContain('useSearchParams')
-      expect(form).toContain("searchParams.get('next')")
+      expect(form).toContain('searchParams.get(\'next\')')
       expect(form).toMatch(/startsWith\('\/'\) && !rawNext\.startsWith\('\/\/'\)/)
     })
   })
