@@ -76,7 +76,7 @@ export async function getLocalizedContent(): Promise<SiteContent> {
  * hydration sonrasi istemci tarafinda zaten uygulanir — bu degisiklik
  * fonksiyonu degil, sadece ilk boyanin ve SEO sinyallerinin dili duzeltir.
  */
-export const getStaticLocale = cache(async (): Promise<Locale> => 'tr')
+export const getStaticLocale = cache(async (): Promise<Locale> => 'en')
 
 export async function getStaticLocalizedContent(): Promise<SiteContent> {
   const content = await getContent()

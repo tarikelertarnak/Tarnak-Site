@@ -901,7 +901,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       },
     ],
     about: {
-      subtitle: 'ABOUT ME',
+      subtitle: 'HAKKIMDA',
       title: 'A Glimpse Into My World',
       // Açıklama kaldırıldı (2026-10-21, kullanıcı isteği).
       description: '',
@@ -991,7 +991,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       },
     },
     projects: {
-      subtitle: 'PROJECTS',
+      subtitle: 'PROJELER',
       title: 'All Projects',
       // Açıklama kaldırıldı (2026-10-21, kullanıcı isteği) — uydurma metin yazılmaz.
       description: '',
@@ -1025,7 +1025,7 @@ async function getDefaultContent(): Promise<SiteContent> {
       otherLanguages: 'English (A2), German (A1)',
     },
     contact: {
-      subtitle: 'Contact',
+      subtitle: 'İLETİŞİM',
       title: 'Contact',
       description: '',
       footerText: '',
