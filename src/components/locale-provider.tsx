@@ -28,7 +28,7 @@ interface LocaleContextValue {
 const LocaleContext = createContext<LocaleContextValue | null>(null)
 
 /**
- * Bilingual provider — Turkish default, English opt-in.
+ * Bilingual provider — English default, Turkish via translation layer.
  * setPref persists the choice to the `site-locale` cookie and refreshes the
  * page so server components re-render with the new locale.
  */
