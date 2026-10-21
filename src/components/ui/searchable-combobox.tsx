@@ -152,8 +152,12 @@ setOpen(false)
         */
         className={`${HERO_BTN_TRIGGER} cursor-pointer`}
       >
-        {selectedOption?.icon}
-        <span className="max-w-[12rem] truncate">{triggerText}</span>
+        {selectedOption?.icon && (
+          <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center leading-none">
+            {selectedOption.icon}
+          </span>
+        )}
+        <span className="max-w-[12rem] truncate leading-none">{triggerText}</span>
         {multiple && (badge ?? 0) > 0 && (
           <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
             {badge}
@@ -250,8 +254,12 @@ setOpen(false)
                         size={13}
                         className={active ? '' : 'opacity-0'}
                       />
-                      {o.icon}
-                      <span className="truncate">{o.label}</span>
+                      {o.icon && (
+                        <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center leading-none">
+                          {o.icon}
+                        </span>
+                      )}
+                      <span className="truncate leading-none">{o.label}</span>
                     </button>
                   </li>
                 )

@@ -61,15 +61,21 @@ interface SettingsDraft {
   musicEnabled: boolean
 }
 
-/** localStorage'da yazan (yani gercekten uygulanmis) degerleri oku. */
-function readApplied(): SettingsDraft {
+/**
+ * Gercekten uygulanmis (yazan) degerleri oku.
+ *
+ * ⚠️ DİL localStorage'DAN OKUNMAZ (2026-10-21 düzeltmesi). Tercih
+ * `site-locale` CEREZINDE tutuluyor (`LocaleProvider.setPref`), ama eski
+ * `readLocal` yalnizca `localStorage.getItem` okuyordu → her acilista
+ * `'auto'` dönüyordu. Kullanici Çince seçip Kaydet'e basinca cerez `zh`
+ * oluyor, panel yeniden acilinca "Otomatik" gorunuyordu (seçim kaybolmus
+ * gibi). Artik dil, aktif `LocaleProvider` durumundan (`pref` argümanı)
+ * gelir — o da cerezden cozulmustur ve kayitla birebir ayni anahtari kullanir.
+ */
+function readApplied(pref: LocalePref): SettingsDraft {
   return {
     theme: readLocal(THEME_KEY, ['auto', 'light', 'dark'] as const, 'auto'),
-    pref: readLocal<LocalePref>(
-      LOCALE_COOKIE,
-      ['auto', ...LOCALES_ALL],
-      'auto',
-    ),
+    pref,
     reduceMotion:
       readLocal(REDUCE_MOTION_KEY, ['true', 'false'] as const, 'false')
       === 'true',
@@ -106,15 +112,16 @@ export function SettingsModal({
   const bypassNav = useRef(false)
 
   // Panel acilir acilmaz taslagi diskteki GERCEK degerlerden doldur.
+  // `pref` bagimliligi: cerezden cozulen dil degisirse taslak da tazelenir.
   useEffect(() => {
     if (!open)
 return
-    const next = readApplied()
+    const next = readApplied(pref)
     setApplied(next)
     setDraft(next)
     setConfirmOpen(false)
     bypassNav.current = false
-  }, [open])
+  }, [open, pref])
 
   const dirty
     = !!draft
@@ -307,7 +314,7 @@ return
     setPref('auto')
 
     // Sifirla = kalici bir islem; taslak kirli kalmasin.
-    const reset = readApplied()
+    const reset = readApplied('auto')
     setApplied(reset)
     setDraft(reset)
     setConfirmOpen(false)
@@ -341,7 +348,11 @@ return
     <>
       {t('lang.auto')}
       {' ('}
-      {AutoFlag && <AutoFlag size={16} className="inline-block align-[-2px]" />}
+      {AutoFlag && (
+        <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center align-middle leading-none">
+          <AutoFlag size={14} />
+        </span>
+      )}
       {` ${NATIVE_NAMES[detected]})`}
     </>
   )

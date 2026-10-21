@@ -218,9 +218,11 @@ export function localeDirection(locale: Locale): 'ltr' | 'rtl' {
 type Dictionary = Record<string, string>
 
 /**
- * Per-locale UI dictionaries. `tr` is the fallback default; `extra`
- * provides the full translations for every other locale (en included via
- * en.json). Missing keys fall back to Turkish.
+ * Per-locale UI dictionaries. Missing keys fall back to ENGLISH — the
+ * international default stated in the file header (`en` is `enDict`). NOT
+ * Turkish: a visitor whose language has no dictionary (e.g. `zh`, `ko`) must
+ * see English, not Turkish. (`tr` is complete, so Turkish visitors are
+ * unaffected.)
  */
 export const dictionaries: Partial<Record<Locale, Dictionary>> = {
   tr: trDict,
@@ -237,7 +239,11 @@ export function t(
   key: string,
   vars?: Record<string, string | number>,
 ): string {
-  const raw = dictionaries[locale]?.[key] ?? trDict[key as keyof typeof trDict] ?? key
+  const raw
+    = dictionaries[locale]?.[key]
+      ?? enDict[key as keyof typeof enDict]
+      ?? trDict[key as keyof typeof trDict]
+      ?? key
   if (!vars) {
     return raw
   }

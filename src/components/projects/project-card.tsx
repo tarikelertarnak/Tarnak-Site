@@ -105,29 +105,45 @@ return null
   return m ? { owner: m[1], repo: m[2] } : null
 }
 
-/** Release asset adından hedef platform — bilinmeyenler (zip/yml/blockmap vb.) OS'siz kalır. */
-function assetOS(name: string): OSKey | undefined {
+/**
+ * Release asset adından hedef platform.
+ *
+ * ⚠️ Windows SCRIPT'leri de Windows'tur (2026-10-21 düzeltmesi): canlıda
+ * `ActivaterWindows`'un v2.5.0/.cmd/.ps1 asset'leri "Other" grubuna düşüyordu
+ * çünkü yalnizca `.exe` taniniyordu. Sonuç: en yeni sürümler Windows altinda
+ * hiç görünmüyor, "Latest" ise yanlislikla eski `.exe`'yi (v1.0.0) gosteriyordu.
+ * `.cmd`/`.bat`/`.ps1`/`.msi`/`.msix` → Windows. Bilinmeyenler (zip/yml/…) OS'siz.
+ */
+export function assetOS(name: string): OSKey | undefined {
   const n = name.toLowerCase()
-  if (n.endsWith('.exe'))
-return 'windows'
-  if (n.endsWith('.dmg'))
-return 'macos'
+  if (
+    n.endsWith('.exe')
+    || n.endsWith('.msi')
+    || n.endsWith('.msix')
+    || n.endsWith('.cmd')
+    || n.endsWith('.bat')
+    || n.endsWith('.ps1')
+  ) {
+    return 'windows'
+  }
+  if (n.endsWith('.dmg') || n.endsWith('.pkg'))
+    return 'macos'
   if (n.endsWith('.appimage') || n.endsWith('.deb') || n.endsWith('.rpm'))
     return 'linux'
   if (n.endsWith('.apk'))
-return 'android'
+    return 'android'
   if (n.includes('ios'))
-return 'ios'
+    return 'ios'
   return undefined
 }
 
-interface ReleaseDto {
+export interface ReleaseDto {
   tagName: string
   assets: Array<{ name: string, downloadUrl: string }>
 }
 
 /** Her release'i TAG önekiyle ayrıştırır: "v1.0.0 — Player-1.0.0-mac-arm64.dmg". */
-function releaseOptions(releases: ReleaseDto[]): DownloadOption[] {
+export function releaseOptions(releases: ReleaseDto[]): DownloadOption[] {
   const opts: DownloadOption[] = []
   for (const release of releases) {
     for (const asset of release.assets) {
@@ -441,7 +457,7 @@ next.delete(opt.url)
           type="button"
           onClick={toggle}
           onMouseDown={e => e.stopPropagation()}
-          aria-label={isSelected ? 'Kaldır' : 'Seç'}
+          aria-label={isSelected ? t('projects.deselectItem') : t('projects.selectItem')}
           className={cn(
             'flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors',
             isSelected
@@ -548,10 +564,8 @@ next.delete(opt.url)
             {selected.size > 0 && (
               <div className="mx-1.5 mb-1.5 flex items-center gap-2 rounded-lg border border-foreground/15 bg-foreground/[0.06] px-2.5 py-2">
                 <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">
-                  {selected.size}
-{' '}
-seçildi
-</span>
+                  {t('projects.selectedCount', { count: selected.size })}
+                </span>
                 <button
                   type="button"
                   onMouseDown={e => e.stopPropagation()}
@@ -565,13 +579,13 @@ seçildi
                   }}
                   className="shrink-0 rounded-md bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-foreground transition-opacity hover:opacity-90"
                 >
-                  ↓ Toplu İndir
+                  {t('projects.batchDownload')}
                 </button>
                 <button
                   type="button"
                   onMouseDown={e => e.stopPropagation()}
                   onClick={() => setSelected(new Set())}
-                  aria-label="Temizle"
+                  aria-label={t('projects.clearSelection')}
                   className="shrink-0 rounded-md border border-foreground/20 px-1.5 py-1 text-[11px] text-foreground/80 transition-colors hover:text-foreground"
                 >
                   <CloseIcon size={12} />
