@@ -45,8 +45,13 @@ export function isGitHubNotFound(error: unknown): boolean {
  * Kural TEK YERDE yaşar: hem istemci sayfaları (`github-client`) hem admin
  * "Tablolar" sayımı (`admin/overview`) bu kümeyi kullanır — iki yerde
  * yazılsaydı biri unutulur ve depo geri sızardı.
+ *
+ * 2026-10-21 (kullanıcı): "bütün Public'ler görünmeli" → `Player` artık
+ * gizlenmiyor. GitHub'da 11 depo var: 10 public + 1 private (`db-private`).
+ * Private olan API'ye hiç düşmez; public olanların HEPSİ görünmeli.
+ * Kume bos birakildi: ileride yine gizlemek istenirse tek buraya eklenir.
  */
-export const EXCLUDED_REPOS = new Set(['Player'])
+export const EXCLUDED_REPOS = new Set<string>()
 
 export function httpsGet(
   url: string,

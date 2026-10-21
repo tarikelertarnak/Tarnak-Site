@@ -64,6 +64,7 @@ const REPO_DESCRIPTIONS_TR: Record<string, string> = {
   'tarikelertarnak': 'GitHub profil README\'si.',
   'tarikelertarnak.github.io': 'Kişisel portfolyo web sitesi.',
   'AI-Jailbreak': 'AI model güvenlik sınır testleri için prompt koleksiyonu.',
+  'Player': 'Modern, çok platformlu medya oynatıcı — müzik, video, ses, eklentiler ve AI entegrasyonu.',
   'OfficeSetupWizard':
     'Tek tıkla Microsoft Office LTSC Professional Plus 2024 kurulum ve aktivasyonu (Office Deployment Tool sarmalayıcısı).',
 }
