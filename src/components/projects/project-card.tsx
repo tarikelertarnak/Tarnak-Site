@@ -27,9 +27,9 @@ import {
 import { SplitButton } from '@/components/ui/split-button'
 import { StarRating } from '@/components/ui/star-rating'
 import {
-  readProjectStats,
-  recordDownload,
-  recordProjectView,
+  fetchProjectStats,
+  recordDownloadAsync,
+  recordProjectViewAsync,
 } from '@/lib/project-stats'
 
 function useProjectStats(title: string) {
@@ -37,19 +37,24 @@ function useProjectStats(title: string) {
   const [downloads, setDownloads] = useState(0)
 
   useEffect(() => {
-    const s = readProjectStats(title)
-    setViews(s.views)
-    setDownloads(s.downloads)
+    let alive = true
+    fetchProjectStats(title).then((s) => {
+      if (alive) {
+        setViews(s.views)
+        setDownloads(s.downloads)
+      }
+    })
+    return () => { alive = false }
   }, [title])
 
   // View count: Open Page / Open in GitHub / /github/OWNER/REPO visit —
   // the same user counts only ONCE per project (dedup flag).
   const recordView = () => {
-    setViews(recordProjectView(title))
+    recordProjectViewAsync(title).then(setViews)
   }
 
   const trackDownload = () => {
-    setDownloads(recordDownload(title))
+    recordDownloadAsync(title).then(setDownloads)
   }
 
   return { views, downloads, recordView, trackDownload }

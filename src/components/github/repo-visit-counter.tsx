@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { EyeIcon } from '@/components/ui/icons'
-import { recordProjectView } from '@/lib/project-stats'
+import { recordProjectViewAsync } from '@/lib/project-stats'
 
 /**
  * /github/OWNER/REPO ayna sayfası.
@@ -23,8 +23,7 @@ export function RepoVisitCounter({
   const [leaving, setLeaving] = useState(false)
 
   useEffect(() => {
-    const count = recordProjectView(title)
-    setViews(count)
+    recordProjectViewAsync(title).then(setViews)
 
     // Kullanıcı beklemesin: gerçek GitHub sayfasını aç.
     const go = window.setTimeout(() => {
@@ -51,7 +50,7 @@ export function RepoVisitCounter({
         rel="noopener noreferrer"
         onClick={() => {
           setLeaving(true)
-          recordProjectView(title)
+          recordProjectViewAsync(title).then(setViews)
         }}
         className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-medium text-primary-fg no-underline transition-colors hover:bg-primary/90"
       >
