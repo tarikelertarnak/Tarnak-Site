@@ -331,7 +331,7 @@ export default async function RootLayout({
                 // gereksiz: `name` zaten "Tarık Eler (Tarnak)" diyor.
                 'alternateName': ['Tarnak'],
                 'url': SITE_URL,
-                'inLanguage': ['tr', 'en'],
+                'inLanguage': ['en', 'tr'],
                 // 2026-10-04: `potentialAction: SearchAction` KALDIRILDI.
                 // Iki neden: (1) Google Kasim 2024'te sitelinks arama kutusu
                 // ozelligini kaldirdi, schema.org uzerinden isteniyorsa bile
