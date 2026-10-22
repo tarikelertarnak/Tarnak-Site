@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/icons'
 import { Section, SectionTitle } from '@/components/ui/section'
 import { TechIcon } from '@/components/ui/tech-icon'
+import { Tilt3D } from '@/components/ui/tilt-3d'
 import { VCardQr } from '@/components/vcard-qr'
 import { siteUrl } from '@/lib/site-url'
 import { buildVCard } from '@/lib/vcard'
@@ -171,12 +172,14 @@ export function AboutSection({
                 4/8px katları: gap-x-8 = 32, mt-2 = 8, sm:gap-6 = 24.
             */}
             <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
+<Tilt3D intensity={5} className="shrink-0">
               <img
                 src={content.profile.profileImage || undefined}
                 alt={`${content.profile.firstName} ${content.profile.lastName} — profil fotoğrafı`}
                 referrerPolicy="no-referrer"
                 className="h-24 w-24 shrink-0 rounded-full border border-foreground-200/10 object-cover"
               />
+            </Tilt3D>
               <div className="flex w-full flex-col gap-1">
                 <h3 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
                   <UserIcon size={20} className="text-primary" />
