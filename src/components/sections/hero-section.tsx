@@ -21,6 +21,7 @@ import {
   UserPlusIcon,
 } from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
+import { Tilt3D } from '@/components/ui/tilt-3d'
 import { heroScrollTop } from '@/lib/hero-scroll'
 import { parsePhase6 } from '@/lib/phase6'
 import { scrollToY } from '@/lib/scroll'
@@ -121,6 +122,7 @@ export function HeroSection({
           <motion.div variants={item} className="mb-4 flex justify-center">
             <AvailabilityBadge data={phase6?.availability} />
           </motion.div>
+<Tilt3D intensity={6}>
           <motion.a
             href={`${SITE_URL}/`}
             aria-label={`${content.profile.firstName} ${content.profile.lastName}`}
@@ -155,6 +157,7 @@ export function HeroSection({
                   />
                 )}
           </motion.a>
+        </Tilt3D>
 
           {/*
             Name + TARNAK: aynı tipografi (font-black / uppercase /

@@ -10,6 +10,7 @@ import { CloseIcon, SearchIcon } from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
 import { LoadMoreButton } from '@/components/ui/load-more-button'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
+import { Tilt3D } from '@/components/ui/tilt-3d'
 import { clientFetchUserRepos } from '@/lib/github-client'
 import { scrollToElement } from '@/lib/scroll'
 import { useRowPagination } from '@/lib/use-row-pagination'
@@ -433,7 +434,9 @@ return false
         >
           {shown.map(project => (
             <FadeUpItem key={project.title}>
-              <ProjectCard project={project} />
+              <Tilt3D>
+                <ProjectCard project={project} />
+              </Tilt3D>
             </FadeUpItem>
           ))}
         </div>
