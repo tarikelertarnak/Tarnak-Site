@@ -1599,14 +1599,11 @@ tablosundan
     },
     {
       key: 'profile',
-      label: <TabLabel icon="mdi:account-circle" text="Profil & Hakkımda" />,
+      label: <TabLabel icon="mdi:account-circle" text="Profil" />,
       children: (
         <div className="min-w-0 space-y-8">
         <SubSection title="Profil" icon="mdi:account-circle">
           {profilePane}
-        </SubSection>
-        <SubSection title="Hakkımda" icon="mdi:information-outline">
-          {aboutPane}
         </SubSection>
         <SubSection title="Hakkımda Sayfası (/about)" icon="mdi:card-account-details-outline">
           <AboutPageEditor
@@ -1620,7 +1617,14 @@ tablosundan
     {
       key: 'pages',
       label: <TabLabel icon="mdi:file-document-edit-outline" text="Sayfa Düzenle" />,
-      children: <div className="min-w-0">{pagesPane}</div>,
+      children: (
+        <div className="min-w-0 space-y-8">
+        <SubSection title="Hakkımda" icon="mdi:information-outline">
+          {aboutPane}
+        </SubSection>
+        {pagesPane}
+        </div>
+      ),
     },
     {
       key: 'settings',
@@ -1674,11 +1678,12 @@ tablosundan
         icon={<Icon icon="mdi:shield-account" width={36} height={36} />}
         tightGap
       />
-      <div className="mt-2 mb-6 flex min-w-0 flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-        <div className="min-w-0">
+      <div className="mt-2 mb-6 flex min-w-0 flex-col items-center justify-between gap-3">
+        <div className="min-w-0 flex justify-center">
           {/* Kimlik bloğu (2026-10-13, kullanıcı isteği): "giriş yapan" + yetki
-              ayrı satırlar yerine TEK gruplu kutuda; rol rozet olarak. */}
-          <div className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-surface-border bg-surface-1 px-3 py-1.5 text-sm text-foreground-500">
+              ayrı satırlar yerine TEK gruplu kutuda; rol rozet olarak.
+              2026-10-23: ortalı — kullanıcı "Giriş yapan ... kısmı ortalanmış olsun". */}
+          <div className="inline-flex flex-wrap items-center justify-center gap-x-3 gap-y-1 rounded-lg border border-surface-border bg-surface-1 px-3 py-1.5 text-sm text-foreground-500">
             <span>
               Giriş yapan:
               {' '}
@@ -1694,7 +1699,7 @@ tablosundan
             )}
           </div>
         </div>
-        <div className="flex min-w-0 flex-row flex-wrap gap-2">
+        <div className="flex min-w-0 flex-row flex-wrap justify-center gap-2">
           {/* 2026-10-07 (kullanıcı): "Sayfa Düzenleyici" ve `/admin/puck`
               TAMAMEN kaldırıldı. Görsel sayfa düzenleyici (Puck) kullanılmıyor;
               içerik artık içerik dosyası + admin formları üzerinden yönetiliyor.

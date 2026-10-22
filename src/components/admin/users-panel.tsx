@@ -546,12 +546,6 @@ Son giriş:
           </ul>
         )}
       </Card>
-      <p className="text-xs text-foreground-500">
-        Şifreler Supabase tarafında hash&apos;li saklanır — düz metin olarak
-        görüntülenemez. Yetki ve limitler sunucuda zorlanır (arayüzde gizlemek
-        güvenlik sayılmaz). &quot;İncele&quot; yalnız site sahibine görünür ve
-        her açılış denetim kaydına yazılır.
-      </p>
 
       <UserEditForm
         userId={editFor}

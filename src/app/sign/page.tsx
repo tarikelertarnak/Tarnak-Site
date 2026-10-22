@@ -3,7 +3,7 @@ import { AuthForm } from '@/components/auth/auth-form'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'Kayıt Ol | TARIK ELER - TARNAK',
+    title: 'Sign Up | TARIK ELER - TARNAK',
     // 2026-10-04: layout'tan `index: true` miras aliyordu — kayit formu
     // indeksleniyordu. noindex (bkz. login/page.tsx).
     robots: { index: false, follow: false },

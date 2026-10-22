@@ -308,7 +308,7 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
                 className="grid w-full max-w-6xl scroll-mt-24 grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6"
               >
                 {shown.map(post => (
-                  <a key={post.id} href={`/blog/${post.slug}`} className="group">
+                  <a key={post.id} href={`/blog/${post.slug}`} className="group h-full">
                     <div className="flex h-full flex-col gap-3 rounded-3xl border border-surface-border bg-background p-5 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-primary/30 group-hover:shadow-xl group-hover:shadow-primary/5">
                       <div className="flex flex-col gap-1">
                         <div className="flex flex-row items-center justify-between gap-2">

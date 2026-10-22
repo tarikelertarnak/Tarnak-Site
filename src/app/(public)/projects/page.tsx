@@ -10,14 +10,14 @@ import { getStaticLocalizedContent } from '@/lib/i18n-server'
 export const dynamic = 'force-static'
 
 export const metadata: Metadata = {
-  title: 'Projeler — TARIK ELER - TARNAK',
+  title: 'PROJECTS — TARIK ELER - TARNAK',
   description:
-    'TARIK ELER (Tarnak) tarafından geliştirilen açık kaynak projeler: masaüstü uygulamalar, web araçları, tarayıcı eklentileri ve yapay zeka projeleri. Windows, macOS ve Linux için indirilebilir sürümler.',
+    'Open-source projects developed by TARIK ELER (Tarnak): desktop applications, web tools, browser extensions and AI projects. Downloadable builds for Windows, macOS and Linux.',
   alternates: { canonical: '/projects' },
   openGraph: {
-    title: 'Projeler — TARIK ELER - TARNAK',
+    title: 'PROJECTS — TARIK ELER - TARNAK',
     description:
-      'Açık kaynak projeler: masaüstü uygulamalar, web araçları, tarayıcı eklentileri ve yapay zeka projeleri.',
+      'Open-source projects: desktop applications, web tools, browser extensions and AI projects.',
     url: '/projects',
     type: 'website',
   },

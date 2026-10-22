@@ -3,7 +3,7 @@ import { AuthForm } from '@/components/auth/auth-form'
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'Giriş | TARIK ELER - TARNAK',
+    title: 'Login | TARIK ELER - TARNAK',
     // 2026-10-04: Bu sayfa metadata'da SADECE title tasidi; `robots` alani
     // tanimli olmadigi icin layout'tan `index: true, follow: true` MIRAS
     // aliyordu. Yani giris formu Google'a "indekslenmeye uygun sayfa"

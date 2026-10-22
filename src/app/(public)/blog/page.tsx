@@ -15,16 +15,16 @@ export const dynamic = 'force-static'
 // (self-canonical degil, cross-canonical) ve Google'a "bu sayfa / ile ayni"
 // sinyali gidiyordu. Asagida kendi kimligini aliyor.
 export const metadata: Metadata = {
-  title: 'Blog — Yazılarım | Tarık Eler',
+  title: 'BLOG — TARIK ELER - TARNAK',
   description:
-    'Tarık Eler blog: Next.js, TypeScript, React ve yapay zeka üzerine yazılar. Yazılım geliştirme notları, projeler ve öğrenimler — tarik eler, tarnak.',
+    'TARIK ELER blog: posts on Next.js, TypeScript, React and AI. Software development notes, projects and learnings.',
   alternates: { canonical: '/blog' },
   openGraph: {
     type: 'website',
     url: siteUrl('/blog'),
-    title: 'Blog — Yazılarım | Tarık Eler',
+    title: 'BLOG — TARIK ELER - TARNAK',
     description:
-      'Next.js, TypeScript, React ve yapay zeka üzerine yazılar. Yazılım geliştirme notları, projeler ve öğrenimler.',
+      'Posts on Next.js, TypeScript, React and AI. Software development notes, projects and learnings.',
   },
 }
 

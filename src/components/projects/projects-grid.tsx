@@ -433,8 +433,8 @@ return false
           className="grid w-full scroll-mt-24 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6"
         >
           {shown.map(project => (
-            <FadeUpItem key={project.title}>
-              <Tilt3D>
+            <FadeUpItem key={project.title} className="h-full">
+              <Tilt3D className="h-full">
                 <ProjectCard project={project} />
               </Tilt3D>
             </FadeUpItem>

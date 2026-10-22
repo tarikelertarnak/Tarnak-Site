@@ -21,9 +21,9 @@ export const dynamic = 'force-static'
 
 export const metadata = pageMetadata({
   path: '/contact',
-  title: 'İletişim',
+  title: 'CONTACT',
   description:
-    'Tarık Eler (Tarnak) ile iletişime geç: e-posta, telefon, Discord ve iletişim formu.',
+    'Contact TARIK ELER (Tarnak): email, phone, Discord and contact form.',
 })
 
 export default async function ContactPage() {

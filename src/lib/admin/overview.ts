@@ -225,6 +225,34 @@ export async function getOverview(): Promise<OverviewData> {
     }
   }
 
+  // --- 1b) Diller: tablo yokken içerikten say ------------------------------
+  // `languages` tablosu yoksa panel "0 / yok" gösteriyordu, ama dil bilgisi
+  // `content.profile`'ta zaten VAR (firstLanguage + otherLanguages). Tablo
+  // eksikken bile gerçek sayıyı göster: tablo satırı > 0 ise tablo, değilse
+  // içerikten hesap (ana dil 1 + otherLanguages virgülle ayrılmış).
+  const langStat = tables.find(t => t.key === 'languages')
+  if (langStat && (langStat.count === null || langStat.count === 0)) {
+    let fromContent = 0
+    try {
+      const content = await getContent()
+      const p = content.profile as { firstLanguage?: string, otherLanguages?: string }
+      if (p.firstLanguage?.trim())
+        fromContent += 1
+      fromContent += (p.otherLanguages ?? '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
+        .length
+    }
+    catch { /* content okunamadıysa sayı güncellenmez */ }
+    if (fromContent > 0) {
+      langStat.count = fromContent
+      langStat.status = 'ok'
+      langStat.message
+        = `'languages' tablosu yok — sayı içerikten hesaplandı (${fromContent}).`
+    }
+  }
+
   // --- 2) Mesajlar: toplam + okunmamis --------------------------------------
   const messageStat = tables.find(t => t.key === 'messages')
   let unread = 0
