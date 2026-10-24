@@ -1627,6 +1627,11 @@ tablosundan
       ),
     },
     {
+      key: 'password',
+      label: <TabLabel icon="mdi:shield-lock-outline" text="Şifre & Güvenlik" />,
+      children: <div className="min-w-0 space-y-4 pt-4">{securityPane}</div>,
+    },
+    {
       key: 'settings',
       label: <TabLabel icon="mdi:cog-outline" text="Site Ayarları" />,
       children: (
@@ -1636,9 +1641,6 @@ tablosundan
         </SubSection>
         <SubSection title="Sosyal Medya" icon="mdi:share-variant-outline">
           {socialPane}
-        </SubSection>
-        <SubSection title="Şifre & Güvenlik" icon="mdi:shield-lock-outline">
-          {securityPane}
         </SubSection>
         </div>
       ),
