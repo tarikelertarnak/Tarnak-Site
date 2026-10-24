@@ -12,6 +12,9 @@ dns.setDefaultResultOrder('ipv4first')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    agentUpgrade: 'security',
+  },
   // GitHub Pages statik export: EXPORT_MODE=1 iken next build "out/" üretir.
   // OpenNext (Workers/Cloudflare) build'ini etkilemez — export ekstra moddur.
   // Admin bileşenleri API route'larından tip import eder; export'ta API hariç
