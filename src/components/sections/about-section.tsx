@@ -4,7 +4,6 @@ import type { ReactNode } from 'react'
 import type { SiteContent, ToolboxItem as ToolboxItemType } from '@/lib/content'
 import type { CvDoc } from '@/lib/cv'
 import type { VCard } from '@/lib/phase6'
-import { Popover } from '@lobehub/ui/base-ui'
 import { useState } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { FadeUpSection } from '@/components/fade-up-section'
@@ -22,7 +21,6 @@ import {
   CopyIcon,
   FileIcon,
   LaptopIcon,
-  MusicIcon,
   SchoolIcon,
   UserIcon,
 } from '@/components/ui/icons'
@@ -36,7 +34,6 @@ import { buildVCard } from '@/lib/vcard'
 /** Interest icons — iconify id → SVG (no iconify dependency). */
 const INTEREST_ICONS: Record<string, ReactNode> = {
   'mdi:laptop': <LaptopIcon size={14} />,
-  'mdi:music': <MusicIcon size={14} />,
   'mdi:creation': <BrainIcon size={14} />,
 }
 
@@ -641,20 +638,24 @@ function InterestsItem({
   content: string
 }) {
   return (
-    <Popover
-      placement="bottom"
-      content={(
+    <li className="group flex cursor-pointer flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 min-h-[38px]">
+      <IconPopup
+        label={String(children)}
+        className="w-full"
+        triggerClassName="flex w-full cursor-pointer items-center text-left"
+        trigger={(
+          <>
+            <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">
+              {icon}
+            </span>
+            <span className="truncate font-medium">{children}</span>
+          </>
+        )}
+      >
         <div className="max-w-[200px] sm:max-w-[225px] break-words px-1 py-2 text-xs sm:text-sm">
           {content}
         </div>
-      )}
-    >
-      <li className="group flex animate-gradient cursor-pointer flex-row items-center rounded-xl border border-foreground-200/10 bg-background px-3 py-2 text-xs sm:text-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/5 min-h-[38px]">
-        <span className="mr-2 shrink-0 text-foreground-500 transition-colors duration-300 group-hover:text-primary">
-          {icon}
-        </span>
-        <span className="truncate font-medium">{children}</span>
-      </li>
-    </Popover>
+      </IconPopup>
+    </li>
   )
 }

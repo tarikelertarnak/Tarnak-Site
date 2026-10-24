@@ -65,23 +65,26 @@ export function LocaleProvider({
     // Sunucu karari varsa onu kullan (tek kaynak). Yoksa istemci tarafinda
     // tespit: tarayici dili, sonra bolge kodu.
     let detected: Locale
-    if (detectedLocale) {
+    // İstemci tarafında tarayıcı dilinden tespit (öncelikli). Sunucu kararini
+    // (build-time 'en' sabit) kullanmıyoruz çünkü bu, Türkçe sistemlerde
+    // 'en' dönmesine ve otomatik algılamayı bozuyordu.
+    if (typeof navigator !== 'undefined' && navigator.language) {
+      detected = detectLocale(navigator.language)
+      try {
+        const region = (navigator.language.split('-')[1] || '').toUpperCase()
+        if (region) {
+          detected = detectLocaleFromCountry(region) ?? detected
+        }
+      }
+      catch {
+        /* locale unavailable — keep browser-language result */
+      }
+    }
+    else if (detectedLocale) {
       detected = detectedLocale
     }
     else {
-      detected = detectLocale(typeof navigator !== 'undefined' ? navigator.language : undefined)
-      if (typeof navigator !== 'undefined') {
-        try {
-          // "pt-BR" → region "BR" → pt; "en-US" → region not in map → keep 'en'.
-          const region = (navigator.language.split('-')[1] || '').toUpperCase()
-          if (region) {
-            detected = detectLocaleFromCountry(region) ?? detected
-          }
-        }
-        catch {
-          /* locale unavailable — keep browser-language result */
-        }
-      }
+      detected = 'en'
     }
     const locale = resolveLocale(pref, detected)
     const setPref = (next: LocalePref) => {
