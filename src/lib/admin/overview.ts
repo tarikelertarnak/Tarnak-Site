@@ -218,6 +218,11 @@ export async function getOverview(): Promise<OverviewData> {
   for (const t of tables) {
     if (t.key !== 'projects')
       continue
+    // Tablo bosken (0/null) toplam proje sayisi GitHub repo sayisindan gelsin.
+    if ((t.count === null || t.count === 0) && githubRepoCount !== null) {
+      t.count = githubRepoCount
+      t.status = 'ok'
+    }
     t.external = {
       label: 'GitHub projeleri',
       count: githubRepoCount,
