@@ -29,6 +29,7 @@ import { UsersPanel } from '@/components/admin/users-panel'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { aboutPageErrors, normalizeAboutPage } from '@/lib/about-page'
@@ -713,6 +714,70 @@ return item
                 kullanılır. PNG, JPG, WEBP, GIF veya SVG — en fazla 8 MB.
               </p>
             </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <Field label="Arka plan gösterim teması">
+              <SearchableCombobox
+                multiple={false}
+                options={[
+                  { value: 'all', label: 'Hepsi' },
+                  { value: 'dark', label: 'Sadece koyu' },
+                  { value: 'light', label: 'Sadece açık' },
+                ]}
+                selected={[content.settings.backgroundTheme ?? 'all']}
+                onSelect={(v) => {
+                  setContent(prev => ({
+                    ...prev,
+                    settings: { ...prev.settings, backgroundTheme: v as 'all' | 'dark' | 'light' },
+                  }))
+                }}
+                onClear={() => {}}
+                placeholder="Hepsi"
+                searchPlaceholder="Ara..."
+                ariaLabel="Arka plan gösterim teması"
+              />
+            </Field>
+            <Field label="Arka plan gösterilecek sayfalar">
+              <SearchableCombobox
+                multiple
+                options={[
+                  { value: '/chat', label: '/chat' },
+                  { value: '/about', label: '/about' },
+                  { value: '/projects', label: '/projects' },
+                  { value: '/blog', label: '/blog' },
+                  { value: '/contact', label: '/contact' },
+                  { value: '/admin', label: '/admin' },
+                  { value: '/uses', label: '/uses' },
+                  { value: '/now', label: '/now' },
+                ]}
+                selected={content.settings.backgroundPages ?? []}
+                onSelect={(v) => {
+                  setContent((prev) => {
+                    const current = prev.settings.backgroundPages ?? []
+                    const exists = current.includes(v)
+                    return {
+                      ...prev,
+                      settings: {
+                        ...prev.settings,
+                        backgroundPages: exists ? current.filter(x => x !== v) : [...current, v],
+                      },
+                    }
+                  })
+                }}
+                onClear={() => {
+                  setContent(prev => ({
+                    ...prev,
+                    settings: { ...prev.settings, backgroundPages: [] },
+                  }))
+                }}
+                placeholder="Tüm sayfalar"
+                searchPlaceholder="Ara..."
+                ariaLabel="Arka plan gösterilecek sayfalar"
+                showAllOption
+                allLabel="Hepsi"
+                badge={(content.settings.backgroundPages ?? []).length}
+              />
+            </Field>
           </div>
           <div className="flex flex-row flex-wrap items-center gap-x-4 gap-y-2 text-xs text-foreground-500">
             <span className="flex items-center gap-1.5">
@@ -1548,6 +1613,11 @@ tablosundan
   const pagesPane = (
     <PageEditTabs>
       {{
+        about: (
+          <PanelCard title="HAKKIMDA">
+            <div className="space-y-4">{aboutPane}</div>
+          </PanelCard>
+        ),
         projects: (
           <PanelCard title="PROJELER">
             <div className="space-y-4">{projectsPane}</div>
@@ -1618,11 +1688,8 @@ tablosundan
       key: 'pages',
       label: <TabLabel icon="mdi:file-document-edit-outline" text="Sayfa Düzenle" />,
       children: (
-        <div className="min-w-0 space-y-8">
-        <SubSection title="Hakkımda" icon="mdi:information-outline">
-          {aboutPane}
-        </SubSection>
-        {pagesPane}
+        <div className="min-w-0">
+          {pagesPane}
         </div>
       ),
     },
@@ -1841,10 +1908,11 @@ function SubSection({
 function PageEditTabs({
   children,
 }: {
-  children: Record<'projects' | 'blog' | 'sections' | 'extras', ReactNode>
+  children: Record<'about' | 'projects' | 'blog' | 'sections' | 'extras', ReactNode>
 }) {
-  const [inner, setInner] = useState('projects')
+  const [inner, setInner] = useState('about')
   const items = [
+    { key: 'about', label: 'HAKKIMDA', icon: 'mdi:account-circle' },
     { key: 'projects', label: 'PROJELER', icon: 'mdi:folder-outline' },
     { key: 'blog', label: 'BLOG', icon: 'mdi:post-outline' },
     { key: 'sections', label: 'SAYFA BÖLÜMLERİ', icon: 'mdi:page-layout-body' },

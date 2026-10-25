@@ -132,13 +132,14 @@ describe('adminPanel', () => {
     expect(heading.className).toContain('uppercase')
   })
 
-  it('sekme sayısı 6; geliştirme fazı adı (Faz 6) hiçbir yerde kalmadı', () => {
+  it('sekme sayısı 7; geliştirme fazı adı (Faz 6) hiçbir yerde kalmadı', () => {
     renderPanel()
     const tabs = screen.getAllByRole('tab')
     expect(tabs.map(t => t.textContent)).toEqual([
       'Genel Bakış',
-      'Profil & Hakkımda',
+      'Profil',
       'Sayfa Düzenle',
+      'Şifre & Güvenlik',
       'Site Ayarları',
       'Veri Yönetimi',
       'Kullanıcılar',
@@ -148,7 +149,7 @@ describe('adminPanel', () => {
 
   it('profil "Ad" alanına yazarken odak alanda kalır (odak çalınmaz)', () => {
     renderPanel()
-    fireEvent.click(screen.getByRole('tab', { name: /Profil & Hakkımda/ }))
+    fireEvent.click(screen.getByRole('tab', { name: /Profil/ }))
 
     // "Profil" alt bölümünün ilk alanı "Ad (First Name)" — değeriyle doğrula.
     const input = screen.getAllByRole('textbox')[0] as HTMLInputElement
@@ -167,10 +168,10 @@ describe('adminPanel', () => {
   it('github Repoları kartı SADECE BİR kez render edilir (üstteki ölü kopya geri gelmedi)', async () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Sayfa Düzenle/ }))
-    // Sayfa Düzenle artık İÇ SEKMELİ (2026-10-21): varsayılan iç sekme "PROJELER".
-    await waitFor(() => expect(screen.getAllByText('PROJELER').length).toBeGreaterThan(0))
-    // Ölü inline kopya silindi (2026-10-20): kartı yalnızca GitHubReposAdmin çizer.
-    expect(screen.getAllByTestId('github-repos-admin')).toHaveLength(1)
+    await waitFor(() => expect(screen.getAllByText('HAKKIMDA').length).toBeGreaterThan(0))
+    fireEvent.click(screen.getByRole('tab', { name: /PROJELER/ }))
+    // Sayfa Düzenle İÇ SEKMELİ: varsayılan iç sekme HAKKIMDA, PROJELER'a geçince GitHubReposAdmin çizer.
+    await waitFor(() => expect(screen.getAllByTestId('github-repos-admin')).toHaveLength(1))
   })
 
   it('genel bakış sekmesinde özet panel görünür', () => {
@@ -180,22 +181,22 @@ describe('adminPanel', () => {
 
   it('profil & hakkımda sekmesi profil ve hakkımda bölümlerini birlikte gösterir', async () => {
     renderPanel()
-    fireEvent.click(screen.getByRole('tab', { name: /Profil & Hakkımda/ }))
+    fireEvent.click(screen.getByRole('tab', { name: /Profil/ }))
     await waitFor(() => expect(screen.getByTestId('photo-uploader')).toBeTruthy())
     expect(screen.getByText('Profil Bilgileri')).toBeTruthy()
-    expect(screen.getByText('Bölüm Başlıkları')).toBeTruthy()
   })
 
   it('sayfa düzenle sekmesi İÇ SEKMELİDİR: PROJELER / BLOG / SAYFA BÖLÜMLERİ / EK BÖLÜMLER', async () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Sayfa Düzenle/ }))
     // 2026-10-21 (kullanıcı): "Veri Yönetimi gibi alt gruplar, PROJELER/BLOG
-    // şeklinde büyük harfli". Dört iç sekme etiketi de görünür olmalı.
-    await waitFor(() => expect(screen.getAllByText('PROJELER').length).toBeGreaterThan(0))
+    // şeklinde büyük harfli". Beş iç sekme etiketi de görünür olmalı.
+    await waitFor(() => expect(screen.getAllByText('HAKKIMDA').length).toBeGreaterThan(0))
+    expect(screen.getByText('PROJELER')).toBeTruthy()
     expect(screen.getByText('BLOG')).toBeTruthy()
     expect(screen.getByText('SAYFA BÖLÜMLERİ')).toBeTruthy()
     expect(screen.getByText('EK BÖLÜMLER')).toBeTruthy()
-    // Varsayılan iç sekme PROJELER — bölüm başlıkları kartı görünür.
+    // Varsayılan iç sekme HAKKIMDA — bölüm başlıkları kartı görünür.
     expect(screen.getByText('Bölüm Başlıkları')).toBeTruthy()
     // Veri Yönetimi artık ayrı sekmede; buranın parçası değil.
     expect(screen.queryByText('Veri Yönetimi (Tablolar)')).toBeNull()
@@ -232,16 +233,21 @@ describe('adminPanel', () => {
     expect(headings).toContain('Veri Yönetimi (Tablolar)')
   })
 
-  it('site ayarları sekmesi genel, sosyal medya ve güvenlik bölümlerini gösterir', async () => {
+  it('site ayarları sekmesi genel ve sosyal medya bölümlerini gösterir', async () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Site Ayarları/ }))
-    await waitFor(() => expect(screen.getByText('Şifre & Güvenlik')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText('Genel')).toBeTruthy())
     const headings = screen
       .getAllByRole('heading', { level: 2 })
       .map(h => h.textContent)
     expect(headings).toContain('Genel')
     expect(headings).toContain('Sosyal Medya')
-    expect(headings).toContain('Şifre Değiştir')
+  })
+
+  it('şifre ve güvenlik sekmesi şifre değiştir formunu gösterir', async () => {
+    renderPanel()
+    fireEvent.click(screen.getByRole('tab', { name: /Şifre & Güvenlik/ }))
+    await waitFor(() => expect(screen.getByText('Şifre Değiştir')).toBeTruthy())
   })
 
   it('hero: Emoji/Logo alanı GİTTİ, metin alanları panelden KALDIRILDI (2026-10-21)', async () => {
@@ -288,7 +294,7 @@ describe('adminPanel', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
     renderPanel()
     // Önce profil sekmesine geç (dirty değil → onay sorulmaz).
-    fireEvent.click(screen.getByRole('tab', { name: /Profil & Hakkımda/ }))
+    fireEvent.click(screen.getByRole('tab', { name: /Profil/ }))
     await waitFor(() => expect(screen.getByTestId('photo-uploader')).toBeTruthy())
 
     const firstName = document.querySelector('input') as HTMLInputElement
@@ -307,7 +313,7 @@ describe('adminPanel', () => {
   it('kaydedilmemiş değişiklik onaylanırsa sekme değişir', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderPanel()
-    fireEvent.click(screen.getByRole('tab', { name: /Profil & Hakkımda/ }))
+    fireEvent.click(screen.getByRole('tab', { name: /Profil/ }))
     await waitFor(() => expect(screen.getByTestId('photo-uploader')).toBeTruthy())
     fireEvent.change(document.querySelector('input') as HTMLInputElement, {
       target: { value: 'Değişti' },

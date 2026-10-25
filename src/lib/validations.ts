@@ -285,6 +285,10 @@ export const contentSchema = z.object({
     githubUsername: z.string().max(100),
     defaultTheme: z.enum(['light', 'dark', 'system']),
     backgroundImage: z.string().max(500),
+    /** Hangi temada arka plan gösterilecek: 'all' | 'dark' | 'light' */
+    backgroundTheme: z.enum(['all', 'dark', 'light']).optional(),
+    /** Hangi sayfalarda arka plan gösterilecek (path listesi) */
+    backgroundPages: z.array(z.string()).optional(),
   }),
   footer: z.object({
     copyright: textField,

@@ -351,6 +351,10 @@ export interface SiteContent {
     backgroundImage: string
     /** Music player media URL (optional) */
     musicSrc?: string
+    /** Hangi temada arka plan gösterilecek: 'all' | 'dark' | 'light' */
+    backgroundTheme?: 'all' | 'dark' | 'light'
+    /** Hangi sayfalarda arka plan gösterilecek (path listesi) */
+    backgroundPages?: string[]
   }
   footer: {
     copyright: string
@@ -1041,6 +1045,8 @@ async function getDefaultContent(): Promise<SiteContent> {
       githubUsername: 'tarikelertarnak',
       defaultTheme: 'dark',
       backgroundImage: '',
+      backgroundTheme: 'all',
+      backgroundPages: ['/chat', '/about', '/projects', '/blog'],
     },
     footer: {
       copyright: 'TARIKELER',
