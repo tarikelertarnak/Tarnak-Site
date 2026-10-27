@@ -13,13 +13,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
 import { CvPicker } from '@/components/ui/cv-picker'
 import { HERO_BTN_BODY } from '@/components/ui/hero-button-style'
-import {
-  BriefcaseIcon,
-  ChatIcon,
-  FileIcon,
-  SendIcon,
-  UserPlusIcon,
-} from '@/components/ui/icons'
+import { LORD_ICONS, LordIcon } from '@/components/ui/lord-icon'
 import { Section } from '@/components/ui/section'
 import { Tilt3D } from '@/components/ui/tilt-3d'
 import { heroScrollTop } from '@/lib/hero-scroll'
@@ -240,7 +234,14 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={<UserPlusIcon size={16} />}
+              startContent={(
+                <LordIcon
+                  src={LORD_ICONS.user}
+                  trigger="hover"
+                  size={16}
+                  colors="primary:#ffffff,secondary:#3b82f6"
+                />
+              )}
               href="/about/"
             >
               {t('nav.about')}
@@ -248,7 +249,14 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={<BriefcaseIcon size={16} />}
+              startContent={(
+                <LordIcon
+                  src={LORD_ICONS.folder}
+                  trigger="hover"
+                  size={16}
+                  colors="primary:#ffffff,secondary:#3b82f6"
+                />
+              )}
               href="/projects/"
             >
               {heroText(content.hero.i18n, 'exploreLabel', t('hero.projects'))}
@@ -256,7 +264,14 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={<FileIcon size={16} />}
+              startContent={(
+                <LordIcon
+                  src={LORD_ICONS.file}
+                  trigger="hover"
+                  size={16}
+                  colors="primary:#ffffff,secondary:#3b82f6"
+                />
+              )}
               href="/blog/"
             >
               {t('nav.blog')}
@@ -264,7 +279,14 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={<SendIcon size={16} />}
+              startContent={(
+                <LordIcon
+                  src={LORD_ICONS.send}
+                  trigger="hover"
+                  size={16}
+                  colors="primary:#ffffff,secondary:#3b82f6"
+                />
+              )}
               href="/contact/"
             >
               {heroText(content.hero.i18n, 'connectLabel', t('hero.feedback'))}
@@ -272,7 +294,14 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={<ChatIcon size={16} />}
+              startContent={(
+                <LordIcon
+                  src={LORD_ICONS.chat}
+                  trigger="hover"
+                  size={16}
+                  colors="primary:#ffffff,secondary:#3b82f6"
+                />
+              )}
               href="/chat/"
             >
               {t('nav.chat')}

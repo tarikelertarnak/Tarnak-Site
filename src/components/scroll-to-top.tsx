@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useLocale } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
-import { ChevronUpIcon } from '@/components/ui/icons'
+import { LORD_ICONS, LordIcon } from '@/components/ui/lord-icon'
 import { scrollToTop } from '@/lib/scroll'
 
 export function ScrollToTop() {
@@ -47,8 +47,11 @@ export function ScrollToTop() {
           : 'border-foreground-200/30 text-primary',
       )}
     >
-      <ChevronUpIcon
+      <LordIcon
+        src={LORD_ICONS.arrowUp}
+        trigger={isHovered ? 'hover' : undefined}
         size={22}
+        colors={isHovered ? 'primary:#ffffff,secondary:#3b82f6' : 'primary:#3b82f6,secondary:#ffffff'}
         className={cn('transition-transform duration-300', isHovered && '-translate-y-0.5')}
       />
     </button>

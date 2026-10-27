@@ -5,8 +5,9 @@ import { useMemo } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { useLocalizedContent, useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
-import { ArrowUpRightIcon, ChevronUpIcon } from '@/components/ui/icons'
+import { ArrowUpRightIcon } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
+import { LORD_ICONS, LordIcon } from '@/components/ui/lord-icon'
 import { scrollToTop } from '@/lib/scroll'
 import { buildSiteNavigation } from '@/lib/site-navigation'
 
@@ -157,12 +158,26 @@ export function Footer({ content: rawContent }: { content: SiteContent }) {
                 onClick={() => scrollToTop()}
                 className="group inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-sm text-foreground-500 transition-colors hover:text-primary focus-visible:outline-none"
               >
-                <ChevronUpIcon
+                <LordIcon
+                  src={LORD_ICONS.arrowUp}
+                  trigger="hover"
                   size={14}
+                  colors="primary:#a3a3a3,secondary:#3b82f6"
                   className="shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5"
                 />
                 <span>{t('footer.backToTop')}</span>
               </button>
+
+        <div className="mt-8 flex justify-center">
+          <a
+            href="https://lordicon.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-foreground-500 hover:text-foreground transition-colors"
+          >
+            Icons by Lordicon.com
+          </a>
+        </div>
             </div>
           </div>
         </div>

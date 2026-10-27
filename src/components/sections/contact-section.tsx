@@ -10,8 +10,8 @@ import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardFooter } from '@/components/ui/card'
-import { ArrowLeftIcon, ErrorIcon, SendIcon } from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
+import { LORD_ICONS, LordIcon } from '@/components/ui/lord-icon'
 import {
   EMPTY_PHONE,
   parsePhone,
@@ -166,7 +166,14 @@ export function ContactSection({ content }: { content: SiteContent }) {
                 color="primary"
                 variant="light"
                 onPress={resetForm}
-                startContent={<ArrowLeftIcon size={20} />}
+                startContent={(
+                  <LordIcon
+                    src={LORD_ICONS.arrowLeft}
+                    trigger="hover"
+                    size={20}
+                    colors="primary:#3b82f6,secondary:#ffffff"
+                  />
+                )}
               >
                 {t('contact.sendAnother')}
               </Button>
@@ -333,7 +340,12 @@ export function ContactSection({ content }: { content: SiteContent }) {
                 />
                 {errors.general && (
                   <div className="text-danger text-sm font-medium bg-danger-50 border border-danger-200 rounded-lg p-3 flex items-center gap-2">
-                    <ErrorIcon size={16} />
+                    <LordIcon
+                      src={LORD_ICONS.error}
+                      trigger="hover"
+                      size={16}
+                      colors="primary:#ef4444,secondary:#ffffff"
+                    />
                     {errors.general}
                   </div>
                 )}
@@ -349,7 +361,14 @@ export function ContactSection({ content }: { content: SiteContent }) {
                 <Button
                   type="submit"
                   color="primary"
-                  endContent={<SendIcon size={16} />}
+                  endContent={(
+                  <LordIcon
+                    src={LORD_ICONS.send}
+                    trigger="hover"
+                    size={16}
+                    colors="primary:#ffffff,secondary:#3b82f6"
+                  />
+                )}
                   className="font-semibold w-full sm:w-auto"
                   isLoading={isSubmitting}
                   isDisabled={isSubmitting || cooldown > 0}

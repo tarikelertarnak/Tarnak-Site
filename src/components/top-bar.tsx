@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
+import { LORD_ICONS, LordIcon } from '@/components/ui/lord-icon'
 import { scrollToTop } from '@/lib/scroll'
 
 export function TopBar() {
@@ -74,7 +75,12 @@ export function TopBar() {
                 scrolled ? 'h-8 w-8' : 'h-9 w-9'
               }`}
             >
-              <HamburgerIcon small={scrolled} />
+              <LordIcon
+                src={LORD_ICONS.menu}
+                trigger="hover"
+                size={scrolled ? 18 : 20}
+                colors="primary:#e5e5e5,secondary:#3b82f6"
+              />
             </button>
             <Link
               href="/"
@@ -143,20 +149,12 @@ export function TopBar() {
                 scrolled ? 'h-8 px-2.5' : 'h-9 px-3'
               }`}
             >
-              <svg
-                width={scrolled ? 14 : 16}
-                height={scrolled ? 14 : 16}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <path d="m21 21-4.3-4.3" />
-              </svg>
+              <LordIcon
+                src={LORD_ICONS.search}
+                trigger="hover"
+                size={scrolled ? 14 : 16}
+                colors="primary:#e5e5e5,secondary:#3b82f6"
+              />
               <span className="hidden min-w-0 flex-1 truncate text-xs sm:inline">
                 {t('common.search')}
                 ...
@@ -178,26 +176,5 @@ export function TopBar() {
         }`}
       />
     </>
-  )
-}
-
-function HamburgerIcon({ small }: { small?: boolean }) {
-  const size = small ? 18 : 20
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <line x1="4" y1="6" x2="20" y2="6" />
-      <line x1="4" y1="12" x2="20" y2="12" />
-      <line x1="4" y1="18" x2="20" y2="18" />
-    </svg>
   )
 }
