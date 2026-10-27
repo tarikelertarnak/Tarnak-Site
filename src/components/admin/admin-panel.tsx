@@ -63,6 +63,8 @@ export function AdminPanel({
   const [dirty, setDirty] = useState(false)
   const [backgroundUploading, setBackgroundUploading] = useState(false)
   const backgroundFileRef = useRef<HTMLInputElement>(null)
+  const [backgroundMode, setBackgroundMode] = useState<'upload' | 'link'>('upload')
+  const [backgroundUrl, setBackgroundUrl] = useState('')
   const [githubRepos, setGithubRepos] = useState<GitHubRepo[]>([])
   // Sekme kontrollu: "Genel Bakis"taki tablo kartlari "Veri Yonetimi"
   // sekmesine ve ilgili tabloya atlayabilsin diye activeKey'i biz tutuyoruz.
@@ -176,6 +178,23 @@ return
  finally {
       setBackgroundUploading(false)
     }
+  }
+
+  /**
+   * Link (URL) yöntemiyle arka plan görselini ayarlar. Dosya yüklemesine
+   * gerek kalmadan doğrudan bir resim URL si atanir; kaydetme SaveBar ile
+   * diske/ Supabase e yazilir.
+   */
+  const applyBackgroundUrl = () => {
+    const url = backgroundUrl.trim()
+    if (!url)
+return
+    setContent(prev => ({
+      ...prev,
+      settings: { ...prev.settings, backgroundImage: url },
+    }))
+    setBackgroundUrl('')
+    setBackgroundMode('upload')
   }
 
   /**
@@ -671,43 +690,97 @@ return item
                 </p>
               )}
             </div>
-            <div className="flex flex-col items-center sm:items-start gap-3">
-              <input
-                ref={backgroundFileRef}
-                type="file"
-                accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
-                className="hidden"
-                onChange={uploadBackground}
+            <Field label="Görsel yöntemi">
+              <SearchableCombobox
+                multiple={false}
+                options={[
+                  { value: 'upload', label: 'Yükle (dosya)' },
+                  { value: 'link', label: 'Link (URL)' },
+                ]}
+                selected={[backgroundMode]}
+                onSelect={v => setBackgroundMode(v as 'upload' | 'link')}
+                onClear={() => {}}
+                placeholder="Yöntem seçin"
+                searchPlaceholder="Ara..."
+                ariaLabel="Arka plan görsel yöntemi"
               />
-              <div className="flex flex-row gap-2">
-                <Button
-                  color="primary"
-                  onPress={() => backgroundFileRef.current?.click()}
-                  isLoading={backgroundUploading}
-                  startContent={
-                    <Icon icon="mdi:image-plus" width={18} height={18} />
-                  }
-                >
-                  Görsel Yükle
-                </Button>
-                {content.settings.backgroundImage && (
-                  <Button
-                    variant="bordered"
-                    color="danger"
-                    onPress={removeBackground}
-                    isLoading={backgroundUploading}
-                    startContent={(
-                      <Icon
-                        icon="mdi:trash-can-outline"
-                        width={18}
-                        height={18}
-                      />
+            </Field>
+            <div className="flex flex-col items-center sm:items-start gap-3">
+              {backgroundMode === 'upload'
+                ? (
+                <>
+                  <input
+                    ref={backgroundFileRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+                    className="hidden"
+                    onChange={uploadBackground}
+                  />
+                  <div className="flex flex-row gap-2">
+                    <Button
+                      color="primary"
+                      onPress={() => backgroundFileRef.current?.click()}
+                      isLoading={backgroundUploading}
+                      startContent={
+                        <Icon icon="mdi:image-plus" width={18} height={18} />
+                      }
+                    >
+                      Görsel Yükle
+                    </Button>
+                    {content.settings.backgroundImage && (
+                      <Button
+                        variant="bordered"
+                        color="danger"
+                        onPress={removeBackground}
+                        isLoading={backgroundUploading}
+                        startContent={(
+                          <Icon
+                            icon="mdi:trash-can-outline"
+                            width={18}
+                            height={18}
+                          />
+                        )}
+                      >
+                        Kaldır
+                      </Button>
                     )}
+                  </div>
+                </>
+                  )
+                : (
+                <>
+                  <Input
+                    placeholder="https://örnek.com/görsel.jpg"
+                    value={backgroundUrl}
+                    onValueChange={setBackgroundUrl}
+                  />
+                  <Button
+                    color="primary"
+                    onPress={applyBackgroundUrl}
+                    isDisabled={!backgroundUrl.trim()}
+                    startContent={<Icon icon="mdi:link" width={16} height={16} />}
                   >
-                    Kaldır
+                    Uygula
                   </Button>
-                )}
-              </div>
+                  {content.settings.backgroundImage && (
+                    <Button
+                      variant="bordered"
+                      color="danger"
+                      onPress={removeBackground}
+                      isLoading={backgroundUploading}
+                      startContent={(
+                        <Icon
+                          icon="mdi:trash-can-outline"
+                          width={18}
+                          height={18}
+                        />
+                      )}
+                    >
+                      Kaldır
+                    </Button>
+                  )}
+                </>
+                  )}
               <p className="text-xs text-foreground-500">
                 Sitenin arka planına tam ekran görsel koyar (kaplama).
                 Görsel yoksa düz siyah (koyu tema) / beyaz (açık tema)
@@ -1650,7 +1723,13 @@ tablosundan
   /** "Site Ayarları" sekmesinin Şifre & Güvenlik alt bölümü. */
   const securityPane = (
     <div className="space-y-4 pt-4">
+      <p className="text-sm text-foreground-500">
+        Hesabını korumak için şifreni düzenle, oturum bilgilerini gözden geçir ve
+        güvenlik önerilerini takip et.
+      </p>
       <PasswordCard />
+      <SessionInfoCard username={username} roleLabel={roleLabel} />
+      <SecurityTipsCard />
     </div>
   )
 
@@ -1776,15 +1855,16 @@ tablosundan
           <Button
             as="a"
             href="/"
-            variant="light"
+            color="primary"
+            variant="solid"
             startContent={<Icon icon="mdi:eye" width={18} height={18} />}
           >
             Siteyi Görüntüle
           </Button>
           <Button
             onPress={logout}
-            variant="bordered"
             color="danger"
+            variant="solid"
             startContent={<Icon icon="mdi:logout" width={18} height={18} />}
           >
             Çıkış
@@ -2096,6 +2176,58 @@ function PasswordCard() {
           Şifreyi Güncelle
         </Button>
       </div>
+    </PanelCard>
+  )
+}
+
+/** Oturum bilgisi kartı — giriş yapan kullanıcı ve rolünü gösterir. */
+function SessionInfoCard({ username, roleLabel }: { username: string, roleLabel?: string }) {
+  return (
+    <PanelCard title="Oturum Bilgisi">
+      <div className="flex flex-col gap-3 text-sm">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-foreground-500">Kullanıcı</span>
+          <span className="font-semibold text-foreground">{username}</span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-foreground-500">Rol</span>
+          <span className="font-semibold text-foreground">{roleLabel ?? 'admin'}</span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-foreground-500">Oturum Süresi</span>
+          <span className="font-semibold text-foreground">7 gün</span>
+        </div>
+        <p className="text-xs text-foreground-500 mt-1">
+          Oturum cookie ile 7 gün boyunca geçerlidir. Süre dolunca yeniden giriş yapman gerekir.
+        </p>
+      </div>
+    </PanelCard>
+  )
+}
+
+/** Güvenlik ipuçları kartı — hesabı korumak için öneriler. */
+function SecurityTipsCard() {
+  const tips = [
+    'Şifren en az 8 karakter, harf + rakam + sembol içersin.',
+    'Şifreni kimseyle paylaşma, tarayıcıya kaydetme.',
+    'Şüpheli giriş bildirimi alırsan şifreni hemen değiştir.',
+    'Google OAuth kullanıyorsan 2FA\'yı etkin tut.',
+  ]
+  return (
+    <PanelCard title="Güvenlik İpuçları">
+      <ul className="flex flex-col gap-2 text-sm text-foreground-500">
+        {tips.map((tip, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <Icon
+              icon="mdi:shield-check-outline"
+              width={16}
+              height={16}
+              className="shrink-0 mt-0.5 text-primary"
+            />
+            <span>{tip}</span>
+          </li>
+        ))}
+      </ul>
     </PanelCard>
   )
 }
