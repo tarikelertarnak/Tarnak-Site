@@ -13,7 +13,7 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
-import { LORD_ICONS, LordIcon } from '@/components/ui/lord-icon'
+import { MenuIcon, SearchIcon } from '@/components/ui/icons'
 import { scrollToTop } from '@/lib/scroll'
 
 export function TopBar() {
@@ -66,7 +66,7 @@ export function TopBar() {
           }`}
         >
           {/* Left: hamburger + brand */}
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <button
               type="button"
               onClick={openSidebar}
@@ -75,12 +75,7 @@ export function TopBar() {
                 scrolled ? 'h-8 w-8' : 'h-9 w-9'
               }`}
             >
-              <LordIcon
-                src={LORD_ICONS.menu}
-                trigger="hover"
-                size={scrolled ? 18 : 20}
-                colors="primary:#e5e5e5,secondary:#3b82f6"
-              />
+              <MenuIcon size={scrolled ? 18 : 20} />
             </button>
             <Link
               href="/"
@@ -93,76 +88,61 @@ export function TopBar() {
                   scrollToTop()
                 }
               }}
-              className={`group flex items-center gap-2 font-bold tracking-tight whitespace-nowrap ${
+              className={`group relative z-10 flex items-center gap-2 font-bold tracking-tight whitespace-nowrap ${
                 scrolled ? 'text-xs' : 'text-sm sm:text-base'
               }`}
             >
-              {/*
-                Logo (2026-10-05, kullanıcı): `logo-framed-*.svg` çerçeveli
-                marka dosyası. Önceden İKİ ayrı `<img>` vardı
-                (`tarnak-white.svg` + `tarnak.svg`) ve `dark:block/dark:hidden`
-                ile değiştiriliyordu — iki indirme, iki kopya, iki yer de
-                güncellenmeliydi.
-
-                `SiteLogo` inline SVG: `fill=currentColor` (gövde yazı rengini
-                alır) + `stroke=var(--tbg)` (çerçeve sayfa zeminini alır, yani
-                açık temada siyah gövde + beyaz çerçeve, koyu temada tersi).
-                Tema CSS'ten okunduğu için `dark:` varyantı gereksiz.
-              */}
               <SiteLogo
                 size={28}
                 className={`shrink-0 transition-all duration-200 ${
                   scrolled ? 'h-6 w-6' : 'h-7 w-7 sm:h-7 sm:w-7'
                 } group-hover:opacity-80`}
               />
-              {/* Brand text parts: hover/focus ANYWHERE on the link (group) —
-                  all respond equally, as one whole.
-                  - TARIK ELER: foreground → primary
-                  - Separator: muted → primary
-                  - TARNAK: primary → lighter primary
-                  - Logo: subtle opacity dip
-                  Shared: transition, duration. Link's own focus ring comes
-                  from the global :focus-visible rule (tokens.css).
-              */}
-              <span className="inline text-foreground transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
+              <span className="inline select-text text-foreground transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
                 TARIK ELER
               </span>
-              <span className="inline text-foreground/30 transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
+              <span className="inline select-text text-foreground/30 transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
                 —
               </span>
-              <span className="inline font-black text-primary transition-colors duration-200 group-hover:text-primary/70 group-focus-visible:text-primary/70">
+              <span className="inline select-text text-foreground transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
                 TARNAK
               </span>
             </Link>
           </div>
 
-          {/* Right: search trigger (command palette) — the admin "Düzenle" button was
-              removed: it duplicated the Sayfa Düzenleyici (Puck) entry in the sidebar and
-              its client-side admin flag went stale right after logout. */}
-          <div className="flex shrink-0 items-center gap-2">
+          {/* Center: search (desktop) */}
+          <div className="hidden md:flex flex-1 justify-center">
             <button
               type="button"
               onClick={() =>
                 window.dispatchEvent(new CustomEvent('search:request-open'))}
               aria-label={t('common.search')}
-              className={`flex shrink-0 items-center gap-2 rounded-lg border border-white/10 bg-white/5 text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground ${
-                scrolled ? 'h-8 px-2.5' : 'h-9 px-3'
-              }`}
+              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground min-w-[280px] max-w-md"
             >
-              <LordIcon
-                src={LORD_ICONS.search}
-                trigger="hover"
-                size={scrolled ? 14 : 16}
-                colors="primary:#e5e5e5,secondary:#3b82f6"
-              />
-              <span className="hidden min-w-0 flex-1 truncate text-xs sm:inline">
+              <SearchIcon size={16} />
+              <span className="flex-1 text-left truncate">
                 {t('common.search')}
                 ...
               </span>
-              <kbd className="pointer-events-none hidden shrink-0 items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-foreground/50 sm:inline-flex">
+              <kbd className="pointer-events-none inline-flex items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1.5 font-mono text-[10px] text-foreground/50">
                 <span>⌘</span>
                 <span>K</span>
               </kbd>
+            </button>
+          </div>
+
+          {/* Right: search trigger (mobile) */}
+          <div className="flex shrink-0 items-center gap-2 md:hidden">
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent('search:request-open'))}
+              aria-label={t('common.search')}
+              className={`flex shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground ${
+                scrolled ? 'h-8 w-8' : 'h-9 w-9'
+              }`}
+            >
+              <SearchIcon size={scrolled ? 14 : 16} />
             </button>
           </div>
         </div>

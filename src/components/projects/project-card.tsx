@@ -1271,36 +1271,31 @@ continue
 
             {downloadOptions.length > 0 && (
               <div className="relative shrink-0 self-center" ref={comboboxRef}>
-                {/* Indir + acilir liste TEK yuvarlak kutu: ayirici ince cizgi,
-                    birlese ic koseler duz (geometri: `SplitButton`, bkz. split-button.tsx).
-
-                    `ref={splitWrapRef}`: acilir menunun yatay hizasi AYIRICI
-                    CIZGIYE baglanacak (kullanici isteği) ve o cizgi sarmalayicinin
-                    solu + sol parcanin genisligi. Sarmalayici olmadan bu olcum
-                    yapilamaz. */}
-                <SplitButton
-                  ref={splitWrapRef}
-                  parts={[
-                    {
-                      'href': currentDownloadUrl ?? '#',
-                      'title': currentDownloadLabel,
-                      'aria-label': currentDownloadLabel,
-                      'onClick': () => trackDownload(),
-                      'iconOnly': true,
-                      'children': <DownloadIcon size={15} />,
-                    },
-                    {
-                      'onClick': () => setComboboxOpen(o => !o),
-                      'title': t('projects.selectVersion'),
-                      'aria-label': t('projects.selectVersion'),
-                      'aria-expanded': comboboxOpen,
-                      'aria-haspopup': true,
-                      'iconOnly': true,
-                      'ref': triggerRef,
-                      'children': <ChevronDownIcon size={13} />,
-                    },
-                  ]}
-                />
+                <div className="rounded-md overflow-hidden">
+                  <SplitButton
+                    ref={splitWrapRef}
+                    parts={[
+                      {
+                        'href': currentDownloadUrl ?? '#',
+                        'title': currentDownloadLabel,
+                        'aria-label': currentDownloadLabel,
+                        'onClick': () => trackDownload(),
+                        'iconOnly': true,
+                        'children': <DownloadIcon size={15} />,
+                      },
+                      {
+                        'onClick': () => setComboboxOpen(o => !o),
+                        'title': t('projects.selectVersion'),
+                        'aria-label': t('projects.selectVersion'),
+                        'aria-expanded': comboboxOpen,
+                        'aria-haspopup': true,
+                        'iconOnly': true,
+                        'ref': triggerRef,
+                        'children': <ChevronDownIcon size={13} />,
+                      },
+                    ]}
+                  />
+                </div>
                 {comboboxOpen && (
                   <DownloadCombobox
                     options={downloadOptions}

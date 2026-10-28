@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next'
 import { AntdRegistry } from '@ant-design/nextjs-registry'
 import nextDynamic from 'next/dynamic'
 import { headers } from 'next/headers'
-import Script from 'next/script'
 import { EmotionStyleRegistry } from '@/components/emotion-style-registry'
 import { LocaleProvider } from '@/components/locale-provider'
 import { Navigation } from '@/components/navigation'
@@ -344,10 +343,6 @@ export default async function RootLayout({
           }}
         />
         <ThemeInitScript defaultTheme={safeDefaultTheme} nonce={nonce} />
-        <Script
-          src="https://cdn.lordicon.com/lordicon.js"
-          strategy="afterInteractive"
-        />
         <Providers
           backgroundImage={content.settings?.backgroundImage || ''}
           defaultTheme={defaultTheme}

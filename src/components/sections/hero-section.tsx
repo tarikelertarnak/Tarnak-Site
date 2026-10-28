@@ -13,7 +13,13 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
 import { CvPicker } from '@/components/ui/cv-picker'
 import { HERO_BTN_BODY } from '@/components/ui/hero-button-style'
-import { LORD_ICONS, LordIcon } from '@/components/ui/lord-icon'
+import {
+  BriefcaseIcon,
+  ChatIcon,
+  FileIcon,
+  SendIcon,
+  UserPlusIcon,
+} from '@/components/ui/icons'
 import { Section } from '@/components/ui/section'
 import { Tilt3D } from '@/components/ui/tilt-3d'
 import { heroScrollTop } from '@/lib/hero-scroll'
@@ -165,20 +171,16 @@ export function HeroSection({
           <motion.div variants={item} className="w-full">
             <h1
               className={[
-                'font-black uppercase leading-[0.95] tracking-tighter text-primary',
+                'font-black uppercase leading-[0.95] tracking-tighter',
                 'text-5xl sm:text-7xl md:text-7xl lg:text-8xl',
               ].join(' ')}
             >
-              <span className="block">
+              {/* TARIK ELER */}
+              <span className="block select-text text-foreground">
                 {name}
-                {' - '}
               </span>
-              {/*
-                TAKMA AD: `hero.name` = "TARIK ELER" (tek kaynak), takma ad
-                `profile.nickname`'ten geliyor: "TARIK ELER - TARNAK".
-                Admin panelden takma ad değişince burası da değişir.
-              */}
-              <a href={`${SITE_URL}/`} className="block no-underline">
+              {/* TARNAK */}
+              <a href={`${SITE_URL}/`} className="relative z-20 block select-text text-primary no-underline">
                 {content.profile.nickname.toUpperCase()}
               </a>
             </h1>
@@ -234,14 +236,7 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={(
-                <LordIcon
-                  src={LORD_ICONS.user}
-                  trigger="hover"
-                  size={16}
-                  colors="primary:#ffffff,secondary:#3b82f6"
-                />
-              )}
+              startContent={<UserPlusIcon size={16} />}
               href="/about/"
             >
               {t('nav.about')}
@@ -249,14 +244,7 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={(
-                <LordIcon
-                  src={LORD_ICONS.folder}
-                  trigger="hover"
-                  size={16}
-                  colors="primary:#ffffff,secondary:#3b82f6"
-                />
-              )}
+              startContent={<BriefcaseIcon size={16} />}
               href="/projects/"
             >
               {heroText(content.hero.i18n, 'exploreLabel', t('hero.projects'))}
@@ -264,14 +252,7 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={(
-                <LordIcon
-                  src={LORD_ICONS.file}
-                  trigger="hover"
-                  size={16}
-                  colors="primary:#ffffff,secondary:#3b82f6"
-                />
-              )}
+              startContent={<FileIcon size={16} />}
               href="/blog/"
             >
               {t('nav.blog')}
@@ -279,14 +260,7 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={(
-                <LordIcon
-                  src={LORD_ICONS.send}
-                  trigger="hover"
-                  size={16}
-                  colors="primary:#ffffff,secondary:#3b82f6"
-                />
-              )}
+              startContent={<SendIcon size={16} />}
               href="/contact/"
             >
               {heroText(content.hero.i18n, 'connectLabel', t('hero.feedback'))}
@@ -294,14 +268,7 @@ export function HeroSection({
             <Button
               color="primary"
               className={HERO_BTN_BODY}
-              startContent={(
-                <LordIcon
-                  src={LORD_ICONS.chat}
-                  trigger="hover"
-                  size={16}
-                  colors="primary:#ffffff,secondary:#3b82f6"
-                />
-              )}
+              startContent={<ChatIcon size={16} />}
               href="/chat/"
             >
               {t('nav.chat')}
