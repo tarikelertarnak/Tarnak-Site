@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { useLocalizedContent, useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
-import { ArrowUpRightIcon, ChevronUpIcon } from '@/components/ui/icons'
+import { ChevronUpIcon } from '@/components/ui/icons'
 import { Link } from '@/components/ui/link'
 import { scrollToTop } from '@/lib/scroll'
 import { buildSiteNavigation } from '@/lib/site-navigation'
@@ -87,33 +87,36 @@ export function Footer({ content: rawContent }: { content: SiteContent }) {
               </div>
 
               {/* GEZINME — tum sayfalar, bolumler ve hesap baglantilari.
-                  Uc alt kolon: dar ekranda tek, genis ekranda yan yana. */}
+                  Uc alt kolon: dar ekranda tek, genis ekranda yan yana.
+
+                  2026-10-31 (kullanici): "sade, dikey bir liste" — linklerin
+                  yanindaki ok/harici ikon KALDIRILDI, ok/nokta hizalamasi yok.
+                  Renk: varsayilan soluk gri (acik tema neutral-500, koyu tema
+                  neutral-400 = #a1a1aa), hover'da net beyaz/siyah; gecis
+                  `transition-colors duration-200`. Basliklar daha kucuk ve
+                  soluk: 10px, genis harf araligi, neutral tonlari. */}
               <nav
                 aria-label={t('footer.navigate')}
-                className="flex flex-col gap-4 lg:col-span-8"
+                className="flex flex-col gap-5 lg:col-span-8"
               >
-                <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-foreground-500">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500 dark:text-neutral-500">
                   {t('footer.navigate')}
                 </p>
 
-                <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-3">
                   {groups.map(group => (
-                    <div key={group.id} className="flex flex-col gap-2">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-foreground-500/70">
+                    <div key={group.id} className="flex flex-col gap-2.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
                         {group.title}
                       </p>
-                      <ul className="flex flex-col gap-1">
+                      <ul className="flex flex-col gap-1.5">
                         {group.entries.map(entry => (
                           <li key={entry.id}>
                             <Link
                               href={entry.href}
-                              className="group inline-flex items-center gap-1 text-sm text-foreground-500 no-underline transition-colors duration-200 hover:text-primary"
+                              className="block py-0.5 text-[15px] leading-6 text-neutral-500 no-underline transition-colors duration-200 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
                             >
-                              <span className="truncate">{entry.label}</span>
-                              <ArrowUpRightIcon
-                                size={12}
-                                className="shrink-0 opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
-                              />
+                              {entry.label}
                             </Link>
                           </li>
                         ))}

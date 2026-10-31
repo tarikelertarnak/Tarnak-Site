@@ -94,7 +94,13 @@ describe('/api/admin/content POST — yetki ve hız sınırı', () => {
 
 describe('/api/admin/content POST — veri kaybı koruması', () => {
   it('istemci `phase6` göndermezse MEVCUT ek bölümler korunur', async () => {
-    await POST(istek(govde()))
+    /*
+     * 2026-10-30: `data/content.json` artık `phase6.privacy` / `phase6.kvkk`
+     * taşıyor (hukuki metinler dolduruldu). Bu test "istemci alanı
+     * GÖNDERMEZSE" sözleşmesini ölçüyor; bu yüzden gövdeden `phase6`
+     * çıkarılıyor (JSON.stringify `undefined` alanı atar).
+     */
+    await POST(istek(govde({ phase6: undefined })))
     const kaydedilen = saveContentMock.mock.calls[0]![0] as Record<string, unknown>
     expect(kaydedilen.phase6).toEqual({ sections: [{ id: 'mevcut' }] })
   })

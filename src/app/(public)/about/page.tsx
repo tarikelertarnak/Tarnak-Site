@@ -32,7 +32,8 @@ export async function generateMetadata() {
   const aciklama
     = about?.description?.trim().slice(0, 180)
       || 'TARIK ELER (TARNAK) — personal site: projects, posts and contact.'
-  const baslik = about?.subtitle?.trim() || 'ABOUT ME'
+  // <title> sabit Ingilizce (2026-10-30, kullanici listesi).
+  const baslik = 'About Me'
 
   return {
     title: `${baslik} — TARIK ELER - TARNAK`,

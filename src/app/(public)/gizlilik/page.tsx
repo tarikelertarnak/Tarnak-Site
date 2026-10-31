@@ -7,7 +7,7 @@ export const dynamic = 'force-static'
 export function generateMetadata(): Promise<Metadata> {
   return legalMetadata(
     '/gizlilik',
-    'Gizlilik Politikası',
+    'Privacy Policy',
     'TARNAK\'ın gizlilik politikası ve veri işleme uygulamaları.',
   )
 }

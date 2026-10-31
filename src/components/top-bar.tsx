@@ -11,6 +11,7 @@
 import { motion } from 'motion/react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { AdminEditToggle } from '@/components/admin-edit-toggle'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
 import { MenuIcon, SearchIcon } from '@/components/ui/icons'
@@ -61,7 +62,7 @@ export function TopBar() {
         }`}
       >
         <div
-          className={`flex h-full items-center justify-between gap-3 transition-all duration-300 ${
+          className={`relative flex h-full items-center justify-between gap-3 transition-all duration-300 ${
             scrolled ? 'px-3' : 'px-3 sm:px-6'
           }`}
         >
@@ -110,14 +111,23 @@ export function TopBar() {
             </Link>
           </div>
 
-          {/* Center: search (desktop) */}
-          <div className="hidden md:flex flex-1 justify-center">
-            <button
+          {/* Center: search (desktop)
+              2026-10-30 (kullanıcı: "ekran büyükken search yazısı gelince tam
+              ortalanmamış"). Önce `flex-1 justify-center` ile ortalanıyordu;
+              sol blok `flex-1` olduğu için orta alan sayfanın MERKEZİNE değil
+              kalan boşluğun ortasına düşüyordu → ekran genişledikçe sağa
+              kayıyordu. Artık mutlak konumla sayfanın tam ortasında. */}
+          <div className="pointer-events-none absolute top-1/2 left-1/2 hidden -translate-x-1/2 -translate-y-1/2 md:block">
+            {/* Kalem — yalnızca admin görür; arama hapının solunda durur ki
+                hap sayfanın tam ortasında kalsın (2026-10-30). */}
+            <div className="relative">
+              <AdminEditToggle className="pointer-events-auto absolute top-1/2 right-full mr-2 -translate-y-1/2" />
+              <button
               type="button"
               onClick={() =>
                 window.dispatchEvent(new CustomEvent('search:request-open'))}
               aria-label={t('common.search')}
-              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground min-w-[280px] max-w-md"
+              className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground min-w-[280px] max-w-md"
             >
               <SearchIcon size={16} />
               <span className="flex-1 text-left truncate">
@@ -129,6 +139,7 @@ export function TopBar() {
                 <span>K</span>
               </kbd>
             </button>
+            </div>
           </div>
 
           {/* Right: search trigger (mobile) */}

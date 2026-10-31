@@ -303,6 +303,21 @@ export const contentSchema = z.object({
    */
   phase6: z.unknown().optional(),
   aboutPage: z.unknown().optional(),
+  /*
+   * 2026-10-30 (Boss): çok dilli metin + görsel düzenleme + aktif dil listesi.
+   * TANIMLI DEĞİLSE Zod SESSİZCE SİLER (yukarıdaki uyarının aynısı).
+   * Değer sınırları burada: dil kodu 12, alan anahtarı 120, metin 20.000
+   * karakter; düzenleme kayıtları API katmanında `designOverrideSchema` ile
+   * ayrıca doğrulanır.
+   */
+  textOverrides: z
+    .record(
+      z.string().min(2).max(12),
+      z.record(z.string().min(1).max(120), z.string().max(20_000)),
+    )
+    .optional(),
+  design: z.array(z.unknown()).max(500).optional(),
+  locales: z.array(z.string().min(2).max(12)).max(60).optional(),
 })
 
 export type ContentInput = z.infer<typeof contentSchema>

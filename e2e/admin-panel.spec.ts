@@ -57,12 +57,20 @@ function adminSessionCookie() {
   }
 }
 
+/*
+  GERÇEK sekme listesi (2026-10-30 ölçüldü): panel 7 sekmeye ayrıldı —
+  eski 5'li gruplama ("Profil & Hakkımda", "İçerik & Veri", "Mesajlar &
+  Kullanıcılar") bölündü. Liste uygulamadan birebir okunmalı; bir sekme
+  eklenirse burada da güncellenir.
+*/
 const TAB_LABELS = [
   'Genel Bakış',
-  'Profil & Hakkımda',
-  'İçerik & Veri',
+  'Profil',
+  'Sayfa Düzenle',
+  'Şifre & Güvenlik',
   'Site Ayarları',
-  'Mesajlar & Kullanıcılar',
+  'Veri Yönetimi',
+  'Kullanıcılar',
 ]
 
 /** Konsol gürültüsü: ağ/favicon kaynaklı, uygulama hatası olmayan kalıplar. */
@@ -74,7 +82,12 @@ const IGNORED_CONSOLE = [
 ]
 
 test.beforeEach(async ({ context }) => {
-  await context.addCookies([adminSessionCookie()])
+  // Dil SABİT: sekme/bölüm adları Türkçe doğrulanıyor; Playwright varsayılanı
+  // en-US olduğu için site İngilizce metin döndürürse testler boşa düşer.
+  await context.addCookies([
+    adminSessionCookie(),
+    { name: 'site-locale', value: 'tr', domain: 'localhost', path: '/' },
+  ])
 })
 
 /** Sayfayı açar, konsol/sayfa hatalarını toplar, panelin geldiğini doğrular. */
@@ -92,8 +105,47 @@ async function openAdmin(page: import('@playwright/test').Page) {
   page.on('pageerror', err => problems.push(`pageerror: ${err.message}`))
 
   await page.goto('/admin')
-  await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+  /*
+   * BEKLEME SÜRESİ 40 sn (2026-10-31 ölçüldü). `/admin` bir istemci kapısıdır:
+   * önce `/api/admin/session`, sonra `/api/admin/content` çeker ve ancak ikisi
+   * de dönünce h1 çizilir. `next dev` bu rotayı İLK istekte derler; tam pakette
+   * onlarca worker aynı sunucuya yüklenince ilk derleme varsayılan 10 sn'lik
+   * `expect` penceresini aşıyor → test "Yükleniyor…" ekranında düşüyordu
+   * (kanıt: aynı spec tek başına 12/12 geçiyor, tam pakette 4 test kırmızı).
+   * Yükleme ekranı bir hata değil, yavaşlık; süre tanınıyor — başlık hiç
+   * gelmezse test yine ve aynı şekilde kırmızı olur.
+   */
+  await expect(
+    page.getByRole('heading', { level: 1 }),
+    '/admin paneli 40 sn içinde çizilmedi — kapı istekleri takılmış olabilir',
+  ).toBeVisible({ timeout: 40_000 })
   return problems
+}
+
+/**
+ * Sekmeye geçer ve SEÇİMİN GERÇEKTEN DEĞİŞTİĞİNİ doğrular (2026-10-31).
+ *
+ * Neden: sekme şeridi genişliğe göre kayıyor (`ScrollableTabs` +
+ * `ResizeObserver`) ve tam pakette — 6 worker TEK dev sunucusuna yüklenirken —
+ * tıklama ara sıra kayboluyordu: `Profil` tıklandıktan sonra "Genel Bakış"
+ * hâlâ seçiliydi, panel metni hiç gelmiyordu, test "Profil Bilgileri yok"
+ * diye düşüyordu. Aynı spec tek başına 12/12 geçtiği için bu bir yarış.
+ * Tıklama, `aria-selected` değişene kadar en fazla 3 kez tekrarlanır; sekme
+ * gerçekten bozuksa test son denemede net mesajla yine kırmızı olur.
+ */
+async function switchTab(page: import('@playwright/test').Page, name: string, exact = true) {
+  const tab = page.getByRole('tab', { name, exact }).first()
+  for (let deneme = 1; deneme <= 3; deneme++) {
+    await tab.click()
+    try {
+      await expect(tab, `"${name}" sekmesi seçilemedi`).toHaveAttribute('aria-selected', 'true', { timeout: 3000 })
+      return
+    }
+    catch {
+      // Tıklama sekme şeridinin yeniden yerleşmesi sırasında kayboldu → tekrar dene.
+    }
+  }
+  await expect(tab, `"${name}" sekmesi 3 denemede seçilemedi`).toHaveAttribute('aria-selected', 'true')
 }
 
 test('baslik ana sayfa basliklariyla ayni bicimde cizilir', async ({ page }) => {
@@ -107,7 +159,7 @@ test('baslik ana sayfa basliklariyla ayni bicimde cizilir', async ({ page }) => 
   expect(cls, 'buyuk harf (uppercase) yok').toContain('uppercase')
 })
 
-test('tam olarak 5 sekme var ve gelistirme fazi adi kalmadi', async ({ page }) => {
+test('tam olarak 7 sekme var ve gelistirme fazi adi kalmadi', async ({ page }) => {
   await openAdmin(page)
 
   const tabs = page.getByRole('tab')
@@ -122,22 +174,28 @@ test('tam olarak 5 sekme var ve gelistirme fazi adi kalmadi', async ({ page }) =
 test('her sekme acilir ve kendi bolumlerini gosterir', async ({ page }) => {
   await openAdmin(page)
 
+  /*
+    Genel Bakış VARSAYILAN sekmedir ve kartları veri çekildikten sonra çizilir
+    (2026-10-30 ölçümü: masaüstü ~1.8s, mobil ~2.3s). Sekmeyi yeniden
+    tıklamak yükleme durumunu tazelediği için liste döngüsüne SOKULMAZ;
+    burada bir kez beklenir.
+  */
+  await expect(
+    page.getByText('Yetenekler', { exact: false }).first(),
+    '"Genel Bakış" kartlari gelmedi',
+  ).toBeVisible({ timeout: 30_000 })
+
   const expectations: Array<{ tab: string, texts: string[] }> = [
-    { tab: 'Genel Bakış', texts: ['Yetenekler'] },
-    {
-      tab: 'Profil & Hakkımda',
-      texts: ['Profil Bilgileri', 'Bölüm Başlıkları'],
-    },
-    {
-      tab: 'İçerik & Veri',
-      texts: ['Ek Bölümler', 'Veri Yönetimi (Tablolar)'],
-    },
-    { tab: 'Site Ayarları', texts: ['Genel', 'Şifre Değiştir'] },
-    { tab: 'Mesajlar & Kullanıcılar', texts: ['Kullanıcı Yönetimi'] },
+    { tab: 'Profil', texts: ['Profil Bilgileri', 'Hakkımda Sayfası (/about)'] },
+    { tab: 'Sayfa Düzenle', texts: ['Bölüm Başlıkları', 'CV (Özgeçmiş)'] },
+    { tab: 'Şifre & Güvenlik', texts: ['Şifre Değiştir', 'Güvenlik İpuçları'] },
+    { tab: 'Site Ayarları', texts: ['Hero (Ana Ekran)', 'Sosyal Medya'] },
+    { tab: 'Veri Yönetimi', texts: ['Veri Yönetimi (Tablolar)'] },
+    { tab: 'Kullanıcılar', texts: ['Kullanıcı Yönetimi'] },
   ]
 
   for (const { tab, texts } of expectations) {
-    await page.getByRole('tab', { name: tab, exact: false }).click()
+    await switchTab(page, tab, false)
     for (const text of texts) {
       await expect(
         page.getByText(text, { exact: false }).first(),
@@ -149,7 +207,7 @@ test('her sekme acilir ve kendi bolumlerini gosterir', async ({ page }) => {
 
 test('kaynak seridi: oklar seritle ayni hizada, uclarda dogru durumda', async ({ page }) => {
   await openAdmin(page)
-  await page.getByRole('tab', { name: 'İçerik & Veri', exact: false }).click()
+  await switchTab(page, 'Veri Yönetimi', false)
 
   // Kaynak seridi (DataManager) — sayfadaki 2. serit.
   const strips = page.locator('.admin-tabs-strip')
@@ -196,16 +254,21 @@ test('kaynak seridi: oklar seritle ayni hizada, uclarda dogru durumda', async ({
 test('kaydedilmemis degisiklikte sekme degisimi onay ister', async ({ page }) => {
   await openAdmin(page)
   // Once profil sekmesine gec: orada duzenlenebilir alanlar var.
-  await page.getByRole('tab', { name: 'Profil & Hakkımda', exact: false }).click()
+  await switchTab(page, 'Profil')
   await expect(page.getByText('Profil Bilgileri', { exact: false }).first()).toBeVisible()
 
   const input = page.locator('input[type="text"]:visible').first()
   await input.fill('Tarayici Testi')
   await input.blur()
 
-  await expect(
-    page.getByText('Kaydedilmemiş değişiklikler var', { exact: false }).first(),
-  ).toBeVisible()
+  /*
+    Kirli durumun İŞARETİ sabit kaydetme çubuğudur (SaveBar): `dirty` iken
+    "Kaydet" + "İptal Et" ekranın altına yapışır. Onay penceresi ise native
+    `window.confirm`'dir (admin-panel.tsx) — eski test burada sayfada geçen
+    "Kaydedilmemiş değişiklikler var" METNİNİ arıyordu; o metin hiç DOM'a
+    basılmaz, yalnız confirm iletişi olarak çıkar (2026-10-30 ölçüldü).
+  */
+  await expect(page.getByRole('button', { name: 'Kaydet', exact: true }).first()).toBeVisible()
 
   const dialogs: string[] = []
   page.on('dialog', async (dialog) => {
@@ -213,8 +276,9 @@ test('kaydedilmemis degisiklikte sekme degisimi onay ister', async ({ page }) =>
     await dialog.dismiss() // "Kal" secenegi
   })
 
-  await page.getByRole('tab', { name: 'Genel Bakış', exact: false }).click()
+  await page.getByRole('tab', { name: 'Genel Bakış', exact: true }).click()
   await expect.poll(() => dialogs.length).toBeGreaterThan(0)
+  expect(dialogs[0], 'onay metni').toContain('Kaydedilmemiş değişiklikler var')
   // Reddedildi: eski sekme ekranda kalir.
   await expect(page.getByText('Profil Bilgileri', { exact: false }).first()).toBeVisible()
 })

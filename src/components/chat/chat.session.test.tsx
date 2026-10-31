@@ -75,6 +75,14 @@ async function renderChat() {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  /*
+    Dil cerezle sabitlenir (2026-10-30). `detectedLocale` artık otomatik
+    algılamada kullanılmıyor — tarayıcı dili öncelikli (locale-provider.tsx).
+    jsdom'un `navigator.language` değeri 'en-US' olduğu için iddiaların
+    Türkçe metin beklentisi boşa düşüyordu. Gerçek kullanıcı da dili seçince
+    cerez yazılır; test aynı yolu kullanır.
+  */
+  document.cookie = 'site-locale=tr; path=/'
 })
 
 afterEach(() => {

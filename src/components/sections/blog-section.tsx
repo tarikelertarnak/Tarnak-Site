@@ -171,27 +171,30 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
       year: 'numeric',
     })
 
-  return (
-    <Section className="flex-col pt-16 sm:pt-24 lg:pt-32" id="blog" framed>
-      <FadeUpSection className="flex w-full flex-col">
-        {/*
-        Baslik seviyesi — 2026-10-05 (SEO).
-        `/blog` sayfasinda konu basligi olmadigi icin `h1` dogru.
-        Ana sayfada ise `h1` zaten hero'da var; burada `h1` kullanmak
-        sayfada IKINCI h1 uretiyordu (canli olcum: ana sayfada 2 adet
-        `<h1>` — "TARIK ELER TARNAK -TARNAK" ve "BLOG"). Arama motorlari
-        tek h1 bekler; ikincisi bolum basligidir, `h2` olmali.
-      */}
-        <SectionTitle
-          title=""
-          subTitle={t('blog.sub')}
-          description={t('blog.desc')}
-          icon={<NewspaperIcon size={36} className="inline-block" />}
-          headingLevel={onBlogPage ? 'h1' : 'h2'}
-          big
-          tightGap
-        />
+  /*
+    BAŞLIK AYRI GURUPTA (2026-10-30, kullanıcı: "/projects, /blog, /about da
+    /donate gibi SUPPORT gibi ayrı bir grup olsun" + "başlık ile altındaki
+    şey arasındaki boşluk hepsinde aynı olsun"). `/blog`ta başlık artık KENDİ
+    `framed` kartında; içerik ikinci kartta; aralarındaki boşluk `/donate`,
+    `/projects`, `/about` ile aynı: `--section-gap` (24px).
 
+    Ana sayfada (`onBlogPage` false) düzen DEĞİŞMEZ: başlık + içerik tek
+    kartta (kullanıcı: "ana sayfa aynı kalsın").
+  */
+  const titleBlock = (
+    <SectionTitle
+      title=""
+      subTitle={t('blog.sub')}
+      description={t('blog.desc')}
+      icon={<NewspaperIcon size={36} className="inline-block" />}
+      headingLevel={onBlogPage ? 'h1' : 'h2'}
+      big
+      tightGap
+    />
+  )
+
+  const body = (
+    <>
         {/*
           BÖLÜM BOŞLUĞU — başlık çizgisi ile buton arası (2026-10-07).
           `tightGap` başlık sarmalayıcısının `pb-*` değerini sıfırlar, ama
@@ -370,6 +373,34 @@ export function BlogSection({ posts }: { posts: BlogPost[] }) {
             onClick={hasMore ? loadMore : collapseAndScroll}
           />
         )}
+    </>
+  )
+
+  // `/blog`: başlık kartı + 24px + içerik kartı (diğer sayfalarla aynı düzen).
+  if (onBlogPage) {
+    return (
+      <>
+        <Section className="flex-col pt-[var(--section-space)]" framed>
+          <FadeUpSection className="flex w-full flex-col items-center">
+            {titleBlock}
+          </FadeUpSection>
+        </Section>
+        <div aria-hidden className="h-[var(--section-gap)]" />
+        <Section className="flex-col pb-16 sm:pb-20 lg:pb-24" framed>
+          <FadeUpSection className="flex w-full flex-col">
+            {body}
+          </FadeUpSection>
+        </Section>
+      </>
+    )
+  }
+
+  // Ana sayfa: tek kart (düzen korunur).
+  return (
+    <Section className="flex-col pt-[var(--section-space)]" id="blog" framed>
+      <FadeUpSection className="flex w-full flex-col">
+        {titleBlock}
+        {body}
       </FadeUpSection>
     </Section>
   )

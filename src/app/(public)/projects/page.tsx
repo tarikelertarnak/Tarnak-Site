@@ -10,12 +10,12 @@ import { getStaticLocalizedContent } from '@/lib/i18n-server'
 export const dynamic = 'force-static'
 
 export const metadata: Metadata = {
-  title: 'PROJECTS — TARIK ELER - TARNAK',
+  title: 'Projects — TARIK ELER - TARNAK',
   description:
     'Open-source projects developed by TARIK ELER (Tarnak): desktop applications, web tools, browser extensions and AI projects. Downloadable builds for Windows, macOS and Linux.',
   alternates: { canonical: '/projects' },
   openGraph: {
-    title: 'PROJECTS — TARIK ELER - TARNAK',
+    title: 'Projects — TARIK ELER - TARNAK',
     description:
       'Open-source projects: desktop applications, web tools, browser extensions and AI projects.',
     url: '/projects',
@@ -31,13 +31,13 @@ export default async function ProjectsPage() {
       <RememberListPath path="/projects" />
       <main id="main" className="w-full">
         {/*
-          BAŞLIK GRUBUN İÇİNDE (2026-10-21, kullanıcı: "PROJECTS yazısı da
-          grubun içinde değil, BLOG'a bak ondan öğren").
-          `/blog` düzeni referans alındı: `SectionTitle` `framed` Section'ın
-          İÇİNDE, içerikle aynı grupta. Boşlukları `--section-gap` verir,
-          elle `pt-*`/`pb-*` yazılmaz.
+          BAŞLIK AYRI GURUPTA (2026-10-30, kullanıcı: "/projects, /blog,
+          /about da /donate gibi SUPPORT gibi ayrı bir grup olsun").
+          `/donate` düzeni referans: başlık KENDİ `framed` kartında, içerik
+          BAŞKA bir `framed` kartta; aralarındaki boşluk `--section-gap`.
+          Önce başlık içerikle aynı karttaydı (kullanıcı "ayrı grup" istedi).
         */}
-        <Section className="flex-col pt-28 sm:pt-32 pb-16 sm:pb-20 lg:pb-24" framed>
+        <Section className="flex-col pt-28 sm:pt-32" framed>
           <SectionTitle
             title=""
             subTitle={content.projects.subtitle}
@@ -47,8 +47,11 @@ export default async function ProjectsPage() {
             big
             tightGap
           />
-          <div aria-hidden className="h-[var(--section-gap)]" />
+        </Section>
 
+        <div aria-hidden className="h-[var(--section-gap)]" />
+
+        <Section className="flex-col pb-16 sm:pb-20 lg:pb-24" framed>
           {/* GitHub Projects button */}
           <FadeUpSection className="w-full">
             <div className="mx-auto flex w-full max-w-6xl flex-row flex-wrap items-center justify-center gap-3">

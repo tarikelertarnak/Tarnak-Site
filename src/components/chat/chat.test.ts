@@ -342,12 +342,16 @@ describe('chat arayüz sözleşmesi', () => {
       // `clamp(72px,28vw,300px)` kaldırıldı — sürükleme mobilde çalışmıyordu).
       expect(SRC).not.toContain('absolute inset-0 z-40')
       expect(SRC).not.toContain('md:static')
-      // Artık TÜM genişliklerde CSS değişkeni kullanılır (mobil de dahil).
-      expect(SRC).toContain('w-[var(--chat-panel-w)]')
+      /*
+        Genişlik INLINE (2026-10-30): aynı öğede `w-[var(--chat-panel-w)]` ve
+        `w-[72px]` yarışıyordu; üretilen CSS'te `var()` kuralı sonra geldiği
+        için KOMPAKT mod 72px'e HİÇ inmiyordu (e2e ölçtü). Tek kazanan inline
+        stil: açıkken değişken, katlıyken 72px.
+      */
+      expect(SRC).toContain(`panelOpen ? 'min(var(--chat-panel-w), 55%)' : '72px'`)
       // `clamp()` mobilde artık yok — sürükleme mobilde çalışsın diye.
       expect(SRC).not.toContain('clamp(72px,28vw,300px)')
-      // KOMPAKT mod 72px'e iner (avatar sütunu) — genişlik geçişi animasyonlu.
-      expect(SRC).toContain('\'w-[72px]\'')
+      // Genişlik geçişi animasyonlu kalır.
       expect(SRC).toContain('transition-[width] duration-200')
     })
 

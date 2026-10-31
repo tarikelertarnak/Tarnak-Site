@@ -14,11 +14,14 @@ const tokens = readFileSync(join(process.cwd(), 'src/app/tokens.css'), 'utf8')
 const globals = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8')
 
 describe('etkileşim jetonları (tokens.css)', () => {
-  it('basma geri bildirimi (press-feedback) tanımlı ve reduced-motion ile korunuyor', () => {
-    expect(tokens).toContain('.press-feedback')
-    expect(tokens).toContain('transform: scale(0.985)')
-    // Geçiş yalnızca hareket tercihi kapalıyken — aksi halde reduced-motion ihlali.
-    expect(tokens).toMatch(/prefers-reduced-motion:\s*no-preference[\s\S]*press-feedback/)
+  it('basma efektinde GEOMETRİ değişimi YOK (2026-10-31 kullanıcı isteği)', () => {
+    // Kullanıcı: "buton gibi basıldığında küçülüyor — bu küçülüp büyümeyi her
+    // yerden kaldır". `press-feedback` (scale 0.985) tamamen kaldırıldı;
+    // geri eklerse bu test kırmızıya döner.
+    expect(tokens).not.toContain('press-feedback')
+    expect(tokens).not.toContain('transform: scale(0.985)')
+    // Basma geri bildirimi olarak `:active` altında geometri kuralı olmamalı.
+    expect(tokens).not.toMatch(/:active\s*\{[^}]*transform/)
   })
 
   it('dokunmatik gecikme (300ms tap delay) kaldırılmış', () => {

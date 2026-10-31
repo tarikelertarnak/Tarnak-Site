@@ -101,8 +101,8 @@ export function StarRating({
         disabled={readonly || isSubmitting}
         onClick={handleToggle}
         className={cn(
-          'transition-all duration-200',
-          readonly ? 'cursor-default' : 'cursor-pointer hover:scale-125',
+          'transition-colors duration-200',
+          readonly ? 'cursor-default' : 'cursor-pointer',
           liked ? 'text-yellow-400' : 'text-foreground/80 hover:text-yellow-400',
         )}
         title={liked ? t('stars.unlike') : t('stars.like')}

@@ -88,6 +88,15 @@ export async function POST(req: Request) {
      */
     phase6: parsed.data.phase6 ?? current.phase6,
     aboutPage: parsed.data.aboutPage ?? current.aboutPage,
+    /*
+     * 2026-10-30: görsel düzenleme / çeviri / dil listesi de AYNI kurala tabi.
+     * Panel bu üç alanı state'inde taşıyor; taşımayan eski bir istemciden gelen
+     * kayıt onları SİLMEMELİ (bkz. `contentSchema` yorumu: zod bilinmeyen
+     * anahtarı sessizce atar).
+     */
+    design: parsed.data.design ?? current.design,
+    textOverrides: parsed.data.textOverrides ?? current.textOverrides,
+    locales: parsed.data.locales ?? current.locales,
     about: {
       ...parsed.data.about,
       // `cv.href` panelde duzenlenebilir; gonderilmediyse MEVCUT degeri koru.

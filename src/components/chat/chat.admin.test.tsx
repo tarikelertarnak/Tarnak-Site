@@ -102,6 +102,8 @@ async function renderAdminChat(
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // Dil cerezle sabitlenir (2026-10-30) — bkz. chat.session.test.tsx açıklaması.
+  document.cookie = 'site-locale=tr; path=/'
   // jsdom'da `Element.prototype.scrollIntoView` YOK; mesaj eklenince sohbet
   // sonuna kaydırma denenir → ortam eksikliğini tamamla.
   Element.prototype.scrollIntoView = vi.fn()
@@ -355,6 +357,8 @@ describe('admin kullanıcı menüsü', () => {
   })
 
   it('"(Siz)" eki dile göre çevrilir (en: "(You)")', async () => {
+    // Bu test EN metni bekliyor: `beforeEach`in Türkçe varsayılanını ez.
+    document.cookie = 'site-locale=en; path=/'
     mockFetch((url, init) => {
       if (url.includes('/api/admin/session')) {
         return jsonResponse({ success: true, user: { id: 'admin:OWNER', role: 'admin' } })
@@ -380,8 +384,7 @@ describe('admin kullanıcı menüsü', () => {
     )
     await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
     // Satır + (tek kişi olduğu için) başlık aynı etiketi taşır.
-    expect(screen.getAllByText('TARIK ELER TARNAK (You)').length).toBeGreaterThan(0)
-  })
+    expect(screen.getAllByText('TARIK ELER TARNAK (You)').length).toBeGreaterThan(0)  })
 
   it('sekiz sözlükte de "chat.you" var (dile göre çeviri)', () => {
     for (const l of ['tr', 'en', 'de', 'es', 'fr', 'ja', 'pt', 'ru'] as const) {

@@ -69,10 +69,8 @@ function buildStaticGroups(l: Labels): NavGroup[] {
 
         { id: 'donate', label: l.donate, href: '/donate' },
         { id: 'credits', label: l.credits, href: '/credits' },
-        // Kişisel sayfalar
-        { id: 'uses', label: l.uses, href: '/uses' },
+        // Kişisel sayfalar (2026-10-30: `/uses` ve `/changelog` silindi)
         { id: 'now', label: l.now, href: '/now' },
-        { id: 'changelog', label: l.changelog, href: '/changelog' },
       ],
     },
     {

@@ -129,14 +129,22 @@ describe('contentSchema', () => {
     expect(first.value).toBe('tarikelertarnak')
   })
 
-  it('gercek content.json Discord override i kalici (tarikeler)', () => {
+  it('gercek content.json Discord girdileri kalici (kanal + kullanici)', () => {
     const r = contentSchema.safeParse(realContent())
     expect(r.success).toBe(true)
     if (!r.success) {
       return
     }
-    const discord = r.data.social.find(s => s.icon === 'mdi:discord')
-    expect(discord?.value).toBe('tarikeler')
+    // 2026-10-31: tek girdi İKİYE ayrıldı — sunucu daveti ve kullanıcı profili.
+    const discord = r.data.social.filter(s => s.icon === 'mdi:discord')
+    expect(discord).toHaveLength(2)
+    expect(discord.map(d => d.name)).toEqual(['Discord Channel', 'Discord User'])
+    const kanal = discord.find(d => d.name === 'Discord Channel')
+    const kullanici = discord.find(d => d.name === 'Discord User')
+    expect(kanal?.href).toBe('https://discord.gg/UFzppNZxDw')
+    expect(kanal?.value).toBe('Tarnak')
+    expect(kullanici?.href).toBe('https://discord.com/users/1565472290236268605')
+    expect(kullanici?.value).toBe('tarikelertarnak')
   })
 
   it('label/value OPSIYONEL — yoksa da gecer', () => {

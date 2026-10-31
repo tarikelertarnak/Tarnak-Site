@@ -10,7 +10,17 @@
  * Ayni zamanda `data-reduce-motion` tercihini de uygular — bu ayar React
  * baglandiktan sonra degil, parse aninda devreye girmelidir; aksi halde
  * sayfa yenilenince ayar kaybolur (bkz. SCRIPT icindeki not).
+ *
+ * 2026-10-30: ham `<script>` yerine `next/script` + `beforeInteractive`.
+ * Sebep (kullanici bildirdi, konsol hatasi): React 19, bilesen agacinda
+ * render edilen ciplak `<script>` etiketini istemci tarafinda gorunce
+ * "Encountered a script tag while rendering React component" uyarisi
+ * basiyor. `next/script` beforeInteractive stratejisi script'i yalnizca
+ * sunucu HTML'ine (head, hydration'dan once) koyar; istemci React agacinda
+ * script dugumu olusmaz → uyari kaybolur, FOUC korumasi aynen kalir.
  */
+
+import Script from 'next/script'
 
 const SCRIPT = `
 (function(){
@@ -45,17 +55,14 @@ const SCRIPT = `
 `
 
 export function ThemeInitScript({ defaultTheme, nonce }: { defaultTheme: string, nonce?: string }) {
-  // React 19 hoists the script to head and runs it when it is first added to the DOM.
-  // body may not be parsed yet → the script null-checks body.
-  //
   // `nonce` (2026-10-07): CSP nonce tabanlı politika için gerekli — nonce
   // olmadan bu satır içi script 'unsafe-inline' olmadan çalışmaz.
   // Kaynak: src/proxy.ts (x-nonce) → src/app/layout.tsx.
   return (
-    <script
+    <Script
       id="theme-init"
+      strategy="beforeInteractive"
       nonce={nonce}
-      // the loop variable is used inside the script scope — it comes from SSR, a fixed XSS-free enum.
       dangerouslySetInnerHTML={{ __html: `var defaultTheme='${defaultTheme}';\n${SCRIPT}` }}
     />
   )

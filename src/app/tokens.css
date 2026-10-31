@@ -142,25 +142,14 @@ time {
   border-radius: var(--radius-sm);
 }
 
-/* ── Basma geri bildirimi (2026-10-21) ─────────────────────────
-   Tıklanabilir öğelerin hiçbirinde basıldığında görsel tepki yoktu; kullanıcı
-   tıklamanın kaydedildiğini ancak eylem gerçekleşince anlıyordu. `scale`
-   GEOMETRİYİ değiştirdiği için buton kuralları (§8: "hover/active yalnızca
-   renk değiştirir") gereği butonlara UYGULANMAZ — kapsam bilinçli olarak
-   kart ve link-benzeri yüzeylerle sınırlı. `transform` GPU'da çalışır,
-   layout tetiklemez.
-
-   `touch-action: manipulation`: mobilde 300ms çift-dokunma gecikmesini
-   kaldırır (erişilebilirlik değil, algılanan hız iyileştirmesi). */
-:where(.press-feedback, a.press-feedback):active {
-  transform: scale(0.985);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  :where(.press-feedback) {
-    transition: transform var(--duration-fast) var(--ease-out);
-  }
-}
+/* ── Basma geri bildirimi KALDIRILDI (2026-10-31) ───────────────
+   ÖNCE (2026-10-21): `:active` altında `transform: scale(...)` — tıklanınca
+   kartların ve form yüzeylerinin "buton gibi" küçülmesi.
+   KULLANICI İSTEĞİ (2026-10-31): "mesaj yazma yeri buton gibi basıldığında
+   küçülüyor ya bunu kaldır; bu küçülüp büyümeyi her yerden kaldır."
+   ŞİMDİ: geometriye dokunan basma efekti YOK. Geri bildirim yalnızca renk
+   (hover:border / bg) ile verilir — §8 "hover/active yalnızca renk değiştirir".
+   Geri eklemeyin: `tokens-interaction.test.ts` bunu kaynak taramasıyla engeller. */
 
 /* Dokunmatik gecikmeyi kaldır — tüm etkileşimli öğelerde. */
 :where(a, button, [role='button'], summary, label[for]) {

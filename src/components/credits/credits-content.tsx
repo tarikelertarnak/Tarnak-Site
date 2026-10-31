@@ -19,32 +19,34 @@ export function CreditsContent() {
     <div className="min-h-screen w-full relative">
       <main id="main" className="w-full">
         {/*
-          BLOG düzeniyle hizalandı (2026-10-21, kullanıcı: "CONTRIBUTORS'taki
-          yazı yanlış yerde, BLOG gibi olmalı").
-
-          ÖNCE: başlık ÇERÇEVESİZ ayrı bir Section'da, elle yazılmış `<h1>` +
-          `border-b-4` ile. İçerik ayrı `framed` Section'daydı → başlık grupla
-          birleşmiyordu, /blog'dan farklı duruyordu.
-
-          ŞİMDİ: `/blog` (BlogSection) ile AYNI yapı — tek `framed` Section,
-          başlık `SectionTitle` ile grubun İÇİNDE, boşluk `--section-gap`.
+          BLOG gibi TEK KART (2026-10-31, kullanıcı: "KATKIDA BULUNANLAR
+          daki başlık ayrı grup değil, BLOG gibi olmalı").
+          Başlık ve içerik aynı `framed` Section içinde.
         */}
-        <Section
-          className="flex-col pt-28 sm:pt-32 pb-24 sm:pb-32"
-          framed
-          id="credits"
-        >
-          <SectionTitle
-            title=""
-            subTitle={t('credits.heading')}
-            description=""
-            icon={<TrophyIcon size={36} className="inline-block" />}
-            headingLevel="h1"
-            big
-            tightGap
-          />
-          <div aria-hidden className="h-[var(--section-gap)]" />
+        {/*
+          BLOG ile BİREBİR AYNI (2026-10-31, kullanıcı: "KATKIDA BULUNANLAR
+          daki başlık ayrı gurup değil, BLOG gibi olmalı").
 
+          Ölçülmüş `/blog` yapısı (DOM): kart başlık → `--section-gap` (24px)
+          → içerik kartı, ikisi de `framed` (rounded-3xl + border + bg-surface-1).
+          Burada da aynısı: başlık KENDİ kartında, içerik İKİNCİ kartta.
+          Tek kartta birleştirme — başlık grubu kaybolur.
+        */}
+        <Section className="flex-col pt-[var(--section-space)]" framed id="credits">
+          <FadeUpSection className="flex w-full flex-col items-center">
+            <SectionTitle
+              title=""
+              subTitle={t('credits.heading')}
+              description=""
+              icon={<TrophyIcon size={36} className="inline-block" />}
+              headingLevel="h1"
+              big
+              tightGap
+            />
+          </FadeUpSection>
+        </Section>
+        <div aria-hidden className="h-[var(--section-gap)]" />
+        <Section className="flex-col pb-16 sm:pb-20 lg:pb-24" framed>
           <FadeUpSection className="w-full">
             <CreditsBrowser
               contributors={CONTRIBUTORS}

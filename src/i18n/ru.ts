@@ -6,7 +6,7 @@ const ru: Record<string, string> = {
   'about.cvExperience': 'Опыт',
   'about.cvSummaryTitle': 'Резюме',
   'about.cvTitle': 'Резюме',
-  'about.cvView': 'Посмотреть резюме',
+  'about.cvView': 'CV',
   'about.toolboxCopy': 'Скопировать команду',
   'auth.authFailed': 'Вход не удался. Попробуйте ещё раз.',
   'auth.adminOnly': 'Admin only.',

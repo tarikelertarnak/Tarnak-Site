@@ -42,6 +42,10 @@ function draw(props: {
   opening: number
   expanded: boolean
 }) {
+  // Dil cerezle sabitlenir (2026-10-30): `detectedLocale` otomatik algılamada
+  // kullanılmıyor, jsdom'un `navigator.language` değeri 'en-US' olduğu için
+  // Türkçe metin beklentisi karşılanmıyordu.
+  document.cookie = 'site-locale=tr; path=/'
   return render(
     <LocaleProvider detectedLocale="tr">
       <LoadMoreButton {...props} onClick={() => {}} />

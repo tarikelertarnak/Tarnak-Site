@@ -39,7 +39,7 @@ export function pageMetadata({
   // diye canonical'da slash eklendi.
   const temiz = path.replace(/^\/+|\/+$/g, '')
   const canonical = temiz ? `/${temiz}/` : '/'
-  const tamTitle = `${title} — TARIK ELER (Tarnak)`
+  const tamTitle = `${title} — TARIK ELER - TARNAK`
 
   return {
     title: tamTitle,

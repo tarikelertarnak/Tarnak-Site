@@ -1,7 +1,7 @@
 import { AdminGate } from '@/components/admin/admin-gate'
 
 export const metadata = {
-  title: 'Admin Panel',
+  title: 'Admin Panel — TARIK ELER - TARNAK',
   // 2026-10-04: noindex — panel sayfasi arama motorlarina acik bir sayfa
   // degil (once layout'tan index:true miras aliyordu).
   robots: { index: false, follow: false },

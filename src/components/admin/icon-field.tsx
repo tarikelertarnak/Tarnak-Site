@@ -53,7 +53,6 @@ export function IconField({
   /** 300 ms debounce sonrası YEREL algılama (ağ isteği yok). */
   const [detected, setDetected] = useState<IconKind | null>(() => detectIconKind(value))
   const [manual, setManual] = useState<IconKind | 'auto'>('auto')
-  const [advancedOpen, setAdvancedOpen] = useState(false)
   const [resolved, setResolved] = useState<{
     loading: boolean
     kind: IconKind | null
@@ -71,12 +70,9 @@ export function IconField({
     return () => clearTimeout(id)
   }, [value])
 
-  // Algılanamadıysa yedek seçim bölümünü aç (kullanıcı istediği: "formda uyarı
-  // çıksın ve bölüm otomatik açılsın").
-  useEffect(() => {
-    if (undetected)
-      setAdvancedOpen(true)
-  }, [undetected])
+  // Algılanamadıysa yedek seçim bölümü zaten açık (kullanıcı isteği:
+  // "bölüm otomatik açılsın" → 2026-10-31: katlanır bölüm tamamen kaldırıldı,
+  // bölüm her zaman görünür).
 
   // Önizleme + kanonik değer: 600 ms duraklamada sunucuda çözülür.
   useEffect(() => {
@@ -193,38 +189,31 @@ export function IconField({
         </div>
       )}
 
-      {/* Yedek: elle tip seçimi — varsayılan KAPALI */}
+      {/* Yedek: elle tip seçimi — HER ZAMAN görünür. Katlanır bölüm 2026-10-31'de
+          kaldırıldı (kullanıcı: "buton gibi küçülüp büyümeyi her yerden kaldır"). */}
       <div className="rounded-lg border border-foreground/10">
-        <button
-          type="button"
-          aria-expanded={advancedOpen}
-          onClick={() => setAdvancedOpen(o => !o)}
-          className="flex w-full items-center justify-between px-3 py-2 text-left text-[11px] font-medium text-foreground/70 transition-colors hover:bg-foreground/5"
-        >
-          <span>Gelişmiş: ikon tipi</span>
-          <span aria-hidden>{advancedOpen ? '−' : '+'}</span>
-        </button>
-        {advancedOpen && (
-          <div className="flex flex-col gap-2 border-t border-foreground/10 px-3 py-2">
-            <label className="flex flex-col gap-1 text-[11px]">
-              <span className="text-foreground/60">İkon tipi</span>
-              <select
-                value={manual}
-                onChange={e => setManual(e.target.value as IconKind | 'auto')}
-                className="rounded-lg border border-foreground/15 bg-transparent px-2 py-1.5 text-xs"
-              >
-                <option value="auto">Otomatik (varsayılan)</option>
-                {ICON_KINDS.map(k => (
-                  <option key={k} value={k}>{ICON_KIND_LABELS[k]}</option>
-                ))}
-              </select>
-            </label>
-            <p className="text-[11px] text-foreground/50">
-              Otomatik algılama başarısız olursa tipi buradan seç; kaydetme yolu
-              seçtiğin tipe göre çözülür.
-            </p>
-          </div>
-        )}
+        <div className="border-b border-foreground/10 px-3 py-2 text-[11px] font-medium text-foreground/70">
+          Gelişmiş: ikon tipi
+        </div>
+        <div className="flex flex-col gap-2 px-3 py-2">
+          <label className="flex flex-col gap-1 text-[11px]">
+            <span className="text-foreground/60">İkon tipi</span>
+            <select
+              value={manual}
+              onChange={e => setManual(e.target.value as IconKind | 'auto')}
+              className="rounded-lg border border-foreground/15 bg-transparent px-2 py-1.5 text-xs"
+            >
+              <option value="auto">Otomatik (varsayılan)</option>
+              {ICON_KINDS.map(k => (
+                <option key={k} value={k}>{ICON_KIND_LABELS[k]}</option>
+              ))}
+            </select>
+          </label>
+          <p className="text-[11px] text-foreground/50">
+            Otomatik algılama başarısız olursa tipi buradan seç; kaydetme yolu
+            seçtiğin tipe göre çözülür.
+          </p>
+        </div>
       </div>
 
       {help && <span className="text-[11px] text-foreground/50">{help}</span>}

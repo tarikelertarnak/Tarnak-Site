@@ -11,7 +11,9 @@ import { useSwipeReply } from '@/components/chat/use-swipe-reply'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import {
+  BellIcon,
   ClockIcon,
+  CloseIcon,
   ErrorIcon,
   MenuIcon,
   MicIcon,
@@ -22,6 +24,7 @@ import {
   TickReadIcon,
   TickSentIcon,
 } from '@/components/ui/icons'
+import { askNotify, dismissNotify, notifyDismissed, notifyState, showBrowserNotification } from '@/lib/browser-notify'
 import {
   isTyping,
   PRESENCE_UI,
@@ -312,6 +315,13 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
    * Seçim `localStorage`ta hatırlanır; <480px'de varsayılan KOMPAKT.
    */
   const [panelOpen, setPanelOpen] = useState(true)
+  /**
+   * Panel, DAR ekrana geçildiği için kendiliğinden katlandı mı? (2026-10-30)
+   * Otomatik katlanma kullanıcı tercihi DEĞİLDİR: `localStorage`a yazılmaz,
+   * yoksa masaüstünde sayfa yenileyen kullanıcı listeyi kompakt bulurdu.
+   * Kullanıcı düğmeye basınca bayrak düşer ve seçim yeniden kalıcı olur.
+   */
+  const autoCollapsed = useRef(false)
   const [session, setSession] = useState<{ id: string, role?: string } | null>(null)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [schemaMissing, setSchemaMissing] = useState(false)
@@ -352,6 +362,38 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   const isAdmin = session?.role === 'admin'
   /** Sohbet kimliğim: "bu mesaj benim mi?" kararı sunucunun verdiği kimlikle verilir. */
   const myId = selfId || currentUserId
+
+  /*
+    BİLDİRİM (2026-10-30, kullanıcı: "bildirim açma olayı olsun, chat kısmına
+    girince istesin"). Sohbete girildiğinde izin henüz verilmemişse üstte
+    ince bir şerit çıkar; "Aç" `Notification.requestPermission()` çağırır.
+    Yeni mesaj geldiğinde (yoklama) ve sekme arka plandaysa masaüstü
+    bildirimi gösterilir — sohbeti okuyan kullanıcıya gürültü yapılmaz.
+  */
+  const [notifyBanner, setNotifyBanner] = useState(false)
+  const seenIdsRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    const sync = () => {
+      setNotifyBanner(notifyState() === 'default' && !notifyDismissed())
+    }
+    sync()
+    // Kullanıcı izni tarayıcı ayarlarından da değiştirebilir.
+    document.addEventListener('visibilitychange', sync)
+    return () => document.removeEventListener('visibilitychange', sync)
+  }, [])
+
+  async function enableNotifications() {
+    const result = await askNotify()
+    if (result !== 'granted')
+      dismissNotify()
+    setNotifyBanner(result === 'default')
+  }
+
+  function hideNotifyBanner() {
+    dismissNotify()
+    setNotifyBanner(false)
+  }
 
   /**
    * CANLI yanıt hedefi: seçim anındaki kopya yerine LİSTEDEKİ güncel satır
@@ -769,11 +811,14 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
    * aynı: GENİŞ ↔ KOMPAKT. Panel kaybolmaz, sohbet alanı yerinde kalır.
    */
   function togglePanel() {
+    // Kullanıcı seçimi: otomatik katlanma bayrağı düşer, tercih kalıcılaşır.
+    autoCollapsed.current = false
     setPanelOpen(v => !v)
   }
 
   /** "Kişi ara": panel KOMPAKT ise genişletilir ve arama alanı odaklanır. */
   function focusSearch() {
+    autoCollapsed.current = false
     setPanelOpen(true)
     requestAnimationFrame(() => searchRef.current?.focus())
   }
@@ -922,23 +967,70 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
   /**
    * Panel GENİŞ/KOMPAKT seçimi hatırlanır. Kayıt yoksa: dar ekranda KOMPAKT,
    * geniş ekranda GENİŞ başlar (kullanıcı isteği 3).
+   *
+   * ⚠️ 2026-10-30 (gerçek hata): aşağıdaki yazma effect'i İLK render'da da
+   * çalışıp `panelOpen` başlangıç değerini (`true`) kaydediyordu. React Strict
+   * Mode geliştirmede effect'leri iki kez çalıştırdığı için ikinci turda bu
+   * `true` okunuyor ve **dar ekranda otomatik KOMPAKT hiç uygulanmıyordu**
+   * (390px'te panel 72px değil 288px açılıyordu — e2e ölçtü). Çözüm:
+   * karar verilene kadar yazma yok (`decided` ref).
    */
+  const panelPrefDecided = useRef(false)
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(CHAT_PANEL_OPEN_KEY)
+      if (isNarrowScreen()) {
+        autoCollapsed.current = true
+        setPanelOpen(false)
+        return
+      }
       if (saved === '0' || saved === '1') {
         setPanelOpen(saved === '1')
         return
       }
-      setPanelOpen(!isNarrowScreen())
+      setPanelOpen(true)
     }
     catch {
       // Depolama kapalı: dar ekran kuralı yine de uygulanır.
+      autoCollapsed.current = isNarrowScreen()
       setPanelOpen(!isNarrowScreen())
     }
   }, [])
 
+  /**
+   * EKRAN SONRADAN DARALIRSA panel kendiliğinden katlanır (2026-10-30, gerçek
+   * hata): katlanma yalnız ilk açılışta uygulanıyordu. Masaüstünde (1440px)
+   * açılmış panel pencere 390px'e küçültülünce GENİŞ kalıyor, sohbet alanına
+   * 80px kalıyor ve mesaj balonları 24px genişliğe sıkışıp karakter başına
+   * satır kayıyordu (ölçüldü: balon 251px yüksekliğinde). Sohbet alanı asla
+   * kullanılamaz genişliğe düşmemeli.
+   */
   useEffect(() => {
+    const mq = window.matchMedia?.(CHAT_NARROW_QUERY)
+    if (!mq)
+      return
+    const onChange = () => {
+      if (mq.matches) {
+        autoCollapsed.current = true
+        setPanelOpen(false)
+      }
+    }
+    onChange()
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+
+  useEffect(() => {
+    // İlk render'ı atla: henüz karar verilmedi, yazarsak yanlış değeri
+    // (başlangıç `true`) kalıcılaştırırız.
+    if (!panelPrefDecided.current) {
+      panelPrefDecided.current = true
+      return
+    }
+    // Otomatik katlanma tercih değil — yazma.
+    if (autoCollapsed.current)
+      return
     try {
       localStorage.setItem(CHAT_PANEL_OPEN_KEY, panelOpen ? '1' : '0')
     }
@@ -1049,12 +1141,31 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
         return
       }
       /*
+        BİLDİRİM (2026-10-30): yoklama yeni mesaj getirdiyse ve sekme arka
+        plandaysa masaüstü bildirimi gösterilir. İLK yüklemede mevcut mesajlar
+        "yeni" sayılmaz (geçmiş bildirim yağmuru olmasın) — `firstLoad` kapısı.
+      */
+      const server = (json.messages ?? []) as UiMessage[]
+      const seen = seenIdsRef.current
+      const firstLoad = seen.size === 0
+      const incoming = server.filter(
+        m => !seen.has(m.id) && m.sender_id !== (myId || selfId),
+      )
+      for (const m of server) seen.add(m.id)
+      if (!firstLoad && incoming.length > 0) {
+        const last = incoming[incoming.length - 1]
+        showBrowserNotification(
+          last.sender_name?.trim() || t('chat.newMessage'),
+          last.text?.trim() || '…',
+          conversationId ?? undefined,
+        )
+      }
+      /*
         Sunucu listesi YEREL (iyimser) satırlarla birleştirilir: gönderim
         sürerken gelen yoklama, "saat" durumundaki mesajı ekrandan DÜŞÜRMESİN
         (sunucu onu ancak POST bitince döndürür).
       */
       setMessages((prev) => {
-        const server = (json.messages ?? []) as UiMessage[]
         const local = prev.filter(m => (m._pending || m._failed) && !server.some(s => s.id === m.id))
         return local.length ? [...server, ...local] : server
       })
@@ -1585,6 +1696,38 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       className="relative flex h-[calc(100dvh-4.5rem)] min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background md:h-[calc(100svh-11rem)]"
       style={{ '--chat-panel-w': `${panelWidth}px` } as CSSProperties}
     >
+      {/*
+        BİLDİRİM İZİN ŞERİDİ (2026-10-30, kullanıcı: "chat kısmına girince
+        bildirim açmayı istesin"). İzin `default` iken görünür; "Aç" gerçek
+        izin isteğini tetikler, × bir daha sormaz.
+      */}
+      {notifyBanner && (
+        <div className="absolute inset-x-2 top-2 z-40 mx-auto flex max-w-md items-center gap-2 rounded-xl border border-primary/40 bg-background/95 px-3 py-2 shadow-lg backdrop-blur">
+          <BellIcon size={16} className="shrink-0 text-primary" />
+          <p className="min-w-0 flex-1 text-xs leading-snug">
+            <span className="font-semibold text-foreground">{t('chat.notifyTitle')}</span>
+            <span className="hidden text-foreground/60 sm:inline">
+              {' — '}
+              {t('chat.notifyBody')}
+            </span>
+          </p>
+          <button
+            type="button"
+            onClick={enableNotifications}
+            className="shrink-0 rounded-lg bg-primary px-2.5 py-1 text-xs font-medium text-primary-fg transition-colors hover:bg-primary/90"
+          >
+            {t('chat.notifyAllow')}
+          </button>
+          <button
+            type="button"
+            onClick={hideNotifyBanner}
+            aria-label={t('chat.notifyLater')}
+            className="shrink-0 rounded-lg p-1 text-foreground/50 transition-colors hover:text-foreground"
+          >
+            <CloseIcon size={14} />
+          </button>
+        </div>
+      )}
       {/* ── SOL: kime yazmak istiyorum (kişi listesi) ──
           İKİ PANEL HER GENİŞLİKTE YAN YANA (2026-10-13 kullanıcı isteği: "tam
           ekran liste görünümü tamamen kaldırılsın"). Genişlik:
@@ -1595,10 +1738,21 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
       <aside
         className={cn(
           'flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-foreground/10 bg-background transition-[width] duration-200 ease-out',
-          panelOpen
-            ? 'w-[var(--chat-panel-w)]'
-            : 'w-[72px]',
         )}
+        /*
+          GENİŞLİK INLINE (2026-10-30, gerçek hata): eskiden iki Tailwind
+          sınıfı yarışıyordu — `w-[var(--chat-panel-w)]` / `w-[72px]`. Üretilen
+          CSS'te `var(...)` kuralı `72px`'ten SONRA geldiği için panel
+          katlandığında bile `--chat-panel-w` (140px) kazanıyordu → "yan panel
+          düğmesi listeyi daraltır" özelliği ÇALIŞMIYORDU (e2e ölçtü: 72
+          beklenirken 140). Inline stil tek kazanandır, sıraya bağlı değildir.
+
+          `min(..., 55%)` (2026-10-30): dar ekranda kullanıcı paneli elle
+          açarsa sohbet alanına yine de yer kalsın. 390px'te 288px'lik panel
+          sohbete 80px bırakıyordu; balonlar 24px'e sıkışıp karakter başına
+          satıra düşüyordu (ölçüldü). Panel artık kartın %55'ini geçemez.
+        */
+        style={{ width: panelOpen ? 'min(var(--chat-panel-w), 55%)' : '72px' }}
       >
         {/* Arama kutusu yalnız GENİŞ modda. KOMPAKT modda gizlenir (kullanıcı
             isteği 3: "arama kutusu gizlensin"); "Kişi ara" menü maddesi paneli
@@ -1937,7 +2091,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
               )}
               <div
                 className={cn(
-                  'group/msg flex min-w-0 max-w-[80%] items-center gap-1',
+                  'flex min-w-0 max-w-[80%] items-center gap-1',
                   mine ? 'flex-row-reverse' : 'flex-row',
                 )}
               >
@@ -2057,9 +2211,11 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                         ))}
                   </span>
                 </div>
-                {/* HOVER OKU (2026-10-16 kullanıcı isteği: "mesaja hover edince
-                    küçük bir ok/menü butonu çıksın"). Sağ tıkla AYNI menüyü
-                    açar — ikinci bir menü yazılmaz. */}
+                {/* Mesaj menüsü düğmesi (2026-10-16). Sağ tıkla AYNI menüyü
+                    açar — ikinci bir menü yazılmaz.
+                    2026-10-31: `group-hover` ile gizlenme kaldırıldı — düğme
+                    her zaman görünür (kullanıcı: "grup özelliğini her yerden
+                    kaldır"). */}
                 <button
                   type="button"
                   data-testid="chat-reply-button"
@@ -2070,7 +2226,7 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                     const r = e.currentTarget.getBoundingClientRect()
                     setMenu({ kind: 'message', message: m, x: r.left, y: r.bottom + 4 })
                   }}
-                  className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 opacity-0 transition-opacity group-hover/msg:opacity-100 hover:bg-foreground/10 hover:text-foreground focus-visible:opacity-100"
+                  className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
                 >
                   <ReplyIcon size={16} />
                 </button>
@@ -2195,15 +2351,16 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
             title={hasDraft ? t('chat.send') : t('chat.voiceSoon')}
             className={`grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${sendBtnClass}`}
           >
-            {/* İki ikon üst üste durur; 200ms fade + scale ile yer değiştirir. */}
+            {/* İki ikon üst üste durur; yalnızca 200 ms fade ile yer değiştirir
+                (2026-10-31: `scale` küçülüp büyüme efekti kaldırıldı). */}
             <span className="relative grid h-5 w-5 place-items-center">
               <MicIcon
                 size={20}
-                className={`absolute transition-all duration-200 ${hasDraft ? 'scale-50 opacity-0' : 'scale-100 opacity-100'}`}
+                className={`absolute transition-opacity duration-200 ${hasDraft ? 'opacity-0' : 'opacity-100'}`}
               />
               <SendIcon
                 size={18}
-                className={`absolute transition-all duration-200 ${hasDraft ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`}
+                className={`absolute transition-opacity duration-200 ${hasDraft ? 'opacity-100' : 'opacity-0'}`}
               />
             </span>
           </button>

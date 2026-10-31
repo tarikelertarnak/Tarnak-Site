@@ -363,9 +363,35 @@ export function ShieldIcon({ size = 16, className }: IconProps) {
   return (
     <svg {...base(size, className)}>
       <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z" />
-      <path d="M13 10 9.4 13.6" />
-      <path d="m10.8 13.2.4-.4" />
-      <path d="M13.5 8.5l.5-.5" />
+    </svg>
+  )
+}
+
+/**
+ * Kalkan + onay işareti — `/gizlilik` başlık ikonu (2026-10-31).
+ *
+ * ⚠️ Eski `ShieldIcon` üç kopuk `path` taşıyordu (`M13 10 9.4 13.6` gibi):
+ * 36 px başlıkta çizik/silgi görünümü veriyordu (kullanıcı: "iconları kötü").
+ * Bu ikon temiz Lucide `shield-check` geometrisidir.
+ */
+export function ShieldCheckIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  )
+}
+
+/** Terazi — `/kvkk` başlık ikonu (2026-10-31, Lucide `scale`). */
+export function ScaleIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+      <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z" />
+      <path d="M7 21h10" />
+      <path d="M12 3v18" />
+      <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2" />
     </svg>
   )
 }

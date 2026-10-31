@@ -323,7 +323,7 @@ return { r, score: 4 }
             className="z-[9999] overflow-hidden rounded-xl border border-foreground-200/15 bg-background shadow-2xl shadow-black/30"
           >
             {/* Arama */}
-            <div className="border-b border-foreground/200/10 p-2">
+            <div className="border-b border-foreground-200/10 p-2">
               <div className="relative">
                 <SearchIcon
                   size={13}
@@ -342,7 +342,7 @@ return { r, score: 4 }
                   autoComplete="off"
                   // rakam/harf dışını yazmayı engelle
                   pattern="[\\p{L}\\p{N}\\s+.-]*"
-                  className="h-8 w-full rounded-lg border border-foreground/200/15 bg-background pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
+                  className="h-8 w-full rounded-lg border border-foreground-200/15 bg-background pl-8 pr-7 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
                 />
                 {q && (
                   <button

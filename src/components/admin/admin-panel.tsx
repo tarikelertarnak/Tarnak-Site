@@ -13,12 +13,13 @@ import type { GitHubRepo } from '@/lib/github'
 import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
 import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { AboutPageEditor } from '@/components/admin/about-page-editor'
 import { DataManager } from '@/components/admin/data-manager'
 import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
 import { HeroLogoField } from '@/components/admin/hero-logo-field'
 import { OverviewPanel } from '@/components/admin/overview-panel'
+import { PageTextEditor } from '@/components/admin/page-text-editor'
 import { PanelCard } from '@/components/admin/panel-card'
 import { ProfilePhotoUploader } from '@/components/admin/profile-photo-uploader'
 import { SaveBar } from '@/components/admin/save-bar'
@@ -26,6 +27,7 @@ import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
 import { SectionsEditor } from '@/components/admin/sections-editor'
 import { TabLabel } from '@/components/admin/tab-label'
 import { UsersPanel } from '@/components/admin/users-panel'
+import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -34,6 +36,7 @@ import { SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { aboutPageErrors, normalizeAboutPage } from '@/lib/about-page'
 import { clientFetchUserRepos } from '@/lib/github-client'
+import { PAGE_SPECS } from '@/lib/page-text-specs'
 import { scrollToElement } from '@/lib/scroll'
 import { SECTION_SPECS } from '@/lib/section-fields'
 
@@ -55,6 +58,7 @@ export function AdminPanel({
   const [content, setContent] = useState<SiteContent>(initialContent)
   const [status, setStatus] = useState<SaveStatus>(null)
   const [saving, setSaving] = useState(false)
+  const [blogModalOpen, setBlogModalOpen] = useState(false)
   /**
    * Kaydedilmemiş değişiklik takibi (2026-10-13, kullanıcı isteği): sekme
    * değiştirirken uyarabilsin diye son kaydedilen içerik saklanır.
@@ -68,10 +72,36 @@ export function AdminPanel({
   const [githubRepos, setGithubRepos] = useState<GitHubRepo[]>([])
   // Sekme kontrollu: "Genel Bakis"taki tablo kartlari "Veri Yonetimi"
   // sekmesine ve ilgili tabloya atlayabilsin diye activeKey'i biz tutuyoruz.
-  const [tab, setTab] = useState('overview')
+  const HASH_TO_TAB: Record<string, string> = {
+    '#overview': 'overview',
+    '#profile': 'profile',
+    '#pages': 'pages',
+    '#password': 'password',
+    '#settings': 'settings',
+    '#data': 'data',
+    '#people': 'people',
+  }
+
+  const initialTab = (() => {
+    if (typeof window === 'undefined')
+      return 'overview'
+    return HASH_TO_TAB[window.location.hash] ?? 'overview'
+  })()
+  const [tab, setTab] = useState(initialTab)
   const [dataResource, setDataResource] = useState<string | undefined>(
     undefined,
   )
+  const [tabSearch, setTabSearch] = useState('')
+
+  const setTabWithHash = (next: string) => {
+    setTab(next)
+    window.location.hash = next
+  }
+
+  useLayoutEffect(() => {
+    const hash = window.location.hash
+    setTab(HASH_TO_TAB[hash] ?? 'overview')
+  }, [])
 
   // 2026-10-08: Sekme seridinin kaydirma/gosterge isleri `ScrollableTabs`
   // icine tasindi (oklar + kenar solmasi + bölüm noktalari). Buradaki takma kod
@@ -99,7 +129,7 @@ return
       const index = (e as CustomEvent<{ index: number }>).detail?.index
       if (typeof index !== 'number')
         return
-      setTab('pages')
+      setTabWithHash('pages')
       // Sekme paneli çizildikten sonra elemanın DOM'da olmasını bekle.
       requestAnimationFrame(() => {
         scrollToElement(document.getElementById(`admin-project-${index}`))
@@ -820,7 +850,6 @@ return item
                   { value: '/blog', label: '/blog' },
                   { value: '/contact', label: '/contact' },
                   { value: '/admin', label: '/admin' },
-                  { value: '/uses', label: '/uses' },
                   { value: '/now', label: '/now' },
                 ]}
                 selected={content.settings.backgroundPages ?? []}
@@ -1530,6 +1559,8 @@ tablosundan
     <BlogManager
       onStatus={setStatus}
       saving={saving}
+      blogModalOpen={blogModalOpen}
+      setBlogModalOpen={setBlogModalOpen}
       initialPosts={initialBlogPosts ?? []}
     />
   )
@@ -1684,35 +1715,73 @@ tablosundan
    * bir sekme dili kalır, ikinci bir navigasyon icat edilmez.
    */
   const pagesPane = (
-    <PageEditTabs>
-      {{
-        about: (
-          <PanelCard title="HAKKIMDA">
-            <div className="space-y-4">{aboutPane}</div>
-          </PanelCard>
-        ),
-        projects: (
-          <PanelCard title="PROJELER">
-            <div className="space-y-4">{projectsPane}</div>
-          </PanelCard>
-        ),
-        blog: (
-          <PanelCard title="BLOG">
-            <div className="space-y-4">{blogPane}</div>
-          </PanelCard>
-        ),
-        sections: (
-          <PanelCard title="SAYFA BÖLÜMLERİ">
-            <div className="space-y-4">{pageSectionsPane}</div>
-          </PanelCard>
-        ),
-        extras: (
-          <PanelCard title="EK BÖLÜMLER">
-            <div className="space-y-4">{sectionsPane}</div>
-          </PanelCard>
-        ),
-      }}
-    </PageEditTabs>
+    <PageEditTabs
+      initial="about"
+      items={[
+        /*
+          HER SAYFA AYRI (2026-10-30, kullanıcı: "Sayfa Düzenle'de bütün
+          sayfalar bölümler ayrı ayrı olmalı … istisnasız"). Katalog
+          `PAGE_SPECS`ten gelir (12 sayfa); her sayfa kendi dil seçicisi,
+          Kopyala butonu ve yapıştır-çeviri kutusuyla açılır. HAKKIMDA /
+          PROJELER / BLOG sayfalarında ayrıca mevcut yapısal editörler
+          (diziler, toolbox, CV) kartın altında korunur.
+        */
+        ...PAGE_SPECS.map((page) => {
+          const extra
+            = page.id === 'about'
+              ? aboutPane
+              : page.id === 'projects'
+                ? projectsPane
+                : page.id === 'blog'
+                  ? blogPane
+                  : null
+          const title = page.label.toLocaleUpperCase('tr')
+          return {
+            key: page.id,
+            label: title,
+            icon: page.icon,
+            node: (
+              <PanelCard title={title}>
+                <div className="space-y-4">
+                  <PageTextEditor
+                    content={content}
+                    pageId={page.id}
+                    groups={page.groups}
+                    previewPath={page.path}
+                    onChange={setContent}
+                  />
+                  {extra && (
+                    <div className="space-y-4 border-t border-surface-border pt-4">
+                      {extra}
+                    </div>
+                  )}
+                </div>
+              </PanelCard>
+            ),
+          }
+        }),
+        {
+          key: 'sections',
+          label: 'SAYFA BÖLÜMLERİ',
+          icon: 'mdi:page-layout-body',
+          node: (
+            <PanelCard title="SAYFA BÖLÜMLERİ">
+              <div className="space-y-4">{pageSectionsPane}</div>
+            </PanelCard>
+          ),
+        },
+        {
+          key: 'extras',
+          label: 'EK BÖLÜMLER',
+          icon: 'mdi:view-timeline-outline',
+          node: (
+            <PanelCard title="EK BÖLÜMLER">
+              <div className="space-y-4">{sectionsPane}</div>
+            </PanelCard>
+          ),
+        },
+      ]}
+    />
   )
 
   /** "Veri Yönetimi" sekmesinin gövdesi — tablo CRUD (2026-10-20). */
@@ -1744,7 +1813,13 @@ tablosundan
     {
       key: 'overview',
       label: <TabLabel icon="mdi:view-dashboard-outline" text="Genel Bakış" />,
-      children: <div className="min-w-0">{overviewPane}</div>,
+      children: (
+        <div className="min-w-0 space-y-8">
+        <SubSection title="Genel Bakış" icon="mdi:view-dashboard-outline">
+          {overviewPane}
+        </SubSection>
+        </div>
+      ),
     },
     {
       key: 'profile',
@@ -1767,15 +1842,23 @@ tablosundan
       key: 'pages',
       label: <TabLabel icon="mdi:file-document-edit-outline" text="Sayfa Düzenle" />,
       children: (
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-8">
+        <SubSection title="Sayfa Düzenle" icon="mdi:file-document-edit-outline">
           {pagesPane}
+        </SubSection>
         </div>
       ),
     },
     {
       key: 'password',
       label: <TabLabel icon="mdi:shield-lock-outline" text="Şifre & Güvenlik" />,
-      children: <div className="min-w-0 space-y-4 pt-4">{securityPane}</div>,
+      children: (
+        <div className="min-w-0 space-y-8">
+        <SubSection title="Şifre & Güvenlik" icon="mdi:shield-lock-outline">
+          {securityPane}
+        </SubSection>
+        </div>
+      ),
     },
     {
       key: 'settings',
@@ -1814,6 +1897,28 @@ tablosundan
       ),
     },
   ]
+
+  /** Sekme başlıkları için arama eşlemesi — anahtar + görünen metin. */
+  const TAB_LABELS: Record<string, string> = {
+    overview: 'Genel Bakış',
+    profile: 'Profil',
+    pages: 'Sayfa Düzenle',
+    password: 'Şifre & Güvenlik',
+    settings: 'Site Ayarları',
+    data: 'Veri Yönetimi',
+    people: 'Kullanıcılar',
+  }
+
+  /** Arama yazıldığında sadece eşleşen sekmeler görünür. */
+  const filteredTabItems = useMemo(() => {
+    if (!tabSearch.trim()) return tabItems
+    const q = tabSearch.toLowerCase().trim()
+    return tabItems.filter(
+      item =>
+        item.key.toLowerCase().includes(q) ||
+        TAB_LABELS[item.key]?.toLowerCase().includes(q),
+    )
+  }, [tabItems, tabSearch])
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl">
@@ -1878,6 +1983,17 @@ tablosundan
       <div className="w-full min-w-0 overflow-y-auto overflow-x-clip">
         {/* Sekme şeridi: yatay kaydırma yalnızca SEKME LİSTESİNİN kendi
             içinde olur; oklar/noktalar gerektiğinde görünür. */}
+        {/* Sekme arama filtresi: yazıldığında eşleşmeyen sekmeler gizlenir. */}
+        <div className="w-full min-w-0 mb-2">
+          <Input
+            variant="faded"
+            value={tabSearch}
+            onValueChange={setTabSearch}
+            placeholder="Sekme ara (Genel Bakış, Profil, Sayfa Düzenle…)"
+            aria-label="Sekme arama filtresi"
+            className="w-full max-w-md"
+          />
+        </div>
         <ScrollableTabs activeTabKey={tab}>
           <Tabs
             size="large"
@@ -1904,9 +2020,9 @@ tablosundan
               ) {
                 return
               }
-              setTab(next)
+              setTabWithHash(next)
             }}
-            items={tabItems}
+            items={filteredTabItems}
           />
         </ScrollableTabs>
         <div className="mt-6 flex min-w-0 flex-col items-center gap-3">
@@ -1976,28 +2092,24 @@ function SubSection({
 }
 
 /**
- * "Sayfa Düzenle" iç sekmeleri (2026-10-21).
+ * "Sayfa Düzenle" iç listesi (2026-10-30).
  *
- * Kullanıcı isteği: Veri Yönetimi'ndeki gibi alt gruplar, ama büyük harfli
- * isimlerle (PROJELER / BLOG / SAYFA BÖLÜMLERİ / EK BÖLÜMLER). Sekme şeridi
- * panelin dış sekme şeridiyle AYNI bileşenden (`ScrollableTabs`) gelir ki
- * taşma davranışı ve ok/nokta kuralları tek yerde kalsın.
+ * ÖNCE (2026-10-21): 5 sabit alt sekme (HAKKIMDA / PROJELER / BLOG / SAYFA
+ * BÖLÜMLERİ / EK BÖLÜMLER). Kullanıcı isteği: "Sayfa Düzenle'de bütün sayfalar
+ * bölümler ayrı ayrı olmalı … istisnasız, yanında da göz olsun".
  *
- * İçerik DİLİ: etiketler sabit büyük harf; ikonlar Iconify'dan (uydurma SVG yok).
+ * ŞİMDİ: liste ÇAĞIRANDAN gelir (`items`) — 12 sayfa + SAYFA BÖLÜMLERİ +
+ * EK BÖLÜMLER + DİLLER. Sekme şeridi panelin dış şeridiyle AYNI bileşenden
+ * (`ScrollableTabs`) gelir; taşma davranışı tek yerde kalır.
  */
 function PageEditTabs({
-  children,
+  items,
+  initial,
 }: {
-  children: Record<'about' | 'projects' | 'blog' | 'sections' | 'extras', ReactNode>
+  items: { key: string, label: string, icon: string, node: ReactNode }[]
+  initial: string
 }) {
-  const [inner, setInner] = useState('about')
-  const items = [
-    { key: 'about', label: 'HAKKIMDA', icon: 'mdi:account-circle' },
-    { key: 'projects', label: 'PROJELER', icon: 'mdi:folder-outline' },
-    { key: 'blog', label: 'BLOG', icon: 'mdi:post-outline' },
-    { key: 'sections', label: 'SAYFA BÖLÜMLERİ', icon: 'mdi:page-layout-body' },
-    { key: 'extras', label: 'EK BÖLÜMLER', icon: 'mdi:view-timeline-outline' },
-  ] as const
+  const [inner, setInner] = useState(initial)
 
   return (
     <div className="min-w-0 pt-4">
@@ -2020,7 +2132,7 @@ function PageEditTabs({
             // animasyonu nötrler.
             children: (
               <div key={i.key} className="admin-pane-in min-w-0">
-                {children[i.key]}
+                {i.node}
               </div>
             ),
           }))}
@@ -2235,6 +2347,8 @@ function SecurityTipsCard() {
 interface BlogManagerProps {
   onStatus: (s: SaveStatus) => void
   saving: boolean
+  blogModalOpen: boolean
+  setBlogModalOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 /**
@@ -2244,10 +2358,11 @@ interface BlogManagerProps {
 function BlogManager({
   initialPosts,
   onStatus,
+  blogModalOpen,
+  setBlogModalOpen,
 }: BlogManagerProps & { initialPosts: BlogPost[] }) {
   const [posts, setPosts] = useState<any[]>(initialPosts)
   const [editing, setEditing] = useState<any | null>(null)
-
   const savePost = async () => {
     if (!editing?.title?.trim() || !editing?.slug?.trim())
 return
@@ -2268,6 +2383,7 @@ return
       { ...editing },
     ])
     setEditing(null)
+    setBlogModalOpen(false)
   }
 
   const removePost = async (post: any) => {
@@ -2284,8 +2400,10 @@ return
     }
     onStatus({ type: 'success', text: 'Yazı silindi' })
     setPosts(prev => prev.filter((p: any) => p.id !== post.id))
-    if (editing?.id === post.id)
-setEditing(null)
+    if (editing?.id === post.id) {
+      setEditing(null)
+      setBlogModalOpen(false)
+    }
   }
 
   const toSlug = (s: string) =>
@@ -2314,105 +2432,115 @@ setEditing(null)
 {' '}
 yazı
 </p>
-        {!editing && (
+        {!blogModalOpen && (
           <Button
             size="sm"
             color="primary"
             variant="bordered"
-            onPress={() => setEditing(emptyPost())}
+            onPress={() => {
+              setEditing(emptyPost())
+              setBlogModalOpen(true)
+            }}
           >
             + Yeni Yazı
           </Button>
         )}
       </div>
 
-      {editing && (
-        <PanelCard
-          title={
-            posts.some((p: any) => p.id === editing.id)
-              ? 'Yazıyı Düzenle'
-              : 'Yeni Yazı'
-          }
-        >
-          <div className="space-y-3">
-            <Grid>
-              <Field label="Başlık *">
-                <Input
-                  variant="faded"
-                  placeholder="Yazı başlığı"
-                  value={editing.title || ''}
-                  onValueChange={(v) => {
-                    const next = { ...editing, title: v }
-                    if (!editing.slug)
+      <Modal
+        open={blogModalOpen}
+        onClose={() => {
+          setEditing(null)
+          setBlogModalOpen(false)
+        }}
+        title={
+          posts.some((p: any) => p.id === editing.id)
+            ? 'Yazıyı Düzenle'
+            : 'Yeni Yazı'
+        }
+        maxWidth="max-w-lg"
+      >
+        <div className="space-y-3">
+          <Grid>
+            <Field label="Başlık *">
+              <Input
+                variant="faded"
+                placeholder="Yazı başlığı"
+                value={editing.title || ''}
+                onValueChange={(v) => {
+                  const next = { ...editing, title: v }
+                  if (!editing.slug)
 next.slug = toSlug(v)
-                    setEditing(next)
-                  }}
-                />
-              </Field>
-              <Field label="Slug (URL) *">
-                <Input
-                  variant="faded"
-                  placeholder="yazi-url"
-                  value={editing.slug || ''}
-                  onValueChange={v =>
-                    setEditing({ ...editing, slug: toSlug(v) || v })}
-                />
-              </Field>
-              <Field label="Tarih">
-                <Input
-                  variant="faded"
-                  type="date"
-                  value={editing.date || ''}
-                  onValueChange={v => setEditing({ ...editing, date: v })}
-                />
-              </Field>
-              <Field label="Rozet (opsiyonel)">
-                <Input
-                  variant="faded"
-                  placeholder="Yeni"
-                  value={editing.badge || ''}
-                  onValueChange={v => setEditing({ ...editing, badge: v })}
-                />
-              </Field>
-            </Grid>
-            <Field label="Özet (excerpt)">
-              <Textarea
-                variant="faded"
-                minRows={2}
-                placeholder="Listede görünen kısa özet"
-                value={editing.excerpt || ''}
-                onValueChange={v => setEditing({ ...editing, excerpt: v })}
+                  setEditing(next)
+                }}
               />
             </Field>
-            <Field label="İçerik (markdown destekli)">
-              <Textarea
+            <Field label="Slug (URL) *">
+              <Input
                 variant="faded"
-                minRows={10}
-                placeholder="Yazı içeriği…"
-                value={editing.content || ''}
-                onValueChange={v => setEditing({ ...editing, content: v })}
+                placeholder="yazi-url"
+                value={editing.slug || ''}
+                onValueChange={v =>
+                  setEditing({ ...editing, slug: toSlug(v) || v })}
               />
             </Field>
-            <div className="flex flex-row gap-2">
-              <Button
-                color="primary"
-                size="sm"
-                onPress={savePost}
-                isDisabled={!editing.title?.trim() || !editing.slug?.trim()}
-              >
-                Kaydet
-              </Button>
-              <Button
-                variant="bordered"
-                size="sm"
-                onPress={() => setEditing(null)}
-              >
-                Vazgeç
-              </Button>
-            </div>
+            <Field label="Tarih">
+              <Input
+                variant="faded"
+                type="date"
+                value={editing.date || ''}
+                onValueChange={v => setEditing({ ...editing, date: v })}
+              />
+            </Field>
+            <Field label="Rozet (opsiyonel)">
+              <Input
+                variant="faded"
+                placeholder="Yeni"
+                value={editing.badge || ''}
+                onValueChange={v => setEditing({ ...editing, badge: v })}
+              />
+            </Field>
+          </Grid>
+          <Field label="Özet (excerpt)">
+            <Textarea
+              variant="faded"
+              minRows={2}
+              placeholder="Listede görünen kısa özet"
+              value={editing.excerpt || ''}
+              onValueChange={v => setEditing({ ...editing, excerpt: v })}
+            />
+          </Field>
+          <Field label="İçerik (markdown destekli)">
+            <Textarea
+              variant="faded"
+              minRows={10}
+              placeholder="Yazı içeriği…"
+              value={editing.content || ''}
+              onValueChange={v => setEditing({ ...editing, content: v })}
+            />
+          </Field>
+          <div className="flex justify-end gap-2 pt-3 border-t border-surface-border">
+            <Button
+              variant="bordered"
+              size="sm"
+              onPress={() => {
+                setEditing(null)
+                setBlogModalOpen(false)
+              }}
+            >
+              Vazgeç
+            </Button>
+            <Button
+              color="primary"
+              size="sm"
+              onPress={savePost}
+              isDisabled={!editing.title?.trim() || !editing.slug?.trim()}
+            >
+              Kaydet
+            </Button>
           </div>
-        </PanelCard>
-      )}
+        </div>
+      </Modal>
 
       {!editing && (
         <div className="flex flex-col gap-2">
@@ -2440,7 +2568,10 @@ next.slug = toSlug(v)
               <Button
                 size="sm"
                 variant="light"
-                onPress={() => setEditing({ ...post })}
+                onPress={() => {
+                  setEditing({ ...post })
+                  setBlogModalOpen(true)
+                }}
               >
                 Düzenle
               </Button>

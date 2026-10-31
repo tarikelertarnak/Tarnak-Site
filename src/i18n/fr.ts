@@ -6,7 +6,7 @@ const fr: Record<string, string> = {
   'about.cvExperience': 'Expérience',
   'about.cvSummaryTitle': 'Résumé',
   'about.cvTitle': 'CV',
-  'about.cvView': 'Voir le CV',
+  'about.cvView': 'CV',
   'about.toolboxCopy': 'Copier la commande',
   'auth.authFailed': 'Échec de la connexion. Veuillez réessayer.',
   'auth.adminOnly': 'Admin only.',

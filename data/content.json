@@ -66,11 +66,23 @@
       "icon": "mdi:linkedin"
     },
     {
-      "name": "Tarnak",
-      "href": "https://discord.gg/Fp8WbUw4KB",
+      "name": "YouTube",
+      "href": "https://www.youtube.com/channel/UCuyBHNFeTvBkZryFRfk4CQg",
+      "icon": "mdi:youtube"
+    },
+    {
+      "name": "Discord Channel",
+      "href": "https://discord.gg/UFzppNZxDw",
       "icon": "mdi:discord",
-      "label": "Discord",
-      "value": "tarikeler"
+      "label": "Discord Channel",
+      "value": "Tarnak"
+    },
+    {
+      "name": "Discord User",
+      "href": "https://discord.com/users/1565472290236268605",
+      "icon": "mdi:discord",
+      "label": "Discord User",
+      "value": "tarikelertarnak"
     }
   ],
   "about": {
@@ -219,5 +231,36 @@
   },
   "footer": {
     "copyright": "TARIK ELER"
+  },
+  "phase6": {
+    "now": {
+      "title": "Now",
+      "intro": "Bu sayfa ne yaptığımı kısa tutar: öğrendiğim konular, üzerinde çalıştığım işler ve takip ettiklerim. Alttaki GitHub bloğu build sırasında otomatik güncellenir.",
+      "updated": "31 Ekim 2026",
+      "learning": [
+        "Next.js 16 App Router: force-static sınırları, prerender ve cache davranışı",
+        "TypeScript strict modda zod ile API sözleşmeleri ve doğrulama katmanları",
+        "Cloudflare Workers'ta 10 ms CPU bütçesine sığan static-first mimari"
+      ],
+      "building": [
+        "Bu portfolyo: kodsuz sayfa düzenleme paneli ve 25 dilli çeviri akışı",
+        "Görsel düzenleme aracı: seç–tıkla–düzenle, panel sayfayı küçültüyor",
+        "Vitest + Playwright regresyon ağı (1100'den fazla birim testi)"
+      ],
+      "reading": [],
+      "listening": []
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "updated": "30 Ekim 2026",
+      "body": "Bu politika, bu portfolyo sitesinde hangi verilerin işlendiğini ve nasıl korunduğunu açıklar. Veri sorumlusu Tarık Eler'dir; iletişim: tarikelertarnak@gmail.com.\n\n1. İşlenen veriler\nİletişim formu: ad, e-posta, isteğe bağlı telefon ve mesaj metni.\nSohbet: seçtiğin görünen ad ve yazdığın mesajlar.\nHesap: Google veya e-posta ile giriş yaparsan e-posta adresi, görünen ad ve oturum bilgisi.\nTeknik kayıtlar: barındırma sağlayıcısının tuttuğu IP adresi ve tarayıcı bilgisi gibi standart erişim kayıtları.\n\n2. Çerezler ve yerel depolama\nYalnızca işlevsel kayıtlar kullanılır: seçtiğin dil (site-locale çerezi), tema ve ses tercihi (tarayıcı yerel depolaması) ve yönetici girişi için oturum çerezi. Sitede reklam ağı, izleme pikseli veya profilleme çerezi bulunmuyor.\n\n3. Amaç ve hukuki sebep\nVeriler yalnızca mesajına yanıt vermek, sohbeti sürdürmek, hesabını çalıştırmak ve sitenin güvenliğini sağlamak için işlenir. Hukuki sebep: sözleşmenin kurulması veya ifası ile meşru menfaat (KVKK m.5/2-c, m.5/2-f).\n\n4. Saklama süresi\nMesajlar ve sohbet kayıtları amaç ortadan kalkınca ya da silinmesini istediğinde silinir. Oturum çerezleri en fazla 7 gün yaşar.\n\n5. Paylaşım\nVeriler satılmaz. Yalnızca hizmet aldığım sağlayıcılar (barındırma: Cloudflare, veritabanı: Supabase, isteğe bağlı giriş: Google) kendi altyapılarında işler.\n\n6. Hakların\nKVKK m.11 kapsamında verilerine erişme, düzeltme, silinmesini isteme ve işlemeye itiraz etme hakkın var. tarikelertarnak@gmail.com adresine yazman yeterli.\n\n7. Değişiklikler\nPolitika güncellendiğinde bu sayfadaki tarih değişir.",
+      "needsLegalReview": true
+    },
+    "kvkk": {
+      "title": "KVKK Notice",
+      "updated": "30 Ekim 2026",
+      "body": "Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) m.10 kapsamındaki aydınlatma yükümlülüğünü yerine getirmek için hazırlanmıştır. Veri sorumlusu: Tarık Eler — tarikelertarnak@gmail.com.\n\n1. İşlenen kişisel veriler\nKimlik ve iletişim: ad, e-posta, isteğe bağlı telefon.\nİşlem güvenliği: IP adresi, tarayıcı bilgisi, oturum kayıtları.\nMüşteri işlem: sohbet mesajları ve iletişim formu içeriği.\n\n2. İşleme amaçları\nİletişim taleplerini yanıtlamak, sohbet hizmetini sunmak, kullanıcı hesabını yönetmek, site güvenliğini ve hizmet sürekliliğini sağlamak.\n\n3. Hukuki sebepler\nKVKK m.5/2-c (sözleşmenin kurulması veya ifası), m.5/2-f (meşru menfaat) ve m.5/2-e (bir hakkın tesisi veya korunması).\n\n4. Aktarım\nSunucuları yurt dışında bulunan hizmet sağlayıcıları (Cloudflare, Supabase, isteğe bağlı Google girişi) kullanılır. Bu aktarım hizmetin teknik zorunluluğudur; veriler pazarlama amacıyla paylaşılmaz ve satılmaz.\n\n5. Toplama yöntemi\nVeriler, sitedeki formlar ve giriş akışları üzerinden elektronik ortamda doğrudan toplanır.\n\n6. KVKK m.11 kapsamındaki haklar\nKişisel verilerinin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme, işlenme amacına uygun kullanılıp kullanılmadığını öğrenme, eksik veya yanlış işlenmişse düzeltilmesini isteme, silinmesini veya yok edilmesini isteme, aktarıldığı üçüncü kişileri öğrenme ve zararın giderilmesini talep etme.\n\n7. Başvuru\nTaleplerini tarikelertarnak@gmail.com adresine iletebilirsin; başvurular en geç 30 gün içinde yanıtlanır.",
+      "needsLegalReview": true
+    }
   }
 }

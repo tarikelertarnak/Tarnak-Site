@@ -21,7 +21,7 @@ export const dynamic = 'force-static'
 
 export const metadata = pageMetadata({
   path: '/contact',
-  title: 'CONTACT',
+  title: 'Contact',
   description:
     'Contact TARIK ELER (Tarnak): email, phone, Discord and contact form.',
 })

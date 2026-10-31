@@ -28,7 +28,8 @@ describe('drawer with a portaled combobox', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Language' }))
-    const option = await screen.findByRole('button', { name: 'Deutsch' })
+    // secenek dugmeleri listbox icinde role="option" tasir (a11y: aria-selected)
+    const option = await screen.findByRole('option', { name: 'Deutsch' })
     fireEvent.pointerDown(option)
     fireEvent.click(option)
 

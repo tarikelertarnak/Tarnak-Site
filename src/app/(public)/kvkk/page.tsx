@@ -7,7 +7,7 @@ export const dynamic = 'force-static'
 export function generateMetadata(): Promise<Metadata> {
   return legalMetadata(
     '/kvkk',
-    'KVKK Aydınlatma Metni',
+    'KVKK Notice',
     '6698 sayılı KVKK kapsamında kişisel verilerin işlenmesi hakkında aydınlatma metni.',
   )
 }

@@ -5,12 +5,20 @@ import type { SiteContent } from '@/lib/content'
 import type { SessionUser } from '@/lib/supabase/session'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { ContactQuickMenu } from '@/components/contact-quick-menu'
+import { buildContactChannels } from '@/lib/contact-channels'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardFooter } from '@/components/ui/card'
-import { ArrowLeftIcon, ErrorIcon, SendIcon } from '@/components/ui/icons'
+import {
+  ArrowLeftIcon,
+  ErrorIcon,
+  MailIcon,
+  MapPinIcon,
+  PhoneIcon,
+  SendIcon,
+  socialIcon,
+} from '@/components/ui/icons'
 import { Input } from '@/components/ui/input'
 import {
   EMPTY_PHONE,
@@ -138,7 +146,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
 
   if (isSubmitted) {
     return (
-      <Section className="flex-col pt-16 sm:pt-24 lg:pt-36" id="contact" framed>
+      <Section className="flex-col pt-[var(--section-space)]" id="contact" framed>
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -179,7 +187,7 @@ export function ContactSection({ content }: { content: SiteContent }) {
 
   return (
     <Section
-      className="flex-col pt-16 sm:pt-24 lg:pt-36 pb-0"
+      className="flex-col pt-[var(--section-space)] pb-0"
       id="contact"
       framed
     >
@@ -223,8 +231,71 @@ export function ContactSection({ content }: { content: SiteContent }) {
       {/* Iletisim yollari — tek aranabilir acilir menu (e-posta, telefon,
           konum ve tum sosyal kanallar + kopyala butonlari). */}
       <FadeUpSection className="w-full">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-3 sm:flex-row sm:justify-center">
-          <ContactQuickMenu content={content} />
+        <div className="mx-auto w-full max-w-6xl">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {(() => {
+              const channels = buildContactChannels(content, t)
+              const builtin = channels.filter(c => c.kind !== 'social')
+              const social = channels.filter(c => c.kind === 'social')
+              return (
+                <>
+                  {builtin.map(c => (
+                    <a
+                      key={c.id}
+                      href={c.href}
+                      target={c.href?.startsWith('http') ? '_blank' : undefined}
+                      rel={c.href?.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      className="flex items-center gap-3 rounded-lg border border-foreground-200/15 bg-background px-4 py-3 transition-colors hover:border-primary/40 hover:bg-foreground-200/10"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
+                        {c.icon === 'email' && <MailIcon size={18} />}
+                        {c.icon === 'phone' && <PhoneIcon size={18} />}
+                        {c.icon === 'location' && <MapPinIcon size={18} />}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-xs font-semibold text-foreground">
+                          {c.label}
+                        </span>
+                        <span className="block truncate text-[11px] text-foreground-500">
+                          {c.value}
+                        </span>
+                      </span>
+                    </a>
+                  ))}
+                  {social.length > 0 && (
+                    <div className="sm:col-span-2">
+                      <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-foreground-500">
+                        {t('contact.socials')}
+                      </p>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {social.map(c => (
+                          <a
+                            key={c.id}
+                            href={c.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 rounded-lg border border-foreground-200/15 bg-background px-4 py-3 transition-colors hover:border-primary/40 hover:bg-foreground-200/10"
+                          >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/12 text-primary">
+                              {socialIcon(c.icon, 18)}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-semibold text-foreground">
+                                {c.label}
+                              </span>
+                              <span className="block truncate text-[11px] text-foreground-500">
+                                {c.value}
+                              </span>
+                            </span>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+          </div>
         </div>
         {/*
           BÖLÜM BOŞLUĞU (2026-10-06, kullanıcı: "Butonlar hiçbir yerde

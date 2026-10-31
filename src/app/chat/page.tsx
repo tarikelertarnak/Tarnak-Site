@@ -11,14 +11,14 @@ export const dynamic = 'force-static'
 // API katmaninda korunuyor: mesaj/upload/users route'lari getSessionUser ile
 // 401 doner (kimliksiz istek yazamaz). Sayfa goruntuleme kendisi veri sizdirmaz.
 export const metadata: Metadata = {
-  title: 'Tarık Eler Chat | TARIK ELER - TARNAK',
+  title: 'Chat — TARIK ELER - TARNAK',
   description:
     'Tarık Eler (Tarnak) ile sohbet et — yapay zeka destekli chat. Next.js, TypeScript ve yazılım geliştirme hakkında sorularını sor. tarik eler chat, tarnak chat.',
   alternates: { canonical: '/chat' },
   openGraph: {
     type: 'website',
     url: siteUrl('/chat'),
-    title: 'Tarık Eler Chat | TARIK ELER - TARNAK',
+    title: 'Chat — TARIK ELER - TARNAK',
     description:
       'Tarık Eler (Tarnak) ile sohbet et — yapay zeka destekli chat. tarik eler chat.',
     locale: 'tr_TR',

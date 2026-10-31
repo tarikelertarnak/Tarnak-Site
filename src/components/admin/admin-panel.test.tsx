@@ -152,7 +152,8 @@ describe('adminPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Profil/ }))
 
     // "Profil" alt bölümünün ilk alanı "Ad (First Name)" — değeriyle doğrula.
-    const input = screen.getAllByRole('textbox')[0] as HTMLInputElement
+    // [0] = sekme arama inputu, [1] = ilk içerik inputu.
+    const input = screen.getAllByRole('textbox')[1] as HTMLInputElement
     expect(input.value).toBe(content.profile.firstName)
 
     input.focus()
@@ -176,6 +177,7 @@ describe('adminPanel', () => {
 
   it('genel bakış sekmesinde özet panel görünür', () => {
     renderPanel()
+    fireEvent.click(screen.getByRole('tab', { name: /Genel Bakış/ }))
     expect(screen.getByTestId('overview-panel')).toBeTruthy()
   })
 
@@ -273,7 +275,7 @@ describe('adminPanel', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: /Site Ayarları/ }))
     await waitFor(() => expect(screen.getByText('Hero (Ana Ekran)')).toBeTruthy())
-    const nameInput = screen.getAllByRole('textbox')[0] as HTMLInputElement
+    const nameInput = screen.getAllByRole('textbox')[1] as HTMLInputElement
     fireEvent.change(nameInput, { target: { value: 'DEĞİŞTİ' } })
 
     // Dirty → sabit çubuk (Kaydet + İptal Et) görünür.
@@ -297,7 +299,7 @@ describe('adminPanel', () => {
     fireEvent.click(screen.getByRole('tab', { name: /Profil/ }))
     await waitFor(() => expect(screen.getByTestId('photo-uploader')).toBeTruthy())
 
-    const firstName = document.querySelector('input') as HTMLInputElement
+    const firstName = document.querySelectorAll('input')[1] as HTMLInputElement
     fireEvent.change(firstName, { target: { value: 'Değişti' } })
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'İptal Et' })).toBeTruthy(),
@@ -315,7 +317,7 @@ describe('adminPanel', () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Profil/ }))
     await waitFor(() => expect(screen.getByTestId('photo-uploader')).toBeTruthy())
-    fireEvent.change(document.querySelector('input') as HTMLInputElement, {
+    fireEvent.change(document.querySelectorAll('input')[1] as HTMLInputElement, {
       target: { value: 'Değişti' },
     })
     await waitFor(() =>

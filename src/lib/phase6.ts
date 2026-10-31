@@ -91,6 +91,13 @@ export const usesGroupSchema = z.object({
 
 /* ── /now ────────────────────────────────────────────────────────────── */
 export const nowSchema = z.object({
+  /**
+   * Sayfa başlığı. Marka başlıkları (ABOUT ME / PROJECTS / BLOG) İngilizce
+   * olduğu için varsayılan değer "Now" — dilden bağımsız basılır.
+   */
+  title: z.string().max(60).optional(),
+  /** Başlığın altındaki kısa giriş paragrafı. */
+  intro: z.string().max(400).optional(),
   updated: z.string().max(40).optional(),
   learning: z.array(z.string().max(160)).max(6).default([]),
   building: z.array(z.string().max(160)).max(6).default([]),

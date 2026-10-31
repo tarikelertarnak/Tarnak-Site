@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { cache } from 'react'
+import { deepMergeContent } from '@/lib/deep-merge'
 import { createOptionalAdminClient } from '@/lib/supabase/admin'
 import { sanitizeSvg } from '@/lib/svg-sanitize'
 import bundledAdminJson from '../../data/admin.json'
@@ -381,6 +382,28 @@ export interface SiteContent {
    * durum gösterir.
    */
   aboutPage?: unknown
+  /**
+   * ADMIN'DEN GİRİLEN DİLE ÖZEL METİNLER (2026-10-30).
+   *
+   * Yapı: `{ [dil]: { 'content:about.title': '…', 'dict:blog.sub': '…' } }`.
+   * Anahtar biçimi `src/lib/page-text-specs.ts` ile aynı — paneldeki kopyala /
+   * yapıştır akışı bu anahtarlarla çalışır, yani çeviri metni doğrudan
+   * yapıştırılabilir. `content:` anahtarları `localizeContent` içinde içerik
+   * kopyasına uygulanır; `dict:` anahtarları istemcide `useT()` tarafından
+   * sözlük değerinin üzerine bindirilir.
+   */
+  textOverrides?: Record<string, Record<string, string>>
+  /**
+   * GÖRSEL DÜZENLEME KAYITLARI (2026-10-30) — bkz. `src/lib/design.ts`.
+   * Sayfa başına seçici + stil + metin; runtime tek bir `<style>` bloğuna
+   * derler. Şema doğrulaması API katmanında yapılır.
+   */
+  design?: unknown
+  /**
+   * Sitede görünen diller (2026-10-30). Boş/undefined → tüm `LOCALES`.
+   * Admin "Diller" bölümünden açılıp kapatılır.
+   */
+  locales?: string[]
 }
 
 const bundledContent = bundledContentJson as Partial<SiteContent>
@@ -558,7 +581,21 @@ export const getContent = cache(async (): Promise<SiteContent> => {
     }
   }
   const defaults = await getDefaultContent()
-  const base: SiteContent = mergeContent(defaults, parsed ?? bundledContent)
+  /*
+   * PAKET İÇERİK HER ZAMAN TABAN (2026-10-30, canlı ölçüm).
+   *
+   * ÖNCE: `parsed ?? bundledContent` — Supabase satırı VARSA paketlenmiş JSON
+   * tamamen atılıyordu. Sonuç: `site_content` satırı hangi anahtarlarla
+   * yazıldıysa site ONLARLA sınırlı kalıyordu. Ölçülen gerçek hata: satır
+   * `phase6` taşımadığı için `/gizlilik` ve `/kvkk` "İçerik henüz eklenmedi"
+   * gösteriyordu — oysa metinler `data/content.json` içinde duruyordu.
+   *
+   * ŞİMDİ: paket içerik taban, Supabase satırı onun ÜZERİNE biner. Kullanıcının
+   * panelden kaydettiği her alan hâlâ kazanır (satırda olan anahtar Supabase'den
+   * gelir); yalnız satırda HİÇ olmayan yeni anahtarlar koddaki paketten gelir.
+   * Veri kaybı yönü tek: satırda olan ezilmez.
+   */
+  const base: SiteContent = mergeContent(defaults, deepMergeContent<Partial<SiteContent>>(bundledContent, parsed ?? {}))
   const merged = await mergeSupabase(base)
   contentMergeCache = { ts: Date.now(), data: merged }
   return merged
@@ -890,18 +927,27 @@ async function getDefaultContent(): Promise<SiteContent> {
       },
       {
         name: 'Instagram',
-        href: 'https://www.instagram.com/',
+        href: 'https://www.instagram.com/tarikeler_tarnak/',
         icon: 'mdi:instagram',
       },
       {
         name: 'YouTube',
-        href: 'https://www.youtube.com/',
+        href: 'https://www.youtube.com/channel/UCuyBHNFeTvBkZryFRfk4CQg',
         icon: 'mdi:youtube',
       },
       {
-        name: 'TikTok',
-        href: 'https://www.tiktok.com/',
-        icon: 'ic:baseline-tiktok',
+        name: 'Discord Channel',
+        href: 'https://discord.gg/UFzppNZxDw',
+        icon: 'mdi:discord',
+        label: 'Discord Channel',
+        value: 'Tarnak',
+      },
+      {
+        name: 'Discord User',
+        href: 'https://discord.com/users/1565472290236268605',
+        icon: 'mdi:discord',
+        label: 'Discord User',
+        value: 'tarikelertarnak',
       },
     ],
     about: {

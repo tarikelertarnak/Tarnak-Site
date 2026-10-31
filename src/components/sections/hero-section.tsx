@@ -5,6 +5,7 @@ import type { SiteContent } from '@/lib/content'
 import type { CvDoc } from '@/lib/cv'
 import { TypewriterEffect } from '@lobehub/ui/awesome'
 import { motion } from 'motion/react'
+import { useEffect, useRef, useState } from 'react'
 import { useHeroText } from '@/components/hero-i18n'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
@@ -25,7 +26,6 @@ import { Tilt3D } from '@/components/ui/tilt-3d'
 import { heroScrollTop } from '@/lib/hero-scroll'
 import { parsePhase6 } from '@/lib/phase6'
 import { scrollToY } from '@/lib/scroll'
-import { SITE_URL } from '@/lib/site-url'
 
 const container: Variants = {
   hidden: { opacity: 0 },
@@ -63,6 +63,46 @@ export function HeroSection({
     (content as unknown as Record<string, unknown>).phase6,
   )
   const { t } = useT()
+
+  /*
+    TIKLAMA EFEKTİ (2026-10-30; kullanıcı gökkuşağını reddetti): başlığa
+    tıklanınca 2 saniye boyunca düz MAVİ (`--tprimary`) — yani hover'daki
+    rengin aynısı. Gökkuşağı/gradyan animasyonu YOK. Başlık bir bağlantı
+    DEĞİL: tıklama hiçbir yere gitmez.
+  */
+  const [active, setActive] = useState(false)
+  const activeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (activeTimer.current)
+      clearTimeout(activeTimer.current)
+  }, [])
+
+  function triggerActive() {
+    if (activeTimer.current)
+      clearTimeout(activeTimer.current)
+    setActive(true)
+    activeTimer.current = setTimeout(() => setActive(false), 2000)
+  }
+
+  /*
+    LOGO tıklama durumu — başlıktan AYRI (2026-10-30 kullanıcı isteği):
+    Logo kendi başına tıklanır, 2 saniye düz mavi olur, hiçbir yere gitmez.
+  */
+  const [logoActive, setLogoActive] = useState(false)
+  const logoTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (logoTimer.current)
+      clearTimeout(logoTimer.current)
+  }, [])
+
+  function triggerLogoActive() {
+    if (logoTimer.current)
+      clearTimeout(logoTimer.current)
+    setLogoActive(true)
+    logoTimer.current = setTimeout(() => setLogoActive(false), 2000)
+  }
 
   /*
       HERO YERLEŞİMİ (2026-10-07, kullanıcı düzeltmeleriyle güncellendi).
@@ -123,11 +163,22 @@ export function HeroSection({
             <AvailabilityBadge data={phase6?.availability} />
           </motion.div>
 <Tilt3D intensity={6}>
-          <motion.a
-            href={`${SITE_URL}/`}
+          {/*
+            LOGO TIKLAMASI (2026-10-30, kullanıcı: "onun üstündeki icon bir
+            konuma götürüyor, basılınca böyle olmamalı, o da 2 saniye mavi
+            olmalı ama ayrı tıklanır olsun").
+            · ARTIK BAĞLANTI DEĞİL (`<button type="button">`): tıklama hiçbir
+              yere gitmez, URL değişmez.
+            · Başlıktan BAĞIMSIZ kendi `logoActive` durumu var → 2 saniye
+              düz mavi, sonra eski rengine döner.
+            · Hover grubu ayrı (`group/logo`); başlıkla ortak hover YOK.
+          */}
+          <motion.button
+            type="button"
+            onClick={triggerLogoActive}
             aria-label={`${content.profile.firstName} ${content.profile.lastName}`}
             variants={item}
-            className="group/logo mb-[clamp(10px,1.8vh,20px)] inline-flex shrink-0 items-center justify-center"
+            className="group/logo mb-[clamp(10px,1.8vh,20px)] inline-flex shrink-0 cursor-pointer items-center justify-center"
           >
             {logoSrc
               ? (
@@ -151,12 +202,13 @@ export function HeroSection({
                       // 126px → 162px ölçülüyor; 360×640'de 72px (taşmaz).
                       'h-[clamp(72px,18vh,200px)] w-auto opacity-90 transition-colors duration-300',
                       // Mavi hover — Tailwind `text-primary` butonlarla aynı token.
-                      'group-hover/logo:text-primary',
-                      'group-focus-visible/logo:text-primary',
+                      logoActive
+                        ? 'text-primary'
+                        : 'group-hover/logo:text-primary group-focus-visible/logo:text-primary',
                     )}
                   />
                 )}
-          </motion.a>
+          </motion.button>
         </Tilt3D>
 
           {/*
@@ -170,19 +222,30 @@ export function HeroSection({
           */}
           <motion.div variants={item} className="w-full">
             <h1
+              onClick={triggerActive}
               className={[
                 'font-black uppercase leading-[0.95] tracking-tighter',
                 'text-5xl sm:text-7xl md:text-7xl lg:text-8xl',
+                'cursor-pointer',
+                active ? 'hero-click-primary' : '',
               ].join(' ')}
             >
               {/* TARIK ELER */}
-              <span className="block select-text text-foreground">
-                {name}
+              <span className="group/name block select-text">
+                <span className="inline text-foreground transition-colors group-hover/name:text-primary">
+                  {name.split(' ')[0]}
+                </span>
+                {' '}
+                <span className="inline text-foreground transition-colors group-hover/name:text-primary">
+                  {name.split(' ').slice(1).join(' ')}
+                </span>
               </span>
               {/* TARNAK */}
-              <a href={`${SITE_URL}/`} className="relative z-20 block select-text text-primary no-underline">
-                {content.profile.nickname.toUpperCase()}
-              </a>
+              <span className="group/nick relative z-20 block select-text">
+                <span className="inline text-foreground transition-colors group-hover/nick:text-primary">
+                  {content.profile.nickname.toUpperCase()}
+                </span>
+              </span>
             </h1>
           </motion.div>
 
@@ -309,16 +372,21 @@ export function HeroSection({
           variants={item}
           initial="hidden"
           animate="show"
-          className="relative z-10 mt-8 inline-flex h-14 w-8 shrink-0 cursor-pointer items-start justify-center self-center rounded-full border-2 border-primary/40 p-1.5"
+          /*
+            FARE İKONU (2026-10-30, kullanıcı: "daha kalın, anlaşılır,
+            gölgeli, çerçeveli"). 3px mavi çerçeve + hafif mavi zemin +
+            gölge; tekerlek daha büyük ve koyu mavi.
+          */
+          className="relative z-10 mt-8 inline-flex h-16 w-10 shrink-0 cursor-pointer items-start justify-center self-center rounded-full border-[3px] border-primary/70 bg-primary/10 p-2 shadow-lg shadow-primary/20 transition-colors hover:border-primary hover:bg-primary/15"
         >
           <motion.span
-            animate={{ y: [0, 14, 0], opacity: [1, 0.2, 1] }}
+            animate={{ y: [0, 16, 0], opacity: [1, 0.25, 1] }}
             transition={{
               duration: 1.6,
               repeat: Infinity,
               ease: 'easeInOut',
             }}
-            className="h-2.5 w-1 rounded-full bg-primary"
+            className="h-3 w-1.5 rounded-full bg-primary shadow-sm shadow-primary/40"
           />
         </motion.button>
       </div>

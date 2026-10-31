@@ -210,6 +210,8 @@ setOpen(false)
                 <li>
                   <button
                     type="button"
+                    role="option"
+                    aria-selected={selected.length === 0}
                     onClick={() => {
                       onClear()
                       setOpen(false)
@@ -239,6 +241,8 @@ setOpen(false)
                   <li key={o.value}>
                     <button
                       type="button"
+                      role="option"
+                      aria-selected={active}
                       onClick={() => {
                         onSelect(o.value)
                         if (!multiple)

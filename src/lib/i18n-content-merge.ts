@@ -7,6 +7,7 @@ import { frContentOverlay } from '@/lib/i18n-content-fr'
 import { jaContentOverlay } from '@/lib/i18n-content-ja'
 import { ptContentOverlay } from '@/lib/i18n-content-pt'
 import { ruContentOverlay } from '@/lib/i18n-content-ru'
+import { coerceFieldValue, setPath } from '@/lib/page-text-specs'
 
 /**
  * İçerik yerelleştirmesi — SUNUCU ve İSTEMCİ ortak (2026-10-21).
@@ -60,5 +61,44 @@ export function mergeContent<T extends object>(
 /** Content localization — Turkish base content, others via overlay. */
 export function localizeContent(content: SiteContent, locale: Locale): SiteContent {
   const overlay = CONTENT_OVERLAYS[locale]
-  return overlay ? mergeContent(content, overlay) : content
+  const base = overlay ? mergeContent(content, overlay) : content
+  return applyTextOverrides(base, locale)
+}
+
+/**
+ * ADMIN ÇEVİRİLERİ (2026-10-30).
+ *
+ * `content.textOverrides[dil]` içindeki `content:` anahtarları içerik
+ * kopyasına uygulanır (`dict:` anahtarları istemci `useT()` tarafında).
+ * Sıra önemli: kod overlay'i (en/de/…) önce, admin çevirisi SONRA — yani
+ * admin bir alanı çevirdiyse kod varsayılanı onu EZMEZ.
+ */
+function applyTextOverrides(content: SiteContent, locale: Locale): SiteContent {
+  const all = (content as { textOverrides?: Record<string, Record<string, string>> })
+    .textOverrides
+  if (!all)
+    return content
+  // "Hepsi" kayıtları (`all`) dile özel kayıt yoksa uygulanır.
+  const merged: Record<string, string> = { ...(all.all ?? {}) }
+  const forLocale = all[locale]
+  if (forLocale)
+    Object.assign(merged, forLocale)
+  if (!Object.keys(merged).length)
+    return content
+
+  let next: SiteContent = content
+  for (const [key, value] of Object.entries(merged)) {
+    if (!key.startsWith('content:'))
+      continue
+    const path = key.slice('content:'.length)
+    if (!path || typeof value !== 'string' || !value.trim())
+      continue
+    try {
+      next = setPath(next, path, coerceFieldValue(key, value))
+    }
+    catch {
+      // Bozuk anahtar tek kaydı düşürsün, sayfayı değil.
+    }
+  }
+  return next
 }

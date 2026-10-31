@@ -98,6 +98,13 @@ function ciz({
   readFailed?: boolean
   locale?: 'tr' | 'en' | 'de'
 }) {
+  /*
+    Dil SEÇİMİ cerezle verilir (2026-10-30). `detectedLocale` artık otomatik
+    algılamada kullanılmıyor (tarayıcı dili öncelikli, bkz. locale-provider);
+    jsdom'un `navigator.language` değeri 'en-US' olduğu için Türkçe beklentisi
+    karşılanmıyordu. Gerçek kullanıcı da dili Ayarlar'dan seçince cerez yazılır.
+  */
+  document.cookie = `site-locale=${locale}; path=/`
   return render(
     <LocaleProvider detectedLocale={locale}>
       <AboutPageView

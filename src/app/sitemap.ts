@@ -35,9 +35,7 @@ const STATIC_ROUTES: Array<{
   { path: '/donate', priority: 0.5, freq: 'monthly' },
   { path: '/credits', priority: 0.4, freq: 'monthly' },
   // Kişisel sayfalar (düşük öncelik, içerik girilene kadar boş)
-  { path: '/uses', priority: 0.4, freq: 'monthly' },
   { path: '/now', priority: 0.4, freq: 'weekly' },
-  { path: '/changelog', priority: 0.3, freq: 'weekly' },
   { path: '/gizlilik', priority: 0.3, freq: 'monthly' },
   { path: '/kvkk', priority: 0.3, freq: 'monthly' },
   // Kullanıcı kaynakları (araç/link listesi)

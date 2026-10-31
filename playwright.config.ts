@@ -58,7 +58,18 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  /*
+   * YEREL WORKER TAVANI = 6 (2026-10-31 ölçüldü). Neden: bu pakette TÜM
+   * tarayıcılar TEK bir `next dev` sunucusuna bağlanıyor (aşağıdaki webServer
+   * notu). 24 mantıksal çekirdekli makinede Playwright varsayılanı 10 worker
+   * açıyor; 10 eşzamanlı tarayıcı aynı sunucudan ilk kez derlenen rotaları
+   * isteyince sunucu kuyruğa giriyor ve zaman aşımına dayalı testler düşüyor.
+   * Ölçüm: aynı `e2e/admin-panel.spec.ts` tek başına 12/12, `chat-fixes` 15/15
+   * geçerken tam pakette 4 admin + 1 chat testi "Yükleniyor…" ekranında
+   * kırmızıydı — yani hata uygulamada değil, yük dağıtımındaydı. CI tek worker
+   * ile koşmaya devam eder.
+   */
+  workers: process.env.CI ? 1 : 6,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   timeout: 45_000,
   expect: { timeout: 10_000 },

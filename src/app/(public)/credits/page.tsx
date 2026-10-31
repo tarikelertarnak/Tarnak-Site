@@ -7,7 +7,8 @@ export const dynamic = 'force-static'
 // Sunucuda kalan metadata sabit TR'dir (getStaticLocale 'tr' → SEO sinyali Turkce).
 export function generateMetadata() {
   const locale = 'tr' as const
-  const title = t(locale, 'credits.metaTitle')
+  // <title> sabit Ingilizce (2026-10-30, kullanici listesi).
+  const title = 'Contributors — TARIK ELER - TARNAK'
   return {
     title,
     description: t(locale, 'credits.metaDescription'),

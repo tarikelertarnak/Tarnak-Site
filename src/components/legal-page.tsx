@@ -4,7 +4,8 @@ import type { LegalBodyProps } from '@/lib/phase6-server'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { LegalTitle } from '@/components/legal-title'
 import { LegalBodyClient } from '@/components/phase6-client'
-import { Section } from '@/components/ui/section'
+import { ScaleIcon, ShieldCheckIcon } from '@/components/ui/icons'
+import { Section, SectionTitle } from '@/components/ui/section'
 import { getPhase6 } from '@/lib/phase6-server'
 
 export const dynamic = 'force-static'
@@ -27,33 +28,48 @@ export async function LegalPage({
   const p6 = await getPhase6()
   const sayfa = p6?.[anahtar]
 
+  /*
+    BAŞLIK AYRI KARTTA (2026-10-30, kullanıcı: "Şu an, Gizlilik Politikası, KVKK
+    Aydınlatma Metni bu yazılar bozuk ve ayrı grupta değil, aynı BLOG gibi
+    olmalı"). ÖNCE: başlık ile gövde TEK `framed` kartın içindeydi; başlık
+    SectionTitle değil elle yazılmış `<h1>`'di (bu yüzden `/blog` ile aynı
+    görünmüyordu). ŞİMDİ: `/blog` (BlogSection) ile BİREBİR aynı yapı —
+    1) başlık kendi `framed` kartında + `big` SectionTitle (h1),
+    2) `--section-gap` boşluk, 3) gövde ikinci `framed` kartta.
+  */
+  const titleNode = sayfa?.title ?? (
+    <LegalTitle
+      i18nKey={anahtar === 'kvkk' ? 'nav.kvkk' : 'nav.privacy'}
+      fallback={varsayilanBaslik}
+    />
+  )
+
   return (
     <div className="min-h-screen w-full relative">
       <main id="main" className="w-full">
         <Section
-          className="flex-col pt-16 sm:pt-24 lg:pt-36 pb-0"
+          className="flex-col pt-[var(--section-space)]"
           id={yol.slice(1)}
           framed
         >
-          <FadeUpSection className="w-full">
-            <div className="flex flex-col gap-3">
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                {/*
-                  Başlık: içerik varsa onu, yoksa `nav.*` sözlük anahtarını
-                  İSTEMCİDE çözer (2026-10-21). Kök layout `force-static`
-                  olduğu için sunucu her zaman TR basardı; hukuki sayfa
-                  başlığı EN gezinmede Türkçe kalıyordu.
-                */}
-                {sayfa?.title ?? (
-                  <LegalTitle
-                    i18nKey={anahtar === 'kvkk' ? 'nav.kvkk' : 'nav.privacy'}
-                    fallback={varsayilanBaslik}
-                  />
-                )}
-              </h1>
-            </div>
+          <FadeUpSection className="flex w-full flex-col items-center">
+            <SectionTitle
+              title=""
+              subTitle=""
+              subTitleNode={titleNode}
+              description=""
+              icon={anahtar === 'kvkk'
+                ? <ScaleIcon size={36} className="inline-block" />
+                : <ShieldCheckIcon size={36} className="inline-block" />}
+              headingLevel="h1"
+              big
+              tightGap
+            />
           </FadeUpSection>
-          <FadeUpSection className="mt-10">
+        </Section>
+        <div aria-hidden className="h-[var(--section-gap)]" />
+        <Section className="flex-col pb-16 sm:pb-20 lg:pb-24" framed>
+          <FadeUpSection className="w-full">
             <LegalBodyContent sayfa={sayfa} />
           </FadeUpSection>
         </Section>

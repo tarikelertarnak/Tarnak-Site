@@ -275,20 +275,29 @@ setIsOpen(false)
             scrollToTop()
           }
         }}
-        className={`group flex items-center gap-2.5 ${PANEL_SURFACE_BORDER} px-5 py-4`}
+        className={`group flex items-center gap-2 ${PANEL_SURFACE_BORDER} px-5 py-4`}
         ariaLabel="Ana sayfa"
       >
-        <SiteLogo size={30} className="shrink-0 transition-opacity duration-200 group-hover:opacity-80" />
-        <span className="truncate text-base font-bold tracking-tight whitespace-nowrap">
-          {/* Brand text parts: hover/focus ANYWHERE on the link (group) —
-              same whole-link behavior as TopBar. */}
-          <span className="inline text-foreground transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
+        {/*
+          MARKA BANDI = TopBar ile BİREBİR (2026-10-30, kullanıcı: "yan panel
+          en üstündeki icon TARIK ELER - TARNAK kısmı bozuk, ana sayfadaki
+          üstteki sabit nav'daki gibi olmalı"). Eskiden burada TARNAK
+          `font-black text-primary` idi (nav'da beyaz) ve tire ile kelimeler
+          arasında BOŞLUK yoktu → "TARIK ELER—TARNAK" bitişik ve iki renkli
+          görünüyordu. Artık nav'daki üç parçanın sınıfları birebir aynı:
+          beyaz + hover'da mavi, arada gerçek boşluklu tire.
+        */}
+        <SiteLogo size={28} className="shrink-0 transition-all duration-200 group-hover:opacity-80" />
+        <span className="min-w-0 truncate text-sm font-bold tracking-tight whitespace-nowrap sm:text-base">
+          <span className="inline select-text text-foreground transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
             TARIK ELER
           </span>
-          <span className="inline text-foreground/30 transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
+          {' '}
+          <span className="inline select-text text-foreground/30 transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
             —
           </span>
-          <span className="inline font-black text-primary transition-colors duration-200 group-hover:text-primary/70 group-focus-visible:text-primary/70">
+          {' '}
+          <span className="inline select-text text-foreground transition-colors duration-200 group-hover:text-primary group-focus-visible:text-primary">
             TARNAK
           </span>
         </span>

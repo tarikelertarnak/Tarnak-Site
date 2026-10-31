@@ -5,26 +5,10 @@
     "name": "Tarık Eler",
     "bio": "Tarık Eler (Tarnak) - Developer · AI & Machine Learning · desktop apps · Türkiye",
     "avatarUrl": "https://avatars.githubusercontent.com/u/184168415?v=4",
-    "publicRepos": 11,
+    "publicRepos": 10,
     "followers": 1
   },
   "repos": [
-    {
-      "name": "Tarnak-Site",
-      "fullName": "tarikelertarnak/Tarnak-Site",
-      "description": "Tarnak portfolio site — Next.js 15 / OpenNext / Clouflare Pages",
-      "url": "https://github.com/tarikelertarnak/Tarnak-Site",
-      "language": "TypeScript",
-      "stars": 1,
-      "forks": 0,
-      "watchers": 1,
-      "topics": [],
-      "updatedAt": "2026-10-18T18:50:09Z",
-      "license": "NOASSERTION",
-      "openIssues": 3,
-      "defaultBranch": "master",
-      "archived": false
-    },
     {
       "name": "ActivaterWindows",
       "fullName": "tarikelertarnak/ActivaterWindows",
@@ -35,7 +19,7 @@
       "forks": 0,
       "watchers": 2,
       "topics": [],
-      "updatedAt": "2026-10-16T18:38:00Z",
+      "updatedAt": "2026-10-29T14:40:50Z",
       "license": "MIT",
       "openIssues": 0,
       "defaultBranch": "main",
@@ -50,11 +34,32 @@
       "stars": 3,
       "forks": 0,
       "watchers": 3,
-      "topics": ["github-pages", "html", "personal-website", "portfolio"],
-      "updatedAt": "2026-10-16T18:30:39Z",
+      "topics": [
+        "github-pages",
+        "html",
+        "personal-website",
+        "portfolio"
+      ],
+      "updatedAt": "2026-10-29T14:38:25Z",
       "license": null,
       "openIssues": 0,
       "defaultBranch": "main",
+      "archived": false
+    },
+    {
+      "name": "Tarnak-Site",
+      "fullName": "tarikelertarnak/Tarnak-Site",
+      "description": "Tarnak portfolio site — Next.js 15 / OpenNext / Clouflare Pages",
+      "url": "https://github.com/tarikelertarnak/Tarnak-Site",
+      "language": "TypeScript",
+      "stars": 1,
+      "forks": 0,
+      "watchers": 1,
+      "topics": [],
+      "updatedAt": "2026-10-18T18:50:09Z",
+      "license": "NOASSERTION",
+      "openIssues": 3,
+      "defaultBranch": "master",
       "archived": false
     },
     {
@@ -98,7 +103,13 @@
       "stars": 6,
       "forks": 1,
       "watchers": 6,
-      "topics": ["ai", "llm", "prompt", "red-team", "security"],
+      "topics": [
+        "ai",
+        "llm",
+        "prompt",
+        "red-team",
+        "security"
+      ],
       "updatedAt": "2026-09-21T04:32:41Z",
       "license": null,
       "openIssues": 0,
@@ -138,30 +149,6 @@
       "archived": false
     },
     {
-      "name": "codehub-vsc",
-      "fullName": "tarikelertarnak/codehub-vsc",
-      "description": "Terminal & AI coding agent manager for VS Code - one panel for all your agents, sessions and projects.",
-      "url": "https://github.com/tarikelertarnak/codehub-vsc",
-      "language": "TypeScript",
-      "stars": 3,
-      "forks": 0,
-      "watchers": 3,
-      "topics": [
-        "ai",
-        "ai-agents",
-        "claude-code",
-        "developer-tools",
-        "opencode",
-        "terminal",
-        "vscode-extension"
-      ],
-      "updatedAt": "2026-09-04T13:24:20Z",
-      "license": "MIT",
-      "openIssues": 0,
-      "defaultBranch": "master",
-      "archived": false
-    },
-    {
       "name": "TarnakLua-Roblox",
       "fullName": "tarikelertarnak/TarnakLua-Roblox",
       "description": "Roblox Lua tools and scripts.",
@@ -170,7 +157,12 @@
       "stars": 3,
       "forks": 0,
       "watchers": 3,
-      "topics": ["game", "lua", "roblox", "scripting"],
+      "topics": [
+        "game",
+        "lua",
+        "roblox",
+        "scripting"
+      ],
       "updatedAt": "2026-09-04T13:24:18Z",
       "license": null,
       "openIssues": 0,

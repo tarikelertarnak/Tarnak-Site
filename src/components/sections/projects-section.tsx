@@ -18,7 +18,7 @@ export function ProjectsSection({
   const { t } = useT()
 
   return (
-    <Section className="flex-col pt-8 sm:pt-12 lg:pt-16" id="projects" framed>
+    <Section className="flex-col pt-[var(--section-space)]" id="projects" framed>
       <FadeUpSection className="flex w-full flex-col items-center">
         <div className="flex flex-col items-center gap-2 text-center">
           <h2 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">

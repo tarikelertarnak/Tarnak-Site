@@ -169,7 +169,7 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
 
   if (loading && !data) {
     return (
-      <div className="flex items-center gap-2 pt-6 text-sm text-foreground/60">
+      <div className="flex items-center gap-2 pt-6 text-sm text-foreground/60" data-testid="overview-panel">
         <Icon icon="material-symbols:progress-activity" width={18} height={18} className="animate-spin" />
         Genel bakış yükleniyor…
       </div>
@@ -178,7 +178,7 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
 
   if (error && !data) {
     return (
-      <div className="space-y-3 pt-6">
+      <div className="space-y-3 pt-6" data-testid="overview-panel">
         <p className="rounded-lg border border-danger-200 bg-danger-50 p-2.5 text-sm text-danger">{error}</p>
         <Button variant="bordered" onPress={() => void load()}>Tekrar dene</Button>
       </div>
@@ -194,7 +194,7 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
   const totalRows = readable.reduce((sum, t) => sum + (t.count ?? 0), 0)
 
   return (
-    <div className="space-y-4 pt-4">
+    <div className="space-y-4 pt-4" data-testid="overview-panel">
       {/* Baslik + yenile */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>

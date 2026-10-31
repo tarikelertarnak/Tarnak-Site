@@ -36,8 +36,14 @@ afterEach(() => {
 })
 
 describe('localeProvider', () => {
-  it('detectedLocale VERILIRSE onu kullanir (sunucu karari kazanir)', () => {
-    // Istemci "tr" diyor ama sunucu "en" demis → sunucu kazanmali
+  /*
+    2026-10-24 (karar, commit 00bcb7e): otomatik algılamada İSTEMCİ tarayıcı
+    dili öncelikli. Sunucunun verdiği `detectedLocale` build-time sabit 'en'
+    olduğu için (kök layout `force-static`) Türkçe sistemlerde arayüz
+    İngilizce kalıyordu. Bu yüzden bu testler SUNUCU kararının değil,
+    tarayıcı dilinin kazandığını doğrular.
+  */
+  it('navigator dili sunucu kararından önce gelir (tr-TR → tr)', () => {
     setNavigatorLanguage('tr-TR')
     render(
       <LocaleProvider detectedLocale="en">
@@ -45,8 +51,8 @@ describe('localeProvider', () => {
       </LocaleProvider>,
     )
 
-    expect(screen.getByTestId('locale').textContent).toBe('en')
-    expect(screen.getByTestId('detected').textContent).toBe('en')
+    expect(screen.getByTestId('locale').textContent).toBe('tr')
+    expect(screen.getByTestId('detected').textContent).toBe('tr')
   })
 
   it('detectedLocale VERILMEZSE navigator.language`a duser', () => {
@@ -60,8 +66,8 @@ describe('localeProvider', () => {
     expect(screen.getByTestId('locale').textContent).toBe('de')
   })
 
-  it('detectedLocale="tr" iken arayuz Turkce kalir', () => {
-    setNavigatorLanguage('en-US')
+  it('navigator dili YOKSA detectedLocale kullanilir (yedek yol)', () => {
+    setNavigatorLanguage(undefined as unknown as string)
     render(
       <LocaleProvider detectedLocale="tr">
         <Probe />

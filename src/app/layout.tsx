@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import { AntdRegistry } from '@ant-design/nextjs-registry'
 import nextDynamic from 'next/dynamic'
 import { headers } from 'next/headers'
+import { DesignRuntime } from '@/components/design-runtime'
 import { EmotionStyleRegistry } from '@/components/emotion-style-registry'
 import { LocaleProvider } from '@/components/locale-provider'
 import { Navigation } from '@/components/navigation'
@@ -16,6 +17,7 @@ import { SkipLink } from '@/components/skip-link'
 import { ThemeInitScript } from '@/components/theme-init-script'
 import { TopBar } from '@/components/top-bar'
 import { VisitTracker } from '@/components/visit-tracker'
+import { VisualEditor } from '@/components/visual-editor'
 import { getContent } from '@/lib/content'
 import { generateCspNonce } from '@/lib/csp-nonce'
 import { montserrat } from '@/lib/fonts'
@@ -73,7 +75,7 @@ export const viewport: Viewport = {
 export async function generateMetadata(): Promise<Metadata> {
   // Kullanıcı isteği (2026-10-04): paylaşım başlığı sabit ve kısa —
   // link açıklarken görünen metin "Tarık Eler (Tarnak) - Portfolio".
-  const title = 'Tarık Eler (Tarnak) - Portfolio'
+  const title = 'TARIK ELER - TARNAK'
   // Uzun isim/anahtar kelime yığını KALDIRILDI. Google zaten sayfayı
   // indeksleyip "site:" aramasıyla buluyor; spam görünen meta etiketler
   // SEO'yu degil paylaşım kartını bozuyordu. `keywords` alani tamamen
@@ -103,7 +105,7 @@ export async function generateMetadata(): Promise<Metadata> {
       // yeni yazilari ucuz bir GET ile ogrenir (bkz. src/app/feed.xml).
       types: {
         'application/rss+xml': [
-          { url: '/feed.xml', title: 'Tarık Eler (Tarnak) — Blog' },
+          { url: '/feed.xml', title: 'TARIK ELER - TARNAK — Blog' },
         ],
       },
       /*
@@ -343,13 +345,26 @@ export default async function RootLayout({
           }}
         />
         <ThemeInitScript defaultTheme={safeDefaultTheme} nonce={nonce} />
-        <Providers
-          backgroundImage={content.settings?.backgroundImage || ''}
-          defaultTheme={defaultTheme}
-        >
-          <AntdRegistry>
-            <EmotionStyleRegistry>
-              <LocaleProvider detectedLocale={locale}>
+        {/*
+          SIRA (2026-10-30, kullanıcı konsol hatası: "Hydration failed …
+          server rendered <div class="ant-app"> / client rendered <style
+          data-emotion>"). Kök neden: `Providers` (içinde lobehub
+          `ThemeProvider` → `<Global>`/`<App>`) registry'lerin DIŞINDAYDI.
+          `EmotionStyleRegistry`'nin `CacheProvider`'ı `Global`'i kapsamazsa
+          stil `useServerInsertedHTML` yerine SSR'da gövdeye `<style>` olarak
+          basılıyor, istemci aynı stili `head`e enjekte ediyor → iki ağaç
+          uyuşmuyor. Artık Sağlayıcılar her iki registry'nin İÇİNDE.
+        */}
+        <AntdRegistry>
+          <EmotionStyleRegistry>
+            <Providers
+              backgroundImage={content.settings?.backgroundImage || ''}
+              defaultTheme={defaultTheme}
+            >
+              <LocaleProvider
+                detectedLocale={locale}
+                textOverrides={content.textOverrides}
+              >
                 <SkipLink />
                 {/*
                   Klavye kısayolları — TEK kayıt noktası, tüm rotalarda
@@ -402,11 +417,16 @@ export default async function RootLayout({
                 <div id="layout-main" className="relative">
                   <div id="layout-main-content">{children}</div>
                 </div>
+                {/* Görsel düzenleme: kayıtları uygulayan runtime + yan panel.
+                    İkisi de yalnız admin oturumunda anlamlı; runtime kayıt
+                    yoksa hiçbir şey yapmaz. */}
+                <DesignRuntime design={content.design} />
+                <VisualEditor />
                 <MusicPlayer src={musicSrc} />
               </LocaleProvider>
-            </EmotionStyleRegistry>
-          </AntdRegistry>
-        </Providers>
+            </Providers>
+          </EmotionStyleRegistry>
+        </AntdRegistry>
       </body>
     </html>
   )

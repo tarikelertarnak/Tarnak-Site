@@ -97,17 +97,53 @@ export function AboutSection({
     )
   }
 
+  /*
+    BAŞLIK AYRI GURUPTA (2026-10-30, kullanıcı: "/projects, /blog, /about da
+    /donate gibi SUPPORT gibi ayrı bir grup olsun"). `/donate` düzeni referans:
+    başlık KENDİ `framed` kartında, içerik BAŞKA kartta.
+
+    ⚠️ Yalnız `/about` sayfasında (`hideMoreButton`) uygulanır — kullanıcı
+    "ana sayfa aynı kalsın" dedi; ana sayfada başlık içerikle aynı kartta
+    kalır (eski görünüm).
+  */
+  const titleBlock = (
+    <SectionTitle
+      title=""
+      subTitle={about.subtitle}
+      description={about.description}
+      icon={<UserIcon size={34} className="inline-block" />}
+      headingLevel={hideMoreButton ? 'h1' : 'h2'}
+      big
+      tightGap
+    />
+  )
+
   return (
-    <Section id="about" className="flex-col pt-16 sm:pt-24 lg:pt-36" framed>
-      <FadeUpSection className="flex w-full flex-col items-center">
-        <SectionTitle
-          title=""
-          subTitle={about.subtitle}
-          description={about.description}
-          icon={<UserIcon size={34} className="inline-block" />}
-          big
-          tightGap
-        />
+    <>
+      {hideMoreButton && (
+        <Section className="flex-col pt-[var(--section-space)]" framed>
+          <FadeUpSection className="flex w-full flex-col items-center">
+            {titleBlock}
+          </FadeUpSection>
+        </Section>
+      )}
+      {hideMoreButton && (
+        <div aria-hidden className="h-[var(--section-gap)]" />
+      )}
+      {/*
+        BOŞLUK (2026-10-30, kullanıcı: "DESTEK OL yazısı ile altındaki asıl şey
+        arasındaki boşluk neyse hepsinde aynı olsun"). `/about`ta başlık kendi
+        kartındayken bu Section da `pt-[var(--section-space)]` alıyordu →
+        kart arası boşluk 24 + 144 = 168px (ölçüldü), diğer sayfalarda 24px.
+        Başlık ayrıldığında üst dolgu SIFIR; tek kaynak `--section-gap`.
+      */}
+      <Section
+        id="about"
+        className={`flex-col ${hideMoreButton ? 'pt-0' : 'pt-[var(--section-space)]'}`}
+        framed
+      >
+        <FadeUpSection className="flex w-full flex-col items-center">
+          {!hideMoreButton && titleBlock}
         {/*
           BÖLÜM BOŞLUĞU — ÜST (2026-10-06, kullanıcı kuralı: "başlık ile
           butonlar arasındaki boşluk, butonlar ile içerik arasındaki
@@ -155,9 +191,18 @@ export function AboutSection({
       </FadeUpSection>
 
       <div className="flex w-full justify-center">
-        <BentoBox className="w-full max-w-6xl grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+        {/*
+          TEK GRUP (2026-10-30, kullanıcı: "bunların hepsi ABOUT ME, bu
+          grupları bir grup daha yaparak birleştirelim").
+
+          Eskiden Kişisel Bilgiler / Diller / CV / My Toolbox / Beyond Code
+          AYRI AYRI `Card`lardı → beş ayrı kutu gibi görünüyordu. Artık hepsi
+          TEK çerçeveli kartın içinde, aralarında ince ayırıcı çizgi olan
+          bölümler. Dış kart = grup; iç bölümler `bare`.
+        */}
+        <BentoBox className="w-full max-w-6xl grid-cols-1 rounded-2xl border border-surface-border bg-background p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 lg:p-8">
           {/* Personal info */}
-          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4">
+          <BentoBoxItem bare className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4">
             {/*
               KART İÇ DÜZENİ (2026-10-12, kullanıcı: "dağınık ve hizasız"):
 
@@ -312,7 +357,7 @@ export function AboutSection({
 
           {/* Languages: structured table. Data stays a plain string
               ("İngilizce (A2), Almanca (A1)") — parsed here, no schema churn. */}
-          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4">
+          <BentoBoxItem bare className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4 border-t border-foreground/10 pt-8">
             <h3 className="text-base sm:text-lg font-semibold">
               {t('about.languagesTitle')}
             </h3>
@@ -326,12 +371,12 @@ export function AboutSection({
                 uzun dil adları yatay kaydırılabilir.
             */}
             {/* DİLLER KARTI: öncelik tablo verisi (`about.languages`). */}
-            <div className="w-full overflow-x-auto rounded-xl border border-foreground/200/15 px-3 sm:px-4">
+            <div className="w-full overflow-x-auto rounded-xl border border-foreground-200/15 px-3 sm:px-4">
               <table className="w-full text-left text-xs sm:text-sm">
                 <tbody>
                   {(content.about.languages && content.about.languages.length > 0)
                     ? content.about.languages.map((row, i) => (
-                        <tr key={`${row.name}-${i}`} className="border-b border-foreground/200/10 last:border-b-0">
+                        <tr key={`${row.name}-${i}`} className="border-b border-foreground-200/10 last:border-b-0">
                           <td className="py-2.5 pr-3 text-sm font-medium sm:text-base">{row.name}</td>
                           <td className="py-2.5 text-right">
                             <span className={LEVEL_BADGE_PILL}>{row.level === 'Ana dil' ? t('about.infoFirstLanguage') : row.level}</span>
@@ -340,14 +385,14 @@ export function AboutSection({
                       ))
                     : (
                         <>
-                          <tr className="border-b border-foreground/200/10">
+                          <tr className="border-b border-foreground-200/10">
                             <td className="py-2.5 pr-3 text-sm font-medium sm:text-base">{content.profile.firstLanguage}</td>
                             <td className="py-2.5 text-right">
                               <span className={LEVEL_BADGE_PILL}>{t('about.infoFirstLanguage')}</span>
                             </td>
                           </tr>
                           {parseLanguages(content.profile.otherLanguages).map(row => (
-                            <tr key={row.name} className="border-b border-foreground/200/10 last:border-b-0">
+                            <tr key={row.name} className="border-b border-foreground-200/10 last:border-b-0">
                               <td className="py-2.5 pr-3 text-sm text-foreground/80 sm:text-base">{row.name}</td>
                               <td className="py-2.5 text-right">
                                 <span className={LEVEL_BADGE_PILL}>{row.level}</span>
@@ -362,7 +407,7 @@ export function AboutSection({
           </BentoBoxItem>
 
           {/* Resume: who I am + summary + experience + education */}
-          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4">
+          <BentoBoxItem bare className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4 border-t border-foreground/10 pt-8">
             <div className="flex w-full flex-col gap-4">
               <div className="flex w-full flex-row flex-wrap items-center justify-between gap-3">
                 <h3 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
@@ -395,7 +440,7 @@ export function AboutSection({
             </div>
           </BentoBoxItem>
 
-          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3">
+          <BentoBoxItem bare className="col-span-1 sm:col-span-2 lg:col-span-3 border-t border-foreground/10 pt-8">
             <h3 className="text-base sm:text-lg font-semibold">
               {about.toolboxTitle}
             </h3>
@@ -411,7 +456,7 @@ export function AboutSection({
             </div>
           </BentoBoxItem>
 
-          <BentoBoxItem className="col-span-1 sm:col-span-2 lg:col-span-3">
+          <BentoBoxItem bare className="col-span-1 sm:col-span-2 lg:col-span-3 border-t border-foreground/10 pt-8">
             <h3 className="text-base sm:text-lg font-semibold">
               {about.beyondTitle}
             </h3>
@@ -435,6 +480,7 @@ export function AboutSection({
         </BentoBox>
       </div>
     </Section>
+    </>
   )
 }
 
@@ -490,7 +536,7 @@ function InfoRow({
   return (
     <div
       className={cn(
-        'grid min-h-[44px] grid-cols-[minmax(90px,auto)_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-foreground/200/10 py-2',
+        'grid min-h-[44px] grid-cols-[minmax(90px,auto)_minmax(0,1fr)_auto] items-center gap-x-3 border-b border-foreground-200/10 py-2',
         className,
       )}
     >

@@ -73,7 +73,28 @@ export function SearchDialog() {
   const [query, setQuery] = useState('')
   const [repos, setRepos] = useState<GitHubRepo[]>([])
   const [reposLoading, setReposLoading] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [adminChecked, setAdminChecked] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // ── Admin check (for "Admin Paneli" link) ────────────────────────
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/admin/session', { cache: 'no-store' })
+      .then(r => r.json())
+      .then((data) => {
+        if (cancelled)
+          return
+        setIsAdmin(data?.user?.role === 'admin')
+        setAdminChecked(true)
+      })
+      .catch(() => {
+        if (!cancelled)
+          setAdminChecked(true)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   // ── Open / close ────────────────────────────────────────────────
 
@@ -139,24 +160,40 @@ export function SearchDialog() {
     const q = query.trim()
     const out: { label: string, items: SearchResult[] }[] = []
 
-    const navItems: SearchResult[] = NAV_ITEMS
-      .filter((item) => {
-        if (!q)
-          return true
-        const label = locale === 'tr' ? item.titleTr : item.titleEn
-        return fuzzyMatch(q, label) || fuzzyMatch(q, item.titleEn)
-      })
-      .map(item => ({
-        id: `nav-${item.href}`,
-        title: locale === 'tr' ? item.titleTr : item.titleEn,
-        href: item.href,
-        icon: (
-          <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="text-foreground-500">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-            <polyline points="9 22 9 12 15 12 15 22" />
-          </svg>
-        ),
-      }))
+    const navItems: SearchResult[] = [
+      ...NAV_ITEMS
+        .filter((item) => {
+          if (!q)
+            return true
+          const label = locale === 'tr' ? item.titleTr : item.titleEn
+          return fuzzyMatch(q, label) || fuzzyMatch(q, item.titleEn)
+        })
+        .map(item => ({
+          id: `nav-${item.href}`,
+          title: locale === 'tr' ? item.titleTr : item.titleEn,
+          href: item.href,
+          icon: (
+            <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="text-foreground-500">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          ),
+        })),
+      // "Admin Paneli" yalnızca admin oturumunda görünür (2026-10-31).
+      ...(adminChecked && isAdmin
+        ? [{
+            id: 'nav-admin',
+            title: t('nav.adminPanel') || 'Admin Panel',
+            href: '/admin',
+            icon: (
+              <svg viewBox="0 0 24 24" width={16} height={16} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="text-foreground-500">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            ),
+          }]
+        : []),
+    ]
     if (navItems.length > 0) {
       out.push({ label: t('search.nav') || 'Navigation', items: navItems.slice(0, 8) })
     }
@@ -218,7 +255,7 @@ export function SearchDialog() {
     }
 
     return out
-  }, [query, repos, locale, t])
+  }, [query, repos, locale, t, adminChecked, isAdmin])
 
   // ── Navigate to result ─────────────────────────────────────────
 

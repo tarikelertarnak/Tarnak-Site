@@ -28,9 +28,7 @@ describe('buildSiteNavigation', () => {
     '/chat',
     '/donate',
     '/credits',
-    '/uses',
     '/now',
-    '/changelog',
   ]
 
   it.each(REQUIRED_PAGES)('sayfa listede: %s', (href) => {
@@ -70,14 +68,19 @@ describe('buildSiteNavigation', () => {
     // 2026-10-07: Sayfa Duzenleyici kaldirildi → /puck menude DEGIL.
   })
 
+  // 2026-10-30 (kullanıcı): `/uses` ve `/changelog` sayfaları silindi.
+  it.each(['/uses', '/changelog'])('silinen sayfa listede YOK: %s', (href) => {
+    expect(hrefs).not.toContain(href)
+  })
+
   // 2026-10-09: /uses, /now, /changelog sayfaları ve /gizlilik,
   // /kvkk hukuki metinleri eklendi → 13 + 5 = 18 bağlantı.
-  it('13 sayfa + 3 bolum + 2 hesap = 18 baglanti (kisisel sayfalar eklendi)', () => {
-    expect(all.length).toBe(18)
+  it('8 sayfa + 2 hukuki + 4 bolum + 2 hesap = 16 baglanti', () => {
+    expect(all.length).toBe(16)
   })
 
   // Kişisel sayfalar gezinmede gerçekten var mı? (regresyon)
-  it.each(['/uses', '/now', '/changelog', '/gizlilik', '/kvkk'])(
+  it.each(['/now', '/gizlilik', '/kvkk'])(
     'kisisel sayfa listede: %s',
     (href) => {
       expect(hrefs).toContain(href)
@@ -121,6 +124,7 @@ describe('buildSiteNavigation', () => {
 
   it('nav.items verilmezse sabit liste bozulmaz', () => {
     const g = buildSiteNavigation(t, undefined)
-    expect(g.flatMap(x => x.entries).length).toBe(18)
+    // 2026-10-30: `/uses` ve `/changelog` silindi → 18 değil 16 bağlantı.
+    expect(g.flatMap(x => x.entries).length).toBe(16)
   })
 })

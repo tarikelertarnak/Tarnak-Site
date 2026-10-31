@@ -6,7 +6,7 @@ const ja: Record<string, string> = {
   'about.cvExperience': '職歴',
   'about.cvSummaryTitle': '概要',
   'about.cvTitle': '履歴書',
-  'about.cvView': '履歴書を見る',
+  'about.cvView': 'CV',
   'about.toolboxCopy': 'コマンドをコピー',
   'auth.authFailed': 'ログインに失敗しました。もう一度お試しください。',
   'auth.adminOnly': 'Admin only.',

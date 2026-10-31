@@ -13,7 +13,16 @@ import { expect, test } from '@playwright/test'
  */
 
 test.describe('ana sayfa', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, context, baseURL }) => {
+    /*
+      Dil SABİTLENİR (2026-10-30): site artık tarayıcı diline göre çeviriyor,
+      Playwright varsayılanı en-US → "Projeler" yerine "Projects" geliyordu ve
+      Türkçe etiket bekleyen testler boşa düşüyordu. Gerçek kullanıcı da dili
+      Ayarlar'dan seçince `site-locale` cerezi yazılır; test aynı yolu kullanır.
+    */
+    await context.addCookies([
+      { name: 'site-locale', value: 'tr', url: baseURL ?? 'http://localhost:3000' },
+    ])
     /*
       ⚠️ `waitForLoadState('networkidle')` KULLANILMAZ.
       `next dev` HMR websocket'ini açık tutar; ağ hiçbir zaman "boşa"
@@ -35,8 +44,13 @@ test.describe('ana sayfa', () => {
     const text = ((await h1.textContent()) ?? '').replace(/\s+/g, ' ').trim()
     expect(text.length).toBeGreaterThan(3)
 
-    // Logo başlığın üstünde görünmeli (2026-10-07 kullanıcı isteği).
-    const logo = page.locator('a[aria-label] svg').first()
+    /*
+      Logo başlığın üstünde görünmeli (2026-10-07 kullanıcı isteği).
+      2026-10-30: logo artık BAĞLANTI DEĞİL (`<button type="button">`) —
+      kullanıcı "bir konuma götürüyor, gitmemeli" dedi. Seçici `a[aria-label]`
+      yerine `button[aria-label]` oldu; `role` değişti diye test kırılmaz.
+    */
+    const logo = page.locator('button[aria-label] svg').first()
     await expect(logo).toBeVisible()
 
     const h1Box = await h1.boundingBox()

@@ -28,6 +28,16 @@ interface LocaleContextValue {
 const LocaleContext = createContext<LocaleContextValue | null>(null)
 
 /**
+ * ADMIN SÖZLÜK ÇEVİRİLERİ (2026-10-30).
+ *
+ * `content.textOverrides[dil]` içindeki `dict:` anahtarları burada, aktif dil
+ * için `dict:blog.sub` → `blog.sub` biçimine indirilir; `useT()` sözlük
+ * değerinin ÜZERİNE bindirir. Ayrı context: `pref`/`locale` gibi gezinme
+ * durumunu kirletmeden yalnız çeviri katmanını taşıyor.
+ */
+const DictOverridesContext = createContext<Record<string, string> | null>(null)
+
+/**
  * Bilingual provider — English default, Turkish via translation layer.
  * setPref persists the choice to the `site-locale` cookie and refreshes the
  * page so server components re-render with the new locale.
@@ -35,6 +45,7 @@ const LocaleContext = createContext<LocaleContextValue | null>(null)
 export function LocaleProvider({
   children,
   detectedLocale,
+  textOverrides,
 }: {
   children: ReactNode
   /**
@@ -48,9 +59,47 @@ export function LocaleProvider({
    * Artik otomatik algilama icin TEK kaynak sunucunun karari.
    */
   detectedLocale?: Locale
+  /**
+   * Admin'in girdiği dile özel sözlük çevirileri (2026-10-30) —
+   * `content.textOverrides`. `dict:` önekli anahtarlar `useT()` tarafından
+   * uygulanır; `content:` anahtarları sunucuda `localizeContent` içinde.
+   */
+  textOverrides?: Record<string, Record<string, string>>
 }) {
   const router = useRouter()
   const [pref, setPrefState] = useState<LocalePref>('auto')
+
+  /**
+   * Tarayıcı dilinden çözülen dil — SADECE mount sonrası dolar.
+   *
+   * NEDEN `null` İLE BAŞLIYOR (2026-10-30, gerçek hata): eskiden bu değer
+   * render sırasında `navigator.language`'dan hesaplanıyordu. Sunucu ise
+   * `force-static` layout yüzünden her zaman sabit 'tr' HTML basıyor. Sonuç:
+   * Türkçe olmayan tarayıcılarda sunucu "Şu An" basıp istemci "Now" çiziyordu
+   * → React **hydration mismatch** ("server rendered text didn't match the
+   * client") her /now, /gizlilik, /kvkk açılışında konsola düşüyordu
+   * (e2e `personal-pages.spec.ts` yakaladı).
+   *
+   * Kural: İLK render sunucunun HTML'i ile BİREBİR aynı olmalı. Tarayıcı
+   * dili ancak effect içinde okunur; dil bir kare sonra değişir (aynı desen
+   * cerez tercihi için de kullanılıyor).
+   */
+  const [browserLocale, setBrowserLocale] = useState<Locale | null>(null)
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.language)
+      return
+    let next = detectLocale(navigator.language)
+    try {
+      const region = (navigator.language.split('-')[1] || '').toUpperCase()
+      if (region)
+        next = detectLocaleFromCountry(region) ?? next
+    }
+    catch {
+      /* locale unavailable — keep browser-language result */
+    }
+    setBrowserLocale(next)
+  }, [])
 
   // Hydration-safe: bootstrap from cookie, then keep in sync with the provider.
   // ⚠️ Burada 25 dilin TAMAMI kabul edilmeli. Eskiden yalnizca tr|en|auto
@@ -62,30 +111,9 @@ export function LocaleProvider({
   }, [])
 
   const value = useMemo<LocaleContextValue>(() => {
-    // Sunucu karari varsa onu kullan (tek kaynak). Yoksa istemci tarafinda
-    // tespit: tarayici dili, sonra bolge kodu.
-    let detected: Locale
-    // İstemci tarafında tarayıcı dilinden tespit (öncelikli). Sunucu kararini
-    // (build-time 'en' sabit) kullanmıyoruz çünkü bu, Türkçe sistemlerde
-    // 'en' dönmesine ve otomatik algılamayı bozuyordu.
-    if (typeof navigator !== 'undefined' && navigator.language) {
-      detected = detectLocale(navigator.language)
-      try {
-        const region = (navigator.language.split('-')[1] || '').toUpperCase()
-        if (region) {
-          detected = detectLocaleFromCountry(region) ?? detected
-        }
-      }
-      catch {
-        /* locale unavailable — keep browser-language result */
-      }
-    }
-    else if (detectedLocale) {
-      detected = detectedLocale
-    }
-    else {
-      detected = 'en'
-    }
+    // İlk render'da (hydration) sunucunun kararı geçerli — HTML birebir eşleşir.
+    // Mount sonrası tarayıcı dili varsa o kazanır, yoksa sunucu kararı kalır.
+    const detected: Locale = browserLocale ?? detectedLocale ?? 'en'
     const locale = resolveLocale(pref, detected)
     const setPref = (next: LocalePref) => {
       // Savunma: gecersiz bir deger gelirse cerezi bozmayalim.
@@ -102,7 +130,7 @@ export function LocaleProvider({
       router.refresh()
     }
     return { locale, pref, detected, setPref }
-  }, [pref, router])
+  }, [browserLocale, detectedLocale, pref, router])
 
   /*
     `<html lang>`/`<html dir>` senkronu (2026-10-20).
@@ -126,7 +154,37 @@ export function LocaleProvider({
     root.dir = RTL_LOCALES.has(value.locale) ? 'rtl' : 'ltr'
   }, [value.locale])
 
-  return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>
+  /**
+   * Aktif dil için admin çevirileri (2026-10-30).
+   *
+   * Yalnız `dict:` anahtarları buraya girer ve önek atılır; sözlük anahtarları
+   * noktalı düz metindir (`blog.sub`). Dil değişince memo yeniden kurulur.
+   */
+  const dictOverrides = useMemo(() => {
+    const allBucket = textOverrides?.all
+    const forLocale = textOverrides?.[value.locale]
+    if (!allBucket && !forLocale)
+      return null
+    const out: Record<string, string> = {}
+    for (const bucket of [allBucket, forLocale]) {
+      if (!bucket)
+        continue
+      for (const [key, val] of Object.entries(bucket)) {
+        if (!key.startsWith('dict:') || typeof val !== 'string')
+          continue
+        out[key.slice('dict:'.length)] = val
+      }
+    }
+    return Object.keys(out).length ? out : null
+  }, [textOverrides, value.locale])
+
+  return (
+    <LocaleContext.Provider value={value}>
+      <DictOverridesContext.Provider value={dictOverrides}>
+        {children}
+      </DictOverridesContext.Provider>
+    </LocaleContext.Provider>
+  )
 }
 
 export function useLocale(): LocaleContextValue {
@@ -148,12 +206,18 @@ export function useLocale(): LocaleContextValue {
  */
 export function useT() {
   const { locale } = useLocale()
+  const overrides = useContext(DictOverridesContext)
   return useMemo(
     () => ({
-      t: (key: string, vars?: Record<string, string | number>) => t(locale, key, vars),
+      t: (key: string, vars?: Record<string, string | number>) => {
+        const custom = overrides?.[key]
+        if (typeof custom === 'string' && custom.trim())
+          return custom
+        return t(locale, key, vars)
+      },
       locale,
     }),
-    [locale],
+    [locale, overrides],
   )
 }
 

@@ -53,6 +53,7 @@ Section.displayName = 'Section'
 export function SectionTitle({
   title,
   subTitle,
+  subTitleNode,
   description,
   icon,
   big = false,
@@ -61,6 +62,14 @@ export function SectionTitle({
 }: {
   title: string
   subTitle: string
+  /**
+   * `big` başlık için ReactNode alternatifi (2026-10-30).
+   *
+   * Neden: hukuki sayfaların başlığı İSTEMCİDE çözülüyor (`LegalTitle` —
+   * dil değişince güncellensin diye). `subTitle` string olduğu için node
+   * geçirilemiyordu; bu alan yalnız `big` modda `subTitle` yerine basılır.
+   */
+  subTitleNode?: React.ReactNode
   description: string
   icon?: React.ReactNode
   /**
@@ -98,7 +107,7 @@ export function SectionTitle({
         )}
         >
           {icon}
-          {subTitle}
+          {subTitleNode ?? subTitle}
         </Heading>
         {description && (
           <p className="mt-4 text-foreground-500 text-sm sm:text-base max-w-md lg:max-w-lg">{description}</p>

@@ -214,7 +214,9 @@ describe('yan panel yeniden boyutlandırma', () => {
     // localStorage/matchMedia yok — katlama UI üzerinden tetiklenir).
     fireEvent.click(screen.getByTestId('chat-panel-toggle'))
     const aside = sep.previousElementSibling as HTMLElement
-    expect(aside.className).toContain('w-[72px]') // panel katlı
+    // 2026-10-30: genişlik artık INLINE (Tailwind sınıf sırası yarışı yüzünden
+    // `w-[72px]` kaybediyordu). Katlı panel = 72px inline.
+    expect(aside.style.width).toBe('72px')
     // ayraç hâlâ erişilebilir tutamaç (kaybolmuyor)
     expect(sep.getAttribute('tabindex')).toBe('0')
 
@@ -223,7 +225,7 @@ describe('yan panel yeniden boyutlandırma', () => {
 
     // Görünür 72px'ten: 72+300=372 (MIN 240 üstünde) — panel açıldı
     expect(panelWidth(shell)).toBe(372)
-    expect(aside.className).not.toContain('w-[72px]')
+    expect(aside.style.width).toBe('min(var(--chat-panel-w), 55%)')
     act(() => window.dispatchEvent(nativePointer('pointerup', 400)))
   })
 
@@ -232,11 +234,11 @@ describe('yan panel yeniden boyutlandırma', () => {
     const { sep, shell } = await shellAndHandle()
 
     fireEvent.click(screen.getByTestId('chat-panel-toggle'))
-    expect((sep.previousElementSibling as HTMLElement).className).toContain('w-[72px]')
+    expect((sep.previousElementSibling as HTMLElement).style.width).toBe('72px')
 
     fireEvent.keyDown(sep, { key: 'ArrowRight' })
 
     expect(panelWidth(shell)).toBe(304) // kayıtlı 288 + 16
-    expect((sep.previousElementSibling as HTMLElement).className).not.toContain('w-[72px]')
+    expect((sep.previousElementSibling as HTMLElement).style.width).toBe('min(var(--chat-panel-w), 55%)')
   })
 })

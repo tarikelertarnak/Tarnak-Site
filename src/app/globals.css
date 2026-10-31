@@ -410,6 +410,19 @@ html.dark {
   --section-gap: 24px;
 
   /*
+      BÖLÜMLER ARASI BOŞLUK (2026-10-30, kullanıcı: "ABOUT ME, PROJECTS, BLOG,
+      CONTACT kısımları arasındaki boşluğu arttır").
+
+      `--section-gap` bir bölümün İÇİNDEKİ (başlık → buton → içerik) boşluk.
+      Bölüm KARTLARI arasındaki boşluk ayrı bir jetondur: her bölüm kendi
+      `pt-16/pt-24/pt-32…` değerini taşıdığı için ölçülen boşluklar 64 / 128 /
+      144px gibi tutarsızdı. Artık tek kaynak burası.
+
+      Ölçek: mobil 96 · sm 128 · lg 160px (eskisinden belirgin şekilde geniş).
+  */
+  --section-space: 96px;
+
+  /*
       ÜÇ BÖLGELİ KABUK (2026-10-16, kullanıcı isteği).
       [sol yan panel] --gap-- [ORTA ANA ALAN] --gap-- [sağ yan panel]
       Paneller kenardan yapışık değil, yuvarlak kart gibi durur; aralarında
@@ -419,6 +432,19 @@ html.dark {
   --layout-gap: 10px;
   --layout-panel-width: 264px;
   --layout-right-width: 264px;
+}
+
+/* Bölümler arası boşluk ölçeği — bkz. `--section-space` (96 / 128 / 160). */
+@media (min-width: 640px) {
+  :root {
+    --section-space: 128px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --section-space: 160px;
+  }
 }
 
 html[data-theme='light'] {
@@ -487,6 +513,32 @@ html[data-theme='light'] a.text-foreground-400,
 html[data-theme='light'] a.text-foreground-500,
 html[data-theme='light'] a.text-foreground-600 {
   color: #52525b !important;
+}
+
+/*
+  FOOTER GEZINME LINKLERI (2026-10-31, kullanici: "varsayilan renk soluk gri
+  #a1a1aa, hover'da net beyaz; acik tema icin uygun versiyon; oklari kaldir").
+  Neden burada: antd'nin `:where(.css-dev…) a { color: var(--ant-color-link) }`
+  kurali cascade layer DISINDA — Tailwind utility'leri (katmanli) ne kadar
+  ozgul olursa olsun ona yeniliyor. Bu yuzden `footer nav a` icin acik kural.
+  Acik tema: neutral-600 (#52525b, beyaz zeminde okunur), hover neutral-950.
+  Koyu tema: neutral-400 (#a1a1aa), hover #fff.
+*/
+footer nav a {
+  color: #52525b !important;
+  transition: color var(--duration-fast, 200ms) var(--ease-out, ease);
+}
+
+footer nav a:hover {
+  color: #18181b !important;
+}
+
+html[data-theme='dark'] footer nav a {
+  color: #a1a1aa !important;
+}
+
+html[data-theme='dark'] footer nav a:hover {
+  color: #ffffff !important;
 }
 
 html[data-theme='dark'] {
@@ -1154,4 +1206,16 @@ html[data-theme='light'] .markdown-body th {
 /* Sayfanın en üstünde olduğunda (kaydırılmamış) görünmesin */
 .reading-progress[data-hidden='true'] {
   opacity: 0;
+}
+
+/*
+ * Hero başlık tıklama rengi (2026-10-30). Kullanıcı gökkuşağını reddetti:
+ * tıklanınca 5 saniye boyunca DÜZ MAVİ (`--tprimary`, hover'daki rengin
+ * aynısı) görünür, animasyon yok. Bağlantı YOK — tıklama sadece efekti
+ * tetikler. İç span'lar kendi rengini (foreground + group-hover:primary)
+ * taşıdığı için `!important` ile ezilir; böylece hover'dan farkı kalmaz.
+ */
+.hero-click-primary,
+.hero-click-primary span {
+  color: var(--tprimary) !important;
 }
