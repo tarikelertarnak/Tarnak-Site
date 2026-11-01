@@ -130,3 +130,70 @@ create table if not exists public.messages (
 -- ---------- stars ----------
 -- Yıldız verisi: service-role ile yazılır, herkese açık okunur.
 -- (stars.json dosyası da var ama DB'ye taşınabilir)
+
+-- ============================================================
+-- Supabase güvenlik + bütünlük düzeltmeleri (2026-11-01)
+-- Advisor raporları üzerinden uygulananlar:
+--   · public.site_content_bak_20261030: RLS açıldı + kilitlendi (KRİTİK)
+--   · RLS'li ama policy'siz 5 tabloya service-role policy'si eklendi
+--   · handle_new_user(): PUBLIC execute izni kaldırıldı (SECURITY DEFINER
+--     kalır, auth trigger'ı Postgres içinden çağırır; /rest/v1/rpc üzerinden
+--     çağrı engellendi)
+--   · protect_owner / touch_updated_at / set_updated_at: search_path=public
+--   · site_content: PostgREST şema cache'i yenilendi (okunabilir)
+-- Tüm uygulama erişimi service-role üzerinden (chat-db.ts, content.ts).
+-- ============================================================
+
+-- site_content (kalıcılık) — service-role üzerinden yazılır/okunur
+create table if not exists public.site_content (
+  id          text primary key default 'main',
+  content     jsonb not null,
+  updated_at  timestamptz not null default now()
+);
+
+insert into public.site_content (id, content)
+values ('main', '{}'::jsonb)
+on conflict (id) do nothing;
+
+alter table public.site_content enable row level security;
+revoke all on public.site_content from anon, authenticated;
+
+-- site_content_bak_20261030: yedek tablo, RLS kapalıydı (kritik açık)
+alter table public.site_content_bak_20261030 enable row level security;
+revoke all on public.site_content_bak_20261030 from anon, authenticated;
+
+-- Chat + audit tabloları: RLS zaten açık, policy'sizdi → service-only
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='chat_conversations') then
+    create policy "chat_conversations service only" on public.chat_conversations
+      for all to service_role using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='chat_messages') then
+    create policy "chat_messages service only" on public.chat_messages
+      for all to service_role using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='chat_participants') then
+    create policy "chat_participants service only" on public.chat_participants
+      for all to service_role using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='audit_log') then
+    create policy "audit_log service only" on public.audit_log
+      for all to service_role using (true) with check (true);
+  end if;
+end $$;
+
+-- handle_new_user: SECURITY DEFINER (auth trigger'ı içinden çağırır) ama
+-- RPC üzerinden çağrılmamalı → PUBLIC execute izni al
+revoke execute on function public.handle_new_user() from public;
+
+-- search_path mutable düzeltmesi
+alter function public.protect_owner() set search_path = public;
+alter function public.touch_updated_at() set search_path = public;
+alter function public.set_updated_at() set search_path = public;
+
+-- PostgREST şema cache'i yenile (site_content 404 PGRST205 önlemi)
+comment on table public.site_content is 'site content persistence (2026-11-01 security fix)';
+
+-- messages: RLS açık, service-role yazar/okur; phone kolonu var (doğrulandı 2026-11-01)
+alter table public.messages enable row level security;
