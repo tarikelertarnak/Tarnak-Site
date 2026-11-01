@@ -193,20 +193,17 @@ export function PageTextEditor({
 
   return (
     <div className="min-w-0 space-y-3">
-      {/* Üst şerit: dil + kopyala */}
+      {/* Üst şerit: dil seçimi */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-foreground-500">Dil</span>
-          <SearchableCombobox
-            options={languageOptions}
-            selected={[locale]}
-            onSelect={setLocale}
-            onClear={() => setLocale('tr')}
-            placeholder="Dil seç"
-            searchPlaceholder="Dil ara (Türkçe, English, ru…)"
-            ariaLabel="Sayfa metin dili"
-          />
-        </div>
+        <SearchableCombobox
+          options={languageOptions}
+          selected={[locale]}
+          onSelect={setLocale}
+          onClear={() => setLocale('tr')}
+          placeholder="Dil seç"
+          searchPlaceholder="Dil ara (Türkçe, English, ru…)"
+          ariaLabel="Sayfa metin dili"
+        />
         <Button
           size="sm"
           variant="bordered"
@@ -215,22 +212,6 @@ export function PageTextEditor({
         >
           Kopyala
         </Button>
-        {previewPath && (
-          <Button
-            size="sm"
-            variant="bordered"
-            color="primary"
-            onPress={() => void preview()}
-            startContent={<Icon icon="mdi:eye-outline" width={16} height={16} />}
-            className="ml-auto"
-          >
-            Önizle
-          </Button>
-        )}
-        <span className="text-xs text-foreground-500">
-          {pageId}
-          {status ? ` · ${status}` : ''}
-        </span>
       </div>
 
       {/* İçe aktarma kutusu */}
