@@ -14,6 +14,7 @@
  * görünmez olurdu.
  */
 import type { ReactNode } from 'react'
+import { Icon } from '@iconify/react'
 import { Button } from '@/components/ui/button'
 
 export function SaveBar({
@@ -25,6 +26,9 @@ export function SaveBar({
   info,
   /** Ek buton (ör. "Varsayılana dön"). */
   extra,
+  /** Canlı önizleme (değişiklikleri kaydetmeden gör) */
+  onPreview,
+  previewing,
 }: {
   dirty: boolean
   busy?: boolean
@@ -32,6 +36,8 @@ export function SaveBar({
   onCancel: () => void
   info?: ReactNode
   extra?: ReactNode
+  onPreview?: () => void
+  previewing?: boolean
 }) {
   if (!dirty)
     return null
@@ -42,7 +48,7 @@ export function SaveBar({
         {info && (
           <p className="text-xs text-foreground-500">{info}</p>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button
             color="primary"
             className="font-semibold"
@@ -59,6 +65,18 @@ export function SaveBar({
           >
             İptal Et
           </Button>
+          {onPreview && (
+            <Button
+              variant="bordered"
+              color="primary"
+              onPress={onPreview}
+              isLoading={previewing}
+              isDisabled={busy || previewing}
+              startContent={<Icon icon="mdi:eye-outline" width={16} height={16} />}
+            >
+              Önizle
+            </Button>
+          )}
           {extra && <div className="ml-auto">{extra}</div>}
         </div>
       </div>

@@ -94,8 +94,9 @@ export function AdminPanel({
     undefined,
   )
   const [tabSearch, setTabSearch] = useState('')
-  /** Aktif "Sayfa Düzenle" iç-sekmesinin canlı önizleme yolu (SaveBar'da Önizle butonu için). */
-  const [activePagePath, setActivePagePath] = useState<string>('')
+  /** Aktif "Sayfa Düzenle" iç-sekmesinin ID'si ve yolu (SaveBar'da Önizle butonu için). */
+  const [activePageKey, setActivePageKey] = useState<string>('about')
+  const [activePagePath, setActivePagePath] = useState<string>('/about')
 
   /** Sayfa ID'sinden previewPath'e eşleme (PAGE_SPECS'den). */
   const pagePathById = useMemo(() => {
@@ -1733,7 +1734,10 @@ tablosundan
   const pagesPane = (
     <PageEditTabs
       initial="about"
-      onActiveChange={key => setActivePagePath(pagePathById[key] ?? '')}
+      onActiveChange={key => {
+        setActivePageKey(key)
+        setActivePagePath(pagePathById[key] ?? '')
+      }}
       items={[
         /* ... */
         ...PAGE_SPECS.map((page) => {
@@ -2070,6 +2074,9 @@ tablosundan
         {/* Sabit kaydetme çubuğu (2026-10-20, kullanıcı isteği): Kaydet +
             İptal Et + bilgi, alt kısımda `position: fixed`, değişiklik yoksa
             gizli. */}
+        {/* Sabit kaydetme çubuğu (2026-10-20, kullanıcı isteği): Kaydet +
+            İptal Et + bilgi, alt kısımda `position: fixed`, değişiklik yoksa
+            gizli. */}
         <SaveBar
           dirty={dirty}
           busy={saving}
@@ -2079,18 +2086,35 @@ tablosundan
             setStatus(null)
           }}
           info="Kaydedildi! Siteyi yenileyerek değişiklikleri görebilirsin."
-          extra={
-            activePagePath && (
-              <Button
-                size="sm"
-                variant="bordered"
-                color="primary"
-                onPress={() => window.open(activePagePath, '_blank', 'noopener,noreferrer')}
-              >
-                Önizle
-              </Button>
-            )
-          }
+          onPreview={async () => {
+            if (tab !== 'pages') {
+              const p = activePagePath || pagePathById['about'] || '/'
+              window.open(p, '_blank', 'noopener,noreferrer')
+              return
+            }
+            try {
+              setStatus(null)
+              const pageId = activePageKey || 'about'
+              const res = await fetch('/api/admin/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, pageId }),
+              })
+              if (!res.ok) {
+                const err = await res.json().catch(() => ({}))
+                throw new Error(err?.message || 'Önizleme alınamadı')
+              }
+              const html = await res.text()
+              const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+              const url = URL.createObjectURL(blob)
+              window.open(url, '_blank', 'noopener,noreferrer')
+              setTimeout(() => URL.revokeObjectURL(url), 180000)
+              setStatus({ type: 'success', text: 'Önizleme yeni sekmede açıldı (kaydedilmemiş değişikliklerle).' })
+            }
+            catch (e: any) {
+              setStatus({ type: 'error', text: e?.message || 'Önizleme hatası' })
+            }
+          }}
         />
       </div>
     </div>
