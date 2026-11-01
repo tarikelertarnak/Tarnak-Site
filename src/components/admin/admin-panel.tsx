@@ -76,7 +76,7 @@ export function AdminPanel({
     '#overview': 'overview',
     '#profile': 'profile',
     '#pages': 'pages',
-    '#password': 'password',
+    '#password': 'settings',
     '#settings': 'settings',
     '#data': 'data',
     '#people': 'people',
@@ -1888,17 +1888,7 @@ tablosundan
         </div>
       ),
     },
-    {
-      key: 'password',
-      label: <TabLabel icon="mdi:shield-lock-outline" text="Şifre & Güvenlik" />,
-      children: (
-        <div className="min-w-0 space-y-8">
-        <SubSection title="Şifre & Güvenlik" icon="mdi:shield-lock-outline">
-          {securityPane}
-        </SubSection>
-        </div>
-      ),
-    },
+
     {
       key: 'settings',
       label: <TabLabel icon="mdi:cog-outline" text="Site Ayarları" />,
@@ -1909,6 +1899,9 @@ tablosundan
         </SubSection>
         <SubSection title="Sosyal Medya" icon="mdi:share-variant-outline">
           {socialPane}
+        </SubSection>
+        <SubSection title="Şifre & Güvenlik" icon="mdi:shield-lock-outline">
+          {securityPane}
         </SubSection>
         </div>
       ),
@@ -1954,8 +1947,7 @@ tablosundan
       // Sayfa Düzenle içindeki AboutPageEditor
       'Hakkımda Sayfası', '/about',
     ],
-    password: ['Şifre', 'Güvenlik', 'Şifre Değiştir', 'Oturum'],
-    settings: ['Site Ayarları', 'Hero', 'Menü', 'Arka Plan', 'Sosyal Medya', 'Tema'],
+    settings: ['Site Ayarları', 'Hero', 'Menü', 'Arka Plan', 'Sosyal Medya', 'Tema', 'Şifre', 'Güvenlik', 'Şifre Değiştir', 'Oturum'],
     data: [
       'Veri Yönetimi',
       // ResourceDef etiketleri (resources.ts)
