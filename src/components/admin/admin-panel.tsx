@@ -118,8 +118,10 @@ export function AdminPanel({
   useLayoutEffect(() => {
     const hash = window.location.hash
     const fromHash = HASH_TO_TAB[hash]
-    if (fromHash)
+    if (fromHash) {
+      setTabSearch('')
       setTab(fromHash)
+    }
   }, [])
 
   // 2026-10-08: Sekme seridinin kaydirma/gosterge isleri `ScrollableTabs`
@@ -1830,16 +1832,18 @@ tablosundan
     </div>
   )
 
-  /** "Site Ayarları" sekmesinin Şifre & Güvenlik alt bölümü. */
+  /** Şifre & Güvenlik sekmesinin gövdesi (yeniden tasarlanmış). */
   const securityPane = (
-    <div className="space-y-4 pt-4">
-      <p className="text-sm text-foreground-500">
-        Hesabını korumak için şifreni düzenle, oturum bilgilerini gözden geçir ve
-        güvenlik önerilerini takip et.
-      </p>
-      <PasswordCard />
-      <SessionInfoCard username={username} roleLabel={roleLabel} />
-      <SecurityTipsCard />
+    <div className="space-y-6 pt-4">
+      <PanelCard title="Şifre Değiştir">
+        <PasswordCard />
+      </PanelCard>
+      <PanelCard title="Oturum Bilgisi">
+        <SessionInfoCard username={username} roleLabel={roleLabel} />
+      </PanelCard>
+      <PanelCard title="Güvenlik Önerileri">
+        <SecurityTipsCard />
+      </PanelCard>
     </div>
   )
 
@@ -1850,7 +1854,7 @@ tablosundan
     </div>
   )
 
-  const tabItems = [
+  const tabItems = useMemo(() => [
     {
       key: 'overview',
       label: <TabLabel icon="mdi:view-dashboard-outline" text="Genel Bakış" />,
@@ -1931,7 +1935,7 @@ tablosundan
         </div>
       ),
     },
-  ]
+  ], [aboutPane, blogPane, dataPane, generalPane, overviewPane, pageSectionsPane, pagesPane, profilePane, projectsPane, securityPane, sectionsPane, socialPane, usersPane])
 
   /**
    * Sekme araması için genişletilmiş eşleme.
@@ -2296,10 +2300,15 @@ function AddButton({ onPress, label }: { onPress: () => void, label: string }) {
 function PasswordCard() {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [status, setStatus] = useState<SaveStatus>(null)
   const [loading, setLoading] = useState(false)
 
   const submit = async () => {
+    if (newPassword !== confirmPassword) {
+      setStatus({ type: 'error', text: 'Yeni şifreler eşleşmiyor.' })
+      return
+    }
     setLoading(true)
     setStatus(null)
     try {
@@ -2310,9 +2319,10 @@ function PasswordCard() {
       })
       const data = await res.json()
       if (res.ok) {
-        setStatus({ type: 'success', text: 'Şifre güncellendi.' })
+        setStatus({ type: 'success', text: 'Şifre başarıyla güncellendi.' })
         setCurrentPassword('')
         setNewPassword('')
+        setConfirmPassword('')
       }
  else {
         setStatus({
@@ -2330,14 +2340,15 @@ function PasswordCard() {
   }
 
   return (
-    <PanelCard title="Şifre Değiştir">
-      <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
+      <Grid>
         <Field label="Mevcut Şifre">
           <Input
             type="password"
             variant="faded"
             value={currentPassword}
             onValueChange={setCurrentPassword}
+            autoComplete="current-password"
           />
         </Field>
         <Field label="Yeni Şifre">
@@ -2346,91 +2357,101 @@ function PasswordCard() {
             variant="faded"
             value={newPassword}
             onValueChange={setNewPassword}
+            autoComplete="new-password"
           />
         </Field>
-        {status && (
-          <div
-            className={`text-sm font-medium rounded-lg p-3 flex items-center gap-2 ${
+      </Grid>
+      <Field label="Yeni Şifre (Tekrar)">
+        <Input
+          type="password"
+          variant="faded"
+          value={confirmPassword}
+          onValueChange={setConfirmPassword}
+          autoComplete="new-password"
+        />
+      </Field>
+      {status && (
+        <div
+          className={`text-sm font-medium rounded-lg p-3 flex items-center gap-2 ${
+            status.type === 'success'
+              ? 'text-success bg-success-50 border border-success-200'
+              : 'text-danger bg-danger-50 border border-danger-200'
+          }`}
+        >
+          <Icon
+            icon={
               status.type === 'success'
-                ? 'text-success bg-success-50 border border-success-200'
-                : 'text-danger bg-danger-50 border border-danger-200'
-            }`}
-          >
-            <Icon
-              icon={
-                status.type === 'success'
-                  ? 'material-symbols:check-circle'
-                  : 'material-symbols:error'
-              }
-              width={16}
-              height={16}
-            />
-            {status.text}
-          </div>
-        )}
+                ? 'material-symbols:check-circle'
+                : 'material-symbols:error'
+            }
+            width={16}
+            height={16}
+          />
+          {status.text}
+        </div>
+      )}
+      <div className="flex justify-end">
         <Button
           color="primary"
-          className="w-full sm:w-auto font-semibold"
+          className="font-semibold"
           onPress={submit}
           isLoading={loading}
-          isDisabled={loading || !currentPassword || !newPassword}
+          isDisabled={loading || !currentPassword || !newPassword || !confirmPassword}
+          startContent={<Icon icon="mdi:shield-check-outline" width={18} height={18} />}
         >
           Şifreyi Güncelle
         </Button>
       </div>
-    </PanelCard>
+    </div>
   )
 }
 
 /** Oturum bilgisi kartı — giriş yapan kullanıcı ve rolünü gösterir. */
 function SessionInfoCard({ username, roleLabel }: { username: string, roleLabel?: string }) {
   return (
-    <PanelCard title="Oturum Bilgisi">
-      <div className="flex flex-col gap-3 text-sm">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-foreground-500">Kullanıcı</span>
-          <span className="font-semibold text-foreground">{username}</span>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-foreground-500">Rol</span>
-          <span className="font-semibold text-foreground">{roleLabel ?? 'admin'}</span>
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-foreground-500">Oturum Süresi</span>
-          <span className="font-semibold text-foreground">7 gün</span>
-        </div>
-        <p className="text-xs text-foreground-500 mt-1">
-          Oturum cookie ile 7 gün boyunca geçerlidir. Süre dolunca yeniden giriş yapman gerekir.
-        </p>
+    <div className="flex flex-col gap-3 text-sm">
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-surface-border bg-surface-1/40 px-3 py-2">
+        <span className="text-foreground-500">Kullanıcı</span>
+        <span className="font-semibold text-foreground">{username}</span>
       </div>
-    </PanelCard>
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-surface-border bg-surface-1/40 px-3 py-2">
+        <span className="text-foreground-500">Rol</span>
+        <span className="font-semibold text-foreground">{roleLabel ?? 'admin'}</span>
+      </div>
+      <div className="flex items-center justify-between gap-2 rounded-lg border border-surface-border bg-surface-1/40 px-3 py-2">
+        <span className="text-foreground-500">Oturum Süresi</span>
+        <span className="font-semibold text-foreground">7 gün</span>
+      </div>
+      <p className="text-xs text-foreground-500">
+        Oturum cookie ile 7 gün boyunca geçerlidir. Süre dolunca yeniden giriş yapman gerekir.
+      </p>
+    </div>
   )
 }
 
-/** Güvenlik ipuçları kartı — hesabı korumak için öneriler. */
+/** Güvenlik önerileri. */
 function SecurityTipsCard() {
   const tips = [
-    'Şifren en az 8 karakter, harf + rakam + sembol içersin.',
-    'Şifreni kimseyle paylaşma, tarayıcıya kaydetme.',
+    'Şifren en az 12 karakter, harf, rakam ve sembol içersin.',
+    'Farklı sitelerde aynı şifreyi kullanma.',
+    'Şifreni kimseyle paylaşma ve tarayıcıya otomatik kaydetme.',
     'Şüpheli giriş bildirimi alırsan şifreni hemen değiştir.',
-    'Google OAuth kullanıyorsan 2FA\'yı etkin tut.',
+    'Mümkünse güçlü ve benzersiz parolalar kullan.',
   ]
   return (
-    <PanelCard title="Güvenlik İpuçları">
-      <ul className="flex flex-col gap-2 text-sm text-foreground-500">
-        {tips.map((tip, i) => (
-          <li key={i} className="flex items-start gap-2">
-            <Icon
-              icon="mdi:shield-check-outline"
-              width={16}
-              height={16}
-              className="shrink-0 mt-0.5 text-primary"
-            />
-            <span>{tip}</span>
-          </li>
-        ))}
-      </ul>
-    </PanelCard>
+    <ul className="flex flex-col gap-2 text-sm text-foreground-500">
+      {tips.map((tip, i) => (
+        <li key={i} className="flex items-start gap-2">
+          <Icon
+            icon="mdi:shield-check-outline"
+            width={18}
+            height={18}
+            className="shrink-0 mt-0.5 text-primary"
+          />
+          <span>{tip}</span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
