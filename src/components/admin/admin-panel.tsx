@@ -82,12 +82,14 @@ export function AdminPanel({
     '#people': 'people',
   }
 
-  const initialTab = (() => {
+  // Hash'ten başlangıç sekmesi: AdminGate async yükleme bittikten SONRA
+  // AdminPanel mount edilir; o anda hash hâlâ okunaklı olur.
+  // SSR'da window yok → 'overview' döner; useLayoutEffect mount'ta düzeltir.
+  const [tab, setTab] = useState<string>(() => {
     if (typeof window === 'undefined')
       return 'overview'
     return HASH_TO_TAB[window.location.hash] ?? 'overview'
-  })()
-  const [tab, setTab] = useState(initialTab)
+  })
   const [dataResource, setDataResource] = useState<string | undefined>(
     undefined,
   )
@@ -95,12 +97,17 @@ export function AdminPanel({
 
   const setTabWithHash = (next: string) => {
     setTab(next)
-    window.location.hash = next
+    if (typeof window !== 'undefined')
+      window.location.hash = next
   }
 
+  // Mount'ta hash'i bir kez daha oku: strict-mode çift render veya
+  // hydration'dan sonra hash'in değiştiği durumları yakalar.
   useLayoutEffect(() => {
     const hash = window.location.hash
-    setTab(HASH_TO_TAB[hash] ?? 'overview')
+    const fromHash = HASH_TO_TAB[hash]
+    if (fromHash)
+      setTab(fromHash)
   }, [])
 
   // 2026-10-08: Sekme seridinin kaydirma/gosterge isleri `ScrollableTabs`
@@ -2454,12 +2461,14 @@ yazı
           setBlogModalOpen(false)
         }}
         title={
-          posts.some((p: any) => p.id === editing.id)
+          editing && posts.some((p: any) => p.id === editing.id)
             ? 'Yazıyı Düzenle'
             : 'Yeni Yazı'
         }
         maxWidth="max-w-lg"
       >
+        {/* editing null iken Modal open=false olmalı; yine de guard koy */}
+        {editing && (
         <div className="space-y-3">
           <Grid>
             <Field label="Başlık *">
@@ -2470,7 +2479,7 @@ yazı
                 onValueChange={(v) => {
                   const next = { ...editing, title: v }
                   if (!editing.slug)
-next.slug = toSlug(v)
+                    next.slug = toSlug(v)
                   setEditing(next)
                 }}
               />
@@ -2540,6 +2549,7 @@ next.slug = toSlug(v)
             </Button>
           </div>
         </div>
+        )}
       </Modal>
 
       {!editing && (
