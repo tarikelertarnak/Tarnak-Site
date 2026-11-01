@@ -129,10 +129,11 @@ export function PageTextEditor({
 
     const option = (value: string, flag: string, name: string, hint: string) => ({
       value,
-      icon: <span className="text-base leading-none">{flag}</span>,
-      searchText: `${name} ${value} ${hint}`,
+      icon: <span className="text-base leading-none" aria-hidden>{flag}</span>,
+      searchText: `${name} ${value} ${hint} ${flag}`,
       label: (
         <span className="flex items-center gap-1.5">
+          <span className="text-base leading-none">{flag}</span>
           <span>{name}</span>
           <span className="text-[10px] opacity-60">{hint}</span>
           {translated(value)
@@ -144,10 +145,10 @@ export function PageTextEditor({
 
     return [
       option(ALL, ALL_LOCALES_FLAG, 'Hepsi', '(tüm dillerde aynı)'),
-      option('tr', localeFlag('tr'), NATIVE_NAMES.tr, '(tr · taban)'),
+      option('tr', localeFlag('tr'), 'TR', '(taban)'),
       ...(Object.keys(NATIVE_NAMES) as Locale[])
         .filter(code => code !== 'tr')
-        .map(code => option(code, localeFlag(code), NATIVE_NAMES[code], `(${code})`)),
+        .map(code => option(code, localeFlag(code), code.toUpperCase(), `(${code})`)),
     ]
   }, [overrides])
 
