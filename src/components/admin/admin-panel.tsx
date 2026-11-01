@@ -94,6 +94,8 @@ export function AdminPanel({
     undefined,
   )
   const [tabSearch, setTabSearch] = useState('')
+  const [pageEditSearch, setPageEditSearch] = useState('')
+  const [dataSearch, setDataSearch] = useState('')
   /** Aktif "Sayfa Düzenle" iç-sekmesinin ID'si ve yolu (SaveBar'da Önizle butonu için). */
   const [activePageKey, setActivePageKey] = useState<string>('about')
   const [activePagePath, setActivePagePath] = useState<string>('/about')
@@ -1732,15 +1734,29 @@ tablosundan
    * bir sekme dili kalır, ikinci bir navigasyon icat edilmez.
    */
   const pagesPane = (
-    <PageEditTabs
-      initial="about"
-      onActiveChange={key => {
-        setActivePageKey(key)
-        setActivePagePath(pagePathById[key] ?? '')
-      }}
-      items={[
-        /* ... */
-        ...PAGE_SPECS.map((page) => {
+    <div className="space-y-3">
+      <div className="pt-2">
+        <Input
+          variant="faded"
+          value={pageEditSearch}
+          onValueChange={setPageEditSearch}
+          placeholder="Sayfa ara (Ana Sayfa, Hakkımda, Blog...)"
+          aria-label="Sayfa düzenle arama"
+          className="w-full max-w-sm"
+        />
+      </div>
+      <PageEditTabs
+        initial="about"
+        onActiveChange={key => {
+          setActivePageKey(key)
+          setActivePagePath(pagePathById[key] ?? '')
+        }}
+        items={[
+          ...PAGE_SPECS.filter(page => {
+            if (!pageEditSearch.trim()) return true
+            const q = pageEditSearch.toLowerCase().trim()
+            return page.label.toLowerCase().includes(q) || page.id.toLowerCase().includes(q)
+          }).map((page) => {
           const extra
             = page.id === 'about'
               ? aboutPane
@@ -1796,11 +1812,22 @@ tablosundan
         },
       ]}
     />
+    </div>
   )
 
   /** "Veri Yönetimi" sekmesinin gövdesi — tablo CRUD (2026-10-20). */
   const dataPane = (
-    <DataManager key={dataResource} initialResource={dataResource} />
+    <div className="space-y-3 pt-2">
+      <Input
+        variant="faded"
+        value={dataSearch}
+        onValueChange={setDataSearch}
+        placeholder="Tablo ara (Blog Yazıları, Projeler, Yetenekler...)"
+        aria-label="Veri yönetimi arama"
+        className="w-full max-w-sm"
+      />
+      <DataManager key={`${dataResource ?? 'all'}:${dataSearch}`} initialResource={dataResource} />
+    </div>
   )
 
   /** "Site Ayarları" sekmesinin Şifre & Güvenlik alt bölümü. */

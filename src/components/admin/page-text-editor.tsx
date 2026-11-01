@@ -129,10 +129,10 @@ export function PageTextEditor({
 
     const option = (value: string, flag: string, name: string, hint: string) => ({
       value,
-      icon: <span className="text-sm leading-none">{flag}</span>,
+      icon: <span className="text-base leading-none">{flag}</span>,
       searchText: `${name} ${value} ${hint}`,
       label: (
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1.5">
           <span>{name}</span>
           <span className="text-[10px] opacity-60">{hint}</span>
           {translated(value)
@@ -143,8 +143,8 @@ export function PageTextEditor({
     })
 
     return [
-      option('tr', localeFlag('tr'), NATIVE_NAMES.tr, '(tr · taban)'),
       option(ALL, ALL_LOCALES_FLAG, 'Hepsi', '(tüm dillerde aynı)'),
+      option('tr', localeFlag('tr'), NATIVE_NAMES.tr, '(tr · taban)'),
       ...(Object.keys(NATIVE_NAMES) as Locale[])
         .filter(code => code !== 'tr')
         .map(code => option(code, localeFlag(code), NATIVE_NAMES[code], `(${code})`)),
@@ -192,36 +192,38 @@ export function PageTextEditor({
   }
 
   return (
-    <div className="min-w-0 space-y-3">
-      {/* Üst şerit: dil seçimi */}
-      <div className="flex flex-wrap items-center gap-2">
-        <SearchableCombobox
-          options={languageOptions}
-          selected={[locale]}
-          onSelect={setLocale}
-          onClear={() => setLocale('tr')}
-          placeholder="Dil seç"
-          searchPlaceholder="Dil ara (Türkçe, English, ru…)"
-          ariaLabel="Sayfa metin dili"
-        />
-        <Button
-          size="sm"
-          variant="bordered"
-          onPress={() => void copyAll()}
-          startContent={<Icon icon="mdi:content-copy" width={16} height={16} />}
-        >
-          Kopyala
-        </Button>
+    <div className="min-w-0 space-y-4">
+      {/* Üst grup: Dil seçimi + Kopyala */}
+      <div className="rounded-lg border border-surface-border bg-surface-1/40 p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <SearchableCombobox
+            options={languageOptions}
+            selected={[locale]}
+            onSelect={setLocale}
+            onClear={() => setLocale('tr')}
+            placeholder="Dil seç"
+            searchPlaceholder="Ara..."
+            ariaLabel="Sayfa metin dili"
+          />
+          <Button
+            size="sm"
+            variant="bordered"
+            onPress={() => void copyAll()}
+            startContent={<Icon icon="mdi:content-copy" width={16} height={16} />}
+          >
+            Kopyala
+          </Button>
+        </div>
       </div>
 
-      {/* İçe aktarma kutusu */}
-      <div className="space-y-2 rounded-lg border border-surface-border bg-surface-1 p-2">
+      {/* İçe aktarma grubu */}
+      <div className="rounded-lg border border-surface-border bg-surface-1/40 p-3 space-y-2">
         <Textarea
           variant="faded"
-          minRows={3}
+          minRows={4}
           value={paste}
           onValueChange={setPaste}
-          placeholder={'Çeviriyi buraya yapıştır:\ncontent:about.title: About Me\ndict:blog.sub: Blog…'}
+          placeholder={'Çeviriyi buraya yapıştır:\ncontent:about.title: ...\ndict:blog.sub: ...'}
           aria-label="Düzen yapıştır"
         />
         <div className="flex justify-end">
@@ -230,6 +232,10 @@ export function PageTextEditor({
           </Button>
         </div>
       </div>
+
+      <div className="h-px w-full bg-surface-border/70" />
+
+      <div className="space-y-4">
 
       {groups.map(group => (
         <div key={group.title} className="space-y-2">
@@ -266,6 +272,7 @@ export function PageTextEditor({
           ))}
         </div>
       ))}
+      </div>
     </div>
   )
 }
