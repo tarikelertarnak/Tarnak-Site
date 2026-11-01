@@ -94,6 +94,15 @@ export function AdminPanel({
     undefined,
   )
   const [tabSearch, setTabSearch] = useState('')
+  /** Aktif "Sayfa Düzenle" iç-sekmesinin canlı önizleme yolu (SaveBar'da Önizle butonu için). */
+  const [activePagePath, setActivePagePath] = useState<string>('')
+
+  /** Sayfa ID'sinden previewPath'e eşleme (PAGE_SPECS'den). */
+  const pagePathById = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const page of PAGE_SPECS) map[page.id] = page.path
+    return map
+  }, [])
 
   const setTabWithHash = (next: string) => {
     setTab(next)
@@ -1724,15 +1733,9 @@ tablosundan
   const pagesPane = (
     <PageEditTabs
       initial="about"
+      onActiveChange={key => setActivePagePath(pagePathById[key] ?? '')}
       items={[
-        /*
-          HER SAYFA AYRI (2026-10-30, kullanıcı: "Sayfa Düzenle'de bütün
-          sayfalar bölümler ayrı ayrı olmalı … istisnasız"). Katalog
-          `PAGE_SPECS`ten gelir (12 sayfa); her sayfa kendi dil seçicisi,
-          Kopyala butonu ve yapıştır-çeviri kutusuyla açılır. HAKKIMDA /
-          PROJELER / BLOG sayfalarında ayrıca mevcut yapısal editörler
-          (diziler, toolbox, CV) kartın altında korunur.
-        */
+        /* ... */
         ...PAGE_SPECS.map((page) => {
           const extra
             = page.id === 'about'
@@ -1836,12 +1839,6 @@ tablosundan
         <SubSection title="Profil" icon="mdi:account-circle">
           {profilePane}
         </SubSection>
-        <SubSection title="Hakkımda Sayfası (/about)" icon="mdi:card-account-details-outline">
-          <AboutPageEditor
-            value={content.aboutPage}
-            onChange={aboutPage => setContent(prev => ({ ...prev, aboutPage }))}
-          />
-        </SubSection>
         </div>
       ),
     },
@@ -1905,26 +1902,42 @@ tablosundan
     },
   ]
 
-  /** Sekme başlıkları için arama eşlemesi — anahtar + görünen metin. */
-  const TAB_LABELS: Record<string, string> = {
-    overview: 'Genel Bakış',
-    profile: 'Profil',
-    pages: 'Sayfa Düzenle',
-    password: 'Şifre & Güvenlik',
-    settings: 'Site Ayarları',
-    data: 'Veri Yönetimi',
-    people: 'Kullanıcılar',
+  /**
+   * Sekme araması için genişletilmiş eşleme.
+   * Her üst sekme kendi adlarına + içindeki sayfa/tablo etiketlerine eşlenir.
+   * Arama "blog" → Sayfa Düzenle, "yetenekler" → Veri Yönetimi gibi çalışır.
+   */
+  const TAB_SEARCH_TERMS: Record<string, string[]> = {
+    overview: ['Genel Bakış', 'Özet', 'Durum'],
+    profile: ['Profil', 'Profil Bilgileri', 'Fotoğraf'],
+    pages: [
+      'Sayfa Düzenle',
+      // PAGE_SPECS sayfa etiketleri
+      'Ana Sayfa', 'Hakkımda', 'Projeler', 'Blog', 'Sohbet', 'İletişim',
+      'Destek', 'Şu An', 'Katkıda Bulunanlar', 'Gizlilik Politikası',
+      'KVKK', 'GitHub', 'Sayfa Bölümleri', 'Ek Bölümler',
+      // Sayfa Düzenle içindeki AboutPageEditor
+      'Hakkımda Sayfası', '/about',
+    ],
+    password: ['Şifre', 'Güvenlik', 'Şifre Değiştir', 'Oturum'],
+    settings: ['Site Ayarları', 'Hero', 'Menü', 'Arka Plan', 'Sosyal Medya', 'Tema'],
+    data: [
+      'Veri Yönetimi',
+      // ResourceDef etiketleri (resources.ts)
+      'Blog Yazıları', 'Projeler', 'Yetenekler', 'İstatistikler',
+      'Mesajlar', 'Reklamlar', 'Bildiğim Diller', 'CV Belgeleri',
+    ],
+    people: ['Kullanıcılar', 'Kullanıcı Yönetimi'],
   }
 
   /** Arama yazıldığında sadece eşleşen sekmeler görünür. */
   const filteredTabItems = useMemo(() => {
     if (!tabSearch.trim()) return tabItems
     const q = tabSearch.toLowerCase().trim()
-    return tabItems.filter(
-      item =>
-        item.key.toLowerCase().includes(q) ||
-        TAB_LABELS[item.key]?.toLowerCase().includes(q),
-    )
+    return tabItems.filter((item) => {
+      const terms = TAB_SEARCH_TERMS[item.key] ?? [item.key]
+      return terms.some(t => t.toLowerCase().includes(q))
+    })
   }, [tabItems, tabSearch])
 
   return (
@@ -2066,6 +2079,18 @@ tablosundan
             setStatus(null)
           }}
           info="Kaydedildi! Siteyi yenileyerek değişiklikleri görebilirsin."
+          extra={
+            activePagePath && (
+              <Button
+                size="sm"
+                variant="bordered"
+                color="primary"
+                onPress={() => window.open(activePagePath, '_blank', 'noopener,noreferrer')}
+              >
+                Önizle
+              </Button>
+            )
+          }
         />
       </div>
     </div>
@@ -2112,11 +2137,18 @@ function SubSection({
 function PageEditTabs({
   items,
   initial,
+  onActiveChange,
 }: {
   items: { key: string, label: string, icon: string, node: ReactNode }[]
   initial: string
+  onActiveChange?: (key: string) => void
 }) {
   const [inner, setInner] = useState(initial)
+
+  // Aktif iç-sekme anahtarını dışarıya bildir (SaveBar'da Önizle butonu için).
+  useEffect(() => {
+    onActiveChange?.(inner)
+  }, [inner, onActiveChange])
 
   return (
     <div className="min-w-0 pt-4">

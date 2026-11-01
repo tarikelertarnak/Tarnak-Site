@@ -184,23 +184,11 @@ export function PageTextEditor({
     setStatus(`${applied} alan işlendi (${locale}).`)
   }
 
-  /** Gözat: sayfayı yeni sekmede aç (önizleme). */
-  function browse() {
+  /** Sayfayı yeni sekmede aç (canlı önizleme). */
+  function preview() {
     if (previewPath) {
       window.open(previewPath, '_blank', 'noopener,noreferrer')
     }
-  }
-
-  /** Mevcut içeriği .html olarak indir (preview without save). */
-  function downloadHtml() {
-    const html = `<!DOCTYPE html><html lang="${locale === 'tr' ? 'tr' : locale}"><head><meta charset="utf-8"><title>Preview</title></head><body><pre>${copyText.replace(/</g, '&lt;')}</pre></body></html>`
-    const blob = new Blob([html], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${pageId}-${locale}.html`
-    a.click()
-    URL.revokeObjectURL(url)
   }
 
   return (
@@ -228,43 +216,21 @@ export function PageTextEditor({
           Kopyala
         </Button>
         {previewPath && (
-          <>
-            <Button
-              size="sm"
-              variant="bordered"
-              onPress={browse}
-              startContent={<Icon icon="mdi:external-link" width={16} height={16} />}
-            >
-              Gözat
-            </Button>
-            <Button
-              size="sm"
-              variant="bordered"
-              color="primary"
-              onPress={downloadHtml}
-              startContent={<Icon icon="mdi:download" width={16} height={16} />}
-            >
-              İndir (.html)
-            </Button>
-          </>
+          <Button
+            size="sm"
+            variant="bordered"
+            color="primary"
+            onPress={() => void preview()}
+            startContent={<Icon icon="mdi:eye-outline" width={16} height={16} />}
+            className="ml-auto"
+          >
+            Önizle
+          </Button>
         )}
         <span className="text-xs text-foreground-500">
           {pageId}
           {status ? ` · ${status}` : ''}
         </span>
-        {previewPath && (
-          <a
-            href={previewPath}
-            target="_blank"
-            rel="noreferrer"
-            title={`${previewPath} önizle`}
-            aria-label={`${previewPath} önizle`}
-            className="ml-auto inline-flex h-9 items-center gap-1 rounded-md border border-surface-border px-2 text-xs text-foreground-500 transition-colors hover:text-foreground"
-          >
-            <Icon icon="mdi:eye-outline" width={16} height={16} />
-            Önizle
-          </a>
-        )}
       </div>
 
       {/* İçe aktarma kutusu */}
