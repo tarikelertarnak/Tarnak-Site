@@ -1819,17 +1819,20 @@ tablosundan
 
   /** "Veri Yönetimi" sekmesinin gövdesi — tablo CRUD (2026-10-20). */
   const dataPane = (
-    <div className="space-y-3 pt-2">
-      <Input
-        variant="faded"
-        value={dataSearch}
-        onValueChange={setDataSearch}
-        placeholder="Tablo ara (Blog Yazıları, Projeler, Yetenekler...)"
-        aria-label="Veri yönetimi arama"
-        className="w-full max-w-sm"
-      />
-      <DataManager key={`${dataResource ?? 'all'}:${dataSearch}`} initialResource={dataResource} />
-    </div>
+    <PanelCard title="Veri Yönetimi (Tablolar)">
+      <div className="space-y-3">
+        <Input
+          variant="faded"
+          value={dataSearch}
+          onValueChange={setDataSearch}
+          placeholder="Tablo ara (Blog Yazıları, Projeler, Yetenekler...)"
+          aria-label="Veri yönetimi arama"
+          className="w-full max-w-sm"
+          startContent={<Icon icon="mdi:magnify" width={16} height={16} />}
+        />
+        <DataManager key={`${dataResource ?? 'all'}:${dataSearch}`} initialResource={dataResource} />
+      </div>
+    </PanelCard>
   )
 
   /** Şifre & Güvenlik sekmesinin gövdesi (yeniden tasarlanmış). */
@@ -1860,9 +1863,9 @@ tablosundan
       label: <TabLabel icon="mdi:view-dashboard-outline" text="Genel Bakış" />,
       children: (
         <div className="min-w-0 space-y-8">
-        <SubSection title="Genel Bakış" icon="mdi:view-dashboard-outline">
+        <div className="pt-4">
           {overviewPane}
-        </SubSection>
+        </div>
         </div>
       ),
     },
@@ -1911,9 +1914,9 @@ tablosundan
       label: <TabLabel icon="mdi:table-cog-outline" text="Veri Yönetimi" />,
       children: (
         <div className="min-w-0 space-y-8">
-        <SubSection title="Veri Yönetimi (Tablolar)" icon="mdi:table-cog-outline">
+        <div className="pt-4">
           {dataPane}
-        </SubSection>
+        </div>
         </div>
       ),
     },

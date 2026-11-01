@@ -3,6 +3,7 @@
 import { Icon } from '@iconify/react'
 import { useCallback, useEffect, useState } from 'react'
 
+import { PanelCard } from '@/components/admin/panel-card'
 import { VisitorCard } from '@/components/admin/visitor-card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
@@ -88,18 +89,18 @@ function StatCard({
   return (
     <div
       className={cn(
-        'flex flex-col gap-1 rounded-xl border p-3',
+        'flex flex-col gap-1 rounded-lg border p-3',
         tone === 'warning'
           ? 'border-amber-500/30 bg-amber-500/10'
-          : 'border-foreground/10 bg-foreground/[0.03]',
+          : 'border-surface-border bg-surface-1/40',
       )}
     >
-      <div className="flex items-center gap-1.5 text-foreground/60">
-        <Icon icon={icon} width={15} height={15} />
+      <div className="flex items-center gap-1.5 text-foreground-500">
+        <Icon icon={icon} width={16} height={16} />
         <span className="text-xs">{label}</span>
       </div>
       <span className="text-2xl font-semibold tabular-nums text-foreground">{value}</span>
-      {hint && <span className="text-[11px] text-foreground/50">{hint}</span>}
+      {hint && <span className="text-[11px] text-foreground-500">{hint}</span>}
     </div>
   )
 }
@@ -118,15 +119,15 @@ function MiniList({
   render: (row: Row) => React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-foreground/10 p-3">
+    <div className="rounded-lg border border-surface-border bg-surface-1/40 p-3">
       <div className="mb-2 flex items-center gap-1.5 text-sm font-medium text-foreground">
-        <Icon icon={icon} width={15} height={15} />
+        <Icon icon={icon} width={16} height={16} />
         {title}
       </div>
       {rows.length === 0
-        ? <p className="py-3 text-center text-xs text-foreground/40">{emptyText}</p>
+        ? <p className="py-3 text-center text-xs text-foreground-500">{emptyText}</p>
         : (
-            <ul className="flex flex-col divide-y divide-foreground/5">
+            <ul className="flex flex-col divide-y divide-surface-border">
               {rows.map((row, i) => (
                 <li key={String(row.id ?? i)} className="flex items-center gap-2 py-1.5 text-xs">
                   {render(row)}
@@ -194,110 +195,114 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
   const totalRows = readable.reduce((sum, t) => sum + (t.count ?? 0), 0)
 
   return (
-    <div className="space-y-4 pt-4" data-testid="overview-panel">
-      {/* Baslik + yenile */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-base font-semibold text-foreground">Genel Bakış</h2>
-          <p className="text-xs text-foreground/50">
-            {data?.generatedAt ? `Son güncelleme: ${formatDate(data.generatedAt)}` : ''}
+    <div className="space-y-6 pt-4" data-testid="overview-panel">
+      {/* Başlık + yenile */}
+      <PanelCard title="Genel Bakış">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-foreground-500">
+            {data?.generatedAt ? `Son güncelleme: ${formatDate(data.generatedAt)}` : 'Sistem durumu özeti'}
           </p>
-        </div>
-        <Button
-          size="sm"
-          variant="bordered"
-          isDisabled={loading}
-          onPress={() => void load()}
-          startContent={(
-            <Icon
-              icon="material-symbols:refresh"
-              width={16}
-              height={16}
-              className={loading ? 'animate-spin' : undefined}
-            />
-          )}
-        >
-          Yenile
-        </Button>
-      </div>
-
-      {/* Uyarilar */}
-      {warnings.length > 0 && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400">
-          <p className="flex items-center gap-1.5 font-semibold">
-            <Icon icon="material-symbols:warning" width={15} height={15} />
-            {warnings.length}
-            {' '}
-            dikkat gerektiren nokta
-          </p>
-          <ul className="mt-1.5 flex list-disc flex-col gap-1 pl-5">
-            {warnings.map((w, i) => <li key={i}>{w}</li>)}
-          </ul>
-        </div>
-      )}
-
-      {/* Kalicilik durumu — kaydetmenin gercekten isleyip islemedigi */}
-      {data?.persistence && (
-        <div
-          className={cn(
-            'flex items-start gap-2 rounded-xl border p-3 text-xs',
-            data.persistence.ok
-              ? 'border-success-200 bg-success-50 text-success'
-              : 'border-danger-200 bg-danger-50 text-danger',
-          )}
-        >
-          <Icon
-            icon={data.persistence.ok
-              ? 'material-symbols:save'
-              : 'material-symbols:sd-card-alert'}
-            width={16}
-            height={16}
-            className="mt-0.5 shrink-0"
-          />
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold">
-              {data.persistence.ok ? 'Kaydetme kalıcı' : 'Kaydetme KALICI DEĞİL'}
-            </p>
-            <p className="mt-0.5">{data.persistence.note}</p>
-            {!data.persistence.ok && (
-              <ul className="mt-1 flex flex-col gap-0.5 opacity-80">
-                <li>
-                  içerik/şifre dizini:
-                  {' '}
-                  {data.persistence.dataWritable ? 'yazılabilir' : 'YAZILAMIYOR'}
-                </li>
-                <li>
-                  görsel dizini:
-                  {' '}
-                  {data.persistence.uploadsWritable ? 'yazılabilir' : 'YAZILAMIYOR'}
-                </li>
-              </ul>
+          <Button
+            size="sm"
+            variant="bordered"
+            isDisabled={loading}
+            onPress={() => void load()}
+            startContent={(
+              <Icon
+                icon="material-symbols:refresh"
+                width={16}
+                height={16}
+                className={loading ? 'animate-spin' : undefined}
+              />
             )}
-          </div>
+          >
+            Yenile
+          </Button>
         </div>
+      </PanelCard>
+
+      {/* Uyarılar */}
+      {warnings.length > 0 && (
+        <PanelCard title="Dikkat Gerektiren Noktalar">
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400">
+            <p className="flex items-center gap-1.5 font-semibold">
+              <Icon icon="material-symbols:warning" width={16} height={16} />
+              {warnings.length}
+              {' '}
+              dikkat gerektiren nokta
+            </p>
+            <ul className="mt-1.5 flex list-disc flex-col gap-1 pl-5">
+              {warnings.map((w, i) => <li key={i}>{w}</li>)}
+            </ul>
+          </div>
+        </PanelCard>
       )}
 
-      {/* KPI kartlari */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          icon="mdi:database-outline"
-          label="Toplam kayıt"
-          value={String(totalRows)}
-          hint={`${readable.length}/${tables.length} tablo okunabildi`}
-        />
-        <StatCard
-          icon="mdi:email-outline"
-          label="Okunmamış mesaj"
-          value={String(data?.messages?.unread ?? 0)}
-          hint={`${data?.messages?.total ?? 0} toplam mesaj`}
-          tone={(data?.messages?.unread ?? 0) > 0 ? 'warning' : 'default'}
-        />
-        <VisitorCard />
-      </div>
+      {/* Kalıcılık durumu */}
+      {data?.persistence && (
+        <PanelCard title="Kaydetme Durumu">
+          <div
+            className={cn(
+              'flex items-start gap-2 rounded-lg border p-3 text-sm',
+              data.persistence.ok
+                ? 'border-success-200 bg-success-50 text-success'
+                : 'border-danger-200 bg-danger-50 text-danger',
+            )}
+          >
+            <Icon
+              icon={data.persistence.ok
+                ? 'material-symbols:save'
+                : 'material-symbols:sd-card-alert'}
+              width={18}
+              height={18}
+              className="mt-0.5 shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold">
+                {data.persistence.ok ? 'Kaydetme kalıcı' : 'Kaydetme KALICI DEĞİL'}
+              </p>
+              <p className="mt-0.5 text-xs opacity-90">{data.persistence.note}</p>
+              {!data.persistence.ok && (
+                <ul className="mt-1 flex flex-col gap-0.5 text-xs opacity-80">
+                  <li>
+                    İçerik/şifre dizini:
+                    {' '}
+                    {data.persistence.dataWritable ? 'yazılabilir' : 'YAZILAMIYOR'}
+                  </li>
+                  <li>
+                    Görsel dizini:
+                    {' '}
+                    {data.persistence.uploadsWritable ? 'yazılabilir' : 'YAZILAMIYOR'}
+                  </li>
+                </ul>
+              )}
+            </div>
+          </div>
+        </PanelCard>
+      )}
 
-      {/* Tablo sayilari — tiklanabilir */}
-      <div>
-        <h3 className="mb-2 text-sm font-semibold text-foreground">Tablolar</h3>
+      {/* KPI kartları */}
+      <PanelCard title="İstatistikler">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <StatCard
+            icon="mdi:database-outline"
+            label="Toplam kayıt"
+            value={String(totalRows)}
+            hint={`${readable.length}/${tables.length} tablo okunabildi`}
+          />
+          <StatCard
+            icon="mdi:email-outline"
+            label="Okunmamış mesaj"
+            value={String(data?.messages?.unread ?? 0)}
+            hint={`${data?.messages?.total ?? 0} toplam mesaj`}
+            tone={(data?.messages?.unread ?? 0) > 0 ? 'warning' : 'default'}
+          />
+          <VisitorCard />
+        </div>
+      </PanelCard>
+
+      {/* Tablo sayıları */}
+      <PanelCard title="Tablolar">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {tables.map((t) => {
             const clickable = Boolean(onNavigate)
@@ -308,9 +313,9 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
                 disabled={!clickable}
                 onClick={() => onNavigate?.(t.key)}
                 className={cn(
-                  'flex items-center gap-3 rounded-xl border p-3 text-left transition-colors',
+                  'flex items-center gap-3 rounded-lg border p-3 text-left transition-colors',
                   t.status === 'ok'
-                    ? 'border-foreground/10 hover:border-foreground/25'
+                    ? 'border-surface-border hover:border-primary/40 hover:bg-surface-1/60'
                     : 'border-amber-500/30 bg-amber-500/5',
                   clickable ? 'cursor-pointer' : 'cursor-default',
                 )}
@@ -319,16 +324,13 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
                   icon={t.status === 'ok' ? t.icon : 'material-symbols:warning'}
                   width={20}
                   height={20}
-                  className={t.status === 'ok' ? 'text-foreground/70' : 'text-amber-500'}
+                  className={t.status === 'ok' ? 'text-foreground-500' : 'text-amber-500'}
                 />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-foreground">{t.label}</p>
-                  <p className="truncate text-[11px] text-foreground/50">
+                  <p className="truncate text-[11px] text-foreground-500">
                     {t.status === 'ok' ? t.description : (t.message || 'okunamadı')}
                   </p>
-                  {/* Tablo dışı kaynak sayısı (ör. GitHub projeleri). Tablo
-                      boşken "0" göstermek sitede görünen projeleri YOK
-                      sayardı — bkz. lib/admin/overview.ts. */}
                   {t.external && (
                     <p className="mt-0.5 truncate text-[11px] text-primary">
                       {t.external.label}
@@ -349,53 +351,55 @@ export function OverviewPanel({ onNavigate }: { onNavigate?: (resourceKey: strin
             )
           })}
         </div>
-      </div>
+      </PanelCard>
 
-      {/* Son kayitlar */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <MiniList
-          title="Son blog yazıları"
-          icon="mdi:post-outline"
-          rows={recent?.posts ?? []}
-          emptyText="Henüz yazı yok"
-          render={row => (
-            <>
-              <span className="min-w-0 flex-1 truncate text-foreground">{String(row.title ?? '—')}</span>
-              <span
-                className={cn(
-                  'shrink-0 rounded px-1.5 py-0.5 text-[10px]',
-                  row.published
-                    ? 'bg-success-50 text-success'
-                    : 'bg-foreground/10 text-foreground/60',
-                )}
-              >
-                {row.published ? 'yayında' : 'taslak'}
-              </span>
-            </>
-          )}
-        />
-
-        <MiniList
-          title="Son mesajlar"
-          icon="mdi:email-outline"
-          rows={recent?.messages ?? []}
-          emptyText="Henüz mesaj yok"
-          render={row => (
-            <>
-              <span className="min-w-0 flex-1 truncate text-foreground">
-                {String(row.name ?? '—')}
-                {row.subject ? ` · ${String(row.subject)}` : ''}
-              </span>
-              {!row.is_read && (
-                <span className="shrink-0 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-600 dark:text-amber-400">
-                  yeni
+      {/* Son kayıtlar */}
+      <PanelCard title="Son Kayıtlar">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <MiniList
+            title="Son blog yazıları"
+            icon="mdi:post-outline"
+            rows={recent?.posts ?? []}
+            emptyText="Henüz yazı yok"
+            render={row => (
+              <>
+                <span className="min-w-0 flex-1 truncate text-foreground">{String(row.title ?? '—')}</span>
+                <span
+                  className={cn(
+                    'shrink-0 rounded px-1.5 py-0.5 text-[10px]',
+                    row.published
+                      ? 'bg-success-50 text-success'
+                      : 'bg-foreground/10 text-foreground-500',
+                  )}
+                >
+                  {row.published ? 'yayında' : 'taslak'}
                 </span>
-              )}
-              <span className="shrink-0 text-foreground/40">{formatDate(row.created_at)}</span>
-            </>
-          )}
-        />
-      </div>
+              </>
+            )}
+          />
+
+          <MiniList
+            title="Son mesajlar"
+            icon="mdi:email-outline"
+            rows={recent?.messages ?? []}
+            emptyText="Henüz mesaj yok"
+            render={row => (
+              <>
+                <span className="min-w-0 flex-1 truncate text-foreground">
+                  {String(row.name ?? '—')}
+                  {row.subject ? ` · ${String(row.subject)}` : ''}
+                </span>
+                {!row.is_read && (
+                  <span className="shrink-0 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] text-amber-600 dark:text-amber-400">
+                    yeni
+                  </span>
+                )}
+                <span className="shrink-0 text-foreground-500">{formatDate(row.created_at)}</span>
+              </>
+            )}
+          />
+        </div>
+      </PanelCard>
     </div>
   )
 }
