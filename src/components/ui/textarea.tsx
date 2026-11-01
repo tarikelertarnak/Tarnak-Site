@@ -50,6 +50,7 @@ export function Textarea({
       <LobeTextArea
         {...rest}
         ref={inputRef}
+        required={required}
         variant={inputVariant}
         value={value}
         onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {

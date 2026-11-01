@@ -336,7 +336,7 @@ return
   const activeName = contact ?? t('chat.general')
 
   return (
-    <div className="flex w-full max-w-5xl flex-col gap-3">
+    <div className="flex w-full flex-col gap-0">
       <Card className="bg-background overflow-hidden">
         <div className="flex items-center gap-3 border-b border-foreground-200/10 px-3 py-2.5 sm:px-4">
           <div className="relative shrink-0">
@@ -369,9 +369,9 @@ return
           </Link>
         </div>
 
-        <div className="flex flex-col md:flex-row">
+        <div className="flex min-w-0 flex-1 flex-col md:flex-row">
           {/* Left: person list */}
-          <div className="border-foreground-200/10 flex max-h-44 shrink-0 flex-col gap-1 overflow-y-auto border-b p-2 md:max-h-[56vh] md:w-56 md:border-b-0 md:border-r">
+          <div className="border-foreground-200/10 shrink-0 flex-col gap-1 overflow-y-auto border-b p-2 md:max-h-[56vh] md:w-56 md:border-b-0 md:border-r">
             <button
               type="button"
               onClick={() => setContact(null)}
@@ -461,7 +461,7 @@ return
                 </span>
               )}
             </div>
-            <div className="bg-background flex h-[48vh] w-full flex-col gap-2 overflow-y-auto p-3 sm:h-[52vh] sm:p-4">
+            <div className="bg-background min-w-0 flex-1 flex-col gap-2 overflow-y-auto p-3 sm:p-4">
               {visible.length === 0 ? (
                 <div className="text-foreground-500 flex h-full flex-col items-center justify-center gap-2 text-center">
                   <ChatIcon size={40} />

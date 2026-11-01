@@ -8,7 +8,7 @@ import { Icon } from '@iconify/react'
  */
 export function TabLabel({ icon, text }: { icon: string, text: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5">
+    <span className="inline-flex items-center gap-1.5 min-w-[200px] whitespace-nowrap">
       <Icon icon={icon} width={15} height={15} />
       {text}
     </span>

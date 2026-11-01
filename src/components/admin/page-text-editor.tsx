@@ -28,8 +28,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { Textarea } from '@/components/ui/textarea'
-import { ALL_LOCALES_FLAG, localeFlag } from '@/lib/locale-flags'
 import { NATIVE_NAMES, t as translate } from '@/lib/i18n'
+import { ALL_LOCALES_FLAG, localeFlag } from '@/lib/locale-flags'
 import {
   asText,
   coerceFieldValue,
@@ -44,20 +44,19 @@ const ALL = 'all'
 
 export function PageTextEditor({
   content,
-  pageId,
+  _pageId,
   groups,
-  previewPath,
+  _previewPath,
   onChange,
 }: {
   content: SiteContent
-  pageId: string
+  _pageId: string
   groups: { title: string, fields: { key: string, label: string, multiline?: boolean }[] }[]
-  previewPath?: string
+  _previewPath?: string
   onChange: (next: SiteContent) => void
 }) {
   const [locale, setLocale] = useState<string>('tr')
   const [paste, setPaste] = useState('')
-  const [status, setStatus] = useState('')
 
   const overrides = content.textOverrides ?? {}
 
@@ -127,15 +126,16 @@ export function PageTextEditor({
   const languageOptions = useMemo(() => {
     const translated = (code: string) => Object.keys(overrides[code] ?? {}).length > 0
 
-    const option = (value: string, flag: string, name: string, hint: string) => ({
+    const option = (value: string, flag: string, name: string, hint?: string) => ({
       value,
       icon: <span className="text-base leading-none" aria-hidden>{flag}</span>,
-      searchText: `${name} ${value} ${hint} ${flag}`,
+      searchText: `${name} ${value} ${hint ?? ''} ${flag}`,
       label: (
         <span className="flex items-center gap-1.5">
-          <span className="text-base leading-none">{flag}</span>
           <span>{name}</span>
-          <span className="text-[10px] opacity-60">{hint}</span>
+          {hint && (
+            <span className="text-[10px] opacity-60">{hint}</span>
+          )}
           {translated(value)
             ? <span className="text-primary" title="Bu dilde çeviri var">✓</span>
             : null}
@@ -145,20 +145,19 @@ export function PageTextEditor({
 
     return [
       option(ALL, ALL_LOCALES_FLAG, 'Hepsi', '(tüm dillerde aynı)'),
-      option('tr', localeFlag('tr'), 'TR', '(taban)'),
+      option('tr', localeFlag('tr'), NATIVE_NAMES.tr, 'TR'),
       ...(Object.keys(NATIVE_NAMES) as Locale[])
         .filter(code => code !== 'tr')
-        .map(code => option(code, localeFlag(code), code.toUpperCase(), `(${code})`)),
+        .map(code => option(code, localeFlag(code), NATIVE_NAMES[code], code.toUpperCase())),
     ]
   }, [overrides])
 
   async function copyAll() {
     try {
       await navigator.clipboard.writeText(copyText)
-      setStatus(`${copyText.split('\n').length} satır kopyalandı (${locale}).`)
     }
     catch {
-      setStatus('Panoya kopyalanamadı — metni elle seçebilirsin.')
+      // no-op
     }
   }
 
@@ -166,30 +165,19 @@ export function PageTextEditor({
     const parsed = parsePastedText(paste)
     const keys = Object.keys(parsed)
     if (!keys.length) {
-      setStatus('Yapıştırılan metinden alan çıkarılamadı.')
       return
     }
     // Kaydetmeden önce onay (2026-10-31, kullanıcı isteği).
     if (!window.confirm(`${keys.length} alan işlenecek. Devam edilsin mi?`))
       return
     let next = content
-    let applied = 0
     for (const key of keys) {
       if (!key.includes(':'))
         continue
       next = write(key, parsed[key])
-      applied++
     }
     onChange(next)
     setPaste('')
-    setStatus(`${applied} alan işlendi (${locale}).`)
-  }
-
-  /** Sayfayı yeni sekmede aç (canlı önizleme). */
-  function preview() {
-    if (previewPath) {
-      window.open(previewPath, '_blank', 'noopener,noreferrer')
-    }
   }
 
   return (

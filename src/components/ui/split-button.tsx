@@ -176,7 +176,9 @@ return null
         // de ikon oldugu icin `iconOnly` her ikisinde de verilmek zorunda.
         const isIcon
           = p.iconOnly ?? (i === lastIndex && !hasContentPart(parts, i))
-        const base = cn(PART, isIcon ? ICON_PART : MAIN_PART)
+        const base = cn(PART,
+          i === 0 ? 'rounded-l-md' : i === lastIndex ? 'rounded-r-md' : '',
+          isIcon ? ICON_PART : MAIN_PART)
 
         const inner = (
           <>

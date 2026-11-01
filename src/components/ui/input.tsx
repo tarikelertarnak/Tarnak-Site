@@ -75,7 +75,7 @@ export function Input({
   const effectiveType = isPassword ? (showPassword ? 'text' : 'password') : type
 
   return (
-    <div className={cn('flex w-full flex-col gap-1.5', className)}>
+    <div className={cn('flex w-full flex-col gap-1.5 overflow-hidden', className)}>
       {label && (
         <label htmlFor={inputId} className="text-xs sm:text-sm text-foreground-500">
           {label}
@@ -86,6 +86,7 @@ export function Input({
         id={inputId}
         {...rest}
         ref={inputRef}
+        required={required}
         type={effectiveType}
         variant={inputVariant}
         disabled={isDisabled}

@@ -1271,10 +1271,9 @@ continue
 
             {downloadOptions.length > 0 && (
               <div className="relative shrink-0 self-center" ref={comboboxRef}>
-                <div className="rounded-md overflow-hidden">
-                  <SplitButton
-                    ref={splitWrapRef}
-                    parts={[
+                <SplitButton
+                  ref={splitWrapRef}
+                  parts={[
                       {
                         'href': currentDownloadUrl ?? '#',
                         'title': currentDownloadLabel,
@@ -1294,8 +1293,7 @@ continue
                         'children': <ChevronDownIcon size={13} />,
                       },
                     ]}
-                  />
-                </div>
+                />
                 {comboboxOpen && (
                   <DownloadCombobox
                     options={downloadOptions}

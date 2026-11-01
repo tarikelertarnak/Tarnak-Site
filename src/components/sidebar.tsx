@@ -439,10 +439,10 @@ setIsOpen(false)
 
         <button
           onClick={() => {
+            setIsOpen(false)
             window.dispatchEvent(new CustomEvent('settings:open'))
-            // AYNI anda sol paneli KAPATMA (kullanıcı şikayeti): yan panellerin
-            // açık/kapalı durumu ayarlar etkilemez; sadece kendi toggle'ları
-            // değiştirir. Ayarlar orta alana üstüne biner, paneller yerinde kalır.
+            // Ayarlar açılırken sol yan panel kapanır (kullanıcı isteği).
+            // Ayarlar orta alana üstüne biner, kendi toggle'ıyle tekrar kapanır.
           }}
           className="flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium text-foreground/70 transition-colors duration-200 hover:bg-white/5 hover:text-foreground"
         >

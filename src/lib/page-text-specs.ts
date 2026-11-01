@@ -370,6 +370,21 @@ export const PAGE_SPECS: PageSpec[] = [
       },
     ],
   },
+  {
+    id: 'admin',
+    label: 'Admin Paneli',
+    path: '/admin',
+    icon: 'mdi:shield-account',
+    groups: [
+      {
+        title: 'Ayarlar',
+        fields: [
+          f('content:settings.githubUsername', 'GitHub kullanıcı adı'),
+          f('content:settings.defaultTheme', 'Varsayılan tema'),
+        ],
+      },
+    ],
+  },
 ]
 
 /** Tüm sayfalardaki tüm alanlar (dil yönetimi sayımı için). */

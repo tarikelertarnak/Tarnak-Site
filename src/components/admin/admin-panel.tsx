@@ -14,7 +14,6 @@ import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { AboutPageEditor } from '@/components/admin/about-page-editor'
 import { DataManager } from '@/components/admin/data-manager'
 import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
 import { HeroLogoField } from '@/components/admin/hero-logo-field'
@@ -27,10 +26,10 @@ import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
 import { SectionsEditor } from '@/components/admin/sections-editor'
 import { TabLabel } from '@/components/admin/tab-label'
 import { UsersPanel } from '@/components/admin/users-panel'
-import { Modal } from '@/components/ui/modal'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { Modal } from '@/components/ui/modal'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
 import { SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
@@ -76,19 +75,18 @@ export function AdminPanel({
     '#overview': 'overview',
     '#profile': 'profile',
     '#pages': 'pages',
-    '#password': 'settings',
     '#settings': 'settings',
     '#data': 'data',
-    '#people': 'people',
+    '#users': 'users',
   }
 
   // Hash'ten başlangıç sekmesi: AdminGate async yükleme bittikten SONRA
   // AdminPanel mount edilir; o anda hash hâlâ okunaklı olur.
-  // SSR'da window yok → 'overview' döner; useLayoutEffect mount'ta düzeltir.
+  // SSR'da window yok → 'profile' döner; useLayoutEffect mount'ta düzeltir.
   const [tab, setTab] = useState<string>(() => {
     if (typeof window === 'undefined')
-      return 'overview'
-    return HASH_TO_TAB[window.location.hash] ?? 'overview'
+      return 'profile'
+    return HASH_TO_TAB[window.location.hash] ?? 'profile'
   })
   const [dataResource, setDataResource] = useState<string | undefined>(
     undefined,
@@ -1744,18 +1742,19 @@ tablosundan
           onValueChange={setPageEditSearch}
           placeholder="Sayfa ara (Ana Sayfa, Hakkımda, Blog...)"
           aria-label="Sayfa düzenle arama"
-          className="w-full max-w-sm"
+          className="w-full"
         />
       </div>
       <PageEditTabs
         initial="about"
-        onActiveChange={key => {
+        onActiveChange={(key) => {
           setActivePageKey(key)
           setActivePagePath(pagePathById[key] ?? '')
         }}
         items={[
-          ...PAGE_SPECS.filter(page => {
-            if (!pageEditSearch.trim()) return true
+          ...PAGE_SPECS.filter((page) => {
+            if (!pageEditSearch.trim())
+return true
             const q = pageEditSearch.toLowerCase().trim()
             return page.label.toLowerCase().includes(q) || page.id.toLowerCase().includes(q)
           }).map((page) => {
@@ -1777,9 +1776,9 @@ tablosundan
                 <div className="space-y-4">
                   <PageTextEditor
                     content={content}
-                    pageId={page.id}
+                    _pageId={page.id}
                     groups={page.groups}
-                    previewPath={page.path}
+                    _previewPath={page.path}
                     onChange={setContent}
                   />
                   {extra && (
@@ -1813,21 +1812,21 @@ tablosundan
           ),
         },
       ]}
-    />
+      />
     </div>
   )
 
   /** "Veri Yönetimi" sekmesinin gövdesi — tablo CRUD (2026-10-20). */
   const dataPane = (
-    <PanelCard title="Veri Yönetimi (Tablolar)">
-      <div className="space-y-3">
+    <PanelCard className="w-full p-4">
+      <div className="space-y-4 w-full">
         <Input
           variant="faded"
           value={dataSearch}
           onValueChange={setDataSearch}
           placeholder="Tablo ara (Blog Yazıları, Projeler, Yetenekler...)"
           aria-label="Veri yönetimi arama"
-          className="w-full max-w-sm"
+          className="w-full"
           startContent={<Icon icon="mdi:magnify" width={16} height={16} />}
         />
         <DataManager key={`${dataResource ?? 'all'}:${dataSearch}`} initialResource={dataResource} />
@@ -1843,9 +1842,6 @@ tablosundan
       </PanelCard>
       <PanelCard title="Oturum Bilgisi">
         <SessionInfoCard username={username} roleLabel={roleLabel} />
-      </PanelCard>
-      <PanelCard title="Güvenlik Önerileri">
-        <SecurityTipsCard />
       </PanelCard>
     </div>
   )
@@ -1863,9 +1859,9 @@ tablosundan
       label: <TabLabel icon="mdi:view-dashboard-outline" text="Genel Bakış" />,
       children: (
         <div className="min-w-0 space-y-8">
-        <div className="pt-4">
+        <SubSection title="Genel Bakış" icon="mdi:view-dashboard-outline">
           {overviewPane}
-        </div>
+        </SubSection>
         </div>
       ),
     },
@@ -1881,18 +1877,6 @@ tablosundan
       ),
     },
     {
-      key: 'pages',
-      label: <TabLabel icon="mdi:file-document-edit-outline" text="Sayfa Düzenle" />,
-      children: (
-        <div className="min-w-0 space-y-8">
-        <SubSection title="Sayfa Düzenle" icon="mdi:file-document-edit-outline">
-          {pagesPane}
-        </SubSection>
-        </div>
-      ),
-    },
-
-    {
       key: 'settings',
       label: <TabLabel icon="mdi:cog-outline" text="Site Ayarları" />,
       children: (
@@ -1903,35 +1887,41 @@ tablosundan
         <SubSection title="Sosyal Medya" icon="mdi:share-variant-outline">
           {socialPane}
         </SubSection>
-        <SubSection title="Şifre & Güvenlik" icon="mdi:shield-lock-outline">
-          {securityPane}
+        </div>
+      ),
+    },
+    {
+      key: 'pages',
+      label: <TabLabel icon="mdi:file-document-edit-outline" text="Sayfa Düzenle" />,
+      children: (
+        <div className="min-w-0 space-y-8">
+        <SubSection title="Sayfa Düzenle" icon="mdi:file-document-edit-outline">
+          {pagesPane}
         </SubSection>
         </div>
       ),
     },
     {
       key: 'data',
-      label: <TabLabel icon="mdi:table-cog-outline" text="Veri Yönetimi" />,
+      label: <TabLabel icon="mdi:table" text="Veri Yönetimi" />,
       children: (
         <div className="min-w-0 space-y-8">
-        <div className="pt-4">
           {dataPane}
-        </div>
         </div>
       ),
     },
     {
-      key: 'people',
-      label: <TabLabel icon="mdi:account-group-outline" text="Kullanıcılar" />,
+      key: 'users',
+      label: <TabLabel icon="mdi:account-multiple-outline" text="Kullanıcılar" />,
       children: (
         <div className="min-w-0 space-y-8">
-        <SubSection title="Kullanıcı Yönetimi" icon="mdi:account-multiple-outline">
+        <SubSection title="Kullanıcılar" icon="mdi:account-multiple-outline">
           {usersPane}
         </SubSection>
         </div>
       ),
     },
-  ], [aboutPane, blogPane, dataPane, generalPane, overviewPane, pageSectionsPane, pagesPane, profilePane, projectsPane, securityPane, sectionsPane, socialPane, usersPane])
+  ], [aboutPane, blogPane, dataPane, generalPane, overviewPane, pagesPane, profilePane, projectsPane, securityPane, sectionsPane, socialPane, usersPane])
 
   /**
    * Sekme araması için genişletilmiş eşleme.
@@ -1939,7 +1929,6 @@ tablosundan
    * Arama "blog" → Sayfa Düzenle, "yetenekler" → Veri Yönetimi gibi çalışır.
    */
   const TAB_SEARCH_TERMS: Record<string, string[]> = {
-    overview: ['Genel Bakış', 'Özet', 'Durum'],
     profile: ['Profil', 'Profil Bilgileri', 'Fotoğraf'],
     pages: [
       'Sayfa Düzenle',
@@ -1951,18 +1940,12 @@ tablosundan
       'Hakkımda Sayfası', '/about',
     ],
     settings: ['Site Ayarları', 'Hero', 'Menü', 'Arka Plan', 'Sosyal Medya', 'Tema', 'Şifre', 'Güvenlik', 'Şifre Değiştir', 'Oturum'],
-    data: [
-      'Veri Yönetimi',
-      // ResourceDef etiketleri (resources.ts)
-      'Blog Yazıları', 'Projeler', 'Yetenekler', 'İstatistikler',
-      'Mesajlar', 'Reklamlar', 'Bildiğim Diller', 'CV Belgeleri',
-    ],
-    people: ['Kullanıcılar', 'Kullanıcı Yönetimi'],
   }
 
   /** Arama yazıldığında sadece eşleşen sekmeler görünür. */
   const filteredTabItems = useMemo(() => {
-    if (!tabSearch.trim()) return tabItems
+    if (!tabSearch.trim())
+return tabItems
     const q = tabSearch.toLowerCase().trim()
     return tabItems.filter((item) => {
       const terms = TAB_SEARCH_TERMS[item.key] ?? [item.key]
@@ -2041,7 +2024,7 @@ tablosundan
             onValueChange={setTabSearch}
             placeholder="Sekme ara (Genel Bakış, Profil, Sayfa Düzenle…)"
             aria-label="Sekme arama filtresi"
-            className="w-full max-w-md"
+            className="w-full"
           />
         </div>
         <ScrollableTabs activeTabKey={tab}>
@@ -2114,7 +2097,7 @@ tablosundan
           info="Kaydedildi! Siteyi yenileyerek değişiklikleri görebilirsin."
           onPreview={async () => {
             if (tab !== 'pages') {
-              const p = activePagePath || pagePathById['about'] || '/'
+              const p = activePagePath || pagePathById.about || '/'
               window.open(p, '_blank', 'noopener,noreferrer')
               return
             }
@@ -2424,32 +2407,6 @@ function SessionInfoCard({ username, roleLabel }: { username: string, roleLabel?
   )
 }
 
-/** Güvenlik önerileri. */
-function SecurityTipsCard() {
-  const tips = [
-    'Şifren en az 12 karakter, harf, rakam ve sembol içersin.',
-    'Farklı sitelerde aynı şifreyi kullanma.',
-    'Şifreni kimseyle paylaşma ve tarayıcıya otomatik kaydetme.',
-    'Şüpheli giriş bildirimi alırsan şifreni hemen değiştir.',
-    'Mümkünse güçlü ve benzersiz parolalar kullan.',
-  ]
-  return (
-    <ul className="flex flex-col gap-2 text-sm text-foreground-500">
-      {tips.map((tip, i) => (
-        <li key={i} className="flex items-start gap-2">
-          <Icon
-            icon="mdi:shield-check-outline"
-            width={18}
-            height={18}
-            className="shrink-0 mt-0.5 text-primary"
-          />
-          <span>{tip}</span>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
 interface BlogManagerProps {
   onStatus: (s: SaveStatus) => void
   saving: boolean
@@ -2539,17 +2496,7 @@ return
 yazı
 </p>
         {!blogModalOpen && (
-          <Button
-            size="sm"
-            color="primary"
-            variant="bordered"
-            onPress={() => {
-              setEditing(emptyPost())
-              setBlogModalOpen(true)
-            }}
-          >
-            + Yeni Yazı
-          </Button>
+          <AddButton onPress={() => { setEditing(emptyPost()); setBlogModalOpen(true) }} label="Yeni Yazı" />
         )}
       </div>
 

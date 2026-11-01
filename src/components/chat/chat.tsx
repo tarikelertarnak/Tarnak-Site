@@ -62,6 +62,10 @@ import { MenuHeader, MenuItem, menuPoint, MenuSurface, useLongPress } from './co
 interface ChatProps {
   /** Geri dönülecek adres (giriş/kayıt sonrası). Varsayılan `/chat`. */
   nextPath?: string
+  /** Bir mesaja tıklanınca değeri metin alanına yazar (admin düzenleme için). */
+  onConfigUpdate?: (value: string) => void
+  /** Tıklanan mesajın id/class bilgisini döndürür. */
+  onMessageClick?: (info: { id: string, className: string }) => void
 }
 
 /**
@@ -268,7 +272,7 @@ interface PeerRow extends Peer {
  * `/api/admin/session` route handler'ı layout DIŞINDA olduğu için aynı çerezi
  * doğru okuyor. Güvenlik aynı: her API çağrısı yine yetkiyi sunucuda doğrular.
  */
-export function Chat({ nextPath = '/chat' }: ChatProps) {
+export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: ChatProps) {
   const { t, locale } = useT()
   const [messages, setMessages] = useState<UiMessage[]>([])
   const [loading, setLoading] = useState(true)
@@ -2065,7 +2069,6 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           return (
             <div
               key={m.id}
-              id={`msg-${m.id}`}
               data-replied={replied || undefined}
               className={cn(
                 'relative flex flex-col rounded-xl',
@@ -2096,7 +2099,13 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                 )}
               >
                 <div
+                  id={`msg-${m.id}`}
                   data-message-id={m.id}
+                  data-class={cn(
+                    'min-w-0 max-w-full rounded-2xl px-3 py-2 text-sm',
+                    mine ? 'bg-primary text-primary-fg' : 'bg-foreground/10 text-foreground',
+                    replied && 'ring-2 ring-primary',
+                  )}
                   onContextMenu={(e) => {
                     // Menü İMLECİN konumunda (eskiden tam ekran ortalanmış diyalogdu).
                     // `stopPropagation`: kapsayıcının BOŞ ALAN menüsü üzerine yazmasın.
@@ -2104,7 +2113,20 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
                     e.stopPropagation()
                     setMenu({ kind: 'message', message: m, ...menuPoint(e) })
                   }}
-                  onClick={() => replied && jumpToMessage(m.id)}
+                  onClick={() => {
+                    if (replied)
+jumpToMessage(m.id)
+                    // Bir mesaja tıklanınca değeri metin alanına düşür (admin düzenleme için).
+                    const configValue = m.kind === 'image' || m.kind === 'audio' || m.kind === 'video' || m.kind === 'file'
+                      ? `${m.file_name || 'dosya'}: ${m.file_url}`
+                      : m.text || ''
+                    onConfigUpdate?.(configValue)
+                    // Tıklanan mesajın id ve class bilgisini döndür
+                    const el = document.getElementById(`msg-${m.id}`)
+                    if (el) {
+                      onMessageClick?.({ id: m.id, className: el.className })
+                    }
+                  }}
                   className={cn(
                     'min-w-0 max-w-full rounded-2xl px-3 py-2 text-sm',
                     mine ? 'bg-primary text-primary-fg' : 'bg-foreground/10 text-foreground',
@@ -2341,14 +2363,15 @@ export function Chat({ nextPath = '/chat' }: ChatProps) {
           />
           <button
             type="button"
+            data-testid="chat-mic-send-btn"
             onClick={() => {
               if (hasDraft) {
                 send()
               }
             }}
             disabled={sending}
-            aria-label={hasDraft ? t('chat.send') : t('chat.voiceSoon')}
-            title={hasDraft ? t('chat.send') : t('chat.voiceSoon')}
+            aria-label={hasDraft ? t('chat.send') : ''}
+            title={hasDraft ? t('chat.send') : ''}
             className={`grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${sendBtnClass}`}
           >
             {/* İki ikon üst üste durur; yalnızca 200 ms fade ile yer değiştirir
@@ -2922,12 +2945,24 @@ function MessageMenu({ message, x, y, onClose, onReply, onCopy, onForward, onPin
       {labels.header && (
         <MenuHeader text={labels.header} onClose={onClose} closeLabel={labels.close} />
       )}
-      <MenuItem icon="⧉" label={labels.copy} disabled={!message.text} onSelect={onCopy} />
-      <MenuItem icon="↩︎" label={labels.reply} onSelect={onReply} />
-      <MenuItem icon="➦" label={labels.forward} onSelect={onForward} />
-      <MenuItem icon="📌" label={labels.pin} onSelect={onPin} />
-      <MenuItem icon="ⓘ" label={labels.info} onSelect={onInfo} />
-      <MenuItem icon="🗑" label={labels.delete} danger onSelect={onDelete} />
+      <MenuItem icon="😀" label={labels.react || 'Tepki Ekle'} iconColor="text-blue-500" onSelect={() => { onClose() }} />
+      <MenuItem icon="↩︎" label={labels.reply} iconColor="text-blue-500" onSelect={onReply} />
+      <MenuItem icon="❝" label={labels.quote || 'Alıntıla'} iconColor="text-purple-500" onSelect={() => { onClose() }} />
+      {message.file_url && (
+        <MenuItem icon="📥" label={labels.download || 'İndir'} iconColor="text-blue-500" onSelect={() => { onClose() }} />
+      )}
+      <MenuItem icon="📌" label={labels.pin} iconColor="text-orange-500" onSelect={onPin} />
+      <MenuItem icon="📋" label={labels.copy} disabled={!message.text} iconColor="text-blue-500" onSelect={onCopy} />
+      <MenuItem icon="🔄" label={labels.resend || 'Tekrar Gönder'} iconColor="text-cyan-500" onSelect={() => { onClose() }} />
+      <MenuItem icon="✏️" label={labels.edit || 'Düzenle'} iconColor="text-blue-500" onSelect={() => { onClose() }} />
+      <MenuItem icon="⏰" label={labels.remind || 'Hatırlat'} iconColor="text-pink-500" onSelect={() => { onClose() }} />
+      <MenuItem icon="🔖" label={labels.save || 'Sonra İçin Kaydet'} iconColor="text-indigo-500" onSelect={() => { onClose() }} />
+      <MenuItem icon="🚩" label={labels.flag || 'Bildir'} iconColor="text-red-500" onSelect={() => { onClose() }} />
+      <MenuItem icon="🔇" label={labels.mute || 'Sustur'} iconColor="text-gray-500" onSelect={() => { onClose() }} />
+      <MenuItem icon="ℹ️" label={labels.info} iconColor="text-blue-400" onSelect={onInfo} />
+      <MenuItem icon="➡️" label={labels.forward} iconColor="text-blue-500" onSelect={onForward} />
+      <MenuItem icon="🚫" label={labels.block || 'Engelle'} iconColor="text-red-600" onSelect={() => { onClose() }} />
+      <MenuItem icon="🗑" label={labels.delete} danger onSelect={onDelete} iconColor="text-red-500" />
     </MenuSurface>
   )
 }

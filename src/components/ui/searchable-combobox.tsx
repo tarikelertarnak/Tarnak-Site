@@ -150,7 +150,7 @@ setOpen(false)
           Önceki `rounded-full border px-3 text-xs` ve sonraki elle
           `rounded-lg px-4 text-sm` denemeleri yerine ölçülmüş değer.
         */
-        className={`${HERO_BTN_TRIGGER} cursor-pointer`}
+        className={`${HERO_BTN_TRIGGER} cursor-pointer overflow-hidden`}
       >
         {selectedOption?.icon && (
           <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center leading-none">
@@ -216,7 +216,7 @@ setOpen(false)
                       onClear()
                       setOpen(false)
                     }}
-                    className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
+                    className={`flex w-full cursor-pointer items-center gap-2 rounded-t-md px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
                       selected.length === 0
                         ? 'bg-primary/15 text-primary'
                         : 'text-foreground/80 hover:bg-foreground-200/10 hover:text-foreground'
@@ -235,8 +235,15 @@ setOpen(false)
                   <span className="opacity-60">‹boş›</span>
                 </li>
               )}
-              {filtered.map((o) => {
+              {filtered.map((o, i) => {
                 const active = selected.includes(o.value)
+                const isFirst = i === 0 && !showAllOption
+                const isLast = i === filtered.length - 1
+                const radiusClass = isFirst
+                  ? 'rounded-t-md'
+                  : isLast
+                  ? 'rounded-b-md'
+                  : 'rounded-none'
                 return (
                   <li key={o.value}>
                     <button
@@ -248,7 +255,7 @@ setOpen(false)
                         if (!multiple)
 setOpen(false)
                       }}
-                      className={`flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
+                      className={`flex w-full cursor-pointer items-center gap-2 ${radiusClass} px-2.5 py-1.5 text-left text-xs font-medium transition-colors ${
                         active
                           ? 'bg-primary/15 text-primary'
                           : 'text-foreground/80 hover:bg-foreground-200/10 hover:text-foreground'

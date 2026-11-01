@@ -284,17 +284,19 @@ describe('sohbet v2 oturum ekranı', () => {
     await renderChat()
 
     const input = await screen.findByPlaceholderText(/bir mesaj yazın/i)
-    const mic = () => screen.queryByRole('button', { name: 'Sesli mesaj yakında' })
+    const mic = () => screen.getByTestId('chat-mic-send-btn')
     const gonder = () => screen.queryByRole('button', { name: 'Gönder' })
 
-    // Boşken: mikrofon var, gönder yok
+    // Boşken: mikrofon butonu var, gönder yok
     expect(mic()).not.toBeNull()
     expect(gonder()).toBeNull()
+    // Boşken erişilebilir isim yok (kullanıcı isteği: "mesaj yakında" boş)
+    expect(mic().getAttribute('aria-label')).toBe('')
 
-    // Yazınca: gönder çıkar, mikrofon kaybolur
+    // Yazınca: gönder çıkar, mikrofon ikonu kaybolur (buton aynı kalır)
     fireEvent.change(input, { target: { value: 'merhaba' } })
     expect(gonder()).not.toBeNull()
-    expect(mic()).toBeNull()
+    expect(mic().getAttribute('aria-label')).toBe('Gönder')
 
     // YALNIZ boşluk "yazdı" sayılmaz → mikrofon geri gelir
     fireEvent.change(input, { target: { value: '   ' } })

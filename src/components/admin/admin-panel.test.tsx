@@ -132,15 +132,14 @@ describe('adminPanel', () => {
     expect(heading.className).toContain('uppercase')
   })
 
-  it('sekme sayısı 7; geliştirme fazı adı (Faz 6) hiçbir yerde kalmadı', () => {
+  it('sekme sayısı 6; geliştirme fazı adı (Faz 6) hiçbir yerde kalmadı', () => {
     renderPanel()
     const tabs = screen.getAllByRole('tab')
     expect(tabs.map(t => t.textContent)).toEqual([
       'Genel Bakış',
       'Profil',
-      'Sayfa Düzenle',
-      'Şifre & Güvenlik',
       'Site Ayarları',
+      'Sayfa Düzenle',
       'Veri Yönetimi',
       'Kullanıcılar',
     ])
@@ -229,10 +228,6 @@ describe('adminPanel', () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Veri Yönetimi/ }))
     await waitFor(() => expect(screen.getByTestId('data-manager')).toBeTruthy())
-    const headings = screen
-      .getAllByRole('heading', { level: 2 })
-      .map(h => h.textContent)
-    expect(headings).toContain('Veri Yönetimi (Tablolar)')
   })
 
   it('site ayarları sekmesi genel ve sosyal medya bölümlerini gösterir', async () => {
@@ -244,12 +239,6 @@ describe('adminPanel', () => {
       .map(h => h.textContent)
     expect(headings).toContain('Genel')
     expect(headings).toContain('Sosyal Medya')
-  })
-
-  it('şifre ve güvenlik sekmesi şifre değiştir formunu gösterir', async () => {
-    renderPanel()
-    fireEvent.click(screen.getByRole('tab', { name: /Şifre & Güvenlik/ }))
-    await waitFor(() => expect(screen.getByText('Şifre Değiştir')).toBeTruthy())
   })
 
   it('hero: Emoji/Logo alanı GİTTİ, metin alanları panelden KALDIRILDI (2026-10-21)', async () => {
