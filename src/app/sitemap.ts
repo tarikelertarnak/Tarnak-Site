@@ -32,6 +32,9 @@ const STATIC_ROUTES: Array<{
   { path: '/projects', priority: 0.8, freq: 'weekly' },
   { path: '/blog', priority: 0.8, freq: 'daily' },
   { path: '/about', priority: 0.7, freq: 'monthly' },
+  { path: '/uses', priority: 0.5, freq: 'monthly' },
+  { path: '/changelog', priority: 0.5, freq: 'monthly' },
+  { path: '/contact', priority: 0.5, freq: 'monthly' },
   { path: '/donate', priority: 0.5, freq: 'monthly' },
   { path: '/credits', priority: 0.4, freq: 'monthly' },
   // Kişisel sayfalar (düşük öncelik, içerik girilene kadar boş)

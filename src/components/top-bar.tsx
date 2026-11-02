@@ -118,7 +118,7 @@ export function TopBar() {
               onClick={() =>
                 window.dispatchEvent(new CustomEvent('search:request-open'))}
               aria-label={t('common.search')}
-              className={`flex flex-1 min-w-0 items-center justify-between gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-foreground/70 transition-colors hover:border-white/20 hover:text-foreground min-w-24 sm:min-w-32 ${
+              className={`flex shrink-0 min-w-0 items-center justify-between gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-foreground/70 transition-colors hover:border-white/20 hover:text-foreground min-w-[44px] sm:min-w-[64px] sm:max-w-[220px] md:max-w-[280px] ${
                 scrolled ? 'h-9' : 'h-10'
               }`}
             >

@@ -12,9 +12,9 @@ dns.setDefaultResultOrder('ipv4first')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Turbopack CSS işleme WSL'de çöküyor (lightningcss native binding ile ilgili),
-  // bu yüzden webpack kullanılıyor. WSL'de `next build` çalışmalı.
-  turbo: { enabled: false },
+  // Turbopack CSS işleme WSL'de çöküyor (lightningcss native binding ile ilgili).
+  // `turbo: false` → webpack kullanıyor. WSL'de `next build` çalışmalı.
+  turbo: false,
   experimental: {
     agentUpgrade: 'security',
   },

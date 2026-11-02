@@ -73,9 +73,9 @@ describe('konum ve taşma', () => {
     expect(screen.getAllByRole('menuitem').length).toBe(2)
   })
 
-  it('tehlikeli madde (sil) kırmızı ve ayrı vurgulu', () => {
+  it('tehlikeli madde (sil) renksiz gri (monokrom)', () => {
     renderMenu()
-    expect(screen.getByText('Sil').closest('button')?.className).toContain('text-red-500')
+    expect(screen.getByText('Sil').closest('button')?.className).toContain('text-foreground')
     expect(screen.getByText('Birinci').closest('button')?.className).not.toContain('text-red-500')
   })
 })

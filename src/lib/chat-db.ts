@@ -44,7 +44,7 @@ export interface ChatMessageRow {
   sender_id: string
   sender_name: string
   text: string | null
-  kind: 'text' | 'image' | 'file' | 'audio' | 'video'
+  kind: 'text' | 'image' | 'file' | 'audio' | 'video' | 'poll'
   file_url: string | null
   file_name: string | null
   file_type: string | null

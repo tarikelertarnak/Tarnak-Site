@@ -317,6 +317,39 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   const [flashId, setFlashId] = useState<string | null>(null)
   /** Kısa bilgi bildirimi ("Mesaj bulunamadı" vb.) — kendiliğinden kaybolur. */
   const [notice, setNotice] = useState<string | null>(null)
+  /** Mesaj tepkileri: messageId -> { emoji -> count }. */
+  const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({})
+  /** Görsel galeri: açık olan resimlerin listesi ve şu anki indeks. */
+  const [gallery, setGallery] = useState<{ urls: string[], index: number } | null>(null)
+  /** Anketler: messageId -> anket verisi. `user_vote` seçilen seçenek indeksi veya null. */
+  const [polls, setPolls] = useState<Record<string, {
+    question: string
+    options: { text: string, votes: number, voter_ids: string[] }[]
+    is_closed: boolean
+    user_vote: number | null
+  }>>({})
+  /** Anket oluşturma taslağı: null → yok, dolu → form açık. */
+  const [pollDraft, setPollDraft] = useState<{ question: string, options: string[] } | null>(null)
+  /** Açık konu (thread): mesaj ID'si veya null. Doluysa yalnız bu mesaj ve yanıtları görünür. */
+  const [threadMessageId, setThreadMessageId] = useState<string | null>(null)
+
+  /** Galeri aç: mesajdaki tüm resimleri toplayıp bu resimden başlatır. */
+  function openGallery(messageIds: string[], startUrl: string) {
+    const urls: string[] = []
+    for (const m of messages) {
+      if (m.kind === 'image' && m.file_url && messageIds.includes(m.id)) {
+        urls.push(m.file_url)
+      }
+    }
+    if (urls.length === 0)
+urls.push(startUrl)
+    setGallery({ urls, index: urls.includes(startUrl) ? urls.indexOf(startUrl) : 0 })
+  }
+
+  /** Galeri kapat. */
+  function closeGallery() {
+    setGallery(null)
+  }
   /**
    * Mesaj listesi görünür alanda mı (2026-10-16): "okundu" damgası YALNIZCA
    * sekme görünürken VE liste ekrandayken atılır — arka plandaki sekme
@@ -1187,6 +1220,32 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
         const local = prev.filter(m => (m._pending || m._failed) && !server.some(s => s.id === m.id))
         return local.length ? [...server, ...local] : server
       })
+      /* Anket verisini `text` JSON'dan ayrıştır ve `polls` state'ine yaz. */
+      for (const m of server) {
+        if (m.kind === 'poll' && m.text) {
+          try {
+            const payload = JSON.parse(m.text)
+            if (payload.question && Array.isArray(payload.options)) {
+              setPolls(prev => ({
+                ...prev,
+                [m.id]: {
+                  question: payload.question,
+                  options: payload.options.map((o: { text: string, votes?: number, voter_ids?: string[] }) => ({
+                    text: o.text,
+                    votes: o.votes ?? 0,
+                    voter_ids: o.voter_ids ?? [],
+                  })),
+                  is_closed: !!payload.is_closed,
+                  user_vote: payload.options.findIndex((o: { voter_ids?: string[] }) => o.voter_ids?.includes(myId ?? '')),
+                },
+              }))
+            }
+          }
+ catch {
+            // Bozuk anket verisi sessizce atlanır
+          }
+        }
+      }
       setError(null)
     }
     catch {
@@ -1349,6 +1408,141 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
    * doğrudan çift tikle başlamaz (kullanıcının şikâyeti: hiç görülmemiş mesajda
    * çift mavi tik).
    */
+  /** Mesaj tepkisini aç/kapat: messageId + emoji anahtarına göre sayaç artırır/azaltır. */
+  function toggleReaction(messageId: string, emoji: string) {
+    setReactions((prev) => {
+      const byMsg = { ...prev }
+      const byEmoji = { ...(byMsg[messageId] ?? {}) }
+      if (byEmoji[emoji]) {
+        if (byEmoji[emoji] <= 1)
+delete byEmoji[emoji]
+        else byEmoji[emoji] -= 1
+      }
+ else {
+        byEmoji[emoji] = 1
+      }
+      if (Object.keys(byEmoji).length === 0)
+delete byMsg[messageId]
+      else byMsg[messageId] = byEmoji
+      return byMsg
+    })
+  }
+
+  /** Anket seçeneğine oy ver/geri al: messageId + seçenek indeksi. Kendi oyunu yeniden tıklayınca geri alır. */
+  function togglePollVote(messageId: string, optionIndex: number) {
+    setPolls((prev) => {
+      const poll = prev[messageId]
+      if (!poll || poll.is_closed)
+return prev
+      const options = poll.options.map((opt, i) => {
+        if (i !== optionIndex)
+return opt
+        const alreadyVoted = opt.voter_ids.includes(myId)
+        return {
+          ...opt,
+          votes: alreadyVoted ? opt.votes - 1 : opt.votes + 1,
+          voter_ids: alreadyVoted
+            ? opt.voter_ids.filter(id => id !== myId)
+            : [...opt.voter_ids, myId],
+        }
+      })
+      const userVote = poll.user_vote === optionIndex ? null : optionIndex
+      return {
+        ...prev,
+        [messageId]: { ...poll, options, user_vote: userVote },
+      }
+    })
+  }
+
+  /** Anket taslağına seçenek ekler (en az 2 seçenek gerekli). */
+  function addPollOption() {
+    setPollDraft(d => d ? { ...d, options: [...d.options, ''] } : null)
+  }
+
+  /** Anket taslağından seçenek çıkar (en az 2 kalmalı). */
+  function removePollOption(index: number) {
+    setPollDraft((d) => {
+      if (!d || d.options.length <= 2)
+return d
+      return { ...d, options: d.options.filter((_, i) => i !== index) }
+    })
+  }
+
+  /** Anket taslağındaki seçenek metnini günceller. */
+  function setPollOption(index: number, value: string) {
+    setPollDraft((d) => {
+      if (!d)
+return null
+      const options = [...d.options]
+      options[index] = value
+      return { ...d, options }
+    })
+  }
+
+  /** Anket sorusu metnini günceller. */
+  function setPollQuestion(value: string) {
+    setPollDraft(d => d ? { ...d, question: value } : null)
+  }
+
+  /** Anketi gönder: soru + seçenekleri JSON olarak `text` alanına yazar, kind = 'poll'. */
+  async function sendPoll() {
+    if (!pollDraft || !conversationId)
+return
+    const { question, options } = pollDraft
+    if (!question.trim() || options.some(o => !o.trim()))
+return
+    const tmpId = `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const payload = { question, options: options.map(o => ({ text: o.trim(), votes: 0, voter_ids: [] as string[] })) }
+    const optimistic: UiMessage = {
+      id: tmpId,
+      conversation_id: conversationId,
+      sender_id: myId,
+      sender_name: '',
+      text: JSON.stringify(payload),
+      kind: 'poll',
+      file_url: null,
+      file_name: null,
+      file_type: null,
+      file_size: null,
+      audio_duration: null,
+      reply_to_id: null,
+      reply_to: null,
+      delivered_at: null,
+      read_at: null,
+      pinned: false,
+      pinned_at: null,
+      deleted_for_all: false,
+      deleted_by: null,
+      deleted_at: null,
+      created_at: new Date().toISOString(),
+      _pending: true,
+    }
+    setMessages(prev => [...prev, optimistic])
+    setPollDraft(null)
+    setSending(true)
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId, text: JSON.stringify(payload), kind: 'poll', replyToId: undefined }),
+      })
+      const json = await res.json()
+      if (res.ok && json.success) {
+        setMessages(prev => prev.map(m => (m.id === tmpId ? { ...json.data } : m)))
+        stopTyping()
+      }
+ else {
+        fail(tmpId, json.message)
+      }
+    }
+ catch {
+      fail(tmpId)
+    }
+ finally {
+      setSending(false)
+    }
+  }
+
   async function send(override?: string) {
     const text = (override ?? draft).trim()
     const target = replyLive
@@ -1692,6 +1886,11 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   const sendBtnClass = hasDraft
     ? 'bg-[#25D366] text-white hover:brightness-95'
     : 'text-foreground/60 hover:bg-foreground/10 hover:text-foreground'
+
+  /* Konu (thread) görünümü: konu açıldığında yalnız konu mesajı + yanıtları. */
+  const threadMsgs = threadMessageId
+    ? messages.filter(m => m.id === threadMessageId || m.reply_to_id === threadMessageId)
+    : messages
 
   return (
     <div
@@ -2058,7 +2257,23 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
               </button>
             </div>
           )}
-          {threadOpen && messages.map((m, i) => {
+          {/* KONU (THREAD) BAŞLIĞI: konu açıldığında geri düğmesi + konu mesajı */}
+          {threadMessageId && (
+            <div className="mb-4 flex items-center gap-2 px-4">
+              <button
+                type="button"
+                onClick={() => setThreadMessageId(null)}
+                aria-label={t('chat.backToThread')}
+                className="shrink-0 cursor-pointer rounded-full p-1 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+              >
+                ←
+              </button>
+              <span className="text-xs font-medium text-foreground-500 truncate">
+                {t('chat.thread')}
+              </span>
+            </div>
+          )}
+          {threadOpen && threadMsgs.map((m, i) => {
             const mine = m.sender_id === myId
           const replied = replyTo?.id === m.id
           const tick = mine
@@ -2071,7 +2286,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
             hizalama zaten kimin yazdığını söyler ve tek kişilik sohbette
             kendi adını okumak gürültüdür.
           */
-          const showSender = !mine && (i === 0 || messages[i - 1]?.sender_id !== m.sender_id)
+          const showSender = !mine && (i === 0 || threadMsgs[i - 1]?.sender_id !== m.sender_id)
           /*
             ALINTI BLOĞU (2026-10-16 kullanıcı isteği): balonun içinde, mesaj
             metninin ÜSTÜNDE. Metin sunucudan `reply_to` özetiyle gelir; silinmiş
@@ -2086,17 +2301,37 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
                 ? t('chat.deletedMessage')
                 : quote.text || t(replyPlaceholderKey(quote.kind)))
             : ''
+
+          /* TARİH AYIRICI (2026-11-02): önceki mesaj farklı gündeyse ayırıcı göster. */
+          const prevDay = i > 0 ? new Date(messages[i - 1].created_at).toDateString() : null
+          const currDay = new Date(m.created_at).toDateString()
+          const showDateSeparator = i === 0 || prevDay !== currDay
+
           return (
-            <div
-              key={m.id}
-              data-replied={replied || undefined}
-              className={cn(
+            <>
+              {showDateSeparator && (
+                <div className="mb-2 flex w-full items-center justify-center">
+                  <span
+                    className="relative z-0 px-2 text-[10px] font-medium text-foreground-400 uppercase tracking-wider"
+                  >
+                    {new Date(m.created_at).toLocaleDateString('tr-TR', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                    })}
+                  </span>
+                </div>
+              )}
+              <div
+                key={m.id}
+                data-replied={replied || undefined}
+                className={cn(
                 'relative flex flex-col rounded-xl',
                 mine ? 'items-end' : 'items-start',
                 // Vurgu: alıntıya tıklanınca kaydırılan mesaj ~2 sn parlar.
                 flashId === m.id && 'msg-flash',
               )}
-            >
+              >
               {/* Kaydırma sırasında beliren yanıt oku (mobil) — `useSwipeReply`
                   opacity/scale'i doğrudan yazar (her karede render olmasın). */}
               <span
@@ -2194,13 +2429,42 @@ jumpToMessage(m.id)
                   )}
                   {m.kind === 'image' && m.file_url && (
                     // Sohbet görselleri kullanıcı yüklemesi; next/image gerekmez.
-                    <img src={m.file_url} alt={m.file_name ?? ''} className="mb-1 max-h-48 rounded-lg" />
+                    // Tıklanınca tam ekran galeri açılır (stream-chat-react özelliği).
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        openGallery([m.id], m.file_url!)
+                      }}
+                      className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                    >
+                      <img
+                        src={m.file_url}
+                        alt={m.file_name ?? ''}
+                        className="mb-1 max-h-48 rounded-lg object-cover"
+                      />
+                    </button>
                   )}
                   {m.kind === 'audio' && m.file_url && (
-                    <audio controls src={m.file_url} className="mb-1 max-w-full" />
+                    <div className="mb-2 p-3 rounded-lg border border-foreground/10 bg-foreground/5">
+                      <audio
+                        controls
+                        src={m.file_url}
+                        className="w-full h-12"
+                        aria-label={t('chat.audioPlayer')}
+                      />
+                    </div>
                   )}
                   {m.kind === 'video' && m.file_url && (
-                    <video controls src={m.file_url} className="mb-1 max-h-48 rounded-lg" />
+                    <div className="mb-2 p-3 rounded-lg border border-foreground/10 bg-foreground/5">
+                      <video
+                        controls
+                        src={m.file_url}
+                        poster={m.file_name || undefined}
+                        className="max-h-48 w-full rounded-sm"
+                        aria-label={t('chat.videoPlayer')}
+                      />
+                    </div>
                   )}
                   {m.kind === 'file' && m.file_url && (
                     <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="mb-1 underline">
@@ -2208,6 +2472,50 @@ jumpToMessage(m.id)
                       {' '}
                       {m.file_name}
                     </a>
+                  )}
+                  {m.kind === 'poll' && polls[m.id] && (
+                    <div className="mb-2 mt-1 p-3 rounded-lg border border-foreground/10 bg-foreground/5">
+                      <div className="mb-2 text-xs font-semibold text-foreground">
+                        {t('chat.poll')}
+:
+{polls[m.id].question}
+                      </div>
+                      {polls[m.id].options.map((opt, i) => {
+                        const voted = polls[m.id].user_vote === i
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              togglePollVote(m.id, i)
+                            }}
+                            disabled={polls[m.id].is_closed}
+                            className={cn(
+                              'w-full flex items-center justify-between gap-2 rounded px-2 py-1.5 text-sm transition-colors',
+                              voted ? 'bg-primary text-primary-fg' : 'hover:bg-foreground/10',
+                              polls[m.id].is_closed ? 'opacity-60 cursor-not-allowed' : '',
+                            )}
+                          >
+                            <span className="flex-1 truncate">{opt.text}</span>
+                            <span className="shrink-0 text-[10px]">
+                              {opt.votes}
+{' '}
+{t('chat.pollVote')}
+                            </span>
+                          </button>
+                        )
+                      })}
+                      <div className="mt-2 flex items-center gap-1 text-[10px] text-foreground-500">
+                        {polls[m.id].is_closed ? (
+                          <span className="text-danger">{t('chat.pollClosed')}</span>
+                        ) : polls[m.id].user_vote !== null ? (
+                          <span className="text-primary">{t('chat.pollVoted')}</span>
+                        ) : (
+                          <span>{t('chat.pollVote')}</span>
+                        )}
+                      </div>
+                    </div>
                   )}
                   {m.deleted_for_all
                     ? <em className="opacity-70">{t('chat.deletedByYou')}</em>
@@ -2271,8 +2579,47 @@ jumpToMessage(m.id)
                 >
                   <ReplyIcon size={16} />
                 </button>
+                {/* TEPKİ DÜĞMESİ (2026-11-02): emoji tepkisi ekle/çıkar. */}
+                <button
+                  type="button"
+                  aria-label={t('chat.react')}
+                  title={t('chat.react')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    toggleReaction(m.id, '👍')
+                  }}
+                  className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                >
+                  👍
+                </button>
+                {/* TEPKİ GÖSTERGESİ (2026-11-02): mesaj altındaki tepki sayacı. */}
+                {Object.entries(reactions[m.id] ?? {}).map(([emoji, count]) => (
+                  <span
+                    key={emoji}
+                    className="inline-flex items-center gap-1 rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] text-foreground"
+                    onClick={() => toggleReaction(m.id, emoji)}
+                  >
+                    {emoji}
+{' '}
+{count}
+                  </span>
+                ))}
+                {/* KONU DUĞMESİ (2026-11-02): bu mesajı konu başlığı yapıp yanıtları görüntüle. */}
+                <button
+                  type="button"
+                  aria-label={t('chat.threadView')}
+                  title={t('chat.threadView')}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setThreadMessageId(m.id)
+                  }}
+                  className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                >
+                  ↩
+                </button>
               </div>
             </div>
+</>
           )
           })}
         </div>
@@ -2362,6 +2709,60 @@ jumpToMessage(m.id)
           >
             <StickerIcon size={20} />
           </button>
+          <button
+            type="button"
+            onClick={() => setPollDraft(pollDraft ? null : { question: '', options: ['', ''] })}
+            aria-label={t('chat.pollCreate')}
+            title={t('chat.pollCreate')}
+            className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          >
+            📊
+          </button>
+          {pollDraft && (
+            <div className="flex w-full flex-col gap-2 pt-2">
+              <input
+                value={pollDraft.question}
+                onChange={e => setPollQuestion(e.target.value)}
+                placeholder={t('chat.pollQuestion')}
+                className="w-full min-w-0 rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
+              />
+              <div className="flex w-full gap-2">
+                {pollDraft.options.map((opt, i) => (
+                  <div key={i} className="flex-1 flex gap-1">
+                    <input
+                      value={opt}
+                      onChange={e => setPollOption(i, e.target.value)}
+                      placeholder={t('chat.pollOption')}
+                      className="min-w-0 flex-1 rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removePollOption(i)}
+                      disabled={pollDraft.options.length <= 2}
+                      className="shrink-0 rounded-lg p-1.5 text-foreground/50 transition-colors hover:bg-foreground/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addPollOption}
+                  className="shrink-0 rounded-lg p-1.5 text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                >
+                  +
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={sendPoll}
+                disabled={sending || !pollDraft.question.trim() || pollDraft.options.some(o => !o.trim())}
+                className="w-full h-10 shrink-0 cursor-pointer rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t('chat.pollCreate')}
+              </button>
+            </div>
+          )}
           <input
             ref={inputRef}
             value={draft}
@@ -2576,6 +2977,82 @@ jumpToMessage(m.id)
             cancel: t('chat.cancel'),
           }}
         />
+      )}
+
+      {/* GÖRSEL GALERİ MODALİ (2026-11-02, stream-chat-react özelliği): tıklanan
+          resim tam ekranda açılır, ok/sağa-sola kaydırma ve ESC ile kapatılır. */}
+      {gallery && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+          onClick={closeGallery}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+ closeGallery()
+}
+            else if (e.key === 'ArrowRight') {
+              e.preventDefault()
+              setGallery(g => g ? { ...g, index: (g.index + 1) % g.urls.length } : null)
+            }
+            else if (e.key === 'ArrowLeft') {
+              e.preventDefault()
+              setGallery(g => g ? { ...g, index: (g.index - 1 + g.urls.length) % g.urls.length } : null)
+            }
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Görsel galeri"
+            className="relative w-full max-w-full max-h-full overflow-hidden rounded-xl border border-white/10 bg-black outline-none"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={closeGallery}
+              className="absolute top-2 right-2 z-10 shrink-0 cursor-pointer rounded-full bg-white/10 p-1.5 text-white hover:bg-white/20 transition-colors"
+              aria-label="Kapat"
+            >
+              ✕
+            </button>
+            <img
+              src={gallery.urls[gallery.index]}
+              alt=""
+              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              loading="lazy"
+              decoding="async"
+            />
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-white/80 bg-black/10">
+              <button
+                type="button"
+                onClick={() => {
+                  setGallery(g => g ? { ...g, index: (g.index - 1 + g.urls.length) % g.urls.length } : null)
+                }}
+                disabled={gallery.urls.length <= 1}
+                className="shrink-0 cursor-pointer rounded-full bg-white/20 p-2 text-white hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                aria-label="Önceki"
+              >
+                ‹
+              </button>
+              <span className="text-xs font-medium">
+                {gallery.index + 1}
+{' '}
+/
+{gallery.urls.length}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setGallery(g => g ? { ...g, index: (g.index + 1) % g.urls.length } : null)
+                }}
+                disabled={gallery.urls.length <= 1}
+                className="shrink-0 cursor-pointer rounded-full bg-white/20 p-2 text-white hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                aria-label="Sonraki"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

@@ -220,14 +220,14 @@ return
           className={cn(
             'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50',
             item.danger
-              ? 'text-red-500 hover:bg-red-500/10'
+              ? 'text-foreground hover:bg-foreground/10'
               : item.color
-                ? `text-${item.color} hover:bg-${item.color}/10`
+                ? 'text-foreground hover:bg-foreground/10'
                 : 'hover:bg-foreground/10',
           )}
         >
           {item.icon && (
-            <span className={cn('flex shrink-0 items-center justify-center', item.iconColor)} aria-hidden>
+            <span className={cn('flex shrink-0 items-center justify-center text-foreground-400', item.iconColor)} aria-hidden>
               {item.icon}
             </span>
           )}
@@ -305,16 +305,16 @@ export function MenuItem({
       className={cn(
         'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50',
         danger
-          ? 'text-red-500 hover:bg-red-500/10'
+          ? 'text-foreground hover:bg-foreground/10'
           : selected
-            ? 'font-medium text-primary hover:bg-primary/10'
+            ? 'font-medium text-foreground hover:bg-foreground/10'
             : color
-              ? `text-${color} hover:bg-${color}/10`
+              ? 'text-foreground hover:bg-foreground/10'
               : 'hover:bg-foreground/10',
       )}
     >
       {icon && (
-        <span className={cn('flex shrink-0 items-center justify-center', iconColor)} aria-hidden>
+        <span className={cn('flex shrink-0 items-center justify-center text-foreground-400', iconColor)} aria-hidden>
           {icon}
         </span>
       )}

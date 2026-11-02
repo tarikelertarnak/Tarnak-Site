@@ -224,6 +224,18 @@ describe('adminPanel', () => {
     expect(cards).toContain('Footer')
   })
 
+  it('#pages/about hash’i Sayfa Düzenle ana sekmesini etkinleştirir', async () => {
+    window.location.hash = '#pages/about'
+    try {
+      renderPanel()
+      const tabEl = screen.getByRole('tab', { name: /Sayfa Düzenle/ })
+      expect(tabEl.getAttribute('aria-selected')).toBe('true')
+    }
+ finally {
+      window.location.hash = ''
+    }
+  })
+
   it('veri yönetimi sekmesi tablo CRUD bileşenini gösterir', async () => {
     renderPanel()
     fireEvent.click(screen.getByRole('tab', { name: /Veri Yönetimi/ }))

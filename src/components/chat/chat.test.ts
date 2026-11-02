@@ -418,7 +418,7 @@ describe('chat arayüz sözleşmesi', () => {
 
     it('balon üstünde gönderen satırı var; art arda tekrarlanmaz', () => {
       expect(CODE).toContain('const showSender = !mine &&')
-      expect(CODE).toContain('messages[i - 1]?.sender_id !== m.sender_id')
+      expect(CODE).toContain('threadMsgs[i - 1]?.sender_id !== m.sender_id')
       expect(CODE).toContain('{m.sender_name}')
       // Kendi mesajım sağda mavi, karşı taraf solda koyu gri (değişmedi).
       expect(CODE).toContain('mine ? \'items-end\' : \'items-start\'')

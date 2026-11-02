@@ -18,7 +18,7 @@ export interface ReplyPreview {
   sender_name: string
   /** En fazla `REPLY_TEXT_MAX` karakter. Silinmişse null. */
   text: string | null
-  kind: 'text' | 'image' | 'file' | 'audio' | 'video'
+  kind: 'text' | 'image' | 'file' | 'audio' | 'video' | 'poll'
   file_name: string | null
   file_url: string | null
   deleted: boolean

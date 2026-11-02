@@ -83,11 +83,16 @@ export function AdminPanel({
   // Hash'ten başlangıç sekmesi: AdminGate async yükleme bittikten SONRA
   // AdminPanel mount edilir; o anda hash hâlâ okunaklı olur.
   // SSR'da window yok → 'profile' döner; useLayoutEffect mount'ta düzeltir.
+  // Desteklenen hash'ler: #overview #profile #pages #settings #data #users
+  // Alt sayfa açmak için #pages/about gibi kullanılabilir: ilk parça tab,
+  // ikinci parça PageEditTabs iç-sekmesi olarak kullanılır
+  // (örn. #pages/about → tab=pages, activePageKey=about)
   const [tab, setTab] = useState<string>(() => {
     if (typeof window === 'undefined')
       return 'profile'
     return HASH_TO_TAB[window.location.hash] ?? 'profile'
   })
+  const [hashPageKey, setHashPageKey] = useState<string | undefined>(undefined)
   const [dataResource, setDataResource] = useState<string | undefined>(
     undefined,
   )
@@ -113,12 +118,24 @@ export function AdminPanel({
 
   // Mount'ta hash'i bir kez daha oku: strict-mode çift render veya
   // hydration'dan sonra hash'in değiştiği durumları yakalar.
+  // `#pages/about` gibi alt-hash'ler: tab=pages, activePageKey=about
   useLayoutEffect(() => {
     const hash = window.location.hash
     const fromHash = HASH_TO_TAB[hash]
     if (fromHash) {
       setTabSearch('')
       setTab(fromHash)
+      setHashPageKey(undefined)
+      setActivePageKey(fromHash === 'pages' ? 'about' : fromHash)
+      setActivePagePath(pagePathById[fromHash === 'pages' ? 'about' : fromHash] ?? '')
+    }
+ else if (hash.startsWith('#pages/')) {
+      const pageId = hash.slice('#pages/'.length)
+      setTabSearch('')
+      setTab('pages')
+      setHashPageKey(pageId)
+      setActivePageKey(pageId)
+      setActivePagePath(pagePathById[pageId] ?? '')
     }
   }, [])
 
@@ -1746,7 +1763,7 @@ tablosundan
         />
       </div>
       <PageEditTabs
-        initial="about"
+        initial={hashPageKey ?? 'about'}
         onActiveChange={(key) => {
           setActivePageKey(key)
           setActivePagePath(pagePathById[key] ?? '')
@@ -2177,6 +2194,12 @@ function PageEditTabs({
   onActiveChange?: (key: string) => void
 }) {
   const [inner, setInner] = useState(initial)
+
+  // `initial` (hash'tan gelen alt-sayfa) mount sonrası değişebilir:
+  // `useLayoutEffect` içinde `hashPageKey` ayarlandıktan sonra iç-sekmayı güncelle.
+  useEffect(() => {
+    setInner(initial)
+  }, [initial])
 
   // Aktif iç-sekme anahtarını dışarıya bildir (SaveBar'da Önizle butonu için).
   useEffect(() => {
