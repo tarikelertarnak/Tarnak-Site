@@ -119,7 +119,7 @@ export function TopBar() {
                 window.dispatchEvent(new CustomEvent('search:request-open'))}
               aria-label={t('common.search')}
               className={`flex shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground ${
-                scrolled ? 'h-8 w-8 px-2' : 'h-9 w-9 px-2.5'
+                scrolled ? 'h-8 w-8' : 'h-9 w-9'
               }`}
             >
               <SearchIcon size={scrolled ? 14 : 16} />
