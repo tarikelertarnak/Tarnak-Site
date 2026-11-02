@@ -2311,7 +2311,7 @@ jumpToMessage(m.id)
             odak halkası ve arka planı YOK — bar tek kutu gibi görünür. Sağ
             uçtaki düğme boşken MİKROFON, yazı varken yeşil GÖNDER olur
             (karar: `hasDraft`, bkz. yukarısı). */}
-        <div className="flex min-h-12 items-center gap-1 rounded-full bg-foreground/10 px-3 py-1 transition-colors focus-within:bg-foreground/15">
+        <div className="shrink-0 flex min-h-12 items-center gap-1 rounded-full bg-foreground/10 px-3 py-1 transition-colors focus-within:bg-foreground/15">
           <input
             ref={fileRef}
             type="file"
