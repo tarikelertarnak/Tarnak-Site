@@ -2265,8 +2265,7 @@ jumpToMessage(m.id)
                   title={t('chat.reply')}
                   onClick={(e) => {
                     e.stopPropagation()
-                    const r = e.currentTarget.getBoundingClientRect()
-                    setMenu({ kind: 'message', message: m, x: r.left, y: r.bottom + 4 })
+                    startReply(m.id)
                   }}
                   className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
                 >

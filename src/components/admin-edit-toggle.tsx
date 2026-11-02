@@ -63,11 +63,11 @@ export function AdminEditToggle({ className = '' }: { className?: string }) {
       aria-pressed={on}
       title={on ? 'Düzenlemeyi kapat' : 'Sayfayı düzenle (tıkla, öğe seç)'}
       onClick={() => setDesignMode(!on)}
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors ${
+      className={`flex shrink-0 items-center justify-center rounded-full border transition-colors ${
         on
           ? 'border-primary bg-primary text-primary-fg'
-          : 'border-white/10 bg-white/5 text-foreground/60 hover:border-white/25 hover:text-foreground'
-      } ${className}`}
+          : 'border-white/10 bg-white/5 text-foreground hover:border-white/20 hover:text-foreground'
+      } h-9 w-9 ${className}`}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M12 20h9" />

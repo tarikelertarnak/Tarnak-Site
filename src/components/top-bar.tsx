@@ -118,11 +118,16 @@ export function TopBar() {
               onClick={() =>
                 window.dispatchEvent(new CustomEvent('search:request-open'))}
               aria-label={t('common.search')}
-              className={`flex shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground ${
-                scrolled ? 'h-8 w-8' : 'h-9 w-9'
+              className={`flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-foreground/70 transition-colors hover:border-white/20 hover:text-foreground min-w-24 sm:min-w-32 ${
+                scrolled ? 'h-9' : 'h-10'
               }`}
             >
               <SearchIcon size={scrolled ? 14 : 16} />
+              <span className="hidden sm:inline text-[11px] sm:text-sm font-medium text-foreground">{t('common.search')}</span>
+              <kbd className="pointer-events-none shrink-0 inline-flex items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1 font-mono text-[10px] text-foreground/50">
+                <span>⌘</span>
+                <span>K</span>
+              </kbd>
             </button>
 
             {/* Admin edit toggle — sağda, ortalanmış kalem ikonu */}
