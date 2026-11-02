@@ -12,6 +12,9 @@ dns.setDefaultResultOrder('ipv4first')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Turbopack CSS işleme WSL'de çöküyor (lightningcss native binding ile ilgili),
+  // bu yüzden webpack kullanılıyor. WSL'de `next build` çalışmalı.
+  turbo: { enabled: false },
   experimental: {
     agentUpgrade: 'security',
   },
@@ -35,8 +38,8 @@ const nextConfig = {
   skipTrailingSlashRedirect: true,
   // Turbopack, lightningcss'in native .node require'ını bundle edemiyor
   // (Cannot find module / could not resolve ...win32-x64-msvc.node).
-  // External bırakınca Node kendi require'ıyla (düzgün çalışan) yüklüyor.
-  serverExternalPackages: ['lightningcss', 'sharp'],
+  // WSL'de lightningcss-linux-x64-gnu zaten kurulu; sharp hariç external.
+  serverExternalPackages: ['sharp'],
   images: {
     unoptimized: true,
   },

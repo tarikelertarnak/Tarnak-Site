@@ -253,7 +253,7 @@ setIsOpen(false)
 
   const sidebarInner = (
     <nav
-      className={`flex h-full flex-col ${PANEL_SURFACE}`}
+      className={`flex h-full flex-col justify-between ${PANEL_SURFACE}`}
       aria-label="Sidebar navigation"
       aria-modal="true"
       role="dialog"

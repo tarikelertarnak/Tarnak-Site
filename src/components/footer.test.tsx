@@ -82,7 +82,7 @@ describe('footer', () => {
 
   it('marka metni "AD SOYAD (TAKMAAD)" biçiminde ve seçilebilir', () => {
     render(<Footer content={CONTENT} />)
-    const brand = screen.getByText(/TARIK ELER \(TARNAK\)/)
+    const brand = screen.getByText(/TARIK ELER - TARNAK/)
     expect(brand.className).toContain('select-text')
   })
 })

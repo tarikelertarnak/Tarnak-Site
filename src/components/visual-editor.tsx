@@ -112,6 +112,13 @@ export function VisualEditor() {
     return () => window.removeEventListener(DESIGN_MODE_EVENT, onMode)
   }, [width])
 
+  /* Ayarlar veya farklı bir panel açıldığında Görsel Düzenlemeyi kapat. */
+  useEffect(() => {
+    const onSettingsOpen = () => setOpen(false)
+    window.addEventListener('settings:open', onSettingsOpen)
+    return () => window.removeEventListener('settings:open', onSettingsOpen)
+  }, [])
+
   useEffect(() => {
     applyEditorInset(open ? width : 0)
   }, [open, width])
@@ -355,7 +362,7 @@ export function VisualEditor() {
       <aside
         data-tar-panel
         style={{ width, ...(height ? { height } : {}) }}
-        className={`fixed top-0 right-0 z-[70] flex flex-col border-l border-white/15 bg-[#0b0b0e] text-foreground ${
+        className={`fixed top-0 right-0 z-[70] flex flex-col border-l border-foreground/20 bg-background text-foreground ${
           height ? 'bottom-auto' : 'bottom-0'
         }`}
       >
@@ -383,18 +390,18 @@ export function VisualEditor() {
           <button
             type="button"
             onClick={() => setDesignMode(false)}
-            className="rounded border border-white/15 px-2 py-1 text-[11px] hover:bg-white/10"
+            className="rounded border border-foreground/20 px-2 py-1 text-[11px] hover:bg-foreground/10"
           >
             Kapat
           </button>
         </header>
 
-        <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
+        <div className="flex items-center gap-2 border-b border-foreground/20 px-3 py-2">
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Ara: başlık, seçici, grup…"
-            className="h-8 min-w-0 flex-1 rounded border border-white/15 bg-white/5 px-2 text-xs outline-none focus:border-primary"
+            className="h-8 min-w-0 flex-1 rounded border border-foreground/20 bg-foreground/5 px-2 text-xs outline-none focus:border-primary"
           />
           <span className="shrink-0 text-[11px] text-foreground/50">
             {pageOverrides.length}
@@ -441,7 +448,7 @@ kayıt
           ))}
 
           {draft && (
-            <div className="mt-3 rounded border border-primary/40 bg-white/[0.03] p-2">
+            <div className="mt-3 rounded border border-primary/40 bg-foreground/5 p-2">
               <div className="mb-2 flex items-center justify-between gap-2">
                 <span className="truncate text-xs font-semibold">{draft.label}</span>
                 <button
@@ -468,7 +475,7 @@ kayıt
               <select
                 value={textLocale}
                 onChange={e => setTextLocale(e.target.value)}
-                className="mb-2 h-7 w-full rounded border border-white/15 bg-[#15151a] px-2 text-[11px] outline-none focus:border-primary"
+                className="mb-2 h-7 w-full rounded border border-foreground/20 bg-foreground/5 px-2 text-[11px] outline-none focus:border-primary"
               >
                 {TEXT_LOCALES.map(l => (
                   <option key={l} value={l}>
@@ -496,7 +503,7 @@ kayıt
                     onChange={e => patchStyle(field.key, e.target.value)}
                     placeholder={field.label}
                     title={field.label}
-                    className="h-7 w-full rounded border border-white/15 bg-white/5 px-2 text-[11px] outline-none focus:border-primary"
+                    className="h-7 w-full rounded border border-foreground/20 bg-foreground/5 px-2 text-[11px] outline-none focus:border-primary"
                   />
                 ))}
               </div>
@@ -506,19 +513,19 @@ kayıt
                   value={draft.animation?.durationMs ?? ''}
                   onChange={e => patchAnimation('durationMs', e.target.value)}
                   placeholder="süre ms"
-                  className="h-7 w-full rounded border border-white/15 bg-white/5 px-2 text-[11px]"
+                  className="h-7 w-full rounded border border-foreground/20 bg-foreground/5 px-2 text-[11px]"
                 />
                 <input
                   value={draft.animation?.easing ?? ''}
                   onChange={e => patchAnimation('easing', e.target.value)}
                   placeholder="easing"
-                  className="h-7 w-full rounded border border-white/15 bg-white/5 px-2 text-[11px]"
+                  className="h-7 w-full rounded border border-foreground/20 bg-foreground/5 px-2 text-[11px]"
                 />
                 <input
                   value={draft.animation?.iteration ?? ''}
                   onChange={e => patchAnimation('iteration', e.target.value)}
                   placeholder="tekrar"
-                  className="h-7 w-full rounded border border-white/15 bg-white/5 px-2 text-[11px]"
+                  className="h-7 w-full rounded border border-foreground/20 bg-foreground/5 px-2 text-[11px]"
                 />
               </div>
               <textarea
@@ -526,7 +533,7 @@ kayıt
                 onChange={e => patchAnimation('keyframes', e.target.value)}
                 rows={2}
                 placeholder="keyframes: from { opacity: 0 } to { opacity: 1 }"
-                className="mb-2 w-full rounded border border-white/15 bg-white/5 px-2 py-1 font-mono text-[11px]"
+                className="mb-2 w-full rounded border border-foreground/20 bg-foreground/5 px-2 py-1 font-mono text-[11px]"
               />
 
               <textarea
@@ -534,21 +541,21 @@ kayıt
                 onChange={e => setDraft({ ...draft, css: e.target.value })}
                 rows={2}
                 placeholder="Ek CSS (seçici otomatik eklenir)"
-                className="mb-2 w-full rounded border border-white/15 bg-white/5 px-2 py-1 font-mono text-[11px]"
+                className="mb-2 w-full rounded border border-foreground/20 bg-foreground/5 px-2 py-1 font-mono text-[11px]"
               />
               <textarea
                 value={draft.html ?? ''}
                 onChange={e => setDraft({ ...draft, html: e.target.value })}
                 rows={2}
                 placeholder="HTML içerik (boş → dokunulmaz)"
-                className="mb-2 w-full rounded border border-white/15 bg-white/5 px-2 py-1 font-mono text-[11px]"
+                className="mb-2 w-full rounded border border-foreground/20 bg-foreground/5 px-2 py-1 font-mono text-[11px]"
               />
               <textarea
                 value={draft.js ?? ''}
                 onChange={e => setDraft({ ...draft, js: e.target.value })}
                 rows={2}
                 placeholder="JS (element, root) => …"
-                className="mb-2 w-full rounded border border-white/15 bg-white/5 px-2 py-1 font-mono text-[11px]"
+                className="mb-2 w-full rounded border border-foreground/20 bg-foreground/5 px-2 py-1 font-mono text-[11px]"
               />
 
               <div className="flex flex-wrap gap-1">
