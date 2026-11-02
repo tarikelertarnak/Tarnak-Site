@@ -55,14 +55,14 @@ export function TopBar() {
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className={`fixed top-0 right-0 left-0 z-30 transition-all duration-300 ${
+        className={`fixed top-0 right-0 left-0 z-30 transition-[background-color,border-color] duration-200 ${
           scrolled
             ? 'h-12 border-b border-white/10 bg-black/80 backdrop-blur-md'
             : 'h-14 border-b border-transparent bg-black/40'
         }`}
       >
         <div
-          className={`relative flex h-full items-center justify-between gap-3 transition-all duration-300 ${
+          className={`relative flex h-full items-center justify-between gap-4 transition-[padding] duration-200 ${
             scrolled ? 'px-3' : 'px-3 sm:px-6'
           }`}
         >
@@ -112,7 +112,7 @@ export function TopBar() {
           </div>
 
           {/* Right: tek search butonu (yumuk/pill, yalnızca ikon) solda | admin edit toggle sağda */}
-          <div className="flex shrink-0 items-center gap-2 min-w-0">
+          <div className="flex shrink-0 items-center gap-2 min-w-0 w-full justify-end">
             <button
               type="button"
               onClick={() =>
