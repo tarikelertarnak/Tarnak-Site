@@ -11,18 +11,32 @@ import { useSwipeReply } from '@/components/chat/use-swipe-reply'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import {
+  BanIcon,
   BellIcon,
   ClockIcon,
   CloseIcon,
+  CopyIcon,
+  DownloadIcon,
+  EditIcon,
   ErrorIcon,
+  ForwardIcon,
+  InfoIcon,
+  LockIcon,
   MenuIcon,
   MicIcon,
+  MuteIcon,
   PaperclipIcon,
+  PinIcon,
+  QuoteIcon,
   ReplyIcon,
   SendIcon,
+  SmileIcon,
+  StarIcon,
   StickerIcon,
   TickReadIcon,
   TickSentIcon,
+  TrashIcon,
+  UserIcon,
 } from '@/components/ui/icons'
 import { askNotify, dismissNotify, notifyDismissed, notifyState, showBrowserNotification } from '@/lib/browser-notify'
 import {
@@ -1587,7 +1601,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
     return (
       <div className="grid w-full flex-1 place-items-center">
         <div className="flex w-full max-w-md flex-col items-center gap-4 rounded-2xl border border-foreground/10 bg-background p-10 text-center">
-          <span className="text-3xl">🔒</span>
+          <LockIcon size={24} className="text-foreground-400" />
           <p className="text-sm text-foreground-500">{t('chat.loginRequired')}</p>
           <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
             <Link
@@ -1872,7 +1886,13 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
                     </span>
                     {(p.important || p.favorite || p.blocked) && (
                       <span className="ml-auto shrink-0 text-xs" aria-hidden="true">
-                        {p.blocked ? '🚫' : p.important ? '📌' : '⭐'}
+                      {p.blocked ? (
+                        <BanIcon size={12} className="text-foreground-400" />
+                      ) : p.important ? (
+                        <PinIcon size={12} className="text-foreground-400" />
+                      ) : (
+                        <StarIcon size={12} className="text-foreground-400" />
+                      )}
                       </span>
                     )}
                   </>
@@ -2184,7 +2204,7 @@ jumpToMessage(m.id)
                   )}
                   {m.kind === 'file' && m.file_url && (
                     <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="mb-1 underline">
-                      📎
+                      <PaperclipIcon size={14} className="text-foreground-400" />
                       {' '}
                       {m.file_name}
                     </a>
@@ -2749,25 +2769,25 @@ function PeerMenu({ peer, x, y, t, onClose, onNicknameSave, onProfile, onToggle,
                 onClose={onClose}
                 closeLabel={t('common.close')}
               />
-              <MenuItem icon="👤" label={t('chat.viewProfile')} onSelect={() => onProfile()} />
-              <MenuItem icon="✏️" label={t('chat.setNickname')} onSelect={() => setEditing(true)} />
+              <MenuItem icon={<UserIcon size={14} className="text-foreground-400" />} label={t('chat.viewProfile')} onSelect={() => onProfile()} />
+              <MenuItem icon={<EditIcon size={14} className="text-foreground-400" />} label={t('chat.setNickname')} onSelect={() => setEditing(true)} />
               <MenuItem
-                icon="⭐"
+                icon={<StarIcon size={14} className="text-foreground-400" />}
                 label={peer.favorite ? t('chat.unfavorite') : t('chat.favorite')}
                 onSelect={() => onToggle('favorite', !peer.favorite)}
               />
               <MenuItem
-                icon="📌"
+                icon={<PinIcon size={14} className="text-foreground-400" />}
                 label={peer.important ? t('chat.unmarkImportant') : t('chat.markImportant')}
                 onSelect={() => onToggle('important', !peer.important)}
               />
               <MenuItem
-                icon="🚫"
+                icon={<BanIcon size={14} className="text-foreground-400" />}
                 label={peer.blocked ? t('chat.unblock') : t('chat.block')}
                 onSelect={() => onToggle('block', !peer.blocked)}
               />
-              <MenuItem icon="🧹" label={t('chat.clearConversation')} onSelect={() => onClear()} />
-              <MenuItem icon="🗑" label={t('chat.deleteConversation')} danger onSelect={() => onDelete()} />
+              <MenuItem icon={<TrashIcon size={14} className="text-foreground-400" />} label={t('chat.clearConversation')} onSelect={() => onClear()} />
+              <MenuItem icon={<TrashIcon size={14} className="text-foreground-400" />} label={t('chat.deleteConversation')} danger onSelect={() => onDelete()} />
             </>
           )}
     </MenuSurface>
@@ -2904,9 +2924,9 @@ function ProfileSheet({ peer, t, onClose }: {
               hiçbir yerde yer almıyorlar.
             */}
             <p className="mt-4 rounded-lg bg-foreground/5 px-3 py-2 text-xs text-foreground-500">
-              🔒
-{' '}
-{t('chat.privacyNote')}
+              <LockIcon size={14} className="text-foreground-400" />
+              {' '}
+              {t('chat.privacyNote')}
             </p>
           </>
         )}
@@ -2945,24 +2965,24 @@ function MessageMenu({ message, x, y, onClose, onReply, onCopy, onForward, onPin
       {labels.header && (
         <MenuHeader text={labels.header} onClose={onClose} closeLabel={labels.close} />
       )}
-      <MenuItem icon="😀" label={labels.react || 'Tepki Ekle'} iconColor="text-blue-500" onSelect={() => { onClose() }} />
-      <MenuItem icon="↩︎" label={labels.reply} iconColor="text-blue-500" onSelect={onReply} />
-      <MenuItem icon="❝" label={labels.quote || 'Alıntıla'} iconColor="text-purple-500" onSelect={() => { onClose() }} />
+      <MenuItem icon={<SmileIcon size={14} className="text-foreground-400" />} label={labels.react || 'Tepki Ekle'} onSelect={() => { onClose() }} />
+      <MenuItem icon={<ReplyIcon size={14} className="text-foreground-400" />} label={labels.reply} onSelect={onReply} />
+      <MenuItem icon={<QuoteIcon size={14} className="text-foreground-400" />} label={labels.quote || 'Alıntıla'} onSelect={() => { onClose() }} />
       {message.file_url && (
-        <MenuItem icon="📥" label={labels.download || 'İndir'} iconColor="text-blue-500" onSelect={() => { onClose() }} />
+        <MenuItem icon={<DownloadIcon size={14} className="text-foreground-400" />} label={labels.download || 'İndir'} onSelect={() => { onClose() }} />
       )}
-      <MenuItem icon="📌" label={labels.pin} iconColor="text-orange-500" onSelect={onPin} />
-      <MenuItem icon="📋" label={labels.copy} disabled={!message.text} iconColor="text-blue-500" onSelect={onCopy} />
-      <MenuItem icon="🔄" label={labels.resend || 'Tekrar Gönder'} iconColor="text-cyan-500" onSelect={() => { onClose() }} />
-      <MenuItem icon="✏️" label={labels.edit || 'Düzenle'} iconColor="text-blue-500" onSelect={() => { onClose() }} />
-      <MenuItem icon="⏰" label={labels.remind || 'Hatırlat'} iconColor="text-pink-500" onSelect={() => { onClose() }} />
-      <MenuItem icon="🔖" label={labels.save || 'Sonra İçin Kaydet'} iconColor="text-indigo-500" onSelect={() => { onClose() }} />
-      <MenuItem icon="🚩" label={labels.flag || 'Bildir'} iconColor="text-red-500" onSelect={() => { onClose() }} />
-      <MenuItem icon="🔇" label={labels.mute || 'Sustur'} iconColor="text-gray-500" onSelect={() => { onClose() }} />
-      <MenuItem icon="ℹ️" label={labels.info} iconColor="text-blue-400" onSelect={onInfo} />
-      <MenuItem icon="➡️" label={labels.forward} iconColor="text-blue-500" onSelect={onForward} />
-      <MenuItem icon="🚫" label={labels.block || 'Engelle'} iconColor="text-red-600" onSelect={() => { onClose() }} />
-      <MenuItem icon="🗑" label={labels.delete} danger onSelect={onDelete} iconColor="text-red-500" />
+      <MenuItem icon={<PinIcon size={14} className="text-foreground-400" />} label={labels.pin} onSelect={onPin} />
+      <MenuItem icon={<CopyIcon size={14} className="text-foreground-400" />} label={labels.copy} disabled={!message.text} onSelect={onCopy} />
+      <MenuItem icon={<ClockIcon size={14} className="text-foreground-400" />} label={labels.resend || 'Tekrar Gönder'} onSelect={() => { onClose() }} />
+      <MenuItem icon={<EditIcon size={14} className="text-foreground-400" />} label={labels.edit || 'Düzenle'} onSelect={() => { onClose() }} />
+      <MenuItem icon={<ClockIcon size={14} className="text-foreground-400" />} label={labels.remind || 'Hatırlat'} onSelect={() => { onClose() }} />
+      <MenuItem icon={<ForwardIcon size={14} className="text-foreground-400" />} label={labels.save || 'Sonra İçin Kaydet'} onSelect={() => { onClose() }} />
+      <MenuItem icon={<ForwardIcon size={14} className="text-foreground-400" />} label={labels.flag || 'Bildir'} onSelect={() => { onClose() }} />
+      <MenuItem icon={<MuteIcon size={14} className="text-foreground-400" />} label={labels.mute || 'Sustur'} onSelect={() => { onClose() }} />
+      <MenuItem icon={<InfoIcon size={14} className="text-foreground-400" />} label={labels.info} onSelect={onInfo} />
+      <MenuItem icon={<ForwardIcon size={14} className="text-foreground-400" />} label={labels.forward} onSelect={onForward} />
+      <MenuItem icon={<BanIcon size={14} className="text-foreground-400" />} label={labels.block || 'Engelle'} onSelect={() => { onClose() }} />
+      <MenuItem icon={<TrashIcon size={14} className="text-foreground-400" />} label={labels.delete} danger onSelect={onDelete} />
     </MenuSurface>
   )
 }
