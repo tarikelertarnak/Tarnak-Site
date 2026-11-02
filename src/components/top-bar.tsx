@@ -111,37 +111,19 @@ export function TopBar() {
             </Link>
           </div>
 
-          {/* Right: search (pill, grows on desktop) on left | admin edit toggle on right */}
+          {/* Right: tek search butonu (yumuk/pill, yalnızca ikon) solda | admin edit toggle sağda */}
           <div className="flex shrink-0 items-center gap-2 min-w-0">
-            {/* Search — her zaman ikon görünür; masaüstünde text input genişler */}
-            <div className="flex items-center gap-1 min-w-0">
-              <button
-                type="button"
-                onClick={() =>
-                  window.dispatchEvent(new CustomEvent('search:request-open'))}
-                aria-label={t('common.search')}
-                className="flex shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground"
-              >
-                <SearchIcon size={16} />
-              </button>
-              {/* Masaüstünde genişleyen search text alanı */}
-              <div className="hidden sm:flex items-center gap-1.5 min-w-0 w-64 sm:w-80 md:w-96 lg:w-112">
-                <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 min-w-0 flex-1 transition-all hover:border-white/20 focus-within:border-primary/50 focus-within:bg-white/10">
-                  <SearchIcon size={14} className="shrink-0 text-foreground/40" />
-                  <input
-                    type="text"
-                    placeholder={t('common.search')}
-                    aria-label={t('common.search')}
-                    autoComplete="off"
-                    className="bg-transparent border-none outline-none w-full min-w-0 text-sm text-foreground placeholder:text-foreground/40"
-                  />
-                  <kbd className="pointer-events-none shrink-0 inline-flex items-center gap-0.5 rounded border border-white/10 bg-white/5 px-1 font-mono text-[10px] text-foreground/50">
-                    <span>⌘</span>
-                    <span>K</span>
-                  </kbd>
-                </div>
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() =>
+                window.dispatchEvent(new CustomEvent('search:request-open'))}
+              aria-label={t('common.search')}
+              className={`flex shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/5 text-foreground/60 transition-colors hover:border-white/25 hover:text-foreground ${
+                scrolled ? 'h-8 w-8 px-2' : 'h-9 w-9 px-2.5'
+              }`}
+            >
+              <SearchIcon size={scrolled ? 14 : 16} />
+            </button>
 
             {/* Admin edit toggle — sağda, ortalanmış kalem ikonu */}
             <AdminEditToggle className="pointer-events-auto hidden sm:block" />
