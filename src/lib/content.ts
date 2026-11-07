@@ -248,6 +248,16 @@ export interface CvData {
 export type HeroI18nKey = 'tagline' | 'exploreLabel' | 'connectLabel'
 export type HeroI18n = Partial<Record<HeroI18nKey, Record<string, string>>>
 
+export interface AiConfig {
+  claudeApiKey?: string
+  githubToken?: string
+  githubRepo?: string
+  githubBranch?: string
+  model?: string
+  systemPrompt?: string
+  autoPush?: boolean
+}
+
 export interface SiteContent {
   hero: {
     name: string
@@ -404,6 +414,7 @@ export interface SiteContent {
    * Admin "Diller" bölümünden açılıp kapatılır.
    */
   locales?: string[]
+  aiConfig?: AiConfig
 }
 
 const bundledContent = bundledContentJson as Partial<SiteContent>

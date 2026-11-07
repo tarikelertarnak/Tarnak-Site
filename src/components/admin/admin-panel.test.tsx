@@ -193,12 +193,14 @@ describe('adminPanel', () => {
     // 2026-10-21 (kullanıcı): "Veri Yönetimi gibi alt gruplar, PROJELER/BLOG
     // şeklinde büyük harfli". Beş iç sekme etiketi de görünür olmalı.
     await waitFor(() => expect(screen.getAllByText('HAKKIMDA').length).toBeGreaterThan(0))
+    expect(screen.getAllByText('YAPAY ZEKA').length).toBeGreaterThan(0)
     expect(screen.getByText('PROJELER')).toBeTruthy()
     expect(screen.getByText('BLOG')).toBeTruthy()
     expect(screen.getByText('SAYFA BÖLÜMLERİ')).toBeTruthy()
     expect(screen.getByText('EK BÖLÜMLER')).toBeTruthy()
-    // Varsayılan iç sekme HAKKIMDA — bölüm başlıkları kartı görünür.
-    expect(screen.getByText('Bölüm Başlıkları')).toBeTruthy()
+    // Varsayılan iç sekme YAPAY ZEKA; HAKKIMDA'ya geçince bölüm başlıkları görünür.
+    fireEvent.click(screen.getByRole('tab', { name: /HAKKIMDA/ }))
+    await waitFor(() => expect(screen.getByText('Bölüm Başlıkları')).toBeTruthy())
     // Veri Yönetimi artık ayrı sekmede; buranın parçası değil.
     expect(screen.queryByText('Veri Yönetimi (Tablolar)')).toBeNull()
   })

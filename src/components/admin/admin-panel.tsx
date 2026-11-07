@@ -14,6 +14,7 @@ import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { AiConfigEditor } from '@/components/admin/ai-config-editor'
 import { DataManager } from '@/components/admin/data-manager'
 import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
 import { HeroLogoField } from '@/components/admin/hero-logo-field'
@@ -126,8 +127,8 @@ export function AdminPanel({
       setTabSearch('')
       setTab(fromHash)
       setHashPageKey(undefined)
-      setActivePageKey(fromHash === 'pages' ? 'about' : fromHash)
-      setActivePagePath(pagePathById[fromHash === 'pages' ? 'about' : fromHash] ?? '')
+      setActivePageKey(fromHash === 'pages' ? 'ai' : fromHash)
+      setActivePagePath(pagePathById[fromHash === 'pages' ? 'ai' : fromHash] ?? '')
     }
  else if (hash.startsWith('#pages/')) {
       const pageId = hash.slice('#pages/'.length)
@@ -1763,12 +1764,28 @@ tablosundan
         />
       </div>
       <PageEditTabs
-        initial={hashPageKey ?? 'about'}
+        initial={hashPageKey ?? 'ai'}
         onActiveChange={(key) => {
           setActivePageKey(key)
           setActivePagePath(pagePathById[key] ?? '')
         }}
         items={[
+          ...((!pageEditSearch.trim() || 'yapay zeka ai claude prompt github'.includes(pageEditSearch.toLowerCase().trim()))
+            ? [{
+                key: 'ai',
+                label: 'YAPAY ZEKA',
+                icon: 'mdi:robot-outline',
+                node: (
+                  <PanelCard title="YAPAY ZEKA">
+                    <AiConfigEditor
+                      content={content}
+                      onChange={setContent}
+                      onSave={() => void save()}
+                    />
+                  </PanelCard>
+                ),
+              }]
+            : []),
           ...PAGE_SPECS.filter((page) => {
             if (!pageEditSearch.trim())
 return true
@@ -1949,6 +1966,8 @@ return true
     profile: ['Profil', 'Profil Bilgileri', 'Fotoğraf'],
     pages: [
       'Sayfa Düzenle',
+      // Yapay Zeka
+      'Yapay Zeka', 'AI', 'Claude', 'Prompt', 'GitHub Push',
       // PAGE_SPECS sayfa etiketleri
       'Ana Sayfa', 'Hakkımda', 'Projeler', 'Blog', 'Sohbet', 'İletişim',
       'Destek', 'Şu An', 'Katkıda Bulunanlar', 'Gizlilik Politikası',

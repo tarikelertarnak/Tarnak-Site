@@ -318,6 +318,17 @@ export const contentSchema = z.object({
     .optional(),
   design: z.array(z.unknown()).max(500).optional(),
   locales: z.array(z.string().min(2).max(12)).max(60).optional(),
+  aiConfig: z
+    .object({
+      claudeApiKey: z.string().max(500).optional(),
+      githubToken: z.string().max(500).optional(),
+      githubRepo: z.string().max(200).optional(),
+      githubBranch: z.string().max(100).optional(),
+      model: z.string().max(100).optional(),
+      systemPrompt: z.string().max(50_000).optional(),
+      autoPush: z.boolean().optional(),
+    })
+    .optional(),
 })
 
 export type ContentInput = z.infer<typeof contentSchema>

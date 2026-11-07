@@ -11,7 +11,6 @@
 import { motion } from 'motion/react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { AdminEditToggle } from '@/components/admin-edit-toggle'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
 import { MenuIcon, SearchIcon } from '@/components/ui/icons'
@@ -130,8 +129,6 @@ export function TopBar() {
               </kbd>
             </button>
 
-            {/* Admin edit toggle — sağda, ortalanmış kalem ikonu */}
-            <AdminEditToggle className="pointer-events-auto hidden sm:block" />
           </div>
         </div>
       </motion.header>
