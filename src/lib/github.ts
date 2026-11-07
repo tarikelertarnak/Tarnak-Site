@@ -51,7 +51,7 @@ export function isGitHubNotFound(error: unknown): boolean {
  * Private olan API'ye hiç düşmez; public olanların HEPSİ görünmeli.
  * Kume bos birakildi: ileride yine gizlemek istenirse tek buraya eklenir.
  */
-export const EXCLUDED_REPOS = new Set<string>()
+export { EXCLUDED_REPOS } from '@/lib/github-consts'
 
 export function httpsGet(
   url: string,

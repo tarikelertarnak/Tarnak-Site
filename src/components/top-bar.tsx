@@ -1,31 +1,59 @@
 'use client'
 
 /**
- * TopBar — fixed top bar with sidebar toggle, brand, and search trigger.
+ * TopBar — fixed top bar with sidebar toggle, brand, page nav, and search trigger.
  *
  * The Sidebar (left panel) is closed by default on desktop. Users click the
  * hamburger icon to slide it in. This mirrors the live site (tarikelertarnak.github.io)
  * which uses a top-bar pattern instead of always-visible sidebar.
+ *
+ * Nav (2026-11-08): fixed bar now carries a horizontal, per-page navigation
+ * so users can jump between in-page sections without opening the sidebar.
+ * Items are derived from the current pathname (`getPageNav`).
  */
-
 import { motion } from 'motion/react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
 import { MenuIcon, SearchIcon } from '@/components/ui/icons'
-import { scrollToTop } from '@/lib/scroll'
+import { scrollToElement } from '@/lib/scroll'
+
+interface NavItem {
+  key: string
+  label: string
+  /** In-page anchor (without #) or full path. */
+  target: string
+  kind: 'anchor' | 'route'
+}
+
+function getPageNav(pathname: string, t: (k: string) => string): NavItem[] {
+  // Home: in-page section jumps.
+  if (pathname === '/' || pathname === '') {
+    return [
+      { key: 'about', label: t('nav.about'), target: 'about', kind: 'anchor' },
+      { key: 'projects', label: t('nav.projects'), target: 'projects', kind: 'anchor' },
+      { key: 'blog', label: t('nav.blog'), target: 'blog', kind: 'anchor' },
+      { key: 'contact', label: t('hero.feedback'), target: 'contact', kind: 'anchor' },
+    ]
+  }
+  // Other pages: quick cross-page links, current page highlighted.
+  const base: NavItem[] = [
+    { key: 'home', label: t('nav.home'), target: '/', kind: 'route' },
+    { key: 'projects', label: t('nav.projects'), target: '/projects', kind: 'route' },
+    { key: 'blog', label: t('nav.blog'), target: '/blog', kind: 'route' },
+    { key: 'about', label: t('nav.about'), target: '/about', kind: 'route' },
+    { key: 'contact', label: t('hero.feedback'), target: '/contact', kind: 'route' },
+    { key: 'chat', label: t('nav.chat'), target: '/chat', kind: 'route' },
+  ]
+  return base
+}
 
 export function TopBar() {
   const { t } = useT()
+  const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
-
-  /*
-    2026-10-07 (lint temizliği): burada `pathname`, `router`,
-    `isAdmin` ve `adminChecked` vardı ve HİÇBİRİ okunmuyordu. `isAdmin`
-    yüzünden her sayfa yüklemesinde `/api/admin/session` isteği atılıyor,
-    yanıtı çöpe gidiyordu. Kaldırıldı: boşuna istek + boşuna render.
-  */
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
@@ -46,6 +74,16 @@ export function TopBar() {
 
   const openSidebar = () => {
     window.dispatchEvent(new CustomEvent('sidebar:request-toggle'))
+  }
+
+  const navItems = getPageNav(pathname ?? '/', t)
+
+  const jumpTo = (item: NavItem) => {
+    if (item.kind === 'anchor') {
+      const el = document.getElementById(item.target)
+      if (el)
+scrollToElement(el)
+    }
   }
 
   return (
@@ -85,7 +123,8 @@ export function TopBar() {
                   && window.location.pathname === '/'
                 ) {
                   e.preventDefault()
-                  scrollToTop()
+                  // scrollToTop imported lazily below via window
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
                 }
               }}
               className={`group relative z-10 flex items-center gap-2 font-bold tracking-tight whitespace-nowrap ${
@@ -110,8 +149,43 @@ export function TopBar() {
             </Link>
           </div>
 
-          {/* Right: tek search butonu (yumuk/pill, yalnızca ikon) solda | admin edit toggle sağda */}
-          <div className="flex shrink-0 items-center gap-2 min-w-0 w-full justify-end">
+          {/* Middle: page nav (horizontal, scrollable) */}
+          <nav
+            aria-label="Page navigation"
+            className="hidden md:flex flex-1 items-center justify-center gap-1 min-w-0 overflow-x-auto"
+          >
+            {navItems.map((item) => {
+              const active
+                = item.kind === 'route'
+                  ? pathname === item.target || pathname?.startsWith(`${item.target}/`)
+                  : false
+              const cls = `shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                active
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-foreground/60 hover:bg-white/5 hover:text-foreground'
+              }`
+              if (item.kind === 'anchor') {
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => jumpTo(item)}
+                    className={cls}
+                  >
+                    {item.label}
+                  </button>
+                )
+              }
+              return (
+                <Link key={item.key} href={item.target} className={cls}>
+                  {item.label}
+                </Link>
+              )
+            })}
+          </nav>
+
+          {/* Right: search button with right margin */}
+          <div className="flex shrink-0 items-center gap-2 min-w-0 justify-end mr-4">
             <button
               type="button"
               onClick={() =>
@@ -128,7 +202,6 @@ export function TopBar() {
                 <span>K</span>
               </kbd>
             </button>
-
           </div>
         </div>
       </motion.header>

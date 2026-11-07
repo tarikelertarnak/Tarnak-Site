@@ -5,9 +5,9 @@ import type {
   GitHubUserProfile,
 } from '@/lib/github'
 /**
- * KULLANICI İSTEĞİYLE GİZLENEN DEPOLAR — tek kaynak `lib/github`.
+ * KULLANICI İSTEĞİYLE GİZLENEN DEPOLAR — istemci-güvenli sabit.
  */
-import { EXCLUDED_REPOS } from '@/lib/github'
+import { EXCLUDED_REPOS } from '@/lib/github-consts'
 
 const API_BASE = 'https://api.github.com'
 
