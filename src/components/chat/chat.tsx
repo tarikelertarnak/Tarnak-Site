@@ -2478,7 +2478,7 @@ jumpToMessage(m.id)
                     </button>
                   )}
                   {m.kind === 'audio' && m.file_url && (
-                    <AudioMessage src={m.file_url} fileName={m.file_name} />
+                    <AudioMessage src={m.file_url} fileName={m.file_name} mine={mine} />
                   )}
                   {m.kind === 'video' && m.file_url && (
                     <div className="mb-2 p-3 rounded-lg border border-foreground/10 bg-foreground/5">

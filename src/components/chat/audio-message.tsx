@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '@/components/locale-provider'
+import { cn } from '@/components/ui/cn'
 import {
   ArrowUpRightIcon,
   DownloadIcon,
@@ -32,9 +33,15 @@ function fmtTime(s: number): string {
 export function AudioMessage({
   src,
   fileName,
+  mine = false,
 }: {
   src: string
   fileName?: string | null
+  /**
+   * Kendi mesajımın balonunda (mavi `bg-primary`): açık gri hap orada
+   *  sönük kalır — bu durumda koyu hap + fg ikon seti kullanılır.
+   */
+  mine?: boolean
 }) {
   const { t } = useT()
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -112,26 +119,43 @@ export function AudioMessage({
   }
 
   return (
-    <div className="mb-2 flex w-full max-w-md items-center gap-2 rounded-full border border-foreground/10 bg-foreground/5 py-1.5 pr-2 pl-1.5">
+    <div className={cn(
+      'mb-2 flex w-full max-w-md items-center gap-2 rounded-full border py-1.5 pr-2 pl-1.5',
+      mine
+        ? 'border-white/10 bg-black/20'
+        : 'border-foreground/10 bg-foreground/5',
+    )}
+    >
       <audio ref={audioRef} src={src} preload="metadata" />
 
-      {/* Oynat / Duraklat — her zaman görünür, yuvarlak */}
+      {/* Oynat / Duraklat — her zaman görünür, yuvarlak.
+          Kendi balonumda (mavi üstünde) fg dolgu + primary ikon —
+          koyu tema: beyaz buton mavi ikon · açık tema: siyah buton mavi ikon. */}
       <button
         type="button"
         onClick={toggle}
         aria-label={playing ? t('chat.pause') : t('chat.play')}
-        className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full bg-foreground/10 text-foreground transition-colors hover:bg-foreground/20"
+        className={cn(
+          'flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors',
+          mine
+            ? 'bg-primary-fg text-primary hover:bg-primary-fg/90'
+            : 'bg-foreground/10 text-foreground hover:bg-foreground/20',
+        )}
       >
         {playing
           ? <PauseIcon size={15} />
           : <PlayIcon size={15} className="ml-0.5" />}
       </button>
 
-      <span className="shrink-0 text-[11px] font-medium tabular-nums text-foreground-500">
+      <span className={cn(
+        'shrink-0 text-[11px] font-medium tabular-nums',
+        mine ? 'text-primary-fg/85' : 'text-foreground-500',
+      )}
+      >
         {`${fmtTime(current)} / ${fmtTime(duration)}`}
       </span>
 
-      {/* Seek çubuğu */}
+      {/* Seek çubuğu — accent-currentColor balonun fg rengini alır (mavi üstüne mavi düşmez) */}
       <input
         type="range"
         min={0}
@@ -140,7 +164,10 @@ export function AudioMessage({
         value={current}
         onChange={e => seek(Number(e.target.value))}
         aria-label={t('chat.audioPlayer')}
-        className="h-1 min-w-0 flex-1 cursor-pointer accent-primary"
+        className={cn(
+          'h-1 min-w-0 flex-1 cursor-pointer accent-currentColor',
+          mine ? 'text-primary-fg' : 'text-foreground',
+        )}
       />
 
       {/* Sessiz / Sesi aç */}
@@ -148,7 +175,12 @@ export function AudioMessage({
         type="button"
         onClick={toggleMute}
         aria-label={muted ? t('chat.unmute') : t('chat.mute')}
-        className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+        className={cn(
+          'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors',
+          mine
+            ? 'text-primary-fg/75 hover:bg-white/10 hover:text-primary-fg'
+            : 'text-foreground-500 hover:bg-foreground/10 hover:text-foreground',
+        )}
       >
         {muted ? <VolumeXIcon size={16} /> : <VolumeIcon size={16} />}
       </button>
@@ -160,7 +192,12 @@ export function AudioMessage({
           onClick={() => setMenuOpen(o => !o)}
           aria-label={t('chat.options')}
           aria-expanded={menuOpen}
-          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+          className={cn(
+            'flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors',
+            mine
+              ? 'text-primary-fg/75 hover:bg-white/10 hover:text-primary-fg'
+              : 'text-foreground-500 hover:bg-foreground/10 hover:text-foreground',
+          )}
         >
           <MoreVerticalIcon size={16} />
         </button>

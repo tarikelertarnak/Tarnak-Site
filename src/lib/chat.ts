@@ -152,7 +152,13 @@ const MAGIC_BYTES: Array<{ ext: string, test: (b: Buffer) => boolean }> = [
   { ext: 'pdf', test: b => b.length > 3 && b.toString('latin1', 0, 4) === '%PDF' },
   { ext: 'zip', test: b => b.length > 3 && b[0] === 0x50 && b[1] === 0x4B },
   { ext: 'gz', test: b => b.length > 2 && b[0] === 0x1F && b[1] === 0x8B },
-  { ext: 'mp3', test: b => b.length > 2 && b.toString('latin1', 0, 3) === 'ID3' },
+  {
+    ext: 'mp3',
+    test: b =>
+      b.length > 2
+      && ((b.toString('latin1', 0, 3) === 'ID3')
+        || (b[0] === 0xFF && (b[1] & 0xE0) === 0xE0)),
+  },
   {
     ext: 'wav',
     test: b =>
