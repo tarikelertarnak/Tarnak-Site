@@ -9,8 +9,8 @@ import { cn } from '@/components/ui/cn'
  * İMLEÇ KONUMLU BAĞLAM MENÜSÜ (2026-10-13, 2026-11-02 enhanced).
  *
  * Özellikler:
- *  - stream-chat-react tarzı renkli ikonlar ve metinler
- *  - yumuşak köşeler (rounded-xl), gölge, backdrop-blur
+ *  - stream-chat-react tarzı monokrom ikonlar ve metinler (renksiz)
+ *  - yumuşak köşeler (rounded-lg), gölge, backdrop-blur
  *  - alt menü (submenu) desteği (React, Download, RemindMe gibi)
  *  - dışarı tıklama / ESC / kaydırma / resize → kapat
  *  - klavye navigasyonu (ok tuşları, Home, End, Tab)
@@ -218,16 +218,11 @@ return
             setSubmenu(null)
           }}
           className={cn(
-            'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-            item.danger
-              ? 'text-foreground hover:bg-foreground/10'
-              : item.color
-                ? 'text-foreground hover:bg-foreground/10'
-                : 'hover:bg-foreground/10',
+            'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-foreground-600 transition-colors disabled:cursor-not-allowed disabled:opacity-50 hover:bg-foreground/10',
           )}
         >
           {item.icon && (
-            <span className={cn('flex shrink-0 items-center justify-center text-foreground-400', item.iconColor)} aria-hidden>
+            <span className="flex shrink-0 items-center justify-center text-foreground-400" aria-hidden>
               {item.icon}
             </span>
           )}
@@ -261,11 +256,11 @@ export interface MenuItemProps {
 export function MenuItem({
   icon,
   label,
-  danger,
+  danger: _danger,
   disabled,
   selected,
-  color,
-  iconColor,
+  color: _color,
+  iconColor: _iconColor,
   onSelect,
   submenuItems,
 }: MenuItemProps) {
@@ -303,18 +298,12 @@ export function MenuItem({
       onClick={handleClick}
       onClickCapture={handleClickCapture}
       className={cn(
-        'flex w-full cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50',
-        danger
-          ? 'text-foreground hover:bg-foreground/10'
-          : selected
-            ? 'font-medium text-foreground hover:bg-foreground/10'
-            : color
-              ? 'text-foreground hover:bg-foreground/10'
-              : 'hover:bg-foreground/10',
+        'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-foreground-600 transition-colors disabled:cursor-not-allowed disabled:opacity-50 hover:bg-foreground/10',
+        selected ? 'font-medium text-foreground' : '',
       )}
     >
       {icon && (
-        <span className={cn('flex shrink-0 items-center justify-center text-foreground-400', iconColor)} aria-hidden>
+        <span className="flex shrink-0 items-center justify-center text-foreground-400" aria-hidden>
           {icon}
         </span>
       )}
@@ -344,7 +333,7 @@ export function MenuHeader({
         aria-label={closeLabel}
         className="shrink-0 cursor-pointer rounded-md px-2 py-1 text-xs transition-colors hover:bg-foreground/10"
       >
-        <Icon icon="mdi:close" width={14} height={14} />
+        <Icon icon="mdi:close" width={14} height={14} className="text-foreground-400" />
       </button>
     </div>
   )
