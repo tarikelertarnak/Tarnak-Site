@@ -340,19 +340,7 @@ setIsOpen(false)
 
       {/* Primary nav */}
       <div className="flex flex-1 flex-col gap-1 px-3.5 py-5">
-        {[
-          ...NAV_LINKS,
-          // Admin Panel ana listede, Contributors'ın hemen ardında
-          // (2026-10-20, kullanıcı isteği). Yalnızca admin oturumunda görünür.
-          ...(sessionChecked && sessionUser?.role === 'admin'
-            ? [{
-                key: 'admin',
-                labelKey: 'nav.adminPanel',
-                href: '/admin',
-                icon: PanelIcon,
-              }]
-            : []),
-        ].map((item) => {
+        {NAV_LINKS.map((item) => {
           const active = isActive(item.href)
           const Icon = item.icon
           return (
@@ -378,6 +366,23 @@ setIsOpen(false)
 
       {/* Bottom: session, settings */}
       <div className="flex flex-col gap-1 px-3.5 py-5">
+        {/* Admin Paneli (2026-11-08, kullanıcı isteği): ana listeden AYRILDI,
+            profil kartının hemen üstünde ve bitişiğinde. Üstündeki border-t
+            sayesinde "Ana sayfa … Katkıda Bulunanlar" listesinden ayrışır. */}
+        {sessionChecked && sessionUser?.role === 'admin' && (
+          <Link
+            href="/admin"
+            className={cn(
+              'flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-base font-medium transition-colors duration-200',
+              isActive('/admin')
+                ? 'bg-primary/15 text-primary'
+                : 'text-foreground/70 hover:bg-white/5 hover:text-foreground',
+            )}
+          >
+            <PanelIcon size={20} />
+            <span>{t('nav.adminPanel')}</span>
+          </Link>
+        )}
         {/* Oturum yoksa: Giriş Yap | Kayıt Ol.
             Oturum varsa AYNI yerde profil + çıkış (2026-10-06: profil/çıkış
             üstteki armanın altından buraya taşındı — konum artık giriş/kayıt
