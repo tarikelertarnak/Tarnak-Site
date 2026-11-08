@@ -38,6 +38,20 @@ describe('dosya yükleme · dosya çalışmaz, yalnız var olur', () => {
     expect(CONFIG).toContain('source: \'/uploads/:path*\'')
     expect(CONFIG).toMatch(/Content-Disposition[\s\S]{0,80}attachment/)
     expect(CONFIG).toMatch(/X-Content-Type-Options[\s\S]{0,80}nosniff/)
+    // SOHBET MEDYASI inline — <audio>/<video> oynatabilsin (2026-11-08 kullanıcı isteği)
+    expect(CONFIG).toContain('source: \'/uploads/chat/:path*.:ext(')
+    expect(CONFIG).toMatch(/value: 'inline'/)
+  })
+
+  it('ses uzantıları (.wav/.flac/.m4a/.aac) güvenli beyaz listede', () => {
+    const start = LIB.indexOf('const ALLOWED_EXTENSIONS')
+    const end = LIB.indexOf('const MAGIC_BYTES')
+    const block = LIB.slice(start, end)
+    for (const ext of ['.wav', '.flac', '.m4a', '.aac', '.mp3', '.ogg']) {
+      expect(block, `${ext} beyaz listede olmalı`).toContain(`'${ext}'`)
+    }
+    // WAV gerçekten RIFF+WAVE imzası ile doğrulanır
+    expect(LIB).toContain('b.toString(\'latin1\', 8, 12) === \'WAVE\'')
   })
 
   it('beyaz listede çalıştırılabilir uzantı YOK (.js/.html/.svg/.xml)', () => {

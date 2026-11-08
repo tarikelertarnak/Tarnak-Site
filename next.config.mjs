@@ -170,6 +170,16 @@ const nextConfig = {
         ],
       },
       {
+        // Sohbet medyası İNLINE sunulur — <audio>/<video>/<img> oynatabilsin.
+        // Uzantı beyaz listesi: yalnız güvenli medya uzantıları; gerisi hâlâ
+        // attachment (yukarıdaki kural). nosniff tüm uçlarda kalır.
+        source: '/uploads/chat/:path*.:ext(png|jpg|jpeg|gif|webp|avif|mp3|ogg|webm|mp4|m4a|aac|flac|wav)',
+        headers: [
+          { key: 'Content-Disposition', value: 'inline' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+        ],
+      },
+      {
         // public/ altındaki statik varlıklar.
         // Next varsayılan olarak `public, max-age=0, must-revalidate` gönderir;
         // yani her ziyarette her görsel için yeniden doğrulama isteği gider.

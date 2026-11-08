@@ -112,6 +112,10 @@ const ALLOWED_EXTENSIONS = new Set([
   '.webp',
   '.avif',
   '.mp3',
+  '.wav',
+  '.flac',
+  '.m4a',
+  '.aac',
   '.mp4',
   '.webm',
   '.ogg',
@@ -149,6 +153,14 @@ const MAGIC_BYTES: Array<{ ext: string, test: (b: Buffer) => boolean }> = [
   { ext: 'zip', test: b => b.length > 3 && b[0] === 0x50 && b[1] === 0x4B },
   { ext: 'gz', test: b => b.length > 2 && b[0] === 0x1F && b[1] === 0x8B },
   { ext: 'mp3', test: b => b.length > 2 && b.toString('latin1', 0, 3) === 'ID3' },
+  {
+    ext: 'wav',
+    test: b =>
+      b.length > 12
+      && b.toString('latin1', 0, 4) === 'RIFF'
+      && b.toString('latin1', 8, 12) === 'WAVE',
+  },
+  { ext: 'flac', test: b => b.length > 4 && b.toString('latin1', 0, 4) === 'fLaC' },
 ]
 
 /**
