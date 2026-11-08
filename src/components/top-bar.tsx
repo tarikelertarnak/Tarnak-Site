@@ -3,51 +3,54 @@
 /**
  * TopBar — fixed top bar with sidebar toggle, brand, page nav, and search trigger.
  *
- * The Sidebar (left panel) is closed by default on desktop. Users click the
- * hamburger icon to slide it in. This mirrors the live site (tarikelertarnak.github.io)
- * which uses a top-bar pattern instead of always-visible sidebar.
- *
  * Nav (2026-11-08): fixed bar now carries a horizontal, per-page navigation
- * so users can jump between in-page sections without opening the sidebar.
- * Items are derived from the current pathname (`getPageNav`).
+ * with icons, always button-like styling, centered, scrollable with arrows
+ * (admin panel ScrollableTabs pattern).
  */
 import { motion } from 'motion/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
-import { MenuIcon, SearchIcon } from '@/components/ui/icons'
+import {
+  ChatIcon,
+  FolderIcon,
+  HouseIcon,
+  MenuIcon,
+  NewspaperIcon,
+  SearchIcon,
+  SendIcon,
+  UserIcon,
+} from '@/components/ui/icons'
+import { useScrollState } from '@/hooks/use-scroll-state'
 import { scrollToElement } from '@/lib/scroll'
 
 interface NavItem {
   key: string
   label: string
-  /** In-page anchor (without #) or full path. */
   target: string
   kind: 'anchor' | 'route'
+  icon: (props: { size?: number, className?: string }) => React.ReactElement
 }
 
 function getPageNav(pathname: string, t: (k: string) => string): NavItem[] {
-  // Home: in-page section jumps.
   if (pathname === '/' || pathname === '') {
     return [
-      { key: 'about', label: t('nav.about'), target: 'about', kind: 'anchor' },
-      { key: 'projects', label: t('nav.projects'), target: 'projects', kind: 'anchor' },
-      { key: 'blog', label: t('nav.blog'), target: 'blog', kind: 'anchor' },
-      { key: 'contact', label: t('hero.feedback'), target: 'contact', kind: 'anchor' },
+      { key: 'about', label: t('nav.about'), target: 'about', kind: 'anchor', icon: UserIcon },
+      { key: 'projects', label: t('nav.projects'), target: 'projects', kind: 'anchor', icon: FolderIcon },
+      { key: 'blog', label: t('nav.blog'), target: 'blog', kind: 'anchor', icon: NewspaperIcon },
+      { key: 'contact', label: t('hero.feedback'), target: 'contact', kind: 'anchor', icon: SendIcon },
     ]
   }
-  // Other pages: quick cross-page links, current page highlighted.
-  const base: NavItem[] = [
-    { key: 'home', label: t('nav.home'), target: '/', kind: 'route' },
-    { key: 'projects', label: t('nav.projects'), target: '/projects', kind: 'route' },
-    { key: 'blog', label: t('nav.blog'), target: '/blog', kind: 'route' },
-    { key: 'about', label: t('nav.about'), target: '/about', kind: 'route' },
-    { key: 'contact', label: t('hero.feedback'), target: '/contact', kind: 'route' },
-    { key: 'chat', label: t('nav.chat'), target: '/chat', kind: 'route' },
+  return [
+    { key: 'home', label: t('nav.home'), target: '/', kind: 'route', icon: HouseIcon },
+    { key: 'projects', label: t('nav.projects'), target: '/projects', kind: 'route', icon: FolderIcon },
+    { key: 'blog', label: t('nav.blog'), target: '/blog', kind: 'route', icon: NewspaperIcon },
+    { key: 'about', label: t('nav.about'), target: '/about', kind: 'route', icon: UserIcon },
+    { key: 'contact', label: t('hero.feedback'), target: '/contact', kind: 'route', icon: SendIcon },
+    { key: 'chat', label: t('nav.chat'), target: '/chat', kind: 'route', icon: ChatIcon },
   ]
-  return base
 }
 
 export function TopBar() {
@@ -62,7 +65,6 @@ export function TopBar() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Listen for sidebar toggle from Sidebar component
   useEffect(() => {
     const handler = (e: Event) => {
       const custom = e as CustomEvent<{ open: boolean }>
@@ -78,6 +80,9 @@ export function TopBar() {
 
   const navItems = getPageNav(pathname ?? '/', t)
 
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const state = useScrollState(scrollRef)
+
   const jumpTo = (item: NavItem) => {
     if (item.kind === 'anchor') {
       const el = document.getElementById(item.target)
@@ -85,6 +90,18 @@ export function TopBar() {
 scrollToElement(el)
     }
   }
+
+  const TabArrow = ({ side, disabled, onClick }: { side: 'left' | 'right', disabled: boolean, onClick: () => void }) => (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={side === 'left' ? 'Sola kaydır' : 'Sağa kaydır'}
+      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-fg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      <span className="text-sm font-bold">{side === 'left' ? '‹' : '›'}</span>
+    </button>
+  )
 
   return (
     <>
@@ -104,7 +121,7 @@ scrollToElement(el)
           }`}
         >
           {/* Left: hamburger + brand */}
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0 shrink-0">
             <button
               type="button"
               onClick={openSidebar}
@@ -118,12 +135,8 @@ scrollToElement(el)
             <Link
               href="/"
               onClick={(e) => {
-                if (
-                  typeof window !== 'undefined'
-                  && window.location.pathname === '/'
-                ) {
+                if (typeof window !== 'undefined' && window.location.pathname === '/') {
                   e.preventDefault()
-                  // scrollToTop imported lazily below via window
                   window.scrollTo({ top: 0, behavior: 'smooth' })
                 }
               }}
@@ -149,47 +162,53 @@ scrollToElement(el)
             </Link>
           </div>
 
-          {/* Middle: page nav (horizontal, scrollable) */}
-          <nav
-            aria-label="Page navigation"
-            className="hidden md:flex flex-1 items-center justify-center gap-1 min-w-0 overflow-x-auto"
-          >
-            {navItems.map((item) => {
-              const active
-                = item.kind === 'route'
-                  ? pathname === item.target || pathname?.startsWith(`${item.target}/`)
-                  : false
-              const cls = `shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                active
-                  ? 'bg-primary/15 text-primary'
-                  : 'text-foreground/60 hover:bg-white/5 hover:text-foreground'
-              }`
-              if (item.kind === 'anchor') {
+          {/* Middle: page nav (centered, scrollable with arrows) */}
+          <div className="flex flex-1 items-center justify-center min-w-0 gap-1">
+            {state.hasOverflow && (
+              <TabArrow side="left" disabled={!state.canScrollLeft} onClick={() => state.scrollBy(-1)} />
+            )}
+            <div
+              ref={scrollRef}
+              className="flex min-w-0 flex-1 items-center justify-center gap-1.5 overflow-x-auto scroll-smooth px-1"
+              style={{ scrollbarWidth: 'none' }}
+            >
+              {navItems.map((item) => {
+                const active
+                  = item.kind === 'route'
+                    ? pathname === item.target || pathname?.startsWith(`${item.target}/`)
+                    : false
+                const Icon = item.icon
+                const cls = `shrink-0 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+                  active
+                    ? 'border-primary bg-primary/20 text-primary shadow-sm shadow-primary/20'
+                    : 'border-white/10 bg-white/5 text-foreground/70 hover:border-primary/40 hover:bg-primary/10 hover:text-foreground'
+                }`
+                if (item.kind === 'anchor') {
+                  return (
+                    <button key={item.key} type="button" onClick={() => jumpTo(item)} className={cls}>
+                      <Icon size={14} />
+                      <span>{item.label}</span>
+                    </button>
+                  )
+                }
                 return (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => jumpTo(item)}
-                    className={cls}
-                  >
-                    {item.label}
-                  </button>
+                  <Link key={item.key} href={item.target} className={cls}>
+                    <Icon size={14} />
+                    <span>{item.label}</span>
+                  </Link>
                 )
-              }
-              return (
-                <Link key={item.key} href={item.target} className={cls}>
-                  {item.label}
-                </Link>
-              )
-            })}
-          </nav>
+              })}
+            </div>
+            {state.hasOverflow && (
+              <TabArrow side="right" disabled={!state.canScrollRight} onClick={() => state.scrollBy(1)} />
+            )}
+          </div>
 
           {/* Right: search button with right margin */}
           <div className="flex shrink-0 items-center gap-2 min-w-0 justify-end mr-4">
             <button
               type="button"
-              onClick={() =>
-                window.dispatchEvent(new CustomEvent('search:request-open'))}
+              onClick={() => window.dispatchEvent(new CustomEvent('search:request-open'))}
               aria-label={t('common.search')}
               className={`flex shrink-0 min-w-0 items-center justify-between gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-foreground/70 transition-colors hover:border-white/20 hover:text-foreground min-w-[44px] sm:min-w-[64px] sm:max-w-[220px] md:max-w-[280px] ${
                 scrolled ? 'h-9' : 'h-10'
@@ -206,7 +225,6 @@ scrollToElement(el)
         </div>
       </motion.header>
 
-      {/* Spacer so content doesn't go under fixed header — height matches the bar */}
       <div
         aria-hidden
         className={`w-full transition-all duration-300 ${
