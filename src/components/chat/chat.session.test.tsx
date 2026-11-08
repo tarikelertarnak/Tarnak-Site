@@ -288,11 +288,12 @@ describe('sohbet v2 oturum ekranı', () => {
     const mic = () => screen.getByTestId('chat-mic-send-btn')
     const gonder = () => screen.queryByRole('button', { name: 'Gönder' })
 
-    // Boşken: mikrofon butonu var, gönder yok
+    // Boşken: mikrofon butonu var, gönder yok. 2026-11-08: ses kaydı geldi —
+    // butonun adı "Ses kaydı" (eski boş ad yerine; kullanıcı isteği: mikrofona
+    // basınca WhatsApp tarzı kayıt başlar).
     expect(mic()).not.toBeNull()
     expect(gonder()).toBeNull()
-    // Boşken erişilebilir isim yok (kullanıcı isteği: "mesaj yakında" boş)
-    expect(mic().getAttribute('aria-label')).toBe('')
+    expect(mic().getAttribute('aria-label')).toBe('Ses kaydı')
 
     // Yazınca: gönder çıkar, mikrofon ikonu kaybolur (buton aynı kalır)
     fireEvent.change(input, { target: { value: 'merhaba' } })

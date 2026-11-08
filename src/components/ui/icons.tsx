@@ -1230,6 +1230,29 @@ export function PlusIcon({ size = 18, className }: IconProps) {
   )
 }
 
+/** Büyüteç (zoom in) — medya lightbox'ta resmi/video büyütür. */
+export function ZoomInIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.35-4.35" />
+      <path d="M11 8v6" />
+      <path d="M8 11h6" />
+    </svg>
+  )
+}
+
+/** Büyüteç kapatma (zoom out) — zoom'dayken normale döner. */
+export function ZoomOutIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.35-4.35" />
+      <path d="M8 11h6" />
+    </svg>
+  )
+}
+
 /** Alıntı / tırnak işareti (monochrome, currentColor). */
 export function QuoteIcon({ size = 16, className }: IconProps) {
   return (

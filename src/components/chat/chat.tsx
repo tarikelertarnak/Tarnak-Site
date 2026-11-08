@@ -1,14 +1,16 @@
 'use client'
 
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
+import type { LightboxItem } from '@/components/chat/media-lightbox'
 import type { ChatMessageRow, ChatReactionRow } from '@/lib/chat-db'
 import type { Presence, PresenceState } from '@/lib/chat-peers'
 import type { TickStyle } from '@/lib/chat-ticks'
 import Link from 'next/link'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AudioMessage } from '@/components/chat/audio-message'
 import { EmojiPicker } from '@/components/chat/emoji-picker'
+import { MediaLightbox } from '@/components/chat/media-lightbox'
 import { useSwipeReply } from '@/components/chat/use-swipe-reply'
 import { VideoMessage } from '@/components/chat/video-message'
 import { useT } from '@/components/locale-provider'
@@ -22,6 +24,8 @@ import {
   DownloadIcon,
   EditIcon,
   ErrorIcon,
+  FileIcon,
+  FolderIcon,
   ForwardIcon,
   InfoIcon,
   LockIcon,
@@ -137,6 +141,73 @@ function areaMenuAt(x: number, y: number) {
  * Sunucudan gelen satırlarda ikisi de yoktur.
  */
 type UiMessage = ChatMessageRow & { _pending?: boolean, _failed?: boolean }
+
+/**
+ * Mesajın gerçek medya türü — sunucu türü BİLİNMİYORSA (eski/bug'lı
+ * yüklemeler `file`+`.bin` olarak kaydoldu) dosya adından/MIME'den çıkar.
+ * `file` satırı bozuk olsa bile player yine çizilir (2026-11-08).
+ */
+function mediaKindOf(m: ChatMessageRow): 'image' | 'audio' | 'video' | null {
+  if (m.kind === 'image' || m.kind === 'audio' || m.kind === 'video') {
+    return m.kind
+  }
+  const name = (m.file_name ?? '').toLowerCase()
+  const dot = name.lastIndexOf('.')
+  const ext = dot >= 0 ? name.slice(dot + 1) : ''
+  const ft = (m.file_type ?? '').toLowerCase()
+  if (ft.startsWith('image/') || ['png', 'jpg', 'jpeg', 'gif', 'webp', 'avif', 'bmp'].includes(ext)) {
+    return 'image'
+  }
+  if (ft.startsWith('video/') || ['mp4', 'mov', 'mkv', 'avi', 'webm'].includes(ext)) {
+    return 'video'
+  }
+  if (ft.startsWith('audio/') || ['mp3', 'wav', 'flac', 'm4a', 'aac', 'ogg', 'oga', 'opus', 'weba'].includes(ext)) {
+    return 'audio'
+  }
+  return null
+}
+
+/**
+ * Medya altına dosya adı + İNDİRME ikonu (2026-11-08, kullanıcı isteği):
+ * görsel/video/ses balonunda dosya adı ve yanında indirme düğmesi durur.
+ */
+function MediaCaption({
+  fileName,
+  url,
+  mine,
+  label,
+}: {
+  fileName: string | null
+  url: string
+  mine: boolean
+  label: string
+}) {
+  if (!fileName) {
+    return null
+  }
+  return (
+    <div className={cn('mt-1 flex items-center gap-1.5', mine ? 'justify-end' : 'justify-start')}>
+      <span className={cn('max-w-48 truncate font-mono text-[10px]', mine ? 'text-primary-fg/70' : 'text-foreground-500')}>
+        {fileName}
+      </span>
+      <a
+        href={url}
+        download={fileName}
+        onClick={e => e.stopPropagation()}
+        aria-label={label}
+        title={label}
+        className={cn(
+          'flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors',
+          mine
+            ? 'text-primary-fg/80 hover:bg-white/10 hover:text-primary-fg'
+            : 'text-foreground-500 hover:bg-foreground/10 hover:text-foreground',
+        )}
+      >
+        <DownloadIcon size={12} />
+      </a>
+    </div>
+  )
+}
 
 /**
  * ALINTI ŞERİDİ RENGİ (kullanıcı isteği: "gönderene göre SABİT renk; kendi
@@ -352,8 +423,20 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   const [stripFor, setStripFor] = useState<string | null>(null)
   const [pickerFor, setPickerFor] = useState<string | null>(null)
   const [reactionPanelFor, setReactionPanelFor] = useState<string | null>(null)
-  /** Görsel galeri: açık olan resimlerin listesi ve şu anki indeks. */
-  const [gallery, setGallery] = useState<{ urls: string[], index: number } | null>(null)
+  /** Görsel/video lightbox: tıklanan medya — tüm medya listesi + sıradaki indeks. */
+  const [gallery, setGallery] = useState<{ items: LightboxItem[], index: number } | null>(null)
+  /**
+       Sesli mesaj kaydı (2026-11-08): WhatsApp tarzı — mikrofona bas → kayıt,
+      çöp kutusu ile iptal, yeşil düğme ile gönder. `MediaRecorder` cihazdaysa.
+   */
+  const [recording, setRecording] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const recorderRef = useRef<MediaRecorder | null>(null)
+  const recordStreamRef = useRef<MediaStream | null>(null)
+  const recordChunksRef = useRef<BlobPart[]>([])
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const waveformRafRef = useRef(0)
+  const audioCtxRef = useRef<AudioContext | null>(null)
   /** Anketler: messageId -> anket verisi. `user_vote` seçilen seçenek indeksi veya null. */
   const [polls, setPolls] = useState<Record<string, {
     question: string
@@ -363,19 +446,45 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   }>>({})
   /** Anket oluşturma taslağı: null → yok, dolu → form açık. */
   const [pollDraft, setPollDraft] = useState<{ question: string, options: string[] } | null>(null)
+  // "Ekle" (kâğıt kıskacı) düğmesinin açılır menüsü: Dosya / Klasör / Anket…
+  const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   // "Açık konu (thread)" state'i KALDIRILDI (2026-11-08, kullanıcı isteği).
 
-  /** Galeri aç: mesajdaki tüm resimleri toplayıp bu resimden başlatır. */
-  function openGallery(messageIds: string[], startUrl: string) {
-    const urls: string[] = []
+  /** Lightbox aç: tüm medya (görsel+video) — tıklanandan başla. */
+  function openGallery(clicked: UiMessage) {
+    const items: LightboxItem[] = []
     for (const m of messages) {
-      if (m.kind === 'image' && m.file_url && messageIds.includes(m.id)) {
-        urls.push(m.file_url)
+      const k = mediaKindOf(m)
+      if (k !== 'image' && k !== 'video') {
+        continue
+      }
+      if (m.file_url) {
+        items.push({
+          id: m.id,
+          url: m.file_url,
+          kind: k,
+          fileName: m.file_name,
+          createdAt: m.created_at,
+          senderName: m.sender_name,
+          pinned: m.pinned,
+        })
       }
     }
-    if (urls.length === 0)
-urls.push(startUrl)
-    setGallery({ urls, index: urls.includes(startUrl) ? urls.indexOf(startUrl) : 0 })
+    if (items.length === 0) {
+      if (clicked.file_url) {
+        items.push({
+          id: clicked.id,
+          url: clicked.file_url,
+          kind: 'image',
+          fileName: clicked.file_name,
+          createdAt: clicked.created_at,
+          senderName: clicked.sender_name,
+          pinned: clicked.pinned,
+        })
+      }
+    }
+    const clickedIndex = items.findIndex(i => i.id === clicked.id)
+    setGallery({ items, index: clickedIndex >= 0 ? clickedIndex : 0 })
   }
 
   /** Galeri kapat. */
@@ -431,6 +540,24 @@ urls.push(startUrl)
   const [peerQuery, setPeerQuery] = useState('')
   const [profilePeer, setProfilePeer] = useState<Peer | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  /** Klasör seçimi (webkitdirectory): içindeki dosyalar sırayla mesaj olur. */
+  const folderRef = useRef<HTMLInputElement>(null)
+  /** "Ekle" açılır menüsünün dışa tıklama yakalayıcısı. */
+  const attachMenuRef = useRef<HTMLDivElement>(null)
+
+  // "Ekle" menüsüne dışarı tıklayınca kapanır.
+  useEffect(() => {
+    if (!attachMenuOpen) {
+      return
+    }
+    const onDoc = (e: MouseEvent) => {
+      if (!attachMenuRef.current?.contains(e.target as Node)) {
+        setAttachMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [attachMenuOpen])
   /** Metin alanı: emoji imlecin olduğu yere eklensin diye ref gerekir. */
   const inputRef = useRef<HTMLInputElement>(null)
   /** Mesaj alanı: kaydırma BURADA olur, sayfada değil (bkz. `scrollToBottom`). */
@@ -1729,6 +1856,121 @@ return
     await deliver(m.id, m.text ?? '', m.reply_to_id ?? undefined)
   }
 
+  /** Kaydı başlat (2026-11-08, kullanıcı isteği). İzin yoksa hata bandı gösterir. */
+  async function startRecording() {
+    if (recording || sending || !conversationId) {
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
+        .find(m => MediaRecorder.isTypeSupported(m))
+      const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined)
+      recordChunksRef.current = []
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          recordChunksRef.current.push(e.data)
+        }
+      }
+      recorder.start(250)
+      recorderRef.current = recorder
+      recordStreamRef.current = stream
+      setRecording(true)
+      setElapsed(0)
+      // Canlı dalga biçimi: AnalyserNode → canvas çubukları
+      const AudioContextCtor = window.AudioContext
+        ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+      const ctx = new AudioContextCtor()
+      audioCtxRef.current = ctx
+      const source = ctx.createMediaStreamSource(stream)
+      const analyser = ctx.createAnalyser()
+      analyser.fftSize = 256
+      analyser.smoothingTimeConstant = 0.82
+      source.connect(analyser)
+      const freq = new Uint8Array(analyser.frequencyBinCount)
+      const draw = () => {
+        const canvas = canvasRef.current
+        if (!canvas || !recorderRef.current) {
+          return
+        }
+        const c = canvas.getContext('2d')
+        if (!c) {
+          waveformRafRef.current = requestAnimationFrame(draw)
+          return
+        }
+        analyser.getByteFrequencyData(freq)
+        const w = canvas.width
+        const h = canvas.height
+        const bars = 44
+        const step = Math.max(1, Math.floor(freq.length / bars))
+        const bw = Math.floor(w / bars) - 2
+        c.clearRect(0, 0, w, h)
+        c.fillStyle = '#f87171'
+        for (let i = 0; i < bars; i++) {
+          const v = freq[Math.min(freq.length - 1, i * step)] / 255
+          const bh = Math.max(2, v * h)
+          c.beginPath()
+          c.roundRect(i * (w / bars), (h - bh) / 2, bw, bh, bw / 2)
+          c.fill()
+        }
+        waveformRafRef.current = requestAnimationFrame(draw)
+      }
+      waveformRafRef.current = requestAnimationFrame(draw)
+    }
+    catch {
+      setError(t('chat.micDenied'))
+    }
+  }
+
+  /** Kaydı bitir: `send=true` → ses dosyası yükle+gönder; `false` → iptal. */
+  function stopRecording(send: boolean) {
+    const recorder = recorderRef.current
+    if (!recorder) {
+      return
+    }
+    recorder.onstop = () => {
+      const mime = recorder.mimeType || 'audio/webm'
+      const blob = new Blob(recordChunksRef.current, { type: mime })
+      cleanupRecording()
+      if (!send || blob.size === 0) {
+        return
+      }
+      const ext = mime.includes('ogg') ? 'ogg' : mime.includes('mp4') ? 'm4a' : 'webm'
+      const file = new File([blob], `ses-kaydi-${Date.now()}.${ext}`, { type: mime })
+      void uploadFile(file)
+    }
+    try {
+      recorder.stop()
+    }
+    catch {
+      cleanupRecording()
+    }
+  }
+
+  function cleanupRecording() {
+    cancelAnimationFrame(waveformRafRef.current)
+    recordStreamRef.current?.getTracks().forEach(t => t.stop())
+    recordStreamRef.current = null
+    recorderRef.current = null
+    void audioCtxRef.current?.close().catch(() => {})
+    audioCtxRef.current = null
+    recordChunksRef.current = []
+    setRecording(false)
+    setElapsed(0)
+  }
+
+  /** Kayıt süresi sayacı (250 ms'de bir güncellenir). */
+  useEffect(() => {
+    if (!recording) {
+      return
+    }
+    const started = Date.now()
+    const id = window.setInterval(() => {
+      setElapsed(Math.floor((Date.now() - started) / 1000))
+    }, 250)
+    return () => window.clearInterval(id)
+  }, [recording])
+
   async function uploadFile(file: File) {
     if (!conversationId) {
       return
@@ -2401,9 +2643,11 @@ return
           return (
             <React.Fragment key={m.id}>
               {showDateSeparator && (
-                <div className="mb-2 flex w-full items-center justify-center">
+                <div className="mb-2 flex w-full items-center gap-3">
+                  {/* Tarihten ÖNCE ve SONRA çizgi (2026-11-08, kullanıcı isteği) */}
+                  <span aria-hidden className="h-px min-w-0 flex-1 bg-foreground/15" />
                   <span
-                    className="relative z-0 px-2 text-[10px] font-medium text-foreground-400 uppercase tracking-wider"
+                    className="shrink-0 text-[10px] font-medium text-foreground-400 uppercase tracking-wider"
                   >
                     {new Date(m.created_at).toLocaleDateString('tr-TR', {
                       weekday: 'long',
@@ -2411,6 +2655,7 @@ return
                       month: 'long',
                     })}
                   </span>
+                  <span aria-hidden className="h-px min-w-0 flex-1 bg-foreground/15" />
                 </div>
               )}
               <div
@@ -2518,29 +2763,38 @@ jumpToMessage(m.id)
                       )}
                     </button>
                   )}
-                  {m.kind === 'image' && m.file_url && (
-                    // Sohbet görselleri kullanıcı yüklemesi; next/image gerekmez.
-                    // Tıklanınca tam ekran galeri açılır (stream-chat-react özelliği).
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        openGallery([m.id], m.file_url!)
-                      }}
-                      className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                    >
-                      <img
-                        src={m.file_url}
-                        alt={m.file_name ?? ''}
-                        className="mb-1 max-h-48 rounded-lg object-cover"
-                      />
-                    </button>
+                  {mediaKindOf(m) === 'image' && m.file_url && (
+                    <>
+                      {/* Sohbet görselleri kullanıcı yüklemesi; next/image gerekmez.
+                          Tıklanınca lightbox açılır (ad/benzeri, ok tuşları, zoom, tekerlek). */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          openGallery(m)
+                        }}
+                        className="shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                      >
+                        <img
+                          src={m.file_url}
+                          alt={m.file_name ?? ''}
+                          className="mb-1 max-h-48 rounded-lg object-cover"
+                        />
+                      </button>
+                      <MediaCaption fileName={m.file_name ?? null} url={m.file_url} mine={mine} label={t('chat.download')} />
+                    </>
                   )}
-                  {m.kind === 'audio' && m.file_url && (
-                    <AudioMessage src={m.file_url} fileName={m.file_name} mine={mine} />
+                  {mediaKindOf(m) === 'audio' && m.file_url && (
+                    <>
+                      <AudioMessage src={m.file_url} fileName={m.file_name} mine={mine} />
+                      <MediaCaption fileName={m.file_name ?? null} url={m.file_url} mine={mine} label={t('chat.download')} />
+                    </>
                   )}
-                  {m.kind === 'video' && m.file_url && (
-                    <VideoMessage src={m.file_url} fileName={m.file_name} mine={mine} />
+                  {mediaKindOf(m) === 'video' && m.file_url && (
+                    <>
+                      <VideoMessage src={m.file_url} fileName={m.file_name} mine={mine} />
+                      <MediaCaption fileName={m.file_name ?? null} url={m.file_url} mine={mine} label={t('chat.download')} />
+                    </>
                   )}
                   {m.kind === 'file' && m.file_url && (
                     <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="mb-1 underline">
@@ -2865,12 +3119,46 @@ jumpToMessage(m.id)
             </button>
           </div>
         )}
-        {/* WhatsApp tarzı tek parça "hap" yazma alanı (2026-10-13, kullanıcı).
-            İkonlar ve giriş AYNI kutunun içinde; girişin kendi kenarlığı,
-            odak halkası ve arka planı YOK — bar tek kutu gibi görünür. Sağ
-            uçtaki düğme boşken MİKROFON, yazı varken yeşil GÖNDER olur
-            (karar: `hasDraft`, bkz. yukarısı). */}
+        {/* Sesli mesaj kayıt çubuğu (2026-11-08): WhatsApp düzeni — iptal · kırmızı nokta · süre · dalga biçimi · gönder */}
+        {recording ? (
+          <div
+            className="shrink-0 flex min-h-12 items-center gap-2 rounded-full bg-foreground/10 px-3 py-1"
+            role="status"
+            aria-live="polite"
+          >
+            <button
+              type="button"
+              onClick={() => stopRecording(false)}
+              aria-label={t('common.cancel')}
+              className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <TrashIcon size={20} />
+            </button>
+            <span className="flex h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" aria-hidden />
+            <span className="shrink-0 text-xs font-medium tabular-nums text-foreground">
+{Math.floor(elapsed / 60)}
+:
+{String(elapsed % 60).padStart(2, '0')}
+</span>
+            <canvas
+              ref={canvasRef}
+              width={560}
+              height={44}
+              className="h-8 w-full min-w-0 flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => stopRecording(true)}
+              aria-label={t('chat.send')}
+              className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full bg-[#25D366] text-white transition-colors hover:brightness-95"
+            >
+              <SendIcon size={18} />
+            </button>
+          </div>
+        ) : (
         <div className="shrink-0 flex min-h-12 items-center gap-1 rounded-full bg-foreground/10 px-3 py-1 transition-colors focus-within:bg-foreground/15">
+          {/* WhatsApp tarzı tek parça "hap" yazma alanı (2026-10-13, kullanıcı):
+              ikonlar ve giriş aynı kutunun içinde; sağ uç boşken MİKROFON, yazınca GÖNDER. */}
           <input
             ref={fileRef}
             type="file"
@@ -2883,15 +3171,64 @@ jumpToMessage(m.id)
               e.target.value = ''
             }}
           />
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            aria-label={t('chat.attach')}
-            title={t('chat.attach')}
-            className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            <PaperclipIcon size={20} />
-          </button>
+          {/* Klasör seçimi — içindeki tüm dosyalar sırayla mesaj olur (en fazla 20). */}
+          <input
+            ref={folderRef}
+            type="file"
+            hidden
+            multiple
+            {...({ webkitdirectory: '' } as any)}
+            onChange={async (e) => {
+              const files = [...(e.target.files ?? [])].slice(0, 20)
+              for (const f of files) {
+                await uploadFile(f)
+              }
+              e.target.value = ''
+            }}
+          />
+          <div className="relative shrink-0" ref={attachMenuRef}>
+            <button
+              type="button"
+              onClick={() => setAttachMenuOpen(o => !o)}
+              aria-label={t('chat.attachMenu')}
+              aria-expanded={attachMenuOpen}
+              title={t('chat.attachMenu')}
+              className="grid h-9 w-9 cursor-pointer place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <PaperclipIcon size={20} />
+            </button>
+            {attachMenuOpen && (
+              <div className="absolute bottom-full left-0 z-30 mb-2 w-48 overflow-hidden rounded-xl border border-foreground/10 bg-background shadow-lg">
+                <button
+                  type="button"
+                  onClick={() => { setAttachMenuOpen(false); fileRef.current?.click() }}
+                  className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground/80 transition-colors hover:bg-foreground/5"
+                >
+                  <FileIcon size={16} />
+                  {t('chat.attachFile')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAttachMenuOpen(false); folderRef.current?.click() }}
+                  className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground/80 transition-colors hover:bg-foreground/5"
+                >
+                  <FolderIcon size={16} />
+                  {t('chat.attachFolder')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachMenuOpen(false)
+                    setPollDraft(p => (p ? null : { question: '', options: ['', ''] }))
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground/80 transition-colors hover:bg-foreground/5"
+                >
+                  <span aria-hidden className="w-4 text-center text-base leading-4">📊</span>
+                  {t('chat.attachPoll')}
+                </button>
+              </div>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setShowEmoji(v => !v)}
@@ -2981,10 +3318,13 @@ jumpToMessage(m.id)
               if (hasDraft) {
                 send()
               }
+              else {
+                void startRecording()
+              }
             }}
             disabled={sending}
-            aria-label={hasDraft ? t('chat.send') : ''}
-            title={hasDraft ? t('chat.send') : ''}
+            aria-label={hasDraft ? t('chat.send') : t('common.record')}
+            title={hasDraft ? t('chat.send') : t('common.record')}
             className={`grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${sendBtnClass}`}
           >
             {/* İki ikon üst üste durur; yalnızca 200 ms fade ile yer değiştirir
@@ -3001,6 +3341,7 @@ jumpToMessage(m.id)
             </span>
           </button>
         </div>
+        )}
         {/* Emoji seçici (2026-10-12): aramalı, kaydırılabilir, koyu tema —
             `emoji-picker-element`. Eski 16 emojili şerit kaldırıldı. */}
         {showEmoji && (
@@ -3179,80 +3520,41 @@ jumpToMessage(m.id)
         />
       )}
 
-      {/* GÖRSEL GALERİ MODALİ (2026-11-02, stream-chat-react özelliği): tıklanan
-          resim tam ekranda açılır, ok/sağa-sola kaydırma ve ESC ile kapatılır. */}
+      {/* MEDYA LIGHTBOX (2026-11-08, kullanıcı isteği): WhatsApp tarzı —
+          tekerlekle büyüt, ileri/geri gizlenir, altta thumbnail şeridi,
+          üst bar: büyüt · yanıtla · sabitle · tepki · ilet · indir · mesaja git. */}
       {gallery && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
-          onClick={closeGallery}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') {
- closeGallery()
-}
-            else if (e.key === 'ArrowRight') {
-              e.preventDefault()
-              setGallery(g => g ? { ...g, index: (g.index + 1) % g.urls.length } : null)
-            }
-            else if (e.key === 'ArrowLeft') {
-              e.preventDefault()
-              setGallery(g => g ? { ...g, index: (g.index - 1 + g.urls.length) % g.urls.length } : null)
-            }
+        <MediaLightbox
+          items={gallery.items}
+          index={gallery.index}
+          onIndexChange={i => setGallery(g => (g ? { ...g, index: i } : null))}
+          onClose={closeGallery}
+          onReply={(id) => {
+            startReply(id)
+            closeGallery()
           }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Görsel galeri"
-            className="relative w-full max-w-full max-h-full overflow-hidden rounded-xl border border-white/10 bg-black outline-none"
-            onClick={e => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              onClick={closeGallery}
-              className="absolute top-2 right-2 z-10 shrink-0 cursor-pointer rounded-full bg-white/10 p-1.5 text-white hover:bg-white/20 transition-colors"
-              aria-label="Kapat"
-            >
-              ✕
-            </button>
-            <img
-              src={gallery.urls[gallery.index]}
-              alt=""
-              className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-              loading="lazy"
-              decoding="async"
-            />
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-white/80 bg-black/10">
-              <button
-                type="button"
-                onClick={() => {
-                  setGallery(g => g ? { ...g, index: (g.index - 1 + g.urls.length) % g.urls.length } : null)
-                }}
-                disabled={gallery.urls.length <= 1}
-                className="shrink-0 cursor-pointer rounded-full bg-white/20 p-2 text-white hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                aria-label="Önceki"
-              >
-                ‹
-              </button>
-              <span className="text-xs font-medium">
-                {gallery.index + 1}
-{' '}
-/
-{gallery.urls.length}
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setGallery(g => g ? { ...g, index: (g.index + 1) % g.urls.length } : null)
-                }}
-                disabled={gallery.urls.length <= 1}
-                className="shrink-0 cursor-pointer rounded-full bg-white/20 p-2 text-white hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                aria-label="Sonraki"
-              >
-                ›
-              </button>
-            </div>
-          </div>
-        </div>
+          onPin={(id) => {
+            const target = messages.find(x => x.id === id)
+            void act('pin', { messageId: id, pinned: !target?.pinned })
+            setGallery(g => (g
+              ? { ...g, items: g.items.map(it => (it.id === id ? { ...it, pinned: !it.pinned } : it)) }
+              : null))
+          }}
+          onReact={(id, emoji) => {
+            void reactTo(id, emoji)
+          }}
+          onForward={(id) => {
+            const target = messages.find(x => x.id === id)
+            if (target) {
+              setForwardMsg(target)
+            }
+            closeGallery()
+          }}
+          onGoToMessage={(id) => {
+            closeGallery()
+            jumpToMessage(id)
+          }}
+        />
       )}
 
     </div>

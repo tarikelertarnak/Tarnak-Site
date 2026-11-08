@@ -175,37 +175,39 @@ export function MediaPlayerBar({
           : <PlayIcon size={15} className="ml-0.5" />}
       </button>
 
-      <span className={cn(
-        'shrink-0 text-[11px] font-medium tabular-nums',
-        mine ? 'text-primary-fg/85' : 'text-foreground-500',
-      )}
-      >
-        {`${fmtTime(current)} / ${fmtTime(duration)}`}
-      </span>
-
-      {/* Seek çubuğu */}
-      <input
-        type="range"
-        min={0}
-        max={Math.max(duration, 0.01)}
-        step={0.01}
-        value={current}
-        onChange={e => seek(Number(e.target.value))}
-        aria-label={t('chat.audioPlayer')}
-        className={cn(
-          'h-1 min-w-0 flex-1 cursor-pointer accent-currentColor',
-          mine ? 'text-primary-fg' : 'text-foreground',
+      {/* Süre + seek + hover'da üstüne geçen ses kaydırıcısı (Material).
+          Seek alanı asla genişlemez: hover hâli AYNI alanı kaplar. */}
+      <div className="group/vol relative flex min-w-0 flex-1 items-center gap-2">
+        <span className={cn(
+          'shrink-0 text-[11px] font-medium tabular-nums',
+          mine ? 'text-primary-fg/85' : 'text-foreground-500',
         )}
-      />
+        >
+          {`${fmtTime(current)} / ${fmtTime(duration)}`}
+        </span>
 
-      {/* Ses — hover'da/focus'ta açılan kaydırıcı (Material) */}
-      <div className="group/vol flex shrink-0 items-center">
+        {/* Seek çubuğu */}
+        <input
+          type="range"
+          min={0}
+          max={Math.max(duration, 0.01)}
+          step={0.01}
+          value={current}
+          onChange={e => seek(Number(e.target.value))}
+          aria-label={t('chat.audioPlayer')}
+          className={cn(
+            'h-1 min-w-0 flex-1 cursor-pointer accent-currentColor',
+            mine ? 'text-primary-fg' : 'text-foreground',
+          )}
+        />
+
+        {/* Sessiz / Sesi aç */}
         <button
           type="button"
           onClick={toggleMute}
           aria-label={muted || volume === 0 ? t('chat.unmute') : t('chat.mute')}
           className={cn(
-            'flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors',
+            'flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors',
             mine
               ? 'text-primary-fg/75 hover:bg-white/10 hover:text-primary-fg'
               : 'text-foreground-500 hover:bg-foreground/10 hover:text-foreground',
@@ -213,19 +215,33 @@ export function MediaPlayerBar({
         >
           {muted || volume === 0 ? <VolumeXIcon size={16} /> : <VolumeIcon size={16} />}
         </button>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={muted ? 0 : volume}
-          onChange={e => changeVolume(Number(e.target.value))}
-          aria-label={t('chat.volume')}
+
+        {/* Hover/focus hâli — süre+seek'in ÜSTÜNDE, aynı genişlik: ikon + kaydırıcı */}
+        <div
           className={cn(
-            'h-1 w-0 cursor-pointer accent-currentColor opacity-0 transition-all duration-200 group-focus-within/vol:w-20 group-focus-within/vol:pr-1.5 group-focus-within/vol:opacity-100 group-hover/vol:w-20 group-hover/vol:pr-1.5 group-hover/vol:opacity-100',
-            mine ? 'text-primary-fg' : 'text-foreground',
+            'pointer-events-none absolute inset-0 z-10 flex items-center gap-2 rounded-full pr-1 pl-2 opacity-0 transition-opacity duration-150 group-focus-within/vol:pointer-events-auto group-focus-within/vol:opacity-100 group-hover/vol:pointer-events-auto group-hover/vol:opacity-100',
+            mine ? 'bg-primary text-primary-fg' : 'bg-background text-foreground',
           )}
-        />
+        >
+          <button
+            type="button"
+            onClick={toggleMute}
+            aria-label={muted || volume === 0 ? t('chat.unmute') : t('chat.mute')}
+            className="flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-black/10"
+          >
+            {muted || volume === 0 ? <VolumeXIcon size={16} /> : <VolumeIcon size={16} />}
+          </button>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.01}
+            value={muted ? 0 : volume}
+            onChange={e => changeVolume(Number(e.target.value))}
+            aria-label={t('chat.volume')}
+            className="h-1 min-w-0 flex-1 cursor-pointer accent-currentColor"
+          />
+        </div>
       </div>
 
       {/* Taşma menüsü — İndir · Yeni sekmede aç · Oynatma hızı */}
