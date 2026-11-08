@@ -24,7 +24,7 @@ import {
   UserIcon,
 } from '@/components/ui/icons'
 import { useScrollState } from '@/hooks/use-scroll-state'
-import { scrollToElement } from '@/lib/scroll'
+import { scrollToElement, scrollToTop } from '@/lib/scroll'
 
 interface NavItem {
   key: string
@@ -137,7 +137,7 @@ scrollToElement(el)
               onClick={(e) => {
                 if (typeof window !== 'undefined' && window.location.pathname === '/') {
                   e.preventDefault()
-                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                  scrollToTop()
                 }
               }}
               className={`group relative z-10 flex items-center gap-2 font-bold tracking-tight whitespace-nowrap ${
