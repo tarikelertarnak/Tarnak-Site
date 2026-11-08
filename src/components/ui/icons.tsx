@@ -1205,6 +1205,31 @@ export function SmileIcon({ size = 16, className }: IconProps) {
   )
 }
 
+/**
+ * Tebessüm yüzü (2026-11-08, WhatsApp tarzı tepki şeridi): emoji tepkisi
+ * düğmesi. İki göz + gülümseme, monochrome currentColor.
+ */
+export function SmileFaceIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <circle cx="12" cy="12" r="9.5" />
+      <path d="M8.5 14.7c.9.96 2.1 1.5 3.5 1.5s2.6-.54 3.5-1.5" />
+      <line x1="9" y1="9.5" x2="9" y2="10" />
+      <line x1="15" y1="9.5" x2="15" y2="10" />
+    </svg>
+  )
+}
+
+/** Artı işareti — tepki şeridinde tam seçiciyi açar. */
+export function PlusIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...base(size, className)}>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  )
+}
+
 /** Alıntı / tırnak işareti (monochrome, currentColor). */
 export function QuoteIcon({ size = 16, className }: IconProps) {
   return (

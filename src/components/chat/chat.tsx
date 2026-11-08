@@ -1,7 +1,7 @@
 'use client'
 
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent } from 'react'
-import type { ChatMessageRow } from '@/lib/chat-db'
+import type { ChatMessageRow, ChatReactionRow } from '@/lib/chat-db'
 import type { Presence, PresenceState } from '@/lib/chat-peers'
 import type { TickStyle } from '@/lib/chat-ticks'
 import Link from 'next/link'
@@ -30,10 +30,11 @@ import {
   MuteIcon,
   PaperclipIcon,
   PinIcon,
+  PlusIcon,
   QuoteIcon,
   ReplyIcon,
   SendIcon,
-  SmileIcon,
+  SmileFaceIcon,
   StarIcon,
   StickerIcon,
   TickReadIcon,
@@ -153,6 +154,32 @@ const QUOTE_ACCENTS = [
   { bar: 'border-indigo-400', text: 'text-indigo-400' },
   { bar: 'border-orange-400', text: 'text-orange-400' },
 ]
+
+/** Tepki şeridindeki hızlı emojiler (WhatsApp düzeni). */
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'] as const
+
+/** Tepkileri emoji başına gruplar; sıra tepkinin oluşma sırasıyla korunur. */
+function groupReactions(list: ChatReactionRow[]): { emoji: string, users: ChatReactionRow[] }[] {
+  const map = new Map<string, ChatReactionRow[]>()
+  for (const r of list) {
+    const arr = map.get(r.emoji) ?? []
+    arr.push(r)
+    map.set(r.emoji, arr)
+  }
+  return [...map.entries()].map(([emoji, users]) => ({ emoji, users }))
+}
+
+/** İsimden baş harfler — avatarsız kullanıcılarda monogram. */
+function initialsOf(name: string | null | undefined): string {
+  const s = (name ?? '').trim()
+  if (!s) {
+    return '?'
+  }
+  const parts = s.split(/\s+/).filter(Boolean)
+  const first = parts[0] ?? ''
+  const last = parts.length > 1 ? parts[parts.length - 1]! : ''
+  return ((first[0] ?? '?') + (last[0] ?? '')).toUpperCase()
+}
 
 /**
  * Alıntı şeridi/başlık rengi.
@@ -321,8 +348,10 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   const [flashId, setFlashId] = useState<string | null>(null)
   /** Kısa bilgi bildirimi ("Mesaj bulunamadı" vb.) — kendiliğinden kaybolur. */
   const [notice, setNotice] = useState<string | null>(null)
-  /** Mesaj tepkileri: messageId -> { emoji -> count }. */
-  const [reactions, setReactions] = useState<Record<string, Record<string, number>>>({})
+  /** Açık tepki şeridi / emoji seçici / "kim tepki verdi" paneli (2026-11-08). */
+  const [stripFor, setStripFor] = useState<string | null>(null)
+  const [pickerFor, setPickerFor] = useState<string | null>(null)
+  const [reactionPanelFor, setReactionPanelFor] = useState<string | null>(null)
   /** Görsel galeri: açık olan resimlerin listesi ve şu anki indeks. */
   const [gallery, setGallery] = useState<{ urls: string[], index: number } | null>(null)
   /** Anketler: messageId -> anket verisi. `user_vote` seçilen seçenek indeksi veya null. */
@@ -334,8 +363,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   }>>({})
   /** Anket oluşturma taslağı: null → yok, dolu → form açık. */
   const [pollDraft, setPollDraft] = useState<{ question: string, options: string[] } | null>(null)
-  /** Açık konu (thread): mesaj ID'si veya null. Doluysa yalnız bu mesaj ve yanıtları görünür. */
-  const [threadMessageId, setThreadMessageId] = useState<string | null>(null)
+  // "Açık konu (thread)" state'i KALDIRILDI (2026-11-08, kullanıcı isteği).
 
   /** Galeri aç: mesajdaki tüm resimleri toplayıp bu resimden başlatır. */
   function openGallery(messageIds: string[], startUrl: string) {
@@ -1436,25 +1464,71 @@ urls.push(startUrl)
    * doğrudan çift tikle başlamaz (kullanıcının şikâyeti: hiç görülmemiş mesajda
    * çift mavi tik).
    */
-  /** Mesaj tepkisini aç/kapat: messageId + emoji anahtarına göre sayaç artırır/azaltır. */
-  function toggleReaction(messageId: string, emoji: string) {
-    setReactions((prev) => {
-      const byMsg = { ...prev }
-      const byEmoji = { ...(byMsg[messageId] ?? {}) }
-      if (byEmoji[emoji]) {
-        if (byEmoji[emoji] <= 1)
-delete byEmoji[emoji]
-        else byEmoji[emoji] -= 1
-      }
- else {
-        byEmoji[emoji] = 1
-      }
-      if (Object.keys(byEmoji).length === 0)
-delete byMsg[messageId]
-      else byMsg[messageId] = byEmoji
-      return byMsg
+  /**
+   * Tepki ver/geri al (2026-11-08, WhatsApp tarzı). İyimser: satır anında
+   * güncellenir; `POST /api/chat` `react` aksiyonu sunucuya kaydeder ve
+   * GÜNCEL listeyi döner. Her kullanıcı x mesaj için TEK tepki: başka
+   * emojiye tıklama değiştirir, aynı emojiye tıklama kaldırır.
+   */
+  async function reactTo(messageId: string, emoji: string) {
+    const mineEntry = (m: UiMessage) => m.reactions?.find(r => r.userId === myId)
+    const myPeer = peers?.find(p => p.id === myId)
+    setMessages((prev) => {
+      return prev.map((m) => {
+        if (m.id !== messageId) {
+          return m
+        }
+        const current = m.reactions ?? []
+        const mine = mineEntry(m)
+        const next: typeof current = mine && mine.emoji === emoji
+          ? current.filter(r => r.userId !== myId)
+          : [
+              ...current.filter(r => r.userId !== myId),
+              {
+                emoji,
+                userId: myId,
+                username: myPeer?.username ?? null,
+                fullName: myPeer?.fullName ?? null,
+                nickname: myPeer?.nickname ?? null,
+                avatarUrl: myPeer?.avatarUrl ?? null,
+              },
+            ]
+        return { ...m, reactions: next }
+      })
     })
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'react', messageId, emoji }),
+      })
+      const json = await res.json().catch(() => null)
+      if (res.ok && json?.success && Array.isArray(json.reactions)) {
+        setMessages(prev => prev.map(m => (m.id === messageId ? { ...m, reactions: json.reactions } : m)))
+      }
+    }
+    catch {
+      // Bir sonraki yoklama sunucudan doğru listeyi getirir
+    }
   }
+
+  // Tepki şeridi/seçici/panel dışarı tıklanınca kapanır.
+  useEffect(() => {
+    if (!stripFor && !pickerFor && !reactionPanelFor) {
+      return
+    }
+    const onDoc = (e: MouseEvent) => {
+      const el = e.target as HTMLElement | null
+      if (el?.closest('[data-reaction-popover]')) {
+        return
+      }
+      setStripFor(null)
+      setPickerFor(null)
+      setReactionPanelFor(null)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [stripFor, pickerFor, reactionPanelFor])
 
   /** Anket seçeneğine oy ver/geri al: messageId + seçenek indeksi. Kendi oyunu yeniden tıklayınca geri alır. */
   function togglePollVote(messageId: string, optionIndex: number) {
@@ -1926,10 +2000,8 @@ return
     ? 'bg-[#25D366] text-white hover:brightness-95'
     : 'text-foreground/60 hover:bg-foreground/10 hover:text-foreground'
 
-  /* Konu (thread) görünümü: konu açıldığında yalnız konu mesajı + yanıtları. */
-  const threadMsgs = threadMessageId
-    ? messages.filter(m => m.id === threadMessageId || m.reply_to_id === threadMessageId)
-    : messages
+  // "Konu (thread) görünümü" KALDIRILDI (2026-11-08, kullanıcı isteği):
+  // "konuyu görüntüle özelliğini kaldır".
 
   return (
     <div
@@ -2291,23 +2363,8 @@ return
               </button>
             </div>
           )}
-          {/* KONU (THREAD) BAŞLIĞI: konu açıldığında geri düğmesi + konu mesajı */}
-          {threadMessageId && (
-            <div className="mb-4 flex items-center gap-2 px-4">
-              <button
-                type="button"
-                onClick={() => setThreadMessageId(null)}
-                aria-label={t('chat.backToThread')}
-                className="shrink-0 cursor-pointer rounded-full p-1 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
-              >
-                ←
-              </button>
-              <span className="text-xs font-medium text-foreground-500 truncate">
-                {t('chat.thread')}
-              </span>
-            </div>
-          )}
-          {threadOpen && threadMsgs.map((m, i) => {
+          {/* KONU (THREAD) BAŞLIĞI KALDIRILDI (2026-11-08, kullanıcı isteği) */}
+          {threadOpen && messages.map((m, i) => {
             const mine = m.sender_id === myId
           const replied = replyTo?.id === m.id
           const tick = mine
@@ -2320,7 +2377,7 @@ return
             hizalama zaten kimin yazdığını söyler ve tek kişilik sohbette
             kendi adını okumak gürültüdür.
           */
-          const showSender = !mine && (i === 0 || threadMsgs[i - 1]?.sender_id !== m.sender_id)
+          const showSender = !mine && (i === 0 || messages[i - 1]?.sender_id !== m.sender_id)
           /*
             ALINTI BLOĞU (2026-10-16 kullanıcı isteği): balonun içinde, mesaj
             metninin ÜSTÜNDE. Metin sunucudan `reply_to` özetiyle gelir; silinmiş
@@ -2598,45 +2655,162 @@ jumpToMessage(m.id)
                 >
                   <ReplyIcon size={16} />
                 </button>
-                {/* TEPKİ DÜĞMESİ (2026-11-02): emoji tepkisi ekle/çıkar. */}
+                {/* TEPKİ DÜĞMESİ (2026-11-08, WhatsApp tarzı): şeridi açar. */}
                 <button
                   type="button"
                   aria-label={t('chat.react')}
                   title={t('chat.react')}
                   onClick={(e) => {
                     e.stopPropagation()
-                    toggleReaction(m.id, '👍')
+                    setStripFor(prev => (prev === m.id ? null : m.id))
+                    setPickerFor(null)
+                    setReactionPanelFor(null)
                   }}
                   className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
                 >
-                  👍
+                  <SmileFaceIcon size={16} />
                 </button>
-                {/* TEPKİ GÖSTERGESİ (2026-11-02): mesaj altındaki tepki sayacı. */}
-                {Object.entries(reactions[m.id] ?? {}).map(([emoji, count]) => (
-                  <span
-                    key={emoji}
-                    className="inline-flex items-center gap-1 rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] text-foreground"
-                    onClick={() => toggleReaction(m.id, emoji)}
+                {/* Tepki şeridi (hover gibi davranır: tıkla-aç') */}
+                {stripFor === m.id && (
+                  <div
+                    data-reaction-popover
+                    className={cn(
+                      'absolute bottom-full z-30 mb-1 flex items-center gap-0.5 rounded-full border border-foreground/10 bg-background px-1.5 py-1 shadow-xl',
+                      mine ? 'right-0' : 'left-0',
+                    )}
+                    onClick={e => e.stopPropagation()}
                   >
-                    {emoji}
-{' '}
-{count}
-                  </span>
-                ))}
-                {/* KONU DUĞMESİ (2026-11-02): bu mesajı konu başlığı yapıp yanıtları görüntüle. */}
-                <button
-                  type="button"
-                  aria-label={t('chat.threadView')}
-                  title={t('chat.threadView')}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setThreadMessageId(m.id)
-                  }}
-                  className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
-                >
-                  ↩
-                </button>
+                    {QUICK_REACTIONS.map(emoji => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => {
+                          void reactTo(m.id, emoji)
+                          setStripFor(null)
+                        }}
+                        aria-label={emoji}
+                        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-lg transition-transform hover:scale-125"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPickerFor(m.id)
+                        setStripFor(null)
+                      }}
+                      aria-label={t('chat.addReaction')}
+                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                    >
+                      <PlusIcon size={16} />
+                    </button>
+                  </div>
+                )}
+                {/* Tam seçici — emoji-picker-element, "İfade Ara" + Son ifadeler + kategoriler */}
+                {pickerFor === m.id && (
+                  <div
+                    data-reaction-popover
+                    className={cn(
+                      'absolute bottom-full z-30 mb-1 w-[320px] overflow-hidden rounded-xl shadow-2xl',
+                      mine ? 'right-0' : 'left-0',
+                    )}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <EmojiPicker
+                      locale={locale}
+                      onPick={(emoji) => {
+                        void reactTo(m.id, emoji)
+                        setPickerFor(null)
+                      }}
+                      onClose={() => setPickerFor(null)}
+                    />
+                  </div>
+                )}
               </div>
+                {/* Tepki pill'leri — balonun altında (sayı yalnız 1+) */}
+                {(m.reactions?.length ?? 0) > 0 && (
+                  <div
+                    className={cn('mt-1 flex flex-wrap gap-1', mine ? 'justify-end' : 'justify-start')}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {groupReactions(m.reactions ?? []).map(({ emoji, users }) => {
+                      const mineReacted = users.some(u => u.userId === myId)
+                      return (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setReactionPanelFor(prev => (prev === m.id ? null : m.id))}
+                          aria-label={t('chat.react')}
+                          className={cn(
+                            'inline-flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] leading-5 transition-colors',
+                            mineReacted
+                              ? 'border-primary/50 bg-primary/15 text-primary'
+                              : 'border-foreground/10 bg-foreground/10 text-foreground hover:bg-foreground/15',
+                          )}
+                        >
+                          <span>{emoji}</span>
+                          {users.length > 1 && (
+                            <span className="text-[10px] font-semibold tabular-nums">{users.length}</span>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+                {/* "Kim tepki verdi" paneli — avatar + ad + emoji; benimki "Siz" + kaldır */}
+                {reactionPanelFor === m.id && (
+                  <div
+                    data-reaction-popover
+                    className={cn(
+                      'absolute top-full z-30 mt-1 w-64 overflow-hidden rounded-xl border border-foreground/10 bg-background shadow-xl',
+                      mine ? 'right-0' : 'left-0',
+                    )}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    <div className="border-b border-foreground/10 px-3 py-2 text-xs font-semibold text-foreground">
+                      {t('chat.reactors', { count: m.reactions?.length ?? 0 })}
+                    </div>
+                    <div className="max-h-56 overflow-y-auto p-1">
+                      {groupReactions(m.reactions ?? []).map(({ emoji, users }) => (
+                        users.map(u => (
+                          <button
+                            key={`${emoji}-${u.userId}`}
+                            type="button"
+                            onClick={() => {
+                              // Yalnızca kendi satırım tıklanabilir: tepkiyi kaldırır
+                              if (u.userId === myId) {
+                                void reactTo(m.id, emoji)
+                              }
+                            }}
+                            aria-label={u.userId === myId ? t('chat.removeReaction') : undefined}
+                            className={cn(
+                              'flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-foreground/5',
+                              u.userId === myId && 'bg-foreground/5',
+                            )}
+                          >
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-foreground/10 text-[11px] font-semibold text-foreground-500">
+                              {u.avatarUrl
+                                ? <img src={u.avatarUrl} alt="" className="h-full w-full object-cover" />
+                                : initialsOf(u.nickname || u.fullName || u.username)}
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-xs font-medium text-foreground">
+                                {u.userId === myId ? t('chat.you') : (u.nickname || u.fullName || u.username || '—')}
+                              </span>
+                              {u.userId === myId && (
+                                <span className="block truncate text-[10px] text-foreground-500">
+                                  {t('chat.removeReaction')}
+                                </span>
+                              )}
+                            </span>
+                            <span className="shrink-0 text-base leading-none">{emoji}</span>
+                          </button>
+                        ))
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
             </React.Fragment>
           )
@@ -2915,6 +3089,13 @@ jumpToMessage(m.id)
           onPin={() => { act('pin', { messageId: menu.message.id, pinned: !menu.message.pinned }); setMenu(null) }}
           onInfo={() => { setInfoMsg(menu.message); setMenu(null) }}
           onDelete={() => { setConfirmMsg(menu.message); setMenu(null) }}
+          onReact={() => {
+            // "Tepki Ekle" → şeridi aç (2026-11-08: tepki artık çalışır)
+            setStripFor(menu.message.id)
+            setPickerFor(null)
+            setReactionPanelFor(null)
+            setMenu(null)
+          }}
           labels={{
             header: menu.message.text || menu.message.file_name || '',
             reply: t('chat.reply'),
@@ -3442,7 +3623,7 @@ function ProfileSheet({ peer, t, onClose }: {
  * YOKTUR (`supabase/chat.sql`). Kolonsuz düzenleme "düzenlendi" işareti
  * koyamaz → kullanıcıya sessizce değiştirilmiş geçmiş gösterirdi.
  */
-function MessageMenu({ message, x, y, onClose, onReply, onCopy, onForward, onPin, onInfo, onDelete, labels }: {
+function MessageMenu({ message, x, y, onClose, onReply, onCopy, onForward, onPin, onInfo, onDelete, onReact, labels }: {
   message: ChatMessageRow
   x: number
   y: number
@@ -3453,6 +3634,7 @@ function MessageMenu({ message, x, y, onClose, onReply, onCopy, onForward, onPin
   onPin: () => void
   onInfo: () => void
   onDelete: () => void
+  onReact: () => void
   labels: Record<string, string>
 }) {
   return (
@@ -3460,7 +3642,7 @@ function MessageMenu({ message, x, y, onClose, onReply, onCopy, onForward, onPin
       {labels.header && (
         <MenuHeader text={labels.header} onClose={onClose} closeLabel={labels.close} />
       )}
-      <MenuItem icon={<SmileIcon size={14} className="text-foreground-400" />} label={labels.react || 'Tepki Ekle'} onSelect={() => { onClose() }} />
+      <MenuItem icon={<SmileFaceIcon size={14} className="text-foreground-400" />} label={labels.react || 'Tepki Ekle'} onSelect={onReact} />
       <MenuItem icon={<ReplyIcon size={14} className="text-foreground-400" />} label={labels.reply} onSelect={onReply} />
       <MenuItem icon={<QuoteIcon size={14} className="text-foreground-400" />} label={labels.quote || 'Alıntıla'} onSelect={() => { onClose() }} />
       {message.file_url && (

@@ -65,6 +65,22 @@ export interface ChatMessageRow {
    * Yanıt değilse `null`/yok.
    */
   reply_to?: ReplyPreview | null
+  /**
+   * WhatsApp tarzı tepkiler (2026-11-08): emoji + onu veren kişinin adı/avatarı.
+   * `listMessages` doldurur (tek ek sorgu). İstemci bu satırla "N ifade"
+   * panelini ve sayaç pill'ini besler.
+   */
+  reactions?: ChatReactionRow[]
+}
+
+/** Tepki + tepki veren kişi (adı/avatarı) — “kim tepki verdi” paneli için. */
+export interface ChatReactionRow {
+  emoji: string
+  userId: string
+  username: string | null
+  fullName: string | null
+  nickname: string | null
+  avatarUrl: string | null
 }
 
 /**
@@ -560,7 +576,8 @@ export async function listMessages(
           : m,
       )
   // Yanıtlanan mesajın özeti (2026-10-16) — tek sorgu, N+1 yok.
-  return attachReplyPreviews(visible)
+  const withReplies = await attachReplyPreviews(visible)
+  return attachReactions(withReplies)
 }
 
 /**
@@ -635,6 +652,165 @@ async function attachReplyPreviews(rows: ChatMessageRow[]): Promise<ChatMessageR
           : missingReplyPreview(r.reply_to_id))
       : null,
   }))
+}
+
+interface ReactionJoinRow {
+  message_id: string
+  emoji: string
+  user_id: string
+  /** PostgREST to-one join'i nesne ya da dizi verir — iddiası özeldir, ikisini de kabul et. */
+  profiles: {
+    username: string | null
+    full_name: string | null
+    nickname: string | null
+    avatar_url: string | null
+  } | {
+    username: string | null
+    full_name: string | null
+    nickname: string | null
+    avatar_url: string | null
+  }[] | null
+}
+
+function mapReactionRow(row: ReactionJoinRow): ChatReactionRow {
+  const raw = row.profiles
+  const p = Array.isArray(raw) ? raw[0] : raw
+  return {
+    emoji: row.emoji,
+    userId: row.user_id,
+    username: p?.username ?? null,
+    fullName: p?.full_name ?? null,
+    nickname: p?.nickname ?? null,
+    avatarUrl: p?.avatar_url ?? null,
+  }
+}
+
+/** Tek çekim: tüm mesajların tepkileri, profilleriyle (N+1 yok). */
+async function listReactionsForMessages(
+  messageIds: string[],
+): Promise<Map<string, ChatReactionRow[]>> {
+  const map = new Map<string, ChatReactionRow[]>()
+  if (messageIds.length === 0) {
+    return map
+  }
+  const client = db()
+  const res = await client
+    .from('chat_reactions')
+    .select('message_id, emoji, user_id, profiles(username, full_name, nickname, avatar_url)')
+    .in('message_id', messageIds)
+    .order('created_at', { ascending: true })
+  if (res.error) {
+    // Tepki kaybı mesajların görünmesini engellememeli.
+    return map
+  }
+  for (const row of (res.data ?? []) as unknown as ReactionJoinRow[]) {
+    const list = map.get(row.message_id) ?? []
+    list.push(mapReactionRow(row))
+    map.set(row.message_id, list)
+  }
+  return map
+}
+
+/** Bir mesajın tepkilerini profilleriyle doldur (toggle sonrası dönüş). */
+export async function listReactionsForMessage(messageId: string): Promise<ChatReactionRow[]> {
+  const client = db()
+  const res = await client
+    .from('chat_reactions')
+    .select('message_id, emoji, user_id, profiles(username, full_name, nickname, avatar_url)')
+    .eq('message_id', messageId)
+    .order('created_at', { ascending: true })
+  if (res.error) {
+    if (isMissingTable(res.error)) {
+      throw new ChatSchemaMissing()
+    }
+    throw res.error
+  }
+  return ((res.data ?? []) as unknown as ReactionJoinRow[]).map(mapReactionRow)
+}
+
+/**
+ * Tepkiyi aç/kapat (WhatsApp gibi): aynı tepkiye tekrar tıklayınca kaldır,
+ * farklı tepkiye güncelle, yoksa ekle — kullanıcı başına mesaj başına TEK
+ * satır. Döner: güncel liste (istemci iyimser günceller).
+ */
+export async function toggleReaction(
+  messageId: string,
+  userId: string,
+  emoji: string,
+): Promise<ChatReactionRow[]> {
+  if (!emoji || emoji.length > 16) {
+    throw new Error('Geçersiz tepki')
+  }
+  const client = db()
+  const existing = await client
+    .from('chat_reactions')
+    .select('emoji')
+    .eq('message_id', messageId)
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (existing.error) {
+    if (isMissingTable(existing.error)) {
+      throw new ChatSchemaMissing()
+    }
+    throw existing.error
+  }
+  if (existing.data?.emoji === emoji) {
+    // Aynı tepkiye tekrar tıklama = kaldır
+    const del = await client
+      .from('chat_reactions')
+      .delete()
+      .eq('message_id', messageId)
+      .eq('user_id', userId)
+    if (del.error) {
+      throw del.error
+    }
+  }
+  else if (existing.data) {
+    // Farklı tepki = eski satırı güncelle (tek satır)
+    const upd = await client
+      .from('chat_reactions')
+      .update({ emoji })
+      .eq('message_id', messageId)
+      .eq('user_id', userId)
+    if (upd.error) {
+      throw upd.error
+    }
+  }
+  else {
+    const ins = await client
+      .from('chat_reactions')
+      .insert({ message_id: messageId, user_id: userId, emoji })
+    if (ins.error) {
+      if (isMissingTable(ins.error)) {
+        throw new ChatSchemaMissing()
+      }
+      throw ins.error
+    }
+  }
+  return listReactionsForMessage(messageId)
+}
+
+/** Mesajın ait olduğu sohbeti döndürür — erişim kontrolünde `conversationId` kanıtı. */
+export async function getMessageConversation(messageId: string): Promise<string | null> {
+  const client = db()
+  const res = await client
+    .from('chat_messages')
+    .select('conversation_id')
+    .eq('id', messageId)
+    .maybeSingle()
+  if (res.error) {
+    if (isMissingTable(res.error)) {
+      throw new ChatSchemaMissing()
+    }
+    throw res.error
+  }
+  return (res.data?.conversation_id as string | undefined) ?? null
+}
+
+async function attachReactions(rows: ChatMessageRow[]): Promise<ChatMessageRow[]> {
+  const ids = rows.map(r => r.id)
+  const map = await listReactionsForMessages(ids)
+  return rows.map(r => ({ ...r, reactions: map.get(r.id) ?? [] }))
 }
 
 /**

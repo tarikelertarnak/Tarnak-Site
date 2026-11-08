@@ -306,12 +306,14 @@ describe('chat · yanıtlanan mesajın özeti', () => {
     expect(m.reply_to?.id).toBe('m1')
   })
 
-  it('yanıt yoksa ek sorgu yapılmaz', async () => {
+  it('yanıt yoksa alıntı önizlemesi sorgusu yapılmaz (tepkiler AYRI çekilir)', async () => {
     const plain = { ...replied, reply_to_id: null }
     reset({ data: [plain] })
     const [m] = await listMessages('c1', false)
     expect(m.reply_to).toBeNull()
-    expect(calls.in).toHaveLength(0)
+    // `.in('id', …)` (alıntı önizlemesi) hiç çağrılmaz — tepkilerin
+    // `.in('message_id', …)` sorgusu bundan ayrı bir çağrıdır.
+    expect(calls.in.filter(([col]) => col === 'id')).toHaveLength(0)
   })
 })
 

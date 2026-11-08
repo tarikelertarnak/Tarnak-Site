@@ -7,6 +7,8 @@ import {
   deleteConversation,
   deleteForAll,
   getAdminProfileView,
+  // 2026-11-08: WhatsApp tarzı emoji tepkileri
+  getMessageConversation,
   getOrCreateDirectConversation,
   isParticipant,
   listForUser,
@@ -20,6 +22,7 @@ import {
   setNickname,
   setPinned,
   siteOwnerId,
+  toggleReaction,
   touchPresence,
 } from '@/lib/chat-db'
 import { isPresenceState } from '@/lib/chat-peers'
@@ -198,6 +201,36 @@ export async function POST(req: Request) {
       }
       await markRead(convId, chatId)
       return NextResponse.json({ success: true })
+    }
+
+    /*
+      EMOJİ TEPKİSİ (2026-11-08, WhatsApp tarzı). `read` gibi "chat.send"
+      istemez — tepkisi atmak mesaj atmak değildir. Erişim kanıtını mesajın
+      KENDİ sohbetinden alırız: `body.conversationId` güveni temellendirir.
+    */
+    if (action === 'react') {
+      const messageId = typeof body?.messageId === 'string' ? body.messageId : ''
+      const emoji = typeof body?.emoji === 'string' ? body.emoji.trim() : ''
+      if (!messageId || !emoji || emoji.length > 16) {
+        return NextResponse.json({ success: false, message: 'Eksik parametre.' }, { status: 400 })
+      }
+      try {
+        const msgConv = await getMessageConversation(messageId)
+        if (!msgConv) {
+          return NextResponse.json({ success: false, message: 'Mesaj bulunamadı.' }, { status: 404 })
+        }
+        if (!(await isParticipant(msgConv, chatId))) {
+          return NextResponse.json({ success: false, message: 'Erişim yok.' }, { status: 403 })
+        }
+        const reactions = await toggleReaction(messageId, chatId, emoji)
+        return NextResponse.json({ success: true, messageId, reactions })
+      }
+      catch (e) {
+        if (e instanceof ChatSchemaMissing) {
+          return schemaMissing()
+        }
+        return NextResponse.json({ success: false, message: 'Tepki kaydedilemedi.' }, { status: 500 })
+      }
     }
 
     if (!hasSessionPermission(user, 'chat.send')) {
