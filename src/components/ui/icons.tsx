@@ -700,6 +700,36 @@ export function VolumeIcon({ size = 16, className }: IconProps) {
   )
 }
 
+/** Oynat — sesli mesaj oynatıcı düğmesi (Material). */
+export function PlayIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...fillBase(size, className)}>
+      <path d="M8 5.14v13.72c0 1.1 1.19 1.77 2.13 1.18l10.5-6.86a1.4 1.4 0 0 0 0-2.36L10.13 3.96A1.4 1.4 0 0 0 8 5.14z" />
+    </svg>
+  )
+}
+
+/** Duraklat — sesli mesaj oynatıcı düğmesi (Material). */
+export function PauseIcon({ size = 18, className }: IconProps) {
+  return (
+    <svg {...fillBase(size, className)}>
+      <rect x="6" y="5" width="4.2" height="14" rx="1.2" />
+      <rect x="13.8" y="5" width="4.2" height="14" rx="1.2" />
+    </svg>
+  )
+}
+
+/** Dikey üç nokta (overflow menü) — sesli mesaj oynatıcı (Material). */
+export function MoreVerticalIcon({ size = 16, className }: IconProps) {
+  return (
+    <svg {...fillBase(size, className)}>
+      <circle cx="12" cy="5" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="12" cy="19" r="1.6" />
+    </svg>
+  )
+}
+
 /** Folder icon — 3D package/box. */
 export function FolderIcon({ size = 18, className }: IconProps) {
   return (

@@ -7,6 +7,7 @@ import type { TickStyle } from '@/lib/chat-ticks'
 import Link from 'next/link'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { AudioMessage } from '@/components/chat/audio-message'
 import { EmojiPicker } from '@/components/chat/emoji-picker'
 import { useSwipeReply } from '@/components/chat/use-swipe-reply'
 import { useT } from '@/components/locale-provider'
@@ -91,6 +92,7 @@ const CHAT_PANEL_MIN = 240
 const CHAT_PANEL_MAX = 560
 const CHAT_PANEL_DEFAULT = 288
 const CHAT_PANEL_KEY = 'chat-panel-width'
+const CHAT_LAST_PEER_KEY = 'chat-last-peer'
 /**
  * Liste panelinin GENİŞ/KOMPAKT durumu hatırlanır (2026-10-13 kullanıcı isteği:
  * "hamburger listeyi genişletip daraltsın … seçimi localStorage'a kaydet").
@@ -938,6 +940,14 @@ urls.push(startUrl)
       return
     }
     setActivePeerId(peerId)
+    // SON AÇILAN KİŞİ HATIRLANIR (2026-11-08, kullanıcı isteği): sohbet
+    // açıldığında en son açılan kişi kendiliğinden açılır.
+    try {
+      localStorage.setItem(CHAT_LAST_PEER_KEY, peerId)
+    }
+    catch {
+      // Depolama kapalı — yoksay, sonraki açılışta seçim olmayacak
+    }
     /*
       ROZET SIFIRLANIR (kullanıcı isteği: "sohbeti açınca okunmamış sıfırlansın,
       rozet kaysın"). 2026-10-16: okundu damgası artık `GET`te DEĞİL, alıcı
@@ -980,19 +990,35 @@ urls.push(startUrl)
   }, [t, selfId, isAdmin])
 
   /*
-    TEK KİŞİ VARSA SOHBET KENDİLİĞİNDEN AÇILIR (2026-10-12): normal kullanıcının
-    listesinde yalnız site sahibi vardır — "listeden seç" adımı gereksiz olurdu.
-    Sahip birden fazla kişi görür, seçim onda kalır (sağ panel "soldan bir kişi
-    seç" der). `autoOpened`: kullanıcı geri dönerse bir daha zorla açma.
+    SON AÇILAN KİŞİ KENDİLİĞİNDEN AÇILIR (2026-11-08, kullanıcı isteği:
+    "en son kimi açtıysam o açılmalı"). Eskiden sohbet yalnız TEK kişi
+    varsa açılıyordu; artık kayıtlı son açılan kişi önceliklidir.
+    Sıra: (1) kayıtlı son kişi listede varsa (kendim değilse ya da adminse),
+    (2) listede tek kişi varsa o, (3) yoksa açılmaz ("soldan bir kişi seç"
+    durumu bilinçli seçim olarak kalır). `autoOpened`: aynı oturumda bir kez.
   */
   const autoOpened = useRef(false)
   useEffect(() => {
-    if (autoOpened.current || conversationId || !peers || peers.length !== 1) {
+    if (autoOpened.current || conversationId || !peers) {
+      return
+    }
+    let saved: string | null = null
+    try {
+      saved = window.localStorage.getItem(CHAT_LAST_PEER_KEY)
+    }
+    catch {
+      saved = null
+    }
+    const savedPeer = saved ? peers.find(p => p.id === saved) : undefined
+    const canOpenSaved = savedPeer && (savedPeer.id !== selfId || isAdmin)
+    const single = peers.length === 1 ? peers[0].id : null
+    const target = canOpenSaved ? savedPeer!.id : single
+    if (!target) {
       return
     }
     autoOpened.current = true
-    void openWith(peers[0].id)
-  }, [peers, conversationId, openWith])
+    void openWith(target)
+  }, [peers, conversationId, openWith, selfId, isAdmin])
 
   /* Yan panel genişliği hatırlanır (SSR uyumu: önce varsayılan, sonra oku). */
   useEffect(() => {
@@ -1867,6 +1893,17 @@ return
    */
   const selfChat = !!selfId && activePeerId === selfId
   const threadOpen = !!conversationId
+  /*
+    KENDİM DIŞINDA KİMSE YOKSA SOL PANEL HİÇ GÖZÜKMESİN (2026-11-08,
+    kullanıcı isteği): "bir gruba eklemediğim kullanıcılarda sadece ben
+    gözüküyom, öyle olanlar için yan panel bile gözükmesin". Normal
+    kullanıcı yalnız site sahibini görür → tek satırlık liste anlamsız
+    → panel ve tutamaç gizlenir, sohbet alanı tam genişlik kaplar.
+    Admin her zaman listede kalır (kişileri yönetebilir). Yükleniyor
+    (`peers === null`) iken `null` döner ve panel iskeletle GÖRÜNÜR —
+    gizleme yalnız YÜKLENDİKTEN sonra.
+  */
+  const hasOthers = peers === null ? null : isAdmin || peers.length > 1
   /**
    * Yazma alanı doluluk kararı (2026-10-13): yalnız BOŞLUK yazmak "yazdı"
    * sayılmaz → sağdaki düğme mikrofon olarak kalır. Tek kaynak burasıdır.
@@ -1945,6 +1982,7 @@ return
               Mobilde (<md) sınırlar 72–300px, masada 240–560px (startResize/
               resizeByKey içinde viewport'a göre uygulanır).
           KOMPAKT modda genişlik 72px'e iner; genişlik geçişi 200ms animasyonlu. */}
+      {hasOthers !== false && (
       <aside
         className={cn(
           'flex min-h-0 shrink-0 flex-col overflow-hidden border-r border-foreground/10 bg-background transition-[width] duration-200 ease-out',
@@ -2098,11 +2136,9 @@ return
           <ProfileSheet peer={profilePeer} t={t} onClose={() => setProfilePeer(null)} />
         )}
       </aside>
+      )}
 
-      {/* ── SÜRÜKLEME TUTAMAĞI: panel genişliği (fare + ok tuşları) ──
-          HER DURUMDA görünür (2026-10-15 kullanıcı isteği: "çok küçükken
-          değiştirilemiyor, her zaman değiştirilebilsin"). Panel katlıyken
-          sürükleme/ok tuşu paneli KOMPAKT'tan açar (startResize/resizeByKey). */}
+      {hasOthers !== false && (
       <div
         role="separator"
         aria-orientation="vertical"
@@ -2112,6 +2148,7 @@ return
         onKeyDown={resizeByKey}
         className="w-1 shrink-0 cursor-ew-resize bg-foreground/10 transition-colors hover:bg-primary/40"
       />
+      )}
 
       {/* ── SAĞ: seçili kişiyle sohbet ──
           Her genişlikte GÖRÜNÜR (`flex`): liste kaplaması kaldırıldı, iki panel
@@ -2229,7 +2266,9 @@ return
           onClickCapture={messageLongPress.onClickCapture}
         >
           {!threadOpen && (
-            <p className="pt-10 text-center text-sm text-foreground-500">{t('chat.selectPerson')}</p>
+            <p className="pt-10 text-center text-sm text-foreground-500">
+              {hasOthers === false ? t('chat.noOneToChat') : t('chat.selectPerson')}
+            </p>
           )}
           {/* Yüklenirken iskelet — ekranı kaplayan "Sohbet yükleniyor…" yok */}
           {threadOpen && loading && <ChatSkeleton label={t('chat.loading')} />}
@@ -2439,14 +2478,7 @@ jumpToMessage(m.id)
                     </button>
                   )}
                   {m.kind === 'audio' && m.file_url && (
-                    <div className="mb-2 p-3 rounded-lg border border-foreground/10 bg-foreground/5">
-                      <audio
-                        controls
-                        src={m.file_url}
-                        className="w-full h-12"
-                        aria-label={t('chat.audioPlayer')}
-                      />
-                    </div>
+                    <AudioMessage src={m.file_url} fileName={m.file_name} />
                   )}
                   {m.kind === 'video' && m.file_url && (
                     <div className="mb-2 p-3 rounded-lg border border-foreground/10 bg-foreground/5">
