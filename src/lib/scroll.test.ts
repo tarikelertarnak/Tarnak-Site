@@ -54,9 +54,9 @@ afterEach(() => {
 
 describe('ofset sözleşmesi', () => {
   it('sCROLL_OFFSET = header + nefes payı (96px)', () => {
-    expect(HEADER_HEIGHT).toBe(80)
+    expect(HEADER_HEIGHT).toBe(56)
     expect(SCROLL_GAP).toBe(16)
-    expect(SCROLL_OFFSET).toBe(96)
+    expect(SCROLL_OFFSET).toBe(72)
   })
 
   it('cSS `scroll-margin-top` aynı toplamı kullanır', () => {
@@ -64,7 +64,7 @@ describe('ofset sözleşmesi', () => {
       join(process.cwd(), 'src', 'app', 'globals.css'),
       'utf-8',
     )
-    expect(css).toContain('--header-height: 80px')
+    expect(css).toContain('--header-height: 56px')
     expect(css).toContain('--scroll-offset: 16px')
     expect(css).toContain(
       'scroll-margin-top: calc(var(--header-height) + var(--scroll-offset))',

@@ -3,9 +3,9 @@
 /**
  * TopBar — fixed top bar with sidebar toggle, brand, page nav, and search trigger.
  *
- * Nav (2026-11-08): fixed bar now carries a horizontal, per-page navigation
- * with icons, always button-like styling, centered, scrollable with arrows
- * (admin panel ScrollableTabs pattern).
+ * Nav (2026-11-08): in-page section links (Hakkımda, Projeler, Blog, İletişim)
+ * appear ONLY on the home page. On every other page the nav is fully removed
+ * — the user navigates by URL instead.
  */
 import { motion } from 'motion/react'
 import Link from 'next/link'
@@ -14,9 +14,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useT } from '@/components/locale-provider'
 import { SiteLogo } from '@/components/logo'
 import {
-  ChatIcon,
   FolderIcon,
-  HouseIcon,
   MenuIcon,
   NewspaperIcon,
   SearchIcon,
@@ -35,6 +33,7 @@ interface NavItem {
 }
 
 function getPageNav(pathname: string, t: (k: string) => string): NavItem[] {
+  // Nav SADECE ana sayfada. Diğer sayfalarda boş — nav rendered edilmez.
   if (pathname === '/' || pathname === '') {
     return [
       { key: 'about', label: t('nav.about'), target: 'about', kind: 'anchor', icon: UserIcon },
@@ -43,26 +42,31 @@ function getPageNav(pathname: string, t: (k: string) => string): NavItem[] {
       { key: 'contact', label: t('hero.feedback'), target: 'contact', kind: 'anchor', icon: SendIcon },
     ]
   }
-  return [
-    { key: 'home', label: t('nav.home'), target: '/', kind: 'route', icon: HouseIcon },
-    { key: 'projects', label: t('nav.projects'), target: '/projects', kind: 'route', icon: FolderIcon },
-    { key: 'blog', label: t('nav.blog'), target: '/blog', kind: 'route', icon: NewspaperIcon },
-    { key: 'about', label: t('nav.about'), target: '/about', kind: 'route', icon: UserIcon },
-    { key: 'contact', label: t('hero.feedback'), target: '/contact', kind: 'route', icon: SendIcon },
-    { key: 'chat', label: t('nav.chat'), target: '/chat', kind: 'route', icon: ChatIcon },
-  ]
+  return []
 }
 
 export function TopBar() {
   const { t } = useT()
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
+  const [scrollProgress, setScrollProgress] = useState(0)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    const onScrollProgress = () => {
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight
+      setScrollProgress(height ? (winScroll / height) * 100 : 0)
+    }
+    onScrollProgress()
+    window.addEventListener('scroll', onScrollProgress, { passive: true })
+    return () => window.removeEventListener('scroll', onScrollProgress)
   }, [])
 
   useEffect(() => {
@@ -102,6 +106,8 @@ scrollToElement(el)
       <span className="text-sm font-bold">{side === 'left' ? '‹' : '›'}</span>
     </button>
   )
+
+  const isHome = pathname === '/' || pathname === ''
 
   return (
     <>
@@ -162,46 +168,36 @@ scrollToElement(el)
             </Link>
           </div>
 
-          {/* Middle: page nav (centered, scrollable with arrows) */}
+          {/* Middle: page nav (centered, scrollable with arrows) — SADECE ana sayfada */}
           <div className="flex flex-1 items-center justify-center min-w-0 gap-1">
-            {state.hasOverflow && (
-              <TabArrow side="left" disabled={!state.canScrollLeft} onClick={() => state.scrollBy(-1)} />
-            )}
-            <div
-              ref={scrollRef}
-              className="flex min-w-0 flex-1 items-center justify-center gap-1.5 overflow-x-auto scroll-smooth px-1"
-              style={{ scrollbarWidth: 'none' }}
-            >
-              {navItems.map((item) => {
-                const active
-                  = item.kind === 'route'
-                    ? pathname === item.target || pathname?.startsWith(`${item.target}/`)
-                    : false
-                const Icon = item.icon
-                const cls = `shrink-0 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
-                  active
-                    ? 'border-primary bg-primary/20 text-primary shadow-sm shadow-primary/20'
-                    : 'border-white/10 bg-white/5 text-foreground/70 hover:border-primary/40 hover:bg-primary/10 hover:text-foreground'
-                }`
-                if (item.kind === 'anchor') {
-                  return (
-                    <button key={item.key} type="button" onClick={() => jumpTo(item)} className={cls}>
-                      <Icon size={14} />
-                      <span>{item.label}</span>
-                    </button>
-                  )
-                }
-                return (
-                  <Link key={item.key} href={item.target} className={cls}>
-                    <Icon size={14} />
-                    <span>{item.label}</span>
-                  </Link>
-                )
-              })}
-            </div>
-            {state.hasOverflow && (
-              <TabArrow side="right" disabled={!state.canScrollRight} onClick={() => state.scrollBy(1)} />
-            )}
+            {isHome ? (
+              <>
+                {state.hasOverflow && (
+                  <TabArrow side="left" disabled={!state.canScrollLeft} onClick={() => state.scrollBy(-1)} />
+                )}
+                <div
+                  ref={scrollRef}
+                  className="flex min-w-0 flex-1 items-center justify-center gap-1.5 overflow-x-auto scroll-smooth px-1"
+                  style={{ scrollbarWidth: 'none' }}
+                >
+                  {navItems.map((item) => {
+                    const Icon = item.icon
+                    const cls = `shrink-0 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
+                      'border-white/10 bg-white/5 text-foreground/70 hover:border-primary/40 hover:bg-primary/10 hover:text-foreground'
+                    }`
+                    return (
+                      <button key={item.key} type="button" onClick={() => jumpTo(item)} className={cls}>
+                        <Icon size={14} />
+                        <span>{item.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                {state.hasOverflow && (
+                  <TabArrow side="right" disabled={!state.canScrollRight} onClick={() => state.scrollBy(1)} />
+                )}
+              </>
+            ) : null}
           </div>
 
           {/* Right: search button with right margin */}
@@ -224,6 +220,12 @@ scrollToElement(el)
           </div>
         </div>
       </motion.header>
+
+      {/* İlerleme çubuğu: kaydırdıkça artan mavi çubuk (ana sayfa nav ile uyumlu) */}
+      <div
+        className="fixed left-0 right-0 top-[var(--header-height)] h-1 bg-primary transition-all duration-300 z-[31]"
+        style={{ width: `${scrollProgress}%` }}
+      />
 
       <div
         aria-hidden

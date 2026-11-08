@@ -17,7 +17,7 @@ export function ChatPageClient() {
   }, [])
 
   return (
-    <div className="w-full h-[calc(100dvh-3.5rem)] overflow-hidden flex flex-col">
+    <div className="w-full h-[calc(100vh-var(--header-height))] overflow-hidden flex flex-col">
       <div className="flex-1 min-h-0 bg-background">
         <Chat
           onMessageClick={onMessageClick}

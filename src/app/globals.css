@@ -331,7 +331,7 @@ body {
    `src/lib/hero-scroll.ts` (HERO_SCROLL_BAR/HERO_SCROLL_GAP) bu değerleri
    kullanır. Burada başka yere sabit yazma. */
 :root {
-  --header-height: 80px;
+  --header-height: 56px;
   --scroll-offset: 16px;
 }
 

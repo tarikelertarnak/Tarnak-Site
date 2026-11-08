@@ -5,7 +5,8 @@ import type { ChatMessageRow } from '@/lib/chat-db'
 import type { Presence, PresenceState } from '@/lib/chat-peers'
 import type { TickStyle } from '@/lib/chat-ticks'
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+
 import { EmojiPicker } from '@/components/chat/emoji-picker'
 import { useSwipeReply } from '@/components/chat/use-swipe-reply'
 import { useT } from '@/components/locale-provider'
@@ -2308,7 +2309,7 @@ return
           const showDateSeparator = i === 0 || prevDay !== currDay
 
           return (
-            <>
+            <React.Fragment key={m.id}>
               {showDateSeparator && (
                 <div className="mb-2 flex w-full items-center justify-center">
                   <span
@@ -2619,7 +2620,7 @@ jumpToMessage(m.id)
                 </button>
               </div>
             </div>
-</>
+            </React.Fragment>
           )
           })}
         </div>

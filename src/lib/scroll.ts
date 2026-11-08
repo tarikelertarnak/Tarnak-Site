@@ -1,5 +1,3 @@
-import { HERO_SCROLL_OFFSET } from '@/lib/hero-scroll'
-
 /**
  * Kaydırmanın TEK yardımcısı (2026-10-17).
  *
@@ -16,21 +14,19 @@ import { HERO_SCROLL_OFFSET } from '@/lib/hero-scroll'
  */
 
 /** Üst çubuğun yüksekliği (px) — CSS `--header-height` ile AYNI olmalı. */
-export const HEADER_HEIGHT = 80
+export const HEADER_HEIGHT = 56
 
 /**
  * Üst çubuk ile hedef arasında kalan nefes payı (px).
- * `hero-scroll.ts`'teki `HERO_SCROLL_GAP` ile aynı değer; tekrar yazmamak
- * için oradan okunur (CSS `--scroll-offset` da bu değeri taşır).
  */
-export const SCROLL_GAP = HERO_SCROLL_OFFSET - HEADER_HEIGHT
+export const SCROLL_GAP = 16
 
 /**
  * Hedefin üstünden çıkarılacak toplam mesafe: 80 + 16 = 96px.
  * CSS tarafı: `[id] { scroll-margin-top: calc(var(--header-height) +
  * var(--scroll-offset)) }` — aynı toplam.
  */
-export const SCROLL_OFFSET = HERO_SCROLL_OFFSET
+export const SCROLL_OFFSET = HEADER_HEIGHT + SCROLL_GAP
 
 /**
  * Hareket azaltma tercihi: işletim sistemi ayarı (`prefers-reduced-motion`)
