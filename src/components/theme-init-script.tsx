@@ -20,8 +20,6 @@
  * script dugumu olusmaz → uyari kaybolur, FOUC korumasi aynen kalir.
  */
 
-import Script from 'next/script'
-
 const SCRIPT = `
 (function(){
   try {
@@ -56,12 +54,15 @@ const SCRIPT = `
 
 export function ThemeInitScript({ defaultTheme, nonce }: { defaultTheme: string, nonce?: string }) {
   // `nonce` (2026-10-07): CSP nonce tabanlı politika için gerekli — nonce
-  // olmadan bu satır içi script 'unsafe-inline' olmadan çalışmaz.
+  // olmadan bu satır içi script 'unsafe-inline' olmadan çalışır.
   // Kaynak: src/proxy.ts (x-nonce) → src/app/layout.tsx.
+  //
+  // next/script yerine doğrudan <script> kullanılıyor: Server Component'de
+  // render edilen <script> SSR HTML'e yazılır, client'da hydrate olur ve
+  // "Encountered a script tag while rendering React component" uyarısı alınmaz.
   return (
-    <Script
+    <script
       id="theme-init"
-      strategy="beforeInteractive"
       nonce={nonce}
       dangerouslySetInnerHTML={{ __html: `var defaultTheme='${defaultTheme}';\n${SCRIPT}` }}
     />

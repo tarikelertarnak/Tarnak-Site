@@ -50,8 +50,10 @@ export function TopBar() {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
     const onScroll = () => setScrolled(window.scrollY > 8)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -219,11 +221,14 @@ scrollToElement(el)
             </button>
           </div>
         </div>
-        {/* İlerleme çubuğu: nav'ın hemen dibine bitişik (absolute bottom-0) */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-1 bg-primary transition-all duration-300 z-[31]"
-          style={{ width: `${scrollProgress}%` }}
-        />
+        {/* İlerleme çubuğu: nav'ın hemen dibine bitişik (absolute bottom-0),
+            yalnızca istemci tarafında render edilir (SSR'de yok → hydration mismatch yok) */}
+        {isMounted && (
+          <div
+            className="absolute bottom-0 left-0 right-0 h-1 bg-primary transition-all duration-300 z-[31]"
+            style={{ width: `${scrollProgress}%` }}
+          />
+        )}
       </motion.header>
 
       <div
