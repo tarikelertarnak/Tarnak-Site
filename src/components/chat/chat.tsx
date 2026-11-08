@@ -10,6 +10,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AudioMessage } from '@/components/chat/audio-message'
 import { EmojiPicker } from '@/components/chat/emoji-picker'
 import { useSwipeReply } from '@/components/chat/use-swipe-reply'
+import { VideoMessage } from '@/components/chat/video-message'
 import { useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import {
@@ -2265,11 +2266,12 @@ return
           }}
           onClickCapture={messageLongPress.onClickCapture}
         >
-          {!threadOpen && (
-            <p className="pt-10 text-center text-sm text-foreground-500">
-              {hasOthers === false ? t('chat.noOneToChat') : t('chat.selectPerson')}
-            </p>
-          )}
+          {/*
+            "Soldan bir kişi seç" boş-durum satırı KALDIRILDI (2026-11-08,
+            kullanıcı isteği): "yenilerken o olmasın kaldır çünkü saten
+            her türlü biri seçili olacak". Sohbet sayfası açılınca son
+            açılan kişi zaten kendiliğinden açılır; boş durum asla çizilmez.
+          */}
           {/* Yüklenirken iskelet — ekranı kaplayan "Sohbet yükleniyor…" yok */}
           {threadOpen && loading && <ChatSkeleton label={t('chat.loading')} />}
           {/* Boş sohbet: metin TIKLANABİLİR (2026-10-12 kullanıcı isteği) —
@@ -2481,15 +2483,7 @@ jumpToMessage(m.id)
                     <AudioMessage src={m.file_url} fileName={m.file_name} mine={mine} />
                   )}
                   {m.kind === 'video' && m.file_url && (
-                    <div className="mb-2 p-3 rounded-lg border border-foreground/10 bg-foreground/5">
-                      <video
-                        controls
-                        src={m.file_url}
-                        poster={m.file_name || undefined}
-                        className="max-h-48 w-full rounded-sm"
-                        aria-label={t('chat.videoPlayer')}
-                      />
-                    </div>
+                    <VideoMessage src={m.file_url} fileName={m.file_name} mine={mine} />
                   )}
                   {m.kind === 'file' && m.file_url && (
                     <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="mb-1 underline">

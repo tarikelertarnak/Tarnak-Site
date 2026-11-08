@@ -197,8 +197,9 @@ describe('sohbet v2 oturum ekranı', () => {
     expect(screen.queryByText(/kime yazmak istiyorsun/i)).toBeNull()
     expect(screen.getByText('Ayşe Yılmaz')).not.toBeNull()
     expect(screen.getByText('mehmet')).not.toBeNull()
-    // Birden çok kişi varken seçim kullanıcıda kalır → sağ panel ipucu gösterir.
-    expect(screen.getByText(/soldan bir kişi seç/i)).not.toBeNull()
+    // Birden çok kişi varken de "Soldan bir kişi seç" YAZILMAZ (2026-11-08,
+    // kullanıcı isteği: her hâlde biri seçili olmalı — ipucu metni kaldırıldı).
+    expect(screen.queryByText(/soldan bir kişi seç/i)).toBeNull()
     // kullanıcının istediği: o saçma ekran ARTIK YOK
     expect(screen.queryByText(/henüz bir sohbet yok/i)).toBeNull()
   })

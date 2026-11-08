@@ -266,8 +266,8 @@ describe('chat arayüz sözleşmesi', () => {
     it('kişi paneli ve sohbet AYNI ekranda durur', () => {
       expect(SRC).toContain('<aside')
       expect(SRC).toContain('<section')
-      // birden fazla kişi varsa sağ panel "soldan bir kişi seç" der
-      expect(SRC).toContain('chat.selectPerson')
+      // biri seçili olmalı — boş durum metni hiç yazılmaz (2026-11-08 kullanıcı isteği)
+      expect(SRC).not.toContain('chat.selectPerson')
     })
 
     it('yan panel sürükleyerek VE klavyeyle yeniden boyutlandırılır', () => {
@@ -435,7 +435,7 @@ describe('chat arayüz sözleşmesi', () => {
     it('"erişim yok" tam ekranı YOK (sunucu görünmeyeni listelemez)', () => {
       // tek anıldığı yer açıklayıcı yorumdur; kodda böyle bir metin/ekran yok
       expect(SRC).not.toMatch(/'Erişim yok/)
-      expect(SRC).toContain('chat.selectPerson')
+      expect(SRC).not.toContain('chat.selectPerson')
     })
 
     it('"Önemli kişi olarak işaretle" başlıkta DEĞİL, sağ tık menüsünde', () => {
