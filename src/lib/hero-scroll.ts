@@ -15,9 +15,9 @@
 
 /**
  * Sabit üst çubuk (TopBar) yüksekliği + hedef başlığın kart içi üst dolgusu.
- * Ölçüm (2026-10-12): çubuk 48–56px, About çerçeveli kartın dolgusu 16–32px.
+ * TopBar 2026-11-08'de 56px'e düşürüldü (--header-height ile AYNI olmalı).
  */
-export const HERO_SCROLL_BAR = 80
+export const HERO_SCROLL_BAR = 56
 
 /**
  * Başlıkla üst çubuk arasında KALAN nefes payı (px).

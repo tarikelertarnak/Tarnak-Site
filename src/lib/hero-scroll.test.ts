@@ -77,7 +77,7 @@ describe('heroScroll ayar sabitleri', () => {
     expect(HERO_SCROLL_GAP).toBe(16)
   })
 
-  it('offset eski 80px\'ten büyük → daha fazla boşluk bırakır', () => {
-    expect(HERO_SCROLL_OFFSET).toBeGreaterThan(80)
+  it('offset header-height + nefes payı = 72px (56 + 16)', () => {
+    expect(HERO_SCROLL_OFFSET).toBe(72)
   })
 })

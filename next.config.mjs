@@ -12,9 +12,10 @@ dns.setDefaultResultOrder('ipv4first')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Turbopack CSS işleme WSL'de çöküyor (lightningcss native binding ile ilgili).
-  // `turbo: false` → webpack kullanıyor. WSL'de `next build` çalışmalı.
-  turbo: false,
+  // Webpack zorlaması `package.json` build script'inde `--webpack` ile yapılır
+  // (Turbopack lightningcss native binding'iyle WSL/Windows'ta çöküyordu).
+  // Not: `turbo` adında bir next.config anahtarı yoktur — Next 16 bilinmeyen
+  // anahtar uyarısı basar.
   experimental: {
     agentUpgrade: 'security',
   },

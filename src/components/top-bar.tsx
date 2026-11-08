@@ -117,7 +117,7 @@ scrollToElement(el)
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className={`fixed top-0 right-0 left-0 z-30 relative transition-[background-color,border-color] duration-200 ${
+        className={`fixed top-0 right-0 left-0 z-30 transition-[height,background-color,border-color] duration-300 ease-out ${
           scrolled
             ? 'h-12 border-b border-white/10 bg-black/80 backdrop-blur-md'
             : 'h-14 border-b border-transparent bg-black/40'
@@ -134,7 +134,7 @@ scrollToElement(el)
               type="button"
               onClick={openSidebar}
               aria-label={t('common.toggleSidebar')}
-              className={`flex shrink-0 items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-white/5 hover:text-foreground ${
+              className={`flex shrink-0 items-center justify-center rounded-lg text-foreground/70 transition-[height,width,color,background-color] duration-300 ease-out hover:bg-white/5 hover:text-foreground ${
                 scrolled ? 'h-8 w-8' : 'h-9 w-9'
               }`}
             >
@@ -148,7 +148,7 @@ scrollToElement(el)
                   scrollToTop()
                 }
               }}
-              className={`group relative z-10 flex items-center gap-2 font-bold tracking-tight whitespace-nowrap ${
+              className={`group relative z-10 flex items-center gap-2 font-bold tracking-tight whitespace-nowrap transition-[font-size] duration-300 ease-out ${
                 scrolled ? 'text-xs' : 'text-sm sm:text-base'
               }`}
             >
@@ -208,7 +208,7 @@ scrollToElement(el)
               type="button"
               onClick={() => window.dispatchEvent(new CustomEvent('search:request-open'))}
               aria-label={t('common.search')}
-              className={`flex shrink-0 min-w-0 items-center justify-between gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-foreground/70 transition-colors hover:border-white/20 hover:text-foreground min-w-[44px] sm:min-w-[64px] sm:max-w-[220px] md:max-w-[280px] ${
+              className={`flex shrink-0 min-w-0 items-center justify-between gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-foreground/70 transition-[height,width,color,background-color,border-color] duration-300 ease-out hover:border-white/20 hover:text-foreground min-w-[44px] sm:min-w-[64px] sm:max-w-[220px] md:max-w-[280px] ${
                 scrolled ? 'h-9' : 'h-10'
               }`}
             >
