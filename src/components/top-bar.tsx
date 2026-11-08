@@ -115,7 +115,7 @@ scrollToElement(el)
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className={`fixed top-0 right-0 left-0 z-30 transition-[background-color,border-color] duration-200 ${
+        className={`fixed top-0 right-0 left-0 z-30 relative transition-[background-color,border-color] duration-200 ${
           scrolled
             ? 'h-12 border-b border-white/10 bg-black/80 backdrop-blur-md'
             : 'h-14 border-b border-transparent bg-black/40'
@@ -219,13 +219,12 @@ scrollToElement(el)
             </button>
           </div>
         </div>
+        {/* İlerleme çubuğu: nav'ın hemen dibine bitişik (absolute bottom-0) */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-1 bg-primary transition-all duration-300 z-[31]"
+          style={{ width: `${scrollProgress}%` }}
+        />
       </motion.header>
-
-      {/* İlerleme çubuğu: kaydırdıkça artan mavi çubuk (ana sayfa nav ile uyumlu) */}
-      <div
-        className="fixed left-0 right-0 top-[var(--header-height)] h-1 bg-primary transition-all duration-300 z-[31]"
-        style={{ width: `${scrollProgress}%` }}
-      />
 
       <div
         aria-hidden
