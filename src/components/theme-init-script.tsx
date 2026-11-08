@@ -43,6 +43,20 @@ const SCRIPT = `
     if (localStorage.getItem('site-reduce-motion') === 'true') {
       root.setAttribute('data-reduce-motion', 'true');
     }
+
+    // Cihaz sınıfı (2026-11-08, Ayarlar / İzinler): phone/tablet/desktop/tv.
+    // CSS cihaz uyarlamaları html[data-device=...] üzerinden türer.
+    try {
+      var ua = (navigator.userAgent || '').toLowerCase();
+      var device = 'desktop';
+      var tvUa = /(?:tizen|web0s|smart-tv|smarttv|hbbtv|netcast|aft|mitv-browser)/;
+      if (tvUa.test(ua)) device = 'tv';
+      else if (window.innerWidth >= 2000) device = 'tv';
+      else if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        device = window.innerWidth < 768 ? 'phone' : 'tablet';
+      }
+      root.setAttribute('data-device', device);
+    } catch (e) { /* cihaz algılanamazsa desktop kalır */ }
   } catch(e) {
     var r = document.documentElement;
     r.classList.add('dark'); r.classList.remove('light');

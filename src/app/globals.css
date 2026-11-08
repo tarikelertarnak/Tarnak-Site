@@ -1219,3 +1219,16 @@ html[data-theme='light'] .markdown-body th {
 .hero-click-primary span {
   color: var(--tprimary) !important;
 }
+
+/* Cihaz sınıfına göre uyarlamalar (2026-11-08, Ayarlar / İzinler).
+   data-device tema-init scripti parse anında html üzerine yazar
+   (phone/tablet/desktop/tv). */
+html[data-device='phone'] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Televizyon (10-foot UI): odak halkası kalın olsun, uzaktan kumanda ok tuşlarıyla dolaşırken seçili öğe net görünsün. */
+html[data-device='tv'] :focus-visible {
+  outline-width: 4px;
+  outline-offset: 2px;
+}

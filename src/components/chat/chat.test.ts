@@ -284,22 +284,17 @@ describe('chat arayüz sözleşmesi', () => {
       expect(SRC).not.toMatch(/separator[\s\S]{0,400}hidden/)
     })
 
-    it('sohbet tam ekranı kaplar (eski 760px / 68svh / max-w-3xl sınırı yok)', () => {
-      // 2026-10-13: başlık bloğu kalktı → ayrılan pay 19rem'den 11rem'e indi.
-      // 2026-10-13 (#2, kullanıcı isteği): dar ekranda (<768px) kart TAM ekranı
-      // kaplar; yüksekliği saran sayfa kutusu `dvh` ile verir.
-      // ÖLÇÜLDÜ (2026-10-13, gerçek Chromium 390×780): `h-full` burada
-      // ÇÖZÜLMÜYOR (slot yüksekliği `min-height`+`flex-1`'den geldiği için
-      // "belirli" sayılmıyor) → kart `min-h-[260px]`'te kalıyordu. Doğrusu
-      // yükseklik sınıfı KOYMAMAK: slotun `items-stretch`'i uzatır.
-      // ÖLÇÜLDÜ (2026-10-13, gerçek Chromium 390×780, 24 mesaj): kartın
-      // yüksekliği belirsizse (ne `h-full` ne sınıf) kaydırma kabı içerik boyuna
-      // (1106px) çıkıyor, `overflow-y-auto` devre dışı kalıyor, yazma alanı
-      // kartın dışına itilip `overflow-hidden` ile kırpılıyordu. Sabit `dvh`
-      // yüksekliği şart; `h-full` (=height:100%) burada ÇÖZÜLMÜYOR.
-      expect(SRC).toContain('h-[calc(100dvh-4.5rem)] min-h-[260px] w-full overflow-hidden')
-      expect(SRC).not.toMatch(/className="[^"]*h-full min-h-\[260px\]/)
-      expect(SRC).toContain('md:h-[calc(100svh-11rem)]')
+    it('sohbet wrapper yüksekliğini doldurur (boş kutu YOK, sayfa kaydırılamaz)', () => {
+      // 2026-11-08 (kullanıcı isteği): "/chat sitenin kendisi kaydırılamaz
+      // olmalı, grup kaydırılır olacak" + "chat kutusunun altında boş kutu
+      // var — kaldır". Kart artık sabit hesaplanmıyor; yüksekliği
+      // `/chat` sarmalayıcısı verir (`100dvh - var(--header-height)`,
+      // overflow-hidden) ve kart `h-full` ile onu doldurur → alta hiç
+      // boş alan kalmaz, sayfanın kendisi kaydırılamaz, yalnız mesaj
+      // listesi (`flex-1 overflow-y-auto`) kaydırılır.
+      expect(SRC).toContain('h-full min-h-[260px] w-full overflow-hidden')
+      expect(SRC).not.toContain('100dvh-4.5rem')
+      expect(SRC).not.toContain('100svh-11rem')
       // sınıf listesinde eski sınırlar YOK (yorumda anılmaları serbest)
       expect(SRC).not.toMatch(/className="[^"]*max-h-\[760px\]/)
       expect(SRC).not.toMatch(/className="[^"]*68svh/)

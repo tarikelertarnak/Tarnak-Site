@@ -1896,22 +1896,14 @@ return
   return (
     <div
       /*
-        YÜKSEKLİK (2026-10-13 kullanıcı isteği: "dar ekranda kart tam genişlik ve
-        tam yükseklik kaplasın; kenar boşluğu en fazla 8-12px olsun").
-         · `md` ALTI (<768px): `h-[calc(100dvh-4.5rem)]` — TopBar payı 3.5rem +
-           üstte/altta 8er px = 4.5rem. YÜKSEKLİK ŞART (ölçüldü): yükseklik
-           verilmezse (ne `h-full` ne sınıfsız) kartın yüksekliği İÇERİĞE göre
-           belirsiz kalıyor, `flex-1` çocuklar (mesaj listesi) küçülemiyor ve
-           `overflow-y-auto` devre dışı kalıyordu: 24 mesajla 390px'de kaydırma
-           kabının `clientHeight`'ı 1106px'e (içerik boyu) çıkıyor, yazma alanı
-           kartın dışına itilip `overflow-hidden` ile KIRPILIYORDU.
-           `dvh`: mobil klavye açılınca kutu küçülür, yazma alanı taşmaz.
-         · `md` VE ÜSTÜ (≥768px): eski sabit yükseklik (`100svh` eksi TopBar 56px
-           + bölüm üst payı 80px + slot payları 40px = 11rem) ve yuvarlak kart.
-        KIRILMA NOKTASI: 768px (`md`). Altında TEK panel (liste ↔ sohbet geçişi),
-        üstünde liste + sohbet yan yana.
+        YÜKSEKLİK (2026-11-08, kullanıcı isteği: "sayfa kendisi kaydırılamaz
+        olmalı, grup kaydırılır olacak" + "chat kutusunun altında boş kutu var").
+        Kart artık SABİT hesap değil, TÜM ekranlarda `h-full` — yüksekliği
+        `/chat` sarmalayıcısı (`100vh - var(--header-height)`, overflow-hidden)
+        verir. Böylece kart bitişerek satırı kaplar, altta boş alan kalmaz;
+        sayfanın kendisi kaydırılamaz, yalnız İÇERİK (mesaj listesi) kaydırılır.
       */
-      className="relative flex h-[calc(100dvh-4.5rem)] min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background md:h-[calc(100svh-11rem)]"
+      className="relative flex h-full min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background"
       style={{ '--chat-panel-w': `${panelWidth}px` } as CSSProperties}
     >
       {/*

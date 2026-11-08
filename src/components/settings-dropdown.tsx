@@ -10,17 +10,21 @@ import { Drawer } from '@/components/ui/drawer'
 import { flagIcons } from '@/components/ui/flag-icons'
 import {
   AutoIcon,
+  BellIcon,
   CheckIcon,
   CogIcon,
   GlobeIcon,
+  MicIcon,
   MoonIcon,
   RefreshCwIcon,
   RotateCcwIcon,
+  ShieldIcon,
   SunIcon,
   ThemeSystemIcon,
 } from '@/components/ui/icons'
 import { Modal } from '@/components/ui/modal'
 import { SearchableCombobox } from '@/components/ui/searchable-combobox'
+import { askNotify, notifyState } from '@/lib/browser-notify'
 import { LOCALES, NATIVE_NAMES } from '@/lib/i18n'
 
 const MUSIC_KEY = 'site-music-enabled'
@@ -29,6 +33,32 @@ const THEME_KEY = 'site-theme'
 const LOCALE_COOKIE = 'site-locale'
 
 const LOCALES_ALL: readonly Locale[] = [...LOCALES]
+
+/**
+ * Cihaz sınıfı algısı (2026-11-08, Ayarlar → İzinler):
+ * telefon/tablet `pointer:coarse` + genişlik eşiği, televizyon akıllı TV UA'sı
+ * veya 2000px+ görüntü genişliği, geri kalan masaüstüdür. `data-device`
+ * <html>'de yayımlanır — CSS cihaz uyarlamaları (ör. TV odak halkası) oradan
+ * türer.
+ */
+export type DeviceClass = 'phone' | 'tablet' | 'desktop' | 'tv'
+
+export function detectDevice(): DeviceClass {
+  if (typeof window === 'undefined')
+    return 'desktop'
+  const ua = navigator.userAgent.toLowerCase()
+  if (/tizen|web0s|smart-tv|smarttv|hbbtv|netcast|aft|mitv-browser/.test(ua))
+    return 'tv'
+  if (window.innerWidth >= 2000)
+    return 'tv'
+  const coarse = typeof window.matchMedia === 'function'
+    && window.matchMedia('(pointer: coarse)').matches
+  if (coarse && window.innerWidth < 768)
+    return 'phone'
+  if (coarse)
+    return 'tablet'
+  return 'desktop'
+}
 
 function readLocal<T extends string>(
   key: string,
@@ -379,6 +409,60 @@ return
     }),
   ]
 
+  // ── İzinler (cihaza göre durum senkronu) ──────────────────
+  const [deviceClass] = useState<DeviceClass>(() => detectDevice())
+  const [notifyPerm, setNotifyPerm] = useState(() => notifyState())
+  const [micPerm, setMicPerm] = useState<'granted' | 'denied' | 'prompt' | 'unknown'>('unknown')
+
+  // <html data-device>: CSS cihaz uyarlamaları (ör. TV'de 4px odak halkası)
+  // bunu kullanır. Panel açılmadan da ayarlanır.
+  useEffect(() => {
+    document.documentElement.dataset.device = deviceClass
+  }, [deviceClass])
+
+  // Panel her açıkta izin durumlarını senkronla (durum tarayıcıdan değişmiş olabilir).
+  useEffect(() => {
+    if (!open)
+      return
+    setNotifyPerm(notifyState())
+    let cancelled = false
+    const permissions = navigator.permissions
+    if (permissions?.query) {
+      permissions.query({ name: 'microphone' as PermissionName })
+        .then((p) => {
+          if (cancelled)
+            return
+          setMicPerm(p.state === 'granted' ? 'granted' : p.state === 'denied' ? 'denied' : 'prompt')
+        })
+        .catch(() => setMicPerm('unknown'))
+    }
+    else {
+      setMicPerm('unknown')
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [open])
+
+  const allowNotify = useCallback(async () => {
+    setNotifyPerm(await askNotify())
+  }, [])
+
+  const allowMic = useCallback(async () => {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      setMicPerm('unknown')
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach(t => t.stop())
+      setMicPerm('granted')
+    }
+    catch {
+      setMicPerm('denied')
+    }
+  }, [])
+
   const cur = draft ?? applied
 
   /*
@@ -464,6 +548,62 @@ return
             />
           </Section>
 
+          {/* İzinler — bu cihaza göre (telefon/tablet/bilgisayar/TV) */}
+          <Section
+            title={t('settings.permissions')}
+            icon={<ShieldIcon size={16} />}
+          >
+            <p className="text-[11px] leading-snug text-foreground/50">
+              {t('settings.permissionsDesc')}
+            </p>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-foreground/10 px-3 py-2">
+              <span className="text-sm text-foreground/80">{t('settings.device')}</span>
+              <span className="text-xs text-foreground/60">
+                {t(deviceClass === 'phone'
+                  ? 'settings.devicePhone'
+                  : deviceClass === 'tablet'
+                    ? 'settings.deviceTablet'
+                    : deviceClass === 'tv'
+                      ? 'settings.deviceTv'
+                      : 'settings.deviceDesktop')}
+              </span>
+            </div>
+            <PermRow
+              icon={<BellIcon size={16} />}
+              title={t('settings.notify')}
+              status={notifyPerm === 'default'
+                ? 'prompt'
+                : notifyPerm === 'unsupported'
+                  ? 'unsupported'
+                  : notifyPerm}
+              labels={{
+                granted: t('settings.notifyGranted'),
+                denied: t('settings.notifyDenied'),
+                allow: t('settings.notifyAllow'),
+                unsupported: t('settings.notifyUnsupported'),
+                deniedNote: t('settings.deniedNote'),
+              }}
+              onAllow={() => {
+                void allowNotify()
+              }}
+            />
+            <PermRow
+              icon={<MicIcon size={16} />}
+              title={t('settings.mic')}
+              status={micPerm}
+              labels={{
+                granted: t('settings.notifyGranted'),
+                denied: t('settings.notifyDenied'),
+                allow: t('settings.micAllow'),
+                unsupported: t('settings.notifyUnsupported'),
+                deniedNote: t('settings.deniedNote'),
+              }}
+              onAllow={() => {
+                void allowMic()
+              }}
+            />
+          </Section>
+
           {/*
             MÜZİK BÖLÜMÜ KALDIRILDI (2026-10-06, kullanıcı).
 
@@ -534,6 +674,67 @@ return
         </div>
       </Modal>
     </>
+  )
+}
+
+/**
+ * Tek satır izin: ikon + başlık + durum/eylem. `prompt`/`unknown` durumunda
+ * "İzin Ver" düğmesi gösterir (tarayıcıdan izin ister); `granted` yeşil ✓;
+ * `denied` engellendi etiketi + çözüm notu; `unsupported` desteklenmiyor.
+ */
+function PermRow({
+  icon,
+  title,
+  status,
+  labels,
+  onAllow,
+}: {
+  icon: React.ReactNode
+  title: string
+  status: 'granted' | 'denied' | 'prompt' | 'unsupported' | 'unknown'
+  labels: {
+    granted: string
+    denied: string
+    allow: string
+    unsupported: string
+    deniedNote: string
+  }
+  onAllow: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-1 rounded-lg border border-foreground/10 px-3 py-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex items-center gap-2 text-sm text-foreground/80">
+          {icon}
+          {title}
+        </span>
+        {status === 'granted' && (
+          <span className="text-[11px] font-medium text-emerald-500">
+            {labels.granted}
+{' '}
+✓
+</span>
+        )}
+        {status === 'denied' && (
+          <span className="text-[11px] font-medium text-foreground/50">{labels.denied}</span>
+        )}
+        {status === 'unsupported' && (
+          <span className="text-[11px] text-foreground/50">{labels.unsupported}</span>
+        )}
+        {(status === 'prompt' || status === 'unknown') && (
+          <button
+            type="button"
+            onClick={onAllow}
+            className="rounded-lg border border-primary/40 bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20"
+          >
+            {labels.allow}
+          </button>
+        )}
+      </div>
+      {status === 'denied' && (
+        <p className="text-[10px] leading-snug text-foreground/45">{labels.deniedNote}</p>
+      )}
+    </div>
   )
 }
 
