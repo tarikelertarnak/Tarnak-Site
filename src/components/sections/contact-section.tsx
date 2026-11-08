@@ -5,7 +5,6 @@ import type { SiteContent } from '@/lib/content'
 import type { SessionUser } from '@/lib/supabase/session'
 import { motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
-import { buildContactChannels } from '@/lib/contact-channels'
 import { FadeUpSection } from '@/components/fade-up-section'
 import { useT } from '@/components/locale-provider'
 import { Button } from '@/components/ui/button'
@@ -28,6 +27,7 @@ import {
 import { Section, SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { useContactForm } from '@/hooks/use-contact-form'
+import { buildContactChannels } from '@/lib/contact-channels'
 import { scrollToElement } from '@/lib/scroll'
 import { HONEYPOT_FIELD } from '@/lib/validations'
 
@@ -41,7 +41,13 @@ import { HONEYPOT_FIELD } from '@/lib/validations'
  * sosyal kanallarla birlikte.
  */
 
-export function ContactSection({ content }: { content: SiteContent }) {
+/**
+ * `separateTitle` (2026-11-08, /contact sayfası — /projects PROJECTS düzeni):
+ *  true  → başlık KENDİ framed kartında (`pt-28 sm:pt-32`, h1), içerik BAŞKA
+ *          framed kartta (`pb-16 sm:pb-20 lg:pb-24`); araları `--section-gap`.
+ *  false → ana sayfa: başlık + kanal kartları + form TEK framed kartta (varsayılan).
+ */
+export function ContactSection({ content, separateTitle = false }: { content: SiteContent, separateTitle?: boolean }) {
   const { t } = useT()
   const {
     formData,
@@ -185,30 +191,14 @@ export function ContactSection({ content }: { content: SiteContent }) {
     )
   }
 
-  return (
-    <Section
-      className="flex-col pt-[var(--section-space)] pb-0"
-      id="contact"
-      framed
-    >
-      {/*
-        BÖLÜM BOŞLUĞU — ÜST (2026-10-06, kullanıcı kuralı: "başlık ile
-        butonlar arasındaki boşluk, butonlar ile içerik arasındaki
-        boşlukla AYNI olsun").
-
-        Ölçüm: `SectionTitle` `big` modu kendi `pb-8 sm:pb-10 lg:pb-12`
-        alt boşluğunu getiriyor (48px) → başlık→buton 72px oluyordu,
-        buton→içerik ise 24px. İki tarafı eşitlemek için `SectionTitle`
-        ALT boşluğu sıfırlandı ve boşluk TEK kaynaktan (`--section-gap`)
-        verildi — hem `pb-0` hem de `mb-0` gerekiyor çünkü Section
-        tabanında hem `<div>` hem `<h2>` sarmalayıcısı var.
-      */}
-      <FadeUpSection className="w-full">
-        <SectionTitle
-          title=""
-          subTitle={content.contact.subtitle}
-          description={content.contact.description}
-          icon={(
+  // BAŞLIK BLOĞU (tek kart) — /projects PROJECTS düzeninde ayrı gruba alınır.
+  const titleBlock = (
+    <FadeUpSection className="w-full">
+      <SectionTitle
+        title=""
+        subTitle={content.contact.subtitle}
+        description={content.contact.description}
+        icon={(
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width={36}
@@ -221,13 +211,16 @@ export function ContactSection({ content }: { content: SiteContent }) {
               <path d="M958 1328q101 40 184 106t142 153t91 187t33 210v64h-128v-64q0-119-45-224t-124-183t-183-123t-224-46q-119 0-224 45t-183 124t-123 183t-46 224v64H0v-64q0-109 32-210t92-187t142-152t184-107q-45-31-81-72t-61-88t-38-100t-14-108q0-93 35-174t96-142t142-96t175-36q93 0 174 35t142 96t96 142t36 175q0 55-13 107t-39 100t-61 89t-81 72m-254-48q66 0 124-25t101-68t69-102t26-125t-25-124t-69-101t-102-69t-124-26t-124 25t-102 69t-69 102t-25 124t25 124t68 102t102 69t125 25M2048 0v1024h-256l-384 384v-384h-128V896h256v203l203-203h181V128H640v230q-32 4-64 10t-64 18V0z" />
             </svg>
           )}
-          big
-          tightGap
-        />
-      </FadeUpSection>
+        big
+        tightGap
+        headingLevel={separateTitle ? 'h1' : undefined}
+      />
+    </FadeUpSection>
+  )
 
-      <div aria-hidden className="h-[var(--section-gap)]" />
-
+  // İÇERİK BLOĞU (tek kart): kanallar + form.
+  const contentBlock = (
+    <>
       {/* Iletisim yollari — tek aranabilir acilir menu (e-posta, telefon,
           konum ve tum sosyal kanallar + kopyala butonlari). */}
       <FadeUpSection className="w-full">
@@ -432,6 +425,40 @@ export function ContactSection({ content }: { content: SiteContent }) {
           </form>
         </Card>
       </FadeUpSection>
+    </>
+  )
+
+  // /contact sayfası: başlık AYRI kart, içerik AYRI kart (/projects düzeni).
+  if (separateTitle) {
+    return (
+      <>
+        <Section
+          className="flex-col pt-28 sm:pt-32"
+          id="contact"
+          framed
+        >
+          {titleBlock}
+        </Section>
+        <div aria-hidden className="h-[var(--section-gap)]" />
+        <Section
+          className="flex-col pb-16 sm:pb-20 lg:pb-24"
+          framed
+        >
+          {contentBlock}
+        </Section>
+      </>
+    )
+  }
+
+  return (
+    <Section
+      className="flex-col pt-[var(--section-space)] pb-0"
+      id="contact"
+      framed
+    >
+      {titleBlock}
+      <div aria-hidden className="h-[var(--section-gap)]" />
+      {contentBlock}
     </Section>
   )
 }

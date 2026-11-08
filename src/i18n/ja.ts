@@ -254,6 +254,7 @@ const ja: Record<string, string> = {
   'nav.allLinks': 'すべてのリンク',
   'nav.blog': 'ブログ',
   'nav.chat': 'チャット',
+  'nav.contact': 'お問い合わせ',
   'nav.resources': 'リソース',
   'nav.credits': '貢献者',
   'nav.donate': '支援する',

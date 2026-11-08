@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbJsonLd } from '@/components/breadcrumb'
+import { BreadcrumbJsonLd } from '@/components/breadcrumb'
 import { ContactSection } from '@/components/sections/contact-section'
 import { CRUMBS, resolveCrumbs } from '@/lib/breadcrumb'
 import { t } from '@/lib/i18n'
@@ -32,13 +32,10 @@ export default async function ContactPage() {
   return (
     <div className="min-h-screen w-full relative">
       <main id="main" className="w-full">
-        {/* Breadcrumb: görünür navigasyon + BreadcrumbList */}
-        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-          <Breadcrumb items={CRUMBS['/contact']} />
-          {/* JSON-LD: SEO bilinçli sınır — statik TR etiketler. */}
-          <BreadcrumbJsonLd items={resolveCrumbs(CRUMBS['/contact'], k => t('tr', k))} />
-        </div>
-        <ContactSection content={content} />
+        {/* Görünür Breadcrumb KALDIRILDI (2026-11-08, kullanıcı isteği).
+            JSON-LD BreadcrumbList SEO için görünmeden kalır. */}
+        <BreadcrumbJsonLd items={resolveCrumbs(CRUMBS['/contact'], k => t('tr', k))} />
+        <ContactSection content={content} separateTitle />
       </main>
     </div>
   )

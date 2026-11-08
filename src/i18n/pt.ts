@@ -254,6 +254,7 @@ const pt: Record<string, string> = {
   'nav.allLinks': 'Todos os links',
   'nav.blog': 'Blog',
   'nav.chat': 'Conversa',
+  'nav.contact': 'Contato',
   'nav.resources': 'Recursos',
   'nav.credits': 'Colaboradores',
   'nav.donate': 'Doar',

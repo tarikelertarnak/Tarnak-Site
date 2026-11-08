@@ -254,6 +254,7 @@ const ru: Record<string, string> = {
   'nav.allLinks': 'Все ссылки',
   'nav.blog': 'Блог',
   'nav.chat': 'Чат',
+  'nav.contact': 'Контакты',
   'nav.resources': 'Ресурсы',
   'nav.credits': 'Участники',
   'nav.donate': 'Поддержать',

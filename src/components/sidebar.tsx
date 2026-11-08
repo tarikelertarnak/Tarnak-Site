@@ -30,6 +30,7 @@ import {
   HouseIcon,
   LoginIcon,
   LogoutIcon,
+  MailIcon,
   NewspaperIcon,
   PanelIcon,
   UserIcon,
@@ -111,6 +112,7 @@ const NAV_LINKS: NavItem[] = [
   },
   { key: 'blog', labelKey: 'nav.blog', href: '/blog', icon: NewspaperIcon },
   { key: 'about', labelKey: 'nav.about', href: '/about', icon: UserIcon },
+  { key: 'contact', labelKey: 'nav.contact', href: '/contact', icon: MailIcon },
   { key: 'donate', labelKey: 'nav.donate', href: '/donate', icon: DonateIcon },
   {
     key: 'credits',

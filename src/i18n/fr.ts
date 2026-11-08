@@ -254,6 +254,7 @@ const fr: Record<string, string> = {
   'nav.allLinks': 'Tous les liens',
   'nav.blog': 'Blog',
   'nav.chat': 'Discussion',
+  'nav.contact': 'Contact',
   'nav.resources': 'Ressources',
   'nav.credits': 'Contributeurs',
   'nav.donate': 'Faire un don',
