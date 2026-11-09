@@ -1,0 +1,167 @@
+import type { SiteContent } from '@/lib/content'
+
+type DeepPartial<T> = { [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K] }
+
+/**
+ * English content translations.
+ *
+ * data/content.json is the Turkish single source of truth; when the locale is
+ * 'en' this overlay is applied over the text fields. Names, URLs, icons,
+ * images, and data-driven arrays (toolbox/social etc.) are preserved.
+ */
+export const enContentOverlay: DeepPartial<SiteContent> = {
+  hero: {
+    name: 'TARIK ELER',
+    tagline: 'Programmer & Vibe Coder',
+    badge: '',
+    description:
+      'Building modern web experiences with Next.js, TypeScript and AI. I work end-to-end, from design to deployment.',
+    exploreLabel: 'Explore Projects',
+    connectLabel: 'Get in Touch',
+    emoji: '🚀',
+    stats: [
+      { label: 'Projects', value: '10+' },
+      { label: 'Technologies', value: '15+' },
+      { label: 'Focus', value: '100%' },
+    ],
+  },
+  nav: {
+    ctaLabel: 'GitHub',
+    githubRepo: 'https://github.com/tarikelertarnak',
+    items: [
+      { title: 'Projects', href: '/projects' },
+      { title: 'Blog', href: '/blog' },
+      { title: 'Chat', href: '/chat' },
+      { title: 'Contact', href: '/contact/' },
+    ],
+  },
+  about: {
+    subtitle: 'ABOUT ME',
+    title: 'A Quick Look Into My World',
+    description: '',
+    whoTitle: 'Who Am I?',
+    whoText:
+      'A web developer who enjoys writing code and building products. Web development, design and technology are my passion. I enjoy everything that builds me up as a person.',
+    toolboxTitle: 'My Toolbox',
+    toolboxDescription: 'Technologies I use while building projects and sites.',
+    beyondTitle: 'Beyond Code',
+    beyondDescription:
+      'Discover what I do when I am not coding, my interests and hobbies.',
+    securityTitle: 'Cybersecurity & CTF',
+    securityText:
+      'Passionate about cybersecurity. I love learning new techniques and overcoming security challenges.',
+    teamTitle: 'OUR TEAM',
+    team: [
+      { name: 'TARIKELER', role: 'Founder' },
+      { name: 'tarikelertarnak', role: 'Infrastructure' },
+      { name: 'Fruity Dev', role: 'DevOps' },
+      { name: 'PixelShield', role: 'Security' },
+      { name: 'Mythora.de', role: 'Operations' },
+    ],
+    cv: {
+      summary:
+        'Web developer building modern, end-to-end web experiences with Next.js, TypeScript and AI. From design to deployment — I build products people use.',
+      experience: [
+        {
+          role: 'Founder & Full-Stack Developer',
+          company: 'Fruity Dev',
+          period: 'Ongoing',
+          description:
+            'Professional web development services — high-quality, scalable web applications for clients.',
+        },
+        {
+          role: 'Owner & Developer',
+          company: 'Mythora.de',
+          period: 'Ongoing',
+          description:
+            'A fully self-developed German Minecraft SMP network — hosting players from all over the world.',
+        },
+        {
+          role: 'Developer',
+          company: 'PixelShield',
+          period: 'Ongoing',
+          description:
+            'DDoS protection for Minecraft servers — protocol-focused filtering for Java, Bedrock and Geyser.',
+        },
+        {
+          role: 'Developer',
+          company: 'Portfolio & GitHub Projects',
+          period: 'Ongoing',
+          description:
+            'Browser extensions, AI tools and utility apps published on GitHub (Scribd-Download, AI-Jailbreak, Accentra, CodeHub and more).',
+        },
+      ],
+      education: [
+        {
+          role: 'Self-Taught Developer',
+          company: 'Computer Science & Software Engineering',
+          period: 'Continuous',
+          description:
+            'Hands-on learning through web development, cybersecurity, CTF and bug bounty platforms.',
+        },
+      ],
+    },
+  },
+  projects: {
+    subtitle: 'PROJECTS',
+    title: 'All Projects',
+    description: '',
+    /*
+      `items` BOS — 2026-10-05 (kullanıcı): burada sabit/hardcoded bir
+      "Player — Music player app" projesi vardı ve kullanıcı bunu istemedi:
+      "bölümde boş görünmesin diye uydurulmuş hiçbir proje olmamalı.
+      Gerçek projeyi silersem kart da kaybolmalı."
+      Bu dizi, GitHub API'si boş/hata döndüğünde devreye giren bir
+      YEDEK veri kaynağıydı. Kaldırıldı: liste artık yalnız gerçek kaynaktan
+      (GitHub API) geliyor, veri yoksa boş durum mesajı gösteriliyor.
+      `lib/content.ts` zaten `items: []` idi — tutarsızlık buradan geliyordu.
+    */
+    items: [],
+  },
+  github: {
+    subtitle: 'GITHUB',
+    title: 'GitHub Projects',
+    description: 'My public repositories, fetched live from my GitHub profile.',
+  },
+  chat: {
+    // `subtitle` tek okunan alan; `title`/`description` sunucu semasi icin
+    // bos birakildi — eski metin public sayfadan tamamen kaldirildi.
+    subtitle: 'CHAT',
+    title: '',
+    description: '',
+  },
+  profile: {
+    firstName: 'TARIK',
+    lastName: 'ELER',
+    displayName: 'TARIKELER',
+    nickname: 'Tarnak',
+    title: 'Programmer & Vibe Coder',
+    profileImage: '/uploads/profile.png',
+    experience: '',
+    firstLanguage: 'Turkish',
+    otherLanguages: 'English (A2), German (A1)',
+  },
+  contact: {
+    subtitle: 'CONTACT',
+    title: 'Contact',
+    description: '',
+    footerText: '',
+    successTitle: 'Message sent!',
+    successText:
+      'Thanks for reaching out! I received your message and will get back to you as soon as possible.',
+    email: 'tarikelertarnak@gmail.com',
+    phone: '+90 5518957215',
+    location:
+      'https://www.google.com/maps/place/Fetih,+S%C3%B6nmez+Sk.+No:5,+42030+Karatay%2FKonya/@37.8750305,32.5391801,17z/data=!4m6!3m5!1s0x14d09ab31a659e3d:0x594d704ce1aa1698!8m2!3d37.8750305!4d32.5391801!16s%2Fg%2F11c4h6twdh?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D',
+    locationYandex:
+      'https://yandex.com.tr/maps/101474/konya/?ll=32.539234%2C37.875019&mode=whatshere&utm_source=share&whatshere%5Bpoint%5D=32.539225%2C37.875038&whatshere%5Bzoom%5D=17&z=21',
+  },
+  settings: {
+    githubUsername: 'tarikelertarnak',
+    defaultTheme: 'system',
+    backgroundImage: '',
+  },
+  footer: {
+    copyright: 'TARIKELER',
+  },
+}

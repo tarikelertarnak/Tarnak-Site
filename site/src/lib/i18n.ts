@@ -1,0 +1,398 @@
+/**
+ * i18n — 25 dil + Auto detection (English default).
+ *
+ * detectLocale() reads the browser/accept-language; resolveLocale() combines
+ * the user preference (cookie) with the detected language; both fall back to
+ * English (the international default — a visitor whose language is not
+ * supported sees English, not Turkish). Turkish is still detected whenever
+ * the visitor's browser language or country is Turkey.
+ */
+
+/* ------------------------------------------------------------------ */
+/* UI dictionary — static strings used by components                   */
+/* ------------------------------------------------------------------ */
+
+import enDict from '@/i18n/en.json'
+import { extraDicts } from '@/i18n/extra'
+import trDict from '@/i18n/tr.json'
+
+export type Locale
+  = | 'tr' | 'en' | 'es' | 'de' | 'ja' | 'fr' | 'pt' | 'ru' | 'it'
+    | 'zh' | 'nl' | 'pl' | 'ko' | 'ar' | 'id' | 'vi' | 'fa' | 'uk'
+    | 'th' | 'cs' | 'hu' | 'ro' | 'sv' | 'el' | 'he'
+    | 'bg' | 'da' | 'fi' | 'no' | 'sq' | 'am' | 'hy' | 'az' | 'eu'
+    | 'be' | 'bn' | 'my' | 'ca' | 'ceb' | 'eo' | 'tl' | 'fy' | 'gl'
+    | 'ka' | 'gu' | 'ht' | 'ha' | 'haw' | 'hi' | 'hmn' | 'ig' | 'is'
+    | 'ga' | 'jw' | 'kn' | 'kk' | 'km' | 'rw' | 'ky' | 'lo' | 'la'
+    | 'lv' | 'lt' | 'lb' | 'mk' | 'mg' | 'ms' | 'ml' | 'mt' | 'mi'
+    | 'mr' | 'mn' | 'ne' | 'ps' | 'qu' | 'sm' | 'gd' | 'sr' | 'st'
+    | 'sn' | 'sd' | 'si' | 'su' | 'tg' | 'ta' | 'te' | 'ug' | 'ur'
+    | 'uz' | 'cy' | 'xh' | 'yi' | 'yo' | 'zu'
+
+export type LocalePref = 'auto' | Locale
+export const LOCALE_COOKIE = 'site-locale'
+
+/** All selectable locales (Auto is handled separately as a pref). */
+export const LOCALES: readonly Locale[] = [
+  'tr',
+  'en',
+  'es',
+  'de',
+  'ja',
+  'fr',
+  'pt',
+  'ru',
+  'it',
+  'zh',
+  'nl',
+  'pl',
+  'ko',
+  'ar',
+  'id',
+  'vi',
+  'fa',
+  'uk',
+  'th',
+  'cs',
+  'hu',
+  'ro',
+  'sv',
+  'el',
+  'he',
+  'bg',
+  'da',
+  'fi',
+  'no',
+  'sq',
+  'am',
+  'hy',
+  'az',
+  'eu',
+  'be',
+  'bn',
+  'my',
+  'ca',
+  'ceb',
+  'eo',
+  'tl',
+  'fy',
+  'gl',
+  'ka',
+  'gu',
+  'ht',
+  'ha',
+  'haw',
+  'hi',
+  'hmn',
+  'ig',
+  'is',
+  'ga',
+  'jw',
+  'kn',
+  'kk',
+  'km',
+  'rw',
+  'ky',
+  'lo',
+  'la',
+  'lv',
+  'lt',
+  'lb',
+  'mk',
+  'mg',
+  'ms',
+  'ml',
+  'mt',
+  'mi',
+  'mr',
+  'mn',
+  'ne',
+  'ps',
+  'qu',
+  'sm',
+  'gd',
+  'sr',
+  'st',
+  'sn',
+  'sd',
+  'si',
+  'su',
+  'tg',
+  'ta',
+  'te',
+  'ug',
+  'ur',
+  'uz',
+  'cy',
+  'xh',
+  'yi',
+  'yo',
+  'zu',
+]
+
+/**
+ * Her dilin KENDİ dilindeki adı — dil seçicilerinde gösterilir
+ * (`settings-dropdown.tsx` + admin `LocaleTextInput`). `LOCALES` ile birlikte
+ * yaşar ki yeni dil eklenince tek yerde tanımlansın.
+ */
+export const NATIVE_NAMES: Record<Locale, string> = {
+  tr: 'Türkçe',
+  en: 'English',
+  es: 'Español',
+  de: 'Deutsch',
+  ja: '日本語',
+  fr: 'Français',
+  pt: 'Português',
+  ru: 'Русский',
+  it: 'Italiano',
+  zh: '中文',
+  nl: 'Nederlands',
+  pl: 'Polski',
+  ko: '한국어',
+  ar: 'العربية',
+  id: 'Bahasa Indonesia',
+  vi: 'Tiếng Việt',
+  fa: 'فارسی',
+  uk: 'Українська',
+  th: 'ไทย',
+  cs: 'Čeština',
+  hu: 'Magyar',
+  ro: 'Română',
+  sv: 'Svenska',
+  el: 'Ελληνικά',
+  he: 'עברית',
+  bg: 'български',
+  da: 'Dansk',
+  fi: 'Suomi',
+  no: 'Norsk',
+  sq: 'Shqip',
+  am: 'አማርኛ',
+  hy: 'Հայերեն',
+  az: 'Azərbaycan dili',
+  eu: 'Euskara',
+  be: 'Беларуская',
+  bn: 'বাংলা',
+  my: 'မြန်မာဘာသာ',
+  ca: 'Català',
+  ceb: 'Cebuano',
+  eo: 'Esperanto',
+  tl: 'Filipino',
+  fy: 'Frysk',
+  gl: 'Galego',
+  ka: 'ქართული',
+  gu: 'ગુજરાતી',
+  ht: 'Kreyòl ayisyen',
+  ha: 'Hausa',
+  haw: 'ʻŌlelo Hawaiʻi',
+  hi: 'हिन्दी',
+  hmn: 'Hmong',
+  ig: 'Igbo',
+  is: 'Íslenska',
+  ga: 'Gaeilge',
+  jw: 'Basa Jawa',
+  kn: 'ಕನ್ನಡ',
+  kk: 'Қазақша',
+  km: 'ភាសាខ្មែរ',
+  rw: 'Kinyarwanda',
+  ky: 'Кыргызча',
+  lo: 'ພາສາລາວ',
+  la: 'Latīna',
+  lv: 'Latviešu',
+  lt: 'Lietuvių',
+  lb: 'Lëtzebuergesch',
+  mk: 'Македонски',
+  mg: 'Malagasy',
+  ms: 'Bahasa Melayu',
+  ml: 'മലയാളം',
+  mt: 'Malti',
+  mi: 'Māori',
+  mr: 'मराठी',
+  mn: 'Монгол',
+  ne: 'नेपाली',
+  ps: 'پښتو',
+  qu: 'Runa Simi',
+  sm: 'Gagana Sāmoa',
+  gd: 'Gàidhlig',
+  sr: 'српски',
+  st: 'Sesotho',
+  sn: 'chiShona',
+  sd: 'سنڌي',
+  si: 'සිංහල',
+  su: 'Basa Sunda',
+  tg: 'Тоҷикӣ',
+  ta: 'தமிழ்',
+  te: 'తెలుగు',
+  ug: 'ئۇيغۇرچە',
+  ur: 'اردو',
+  uz: 'Oʻzbekcha',
+  cy: 'Cymraeg',
+  xh: 'isiXhosa',
+  yi: 'ייִדיש',
+  yo: 'Èdè Yorùbá',
+  zu: 'isiZulu',
+}
+
+/** Right-to-left locales (Arabic, Persian, Hebrew). */
+export const RTL_LOCALES: ReadonlySet<string> = new Set(['ar', 'fa', 'he'])
+
+/**
+ * Gerçekten ÇEVİRİ YAPILMIŞ diller — `hreflang` alternatifi olarak
+ * sitemap/canonical'da SADECE bunlar ilan edilir.
+ *
+ * Neden `LOCALES` (24 dil) değil: `hreflang` "bu dilde şu sayfa şu
+ * içerikle var" DEDİR. İçeriği çevrilmemiş bir dil için `hreflang`
+ * bildirmek yanlış sinyal verir ve Google bunu spam/hataya sayabilir.
+ * Şu an içerik sözlüğü 8 dil (tr/en/de/es/fr/ja/pt/ru); yeni bir dil
+ * çevrilince buraya eklenmeli.
+ *
+ * `x-default` = `tr` (varsayılan dil).
+ */
+export const TRANSLATED_LOCALES: readonly Locale[] = ['tr', 'en', 'de', 'es', 'fr', 'ja', 'pt', 'ru']
+
+/** accept-language base (e.g. `pt-BR` -> `pt`, `zh-Hans` -> `zh`) → Locale. */
+const LANG_TABLE: Record<string, Locale> = {
+  tr: 'tr',
+  en: 'en',
+  es: 'es',
+  de: 'de',
+  ja: 'ja',
+  fr: 'fr',
+  pt: 'pt',
+  ru: 'ru',
+  it: 'it',
+  zh: 'zh',
+  nl: 'nl',
+  pl: 'pl',
+  ko: 'ko',
+  ar: 'ar',
+  id: 'id',
+  vi: 'vi',
+  fa: 'fa',
+  uk: 'uk',
+  th: 'th',
+  cs: 'cs',
+  hu: 'hu',
+  ro: 'ro',
+  sv: 'sv',
+  el: 'el',
+  he: 'he',
+}
+
+function cleanLocale(s?: string | null): Locale | undefined {
+  if (!s)
+    return undefined
+  const base = s.toLowerCase().split(/[_-]/)[0]
+  return LANG_TABLE[base]
+}
+
+/** Detect from a language tag (`navigator.language` / `accept-language`). */
+export function detectLocale(lang?: string): Locale {
+  return cleanLocale(lang) ?? 'en'
+}
+
+/** ISO country code (from CF-IPCountry / timezone) → best locale for that country. */
+const COUNTRY_LOCALE: Record<string, Locale> = {
+  TR: 'tr',
+  DE: 'de',
+  FR: 'fr',
+  ES: 'es',
+  AT: 'de',
+  CH: 'de',
+  BE: 'nl',
+  NL: 'nl',
+  PT: 'pt',
+  BR: 'pt',
+  IT: 'it',
+  RU: 'ru',
+  UA: 'uk',
+  PL: 'pl',
+  CZ: 'cs',
+  HU: 'hu',
+  RO: 'ro',
+  SE: 'sv',
+  GR: 'el',
+  JP: 'ja',
+  KR: 'ko',
+  CN: 'zh',
+  TW: 'zh',
+  HK: 'zh',
+  AR: 'ar',
+  SA: 'ar',
+  AE: 'ar',
+  EG: 'ar',
+  ID: 'id',
+  VN: 'vi',
+  TH: 'th',
+  IL: 'he',
+  IR: 'fa',
+}
+
+/** Detect from a country/region code — used for location-based auto-detect. */
+export function detectLocaleFromCountry(country?: string | null): Locale | undefined {
+  if (!country)
+    return undefined
+  return COUNTRY_LOCALE[country.toUpperCase()]
+}
+
+/** Combine stored preference with detection (works on server and client). */
+export function resolveLocale(pref?: LocalePref, detected?: Locale): Locale {
+  if (pref && pref !== 'auto' && LOCALES.includes(pref as Locale)) {
+    return pref as Locale
+  }
+  return detected ?? 'en'
+}
+
+/**
+ * Tip koruyucu: bu deger gecerli bir dil tercihi mi?
+ *
+ * Neden gerekli: LocaleProvider cerezden okurken bir ara yalnizca
+ * `tr | en | auto` kabul ediyordu. Combobox 25 dil sundugu icin kullanici
+ * "Deutsch" sectiginde cerez `de` oluyor, sayfa yenilenince bu beyaz liste
+ * onu reddedip `auto`ya dusuyordu → secim KAYBOLUYORDU. Artik tek kaynak
+ * burasi: LOCALES listesi.
+ */
+export function isLocalePref(value: unknown): value is LocalePref {
+  return typeof value === 'string'
+    && (value === 'auto' || LOCALES.includes(value as Locale))
+}
+
+/** Direction of a locale ('rtl' for Arabic/Persian/Hebrew). */
+export function localeDirection(locale: Locale): 'ltr' | 'rtl' {
+  return RTL_LOCALES.has(locale) ? 'rtl' : 'ltr'
+}
+
+type Dictionary = Record<string, string>
+
+/**
+ * Per-locale UI dictionaries. Missing keys fall back to ENGLISH — the
+ * international default stated in the file header (`en` is `enDict`). NOT
+ * Turkish: a visitor whose language has no dictionary (e.g. `zh`, `ko`) must
+ * see English, not Turkish. (`tr` is complete, so Turkish visitors are
+ * unaffected.)
+ */
+export const dictionaries: Partial<Record<Locale, Dictionary>> = {
+  tr: trDict,
+  en: enDict,
+  ...extraDicts,
+}
+
+/**
+ * Çeviri lookup. `vars` verilirse metindeki `{ad}` yer tutucuları doldurulur
+ * (örn. t('tr', 'phone.lengthHintRange', { min: 10, max: 10 })).
+ */
+export function t(
+  locale: Locale,
+  key: string,
+  vars?: Record<string, string | number>,
+): string {
+  const raw
+    = dictionaries[locale]?.[key]
+      ?? enDict[key as keyof typeof enDict]
+      ?? trDict[key as keyof typeof trDict]
+      ?? key
+  if (!vars) {
+    return raw
+  }
+  return raw.replace(/\{(\w+)\}/g, (m, name: string) =>
+    (name in vars ? String(vars[name]) : m))
+}

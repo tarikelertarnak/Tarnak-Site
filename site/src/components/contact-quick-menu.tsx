@@ -1,0 +1,511 @@
+'use client'
+
+import type { ContactChannel } from '@/lib/contact-channels'
+import type { SiteContent } from '@/lib/content'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { useT } from '@/components/locale-provider'
+import { cn } from '@/components/ui/cn'
+import { HERO_BTN_TRIGGER } from '@/components/ui/hero-button-style'
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  CloseIcon,
+  CopyIcon,
+  GlobeIcon,
+  MailIcon,
+  MapPinIcon,
+  PhoneIcon,
+  SearchIcon,
+  socialIcon,
+} from '@/components/ui/icons'
+import { usePopoverPosition } from '@/components/ui/use-popover-position'
+import { copyText } from '@/lib/clipboard'
+import {
+  buildContactChannels,
+  filterChannels,
+  groupChannels,
+} from '@/lib/contact-channels'
+
+/**
+ * Iletisim hizli erisim menusu.
+ *
+ * Tek bir acilir menude TUM iletisim yollari: e-posta, telefon, konum
+ * (Google/Yandex) ve sosyal medya (Instagram, GitHub...). Ustte arama var;
+ * her satirda kopyala butonu, satira tiklayinca ilgili adres acilir.
+ *
+ * Neden ayri bilesen: `SearchableCombobox` SECIM icin tasarlandi (secili
+ * ogeyi isaretler). Burada secim yok — her satir bir EYLEM (ac / kopyala).
+ * Ayni bilesene iki farkli anlam yuklemek ikisini de bozardi.
+ *
+ * ⚠️ YON: panel HER ZAMAN ASAGI acilir (`top-full`). Onceki surumde yer
+ * yoksa yukari aciliyordu ama kullanici bunu istemedi — asagi acilmali.
+ *
+ * ⚠️ KAYDIRMA: arama alanina `autoFocus` vermek SAYFAYI EN USTE kaydiriyordu
+ * (tarayici odaklanan elemani gorunur alana getiriyor). Artik odak
+ * `preventScroll: true` ile elle veriliyor.
+ *
+ * ⚠️ BOYUT: yukseklik sabit degil — tetikleyicinin ALTINDAKI bosluga gore
+ * olculur, yani "uzayabildigi kadar" buyur (asgari 240px, azami 85vh).
+ */
+
+/**
+ * Panelin liste DISINDA kalan yuksekligi (px): ust bosluk (artik yukari
+ * kaydirildigi icin olcum gereksiz — asagida bakiyor) + arama kutusu
+ * (p-2 dolgu + h-9 alan + alt kenarlik) + panel kenarligi + pay.
+ * Yukseklik hesabi yalnizca listeye uygulandigi icin buradan dusulmeli.
+ * Negatif ust bosluk paneli SADECE yukari kaydirir; dikeyde yer acmaz,
+ * dolayisiyla bu deger degismedi.
+ */
+/** Kanal ikonu: yerlesik kanallar sabit, sosyaller mdi adiyla. */
+function ChannelIcon({ icon, size = 18 }: { icon: string, size?: number }) {
+  switch (icon) {
+    case 'email':
+      return <MailIcon size={size} />
+    case 'phone':
+      return <PhoneIcon size={size} />
+    case 'location':
+      return <MapPinIcon size={size} />
+    default:
+      return socialIcon(icon, size) ?? <GlobeIcon size={size} />
+  }
+}
+
+function ChannelRow({
+  channel,
+  copied,
+  active,
+  index,
+  onCopy,
+  onActivate,
+  onHover,
+}: {
+  channel: ContactChannel
+  copied: boolean
+  active: boolean
+  /** Duz listedeki sirasi — klavye gezinmesi icin `data-index` olarak yazilir */
+  index: number
+  onCopy: (channel: ContactChannel) => void
+  onActivate: (channel: ContactChannel) => void
+  onHover: () => void
+}) {
+  const { t } = useT()
+  const canCopy = Boolean(channel.copyValue)
+
+  const content = (
+    <>
+      <span
+        className={cn(
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+          active ? 'bg-primary/20 text-primary' : 'bg-primary/12 text-primary',
+        )}
+      >
+        <ChannelIcon icon={channel.icon} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs font-semibold text-foreground">
+          {channel.label}
+        </span>
+        <span className="block truncate text-[11px] text-foreground-500">
+          {channel.value}
+        </span>
+      </span>
+    </>
+  )
+
+  return (
+    <li
+      data-index={index}
+      onMouseEnter={onHover}
+      className={cn(
+        /*
+          Menü satırı — tetikleyici değil, liste öğesi. Yine de kullanıcı
+          isteği: "dokunma alanı en az 40px". `min-h-10` ölçülen 44px'i
+          40px'e indiriyor ve tıklama alanını garantiliyor (ikon+metin
+          hizası `items-center` ile korunuyor).
+        */
+        'group/row flex min-h-10 items-center gap-2 rounded-lg px-2 py-1.5 transition-colors',
+        active ? 'bg-foreground-200/15' : 'hover:bg-foreground-200/10',
+      )}
+    >
+      {channel.href ? (
+        <a
+          href={channel.href}
+          target={channel.href.startsWith('http') ? '_blank' : undefined}
+          rel={
+            channel.href.startsWith('http') ? 'noopener noreferrer' : undefined
+          }
+          onClick={() => onActivate(channel)}
+          className="flex min-w-0 flex-1 items-center gap-2.5 no-underline"
+        >
+          {content}
+        </a>
+      ) : (
+        <span className="flex min-w-0 flex-1 items-center gap-2.5">
+          {content}
+        </span>
+      )}
+
+      {canCopy && (
+        <button
+          type="button"
+          onClick={() => onCopy(channel)}
+          aria-label={`${channel.label} — ${t('contact.copy')}`}
+          title={copied ? t('contact.copied') : t('contact.copy')}
+          className={cn(
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors',
+            copied
+              ? 'border-success-300 bg-success-50 text-success'
+              : 'border-foreground-200/15 text-foreground-500 hover:border-primary/40 hover:text-primary',
+          )}
+        >
+          {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
+        </button>
+      )}
+    </li>
+  )
+}
+
+export function ContactQuickMenu({ content }: { content: SiteContent }) {
+  const { t } = useT()
+  const [open, setOpen] = useState(false)
+  const [q, setQ] = useState('')
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [copyFailed, setCopyFailed] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+
+  /*
+    Konum (2026-10-06). `gap: 6` = kullanıcı "hemen altında çok az
+    boşlukla" dedi.
+
+    ÖNCE burada `maxHeight` state'i + `measureHeight()` + `window.scrollBy`
+    vardı ve panel YÜKSEKLİĞİ listenin üstünde hesaplanıyordu
+    (PANEL_CHROME=80 tahmini). Artık GEREK YOK: `usePopoverPosition`
+    panelin kendi boyutunu ölçüp hem konumu hem `maxHeight`'ını
+    uyguluyor. İki kaynaklı yükseklik hesabı birbirini eziyordu
+    (portal `maxHeight` uygularken liste kendi `maxHeight`'ını
+    taşıyordu) — tek kaynağa indirildi, `measureHeight` ve
+    `window.scrollBy` hack'i silindi.
+  */
+
+  const rootRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLDivElement>(null)
+  const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  /*
+    Konum (2026-10-06). `gap: 6` = kullanıcı "hemen altında çok az
+    boşlukla" dedi — önceki `-mt-7` butonun üstüne biniyordu.
+  */
+  const { triggerRef, panelRef, portalStyle }
+    = usePopoverPosition<HTMLDivElement>(open, 6)
+
+  const channels = useMemo(() => buildContactChannels(content, t), [content, t])
+  const filtered = useMemo(() => filterChannels(channels, q), [channels, q])
+  const groups = useMemo(() => groupChannels(filtered), [filtered])
+
+  /*
+    PANEL YÜKSEKLİĞİ VE KONUM ARTIK BURADA DEĞİL.
+    `measureHeight()` + `PANEL_CHROME(80)` + `window.scrollBy` hack'i
+    kaldırıldı: konumu ve `maxHeight`'ı `usePopoverPosition` ölçüp
+    uyguluyor. Eski kod "sığmıyorsa sayfayı aşağı kaydır" diyerek
+    ekranı kaydırıyordu; portal + sabit konum bunu gereksiz kılıyor.
+  */
+
+  const openMenu = () => {
+    setOpen(true)
+    setQ('')
+    setActiveIndex(0)
+    // ⚠️ `autoFocus` SAYFAYI EN USTE kaydiriyordu. Elle odakla ve kaydirmayi
+    // engelle — panel asagi acilirken sayfa yerinde kalmali.
+    requestAnimationFrame(() => {
+      inputRef.current?.focus({ preventScroll: true })
+    })
+  }
+
+  // Disari tiklayinca / Escape ile kapan
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node
+      /*
+        PORTAL DÜZELTMESİ (2026-10-06). Panel artık `document.body`
+        altına portal'lanıyor, tetikleyicinin `rootRef`inden DIŞINDA.
+        Eski kontrol (`rootRef.contains(target)`) panelin içine tıklayınca
+        "dışarı tıklandı" sayıp paneli KAPATTI — yani listeye hiç
+        tıklayamıyordun. İki kapsayıcıyı da kontrol etmek zorunlu.
+      */
+      const icerde
+        = (rootRef.current?.contains(t) ?? false)
+          || (panelRef.current?.contains(t) ?? false)
+      if (!icerde) {
+        setOpen(false)
+      }
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, panelRef])
+
+  // Bilesen kalkarken bekleyen zamanlayiciyi temizle (sizinti olmasin)
+  useEffect(
+    () => () => {
+      if (resetTimer.current) {
+        clearTimeout(resetTimer.current)
+      }
+    },
+    [],
+  )
+
+  const handleCopy = async (channel: ContactChannel) => {
+    if (!channel.copyValue) {
+      return
+    }
+    const ok = await copyText(channel.copyValue)
+
+    if (resetTimer.current) {
+      clearTimeout(resetTimer.current)
+    }
+    if (ok) {
+      setCopiedId(channel.id)
+      setCopyFailed(false)
+      resetTimer.current = setTimeout(() => setCopiedId(null), 1800)
+    }
+ else {
+      // Sessizce yutmak yok: kullanici "kopyalandi" sanmasin.
+      setCopiedId(null)
+      setCopyFailed(true)
+      resetTimer.current = setTimeout(() => setCopyFailed(false), 2600)
+    }
+  }
+
+  /** Klavye ile aktif satiri ac (Enter). */
+  const activate = (channel: ContactChannel) => {
+    if (!channel.href) {
+      return
+    }
+    if (channel.href.startsWith('http')) {
+      window.open(channel.href, '_blank', 'noopener,noreferrer')
+    }
+ else {
+      window.location.href = channel.href
+    }
+  }
+
+  const moveActive = (delta: number) => {
+    if (!filtered.length) {
+      return
+    }
+    setActiveIndex((prev) => {
+      const next = (prev + delta + filtered.length) % filtered.length
+      // Aktif satiri gorunur alana kaydir — ama SAYFAYI kaydirma.
+      requestAnimationFrame(() => {
+        const el = listRef.current?.querySelector<HTMLElement>(
+          `[data-index="${next}"]`,
+        )
+        el?.scrollIntoView({ block: 'nearest' })
+      })
+      return next
+    })
+  }
+
+  const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      moveActive(1)
+    }
+ else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      moveActive(-1)
+    }
+ else if (e.key === 'Home') {
+      e.preventDefault()
+      setActiveIndex(0)
+    }
+ else if (e.key === 'End') {
+      e.preventDefault()
+      setActiveIndex(Math.max(0, filtered.length - 1))
+    }
+ else if (e.key === 'Enter') {
+      e.preventDefault()
+      const channel = filtered[activeIndex]
+      if (channel) {
+        activate(channel)
+      }
+    }
+  }
+
+  const total = channels.length
+  const isEmpty = total === 0
+
+  // Grup icindeki satirin listedeki GERCEK sirasini bul (klavye vurgusu icin)
+  const indexOf = (channel: ContactChannel) =>
+    filtered.findIndex(c => c.id === channel.id)
+
+  return (
+    <div className="relative">
+      <button
+        ref={triggerRef as React.RefObject<HTMLButtonElement>}
+        type="button"
+        onClick={() => (open ? setOpen(false) : openMenu())}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className={cn(
+          /*
+            "İletişim Bilgileri" tetikleyicisi — 2026-10-05 ölçüm düzeltmesi.
+            Panel İÇİNDEKİ kanallar (WhatsApp/Discord/GitHub) ölçüldü:
+              h      44px vs referans 40px  → h-10
+              radius  8px vs referans  6px  → rounded-md
+              border  yok  vs referans  1px  → border-primary-fg
+              fs     14px vs referans 13px  → text-[13px]
+            Tetikleyici `HERO_BTN_TRIGGER` ile aynı sınıfı kullanıyor;
+            `open` durumunda `bg-primary/90` (aktif ton) korundu.
+          */
+          HERO_BTN_TRIGGER,
+          open ? 'bg-primary/90' : '',
+        )}
+      >
+        {/*
+          `shrink-0`: buton artık flex (`HERO_BTN_BODY` -> `inline-flex`).
+          Flex item'ları dar alanda EZILIR; ikon 15px/13px yerine 8px'e
+          düşüp ok ikonu ile hizasını kaybediyordu. `shrink-0` ikisini de
+          sabit tutar.
+        */}
+        <MailIcon size={15} className="shrink-0" />
+        {t('contact.quickMenu')}
+        <ChevronDownIcon
+          size={13}
+          className={cn('shrink-0 transition-transform', open && 'rotate-180')}
+        />
+      </button>
+
+      {open
+        && createPortal(
+          <div
+            ref={panelRef as React.RefObject<HTMLDivElement>}
+            role="menu"
+            style={portalStyle}
+            /*
+            KONUM (2026-10-06, kullanıcı).
+            Önce: `absolute left-0 top-full -mt-7` → panel tetikleyicinin
+            28px ÜSTÜNE biniyordu ("butonun üstüne açılıyor" şikayeti).
+            Artık konum `usePopoverPosition` hesaplıyor:
+            alt → üst → sağ → sol, tetikleyiciyle ARALARINDA boşluk
+            bırakarak. `left-0 top-full` ve `-mt-7` kaldırıldı — portal
+            `position: fixed` kullandığı için zaten gerek yok.
+          */
+            className="z-50 flex w-64 flex-col overflow-hidden rounded-2xl border border-surface-border bg-background shadow-2xl shadow-black/25"
+          >
+            {/* Arama */}
+            <div className="border-b border-foreground-200/10 p-2">
+              <div className="relative">
+                <SearchIcon
+                  size={13}
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40"
+                />
+                <input
+                  ref={inputRef}
+                  value={q}
+                  onChange={(e) => {
+                    setQ(e.target.value)
+                    setActiveIndex(0)
+                  }}
+                  onKeyDown={onSearchKeyDown}
+                  placeholder={t('contact.searchPlaceholder')}
+                  aria-label={t('contact.searchPlaceholder')}
+                  className="h-9 w-full rounded-xl border border-foreground-200/15 bg-background pl-8 pr-8 text-xs text-foreground outline-none transition-colors focus:border-primary/60"
+                />
+                {q && (
+                  <button
+                    type="button"
+                    onClick={() => setQ('')}
+                    aria-label={t('contact.clearSearch')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground/50 transition-colors hover:text-foreground"
+                  >
+                    <CloseIcon size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Kopyalama hatasi */}
+            {copyFailed && (
+              <p className="border-b border-danger-200 bg-danger-50 px-3 py-1.5 text-[11px] font-medium text-danger">
+                {t('contact.copyFailed')}
+              </p>
+            )}
+
+            {/*
+            Kanallar — yüksekliği PANEL belirler (`portalStyle.maxHeight`),
+            liste kendi maxHeight'ını taşımaz (çift kaynak → birbirini ezdi).
+            `min-h-0` flex çocuğunun küçülmesini engeller; olmadan liste
+            panelin maxHeight'ını taşıp ekrandan taşıyordu.
+          */}
+            <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-1.5">
+              {isEmpty && (
+                <p className="px-2.5 py-6 text-center text-xs text-foreground-500">
+                  {t('contact.empty')}
+                </p>
+              )}
+
+              {!isEmpty && filtered.length === 0 && (
+                <p className="px-2.5 py-6 text-center text-xs text-foreground-500">
+                  {t('contact.noResults')}
+                </p>
+              )}
+
+              {groups.builtin.length > 0 && (
+                <ul className="flex flex-col">
+                  {groups.builtin.map(c => (
+                    <ChannelRow
+                      key={c.id}
+                      channel={c}
+                      copied={copiedId === c.id}
+                      active={indexOf(c) === activeIndex}
+                      index={indexOf(c)}
+                      onCopy={ch => void handleCopy(ch)}
+                      onActivate={activate}
+                      onHover={() => setActiveIndex(indexOf(c))}
+                    />
+                  ))}
+                </ul>
+              )}
+
+              {groups.social.length > 0 && (
+                <>
+                  <p className="px-2.5 pb-1 pt-2 text-[10px] font-bold uppercase tracking-[0.14em] text-foreground-500">
+                    {t('contact.socials')}
+                  </p>
+                  <ul className="flex flex-col">
+                    {groups.social.map(c => (
+                      <ChannelRow
+                        key={c.id}
+                        channel={c}
+                        copied={copiedId === c.id}
+                        active={indexOf(c) === activeIndex}
+                        index={indexOf(c)}
+                        onCopy={ch => void handleCopy(ch)}
+                        onActivate={activate}
+                        onHover={() => setActiveIndex(indexOf(c))}
+                      />
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
+    </div>
+  )
+}

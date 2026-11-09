@@ -1,0 +1,198 @@
+import type { PermissionOverrides, UserLimits } from '@/lib/admin/users-shared'
+import { cookies } from 'next/headers'
+import { verifySessionToken } from '@/lib/auth'
+import { getAdmin } from '@/lib/content'
+import { effectivePermissions, normalizeOverrides } from '@/lib/permissions'
+import { createClient } from '@/lib/supabase/server'
+
+export interface SessionUser {
+  id: string
+  email: string | null
+  username: string | null
+  fullName: string | null
+  avatarUrl: string | null
+  role: 'admin' | 'user'
+  /** profiles.is_owner — sitenin sahibi (en üst yetki). */
+  isOwner: boolean
+  /** Roles in profile (raw). */
+  roles: string[]
+  /**
+   * Computed EFFECTIVE permissions: rol preset'leri + normal kullanıcı
+   * varsayılanları + kullanıcıya özel override (admin = hepsi).
+   */
+  permissions: string[]
+  /** Kullanıcıya özel geçersiz kılma (yalnız kayıtlı olanlar). */
+  permissionOverrides?: PermissionOverrides
+  /** `profiles.limits` — kota zorlaması için (yükleme/mesaj). */
+  limits?: UserLimits
+  /** Profil düzenleme alanları (user_metadata) — hepsi opsiyonel. */
+  phone?: string | null
+  occupation?: string | null
+  occupationOther?: string | null
+  contact?: string | null
+  /** İletişim bilgileri (profil drawer) — hepsi opsiyonel. */
+  contactEmail?: string | null
+  location?: string | null
+  discord?: string | null
+}
+
+/**
+ * Returns the user from the Supabase session (with profile).
+ * Returns null if there is no session.
+ */
+export async function getSessionUser(): Promise<SessionUser | null> {
+  // Priority 1: built-in admin session (/login — admin_session cookie).
+  // This was previously ignored: even if a user logged in via /login and got
+  // admin_session, guards didn't recognize it → users kept hitting
+  // the "unauthorized access" error.
+  try {
+    const store = await cookies()
+    const token = store.get('admin_session')?.value
+    const sessionUser = verifySessionToken(token)
+    if (sessionUser) {
+      const admin = await getAdmin()
+      if (sessionUser === admin.username) {
+        return {
+          id: `admin:${admin.username}`,
+          email: null,
+          username: admin.username,
+          fullName: admin.username,
+          avatarUrl: null,
+          role: 'admin',
+          // admin.json hesabının `profiles` satırı yok → sahiplik kanıtı yok.
+          isOwner: false,
+          roles: ['admin'],
+          permissions: effectivePermissions(['admin']),
+        }
+      }
+    }
+  }
+  catch {
+    /* fall through to the flows below if the admin session can't be verified */
+  }
+
+  // GUVENLIK: 'dev-role' cookie ile rol degistirme ozelligi KALDIRILDI.
+  // Kimlik dogrulama bypass'i olusturuyordu: tarayici konsolundan
+  // `dev-role=admin` yazan HERKES sifresiz tam admin yetkisi aliyordu
+  // (permissions: effectivePermissions(['admin'])). Bir daha EKLENMEMELI.
+  // Dev'de rol testi gerekiyorsa gercek bir kullanici + RLS ile yapilmali.
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return null
+  }
+  const profile = await fetchProfile(supabase, user.id)
+
+  const rawRoles
+    = (profile?.roles as string[] | null)
+      ?? (profile?.role === 'admin' ? ['admin'] : profile?.role ? [profile.role] : [])
+  const rawExtra = (profile?.permissions as string[] | null) ?? []
+  const overrides = (profile as { permission_overrides?: unknown } | null)
+    ?.permission_overrides
+
+  return {
+    id: user.id,
+    email: user.email ?? null,
+    username: profile?.username ?? user.user_metadata?.username ?? user.email?.split('@')[0] ?? null,
+    fullName: profile?.full_name ?? user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+    avatarUrl: profile?.avatar_url ?? user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
+    role: profile?.role ?? 'user',
+    isOwner: Boolean(profile?.is_owner),
+    roles: rawRoles,
+    permissions: effectivePermissions(rawRoles, rawExtra, overrides),
+    permissionOverrides: normalizeOverrides(overrides),
+    limits: (profile?.limits ?? {}) as UserLimits,
+    phone: user.user_metadata?.phone ?? null,
+    occupation: user.user_metadata?.occupation ?? null,
+    occupationOther: user.user_metadata?.occupationOther ?? null,
+    contact: user.user_metadata?.contact ?? null,
+    contactEmail: user.user_metadata?.contactEmail ?? null,
+    location: user.user_metadata?.location ?? null,
+    discord: user.user_metadata?.discord ?? null,
+  }
+}
+
+/**
+ * `profiles` satırını okur. `permission_overrides` kolonu migration ile
+ * gelir (`supabase/users-permissions.sql`); uygulanmamışsa sorgu hata verir
+ * → kolonsuz liste ile BİR KEZ daha denenir ve sonuç modül seviyesinde
+ * hatırlanır (her istekte iki sorgu atılmaz).
+ */
+let overridesColumn: boolean | null = null
+
+const PROFILE_COLUMNS
+  = 'username, full_name, avatar_url, role, roles, permissions, is_owner, limits'
+
+interface ProfileRow {
+  username: string | null
+  full_name: string | null
+  avatar_url: string | null
+  role: 'admin' | 'user' | null
+  roles: string[] | null
+  permissions: string[] | null
+  is_owner: boolean | null
+  limits: UserLimits | null
+  permission_overrides?: unknown
+}
+
+async function fetchProfile(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<ProfileRow | null> {
+  if (overridesColumn !== false) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`${PROFILE_COLUMNS}, permission_overrides`)
+      .eq('id', userId)
+      .maybeSingle()
+    if (!error) {
+      overridesColumn = true
+      return data as ProfileRow
+    }
+    overridesColumn = false
+  }
+  const { data } = await supabase
+    .from('profiles')
+    .select(PROFILE_COLUMNS)
+    .eq('id', userId)
+    .maybeSingle()
+  return data as ProfileRow | null
+}
+
+/** Returns true only for admin users. */
+export async function isAdminUser(): Promise<boolean> {
+  const user = await getSessionUser()
+  return user?.role === 'admin'
+}
+
+/** Returns whether the session user has a specific permission. */
+export function hasSessionPermission(
+  user: SessionUser | null,
+  permissionId: string,
+): boolean {
+  return !!user && user.permissions.includes(permissionId)
+}
+
+/** Display name representing the user in chat messages. */
+export function sessionUserName(
+  user: Pick<SessionUser, 'username' | 'email'> | null,
+): string | null {
+  if (!user) {
+    return null
+  }
+  return user.username?.trim() || user.email?.split('@')[0]?.trim() || null
+}
+
+/** For pages requiring login: redirects to /login?next=... when there's no session. */
+export async function requireUser(next = '/chat'): Promise<SessionUser> {
+  const user = await getSessionUser()
+  if (!user) {
+    const { redirect } = await import('next/navigation')
+    redirect(`/login?next=${encodeURIComponent(next)}`)
+  }
+  // redirect() always throws; this line is only reached when there is a session
+  return user!
+}

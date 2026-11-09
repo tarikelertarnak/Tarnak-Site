@@ -1,0 +1,293 @@
+import arcjet, { protectSignup } from '@arcjet/next'
+import { NextResponse } from 'next/server'
+import env from '@/lib/env'
+import { isMissingColumnError } from '@/lib/postgrest'
+import { clientIp, rateLimit } from '@/lib/rate-limit'
+import { checkLimit, LIMITS, rateLimitResponse } from '@/lib/rate-limit-kv'
+import { createOptionalAdminClient } from '@/lib/supabase/admin'
+import { contactFormSchema, HONEYPOT_FIELD } from '@/lib/validations'
+
+const supabaseAdmin = createOptionalAdminClient()
+
+const aj = env.ARCJET_KEY
+  ? arcjet({
+      key: env.ARCJET_KEY,
+      rules: [
+        protectSignup({
+          email: {
+            mode: 'LIVE',
+            // Arcjet 1.13'te `block` -> `deny` olarak yeniden adlandirildi.
+            // (1.0.0-beta.11'de `block` idi; build bunu TS2353 ile yakaladi.)
+            deny: ['DISPOSABLE', 'NO_MX_RECORDS', 'INVALID'],
+          },
+          bots: {
+            mode: 'LIVE',
+            allow: ['CATEGORY:MONITOR'],
+          },
+          rateLimit: {
+            mode: 'LIVE',
+            interval: '10m',
+            max: 3,
+          },
+        }),
+      ],
+    })
+  : null
+
+/**
+ * Discord'a bildirim gonderir.
+ *
+ * ⚠️ Eskiden webhook tanimsizken `true` donuyordu. Bu "basarili" demekti ve
+ * POST sonunda `if (!sent) 500` kontrolunu atlatiyordu — yani hicbir yere
+ * kaydedilmeyen bir mesaj icin kullaniciya "Message sent successfully!"
+ * deniyordu. Artik durustce `false` doner; POST basarisi "en az bir kanal
+ * calisti" kuralina baglandi.
+ */
+async function sendToDiscord(name: string, email: string, phone: string, message: string) {
+  if (!env.DISCORD_WEBHOOK_URL) {
+    console.warn('⚠️ DISCORD_WEBHOOK_URL tanimli degil — Discord bildirimi atlandi.')
+    return false
+  }
+
+  try {
+    const webhookPayload = {
+      embeds: [
+        {
+          title: 'New Contact Message',
+          color: 0x3B82F6,
+          fields: [
+            { name: 'Name', value: name, inline: true },
+            { name: 'Email', value: email || '(belirtilmedi)', inline: true },
+            { name: 'Phone', value: phone || '(belirtilmedi)', inline: true },
+            { name: 'Message', value: message },
+          ],
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    }
+    const response = await fetch(env.DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(webhookPayload),
+    })
+    if (!response.ok) {
+      throw new Error(`Discord webhook failed: ${response.status}`)
+    }
+    return true
+  }
+  catch (error) {
+    console.error('Failed to send message to Discord:', error)
+    return false
+  }
+}
+
+/**
+ * Mesaji Supabase'e kaydeder.
+ *
+ * ⚠️ BULUNAN GERCEK HATA: `messages` tablosunda `phone` kolonu YOKTU
+ * (PostgREST 42703), ama burada `phone` insert ediliyordu. Insert her
+ * seferinde dusuyor, hata yalnizca console.error'a yaziliyordu — yani
+ * ILETISIM FORMU MESAJLARI VERITABANINA HIC KAYDEDILMIYORDU.
+ *
+ * Cozum: once `phone` ile denenir; kolon yoksa telefon bilgisi body'ye
+ * eklenerek tekrar denenir. Boylece bilgi HICBIR durumda kaybolmaz.
+ * `scripts/schema-fixes.sql` uygulandiginda ikinci adim hic calismaz.
+ */
+async function saveMessage(params: {
+  name: string
+  email: string
+  phone: string
+  message: string
+}): Promise<boolean> {
+  if (!supabaseAdmin) {
+    console.warn('[api/contact] Supabase yapilandirilmamis — mesaj kaydedilemedi.')
+    return false
+  }
+
+  const base = {
+    name: params.name,
+    email: params.email,
+    subject: 'İletişim Formu',
+    body: params.message,
+  }
+
+  const first = params.phone ? { ...base, phone: params.phone } : base
+  let { error } = await supabaseAdmin.from('messages').insert(first)
+
+  // ⚠️ BURADA `error.code === '42703'` YAZMAYIN. Olculdu: PostgREST eksik
+  // kolonda `PGRST204` donduruyor ("Could not find the 'phone' column of
+  // 'messages' in the schema cache"), `42703` DEGIL. Bu kontrol yalnizca
+  // 42703'e bakarken telefonla gonderilen mesajlar 500 alip KAYBOLUYORDU.
+  // Paylasilan yardimci iki kodu da tanir.
+  if (isMissingColumnError(error)) {
+    console.warn(
+      `[api/contact] messages.phone kolonu yok (${error?.code}) — telefon bilgisi body icine ekleniyor. `
+      + 'Kalici cozum: scripts/schema-fixes.sql dosyasini Supabase SQL Editor\'de calistir.',
+    )
+    const body = params.phone
+      ? `${params.message}\n\n---\nTelefon: ${params.phone}`
+      : params.message
+    ;({ error } = await supabaseAdmin.from('messages').insert({ ...base, body }))
+  }
+
+  if (error) {
+    console.error('[api/contact] Supabase kaydi basarisiz:', error.code, error.message)
+    return false
+  }
+  return true
+}
+
+export async function POST(req: Request) {
+  /*
+    HIZ SINIRI — 2026-10-05 güncellemesi.
+
+    ÖNCEKİ: `rateLimit(...)` in-memory, IP başına 3/dakika. Workers'ta her
+    izole ayrı bellek taşıdığı için DAĞITIK spam'i durdurmuyordu.
+
+    YENİ: KV tabanlı `checkLimit`, kullanıcı isteği doğrultusunda
+    **IP başına saatte 5**. İki ek koruma korundu:
+      • IP + e-posta ikilisi (aşağıda, `rateLimit` ile) — tek kişi farklı
+        IP'lerle aynı adrese spam atmasın diye.
+      • Discord webhook + ARCJET gönderimi limitten SONRA — yani reddedilen
+        istek webhook'a ulaşmaz, ücretsiz kanal israf olmaz.
+
+    `failClosed: false`: form ucuz (bir INSERT + iki webhook). KV kesintisi
+    kullanıcıyı formdan mahrum bırakmasın diye izin veriyoruz; gerçek spam
+    koruması zaten Arcjet'te.
+  */
+  const hourly = await checkLimit('contact', { ...LIMITS.contact, failClosed: false }, req)
+  if (!hourly.ok)
+    return rateLimitResponse(hourly)
+
+  // Dakikalık in-memory koruma KORUNDU: saatte 5 limiti tek IP için yeterli
+  // ama e-posta ikilisi farklı IP'leri yakalar. İkisi birlikte çalışıyor.
+  const ip = clientIp(req)
+  const byIp = rateLimit(`contact:ip:${ip}`, { limit: 3, windowMs: 60 * 1000 })
+  if (!byIp.ok) {
+    return NextResponse.json(
+      { success: false, message: 'Too many messages. Please try again shortly.' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(byIp.retryAfter),
+          'X-RateLimit-Limit': '3',
+          'X-RateLimit-Remaining': '0',
+          'X-RateLimit-Reset': String(Math.ceil((Date.now() + byIp.retryAfter * 1000) / 1000)),
+        },
+      },
+    )
+  }
+
+  let body: unknown
+  try {
+    body = await req.json()
+  }
+  catch {
+    return NextResponse.json({ success: false, message: 'Missing Body' }, { status: 400 })
+  }
+
+  const values = contactFormSchema.safeParse(body)
+  if (!values.success) {
+    return NextResponse.json({ success: false, message: 'Invalid data' }, { status: 400 })
+  }
+
+  /*
+    HONEYPOT (2026-10-07, form güvenliği).
+    Görünmez alan dolu geldiyse bu bir bot. İsteği `200` ile "başarılı"
+    kapatıyoruz: bot geri bildirim almaz (daha fazla denemez), gerçek
+    kullanıcı ise alanı göremediği için hiçbir zaman dolu gelmez.
+    Doğrulama zaten `contactFormSchema` içinde; burada sadece davranış.
+  */
+  if ((values.data as Record<string, unknown>)[HONEYPOT_FIELD]) {
+    return NextResponse.json({ success: true, message: 'Message sent successfully!' })
+  }
+
+  const contactEmail
+    = values.data.contactMethod === 'email' ? values.data.contactValue.trim() : ''
+  const contactPhone
+    = values.data.contactMethod === 'phone' ? values.data.contactValue.trim() : ''
+
+  if (aj) {
+    try {
+      const decision = await aj.protect(req, {
+        email: contactEmail,
+      })
+
+      if (decision.isDenied()) {
+        if (decision.reason.isEmail()) {
+          return NextResponse.json(
+            { success: false, message: 'Invalid email address. Please check and try again.' },
+            { status: 400 },
+          )
+        }
+        else if (decision.reason.isRateLimit()) {
+          return NextResponse.json(
+            { success: false, message: 'Too many requests. Please wait a few minutes before trying again.' },
+            { status: 429 },
+          )
+        }
+        else if (decision.reason.isBot()) {
+          return NextResponse.json(
+            { success: false, message: 'Automated requests are not allowed. Please try again.' },
+            { status: 403 },
+          )
+        }
+        else {
+          return NextResponse.json(
+            { success: false, message: 'Request forbidden. Please try again later.' },
+            { status: 403 },
+          )
+        }
+      }
+
+      if (decision.ip.hasAsn() && decision.ip.asnType === 'hosting') {
+        return NextResponse.json(
+          { success: false, message: 'Requests from hosting providers are not allowed.' },
+          { status: 403 },
+        )
+      }
+
+      if (
+        decision.ip.isHosting()
+        || decision.ip.isVpn()
+        || decision.ip.isProxy()
+        || decision.ip.isRelay()
+      ) {
+        return NextResponse.json(
+          { success: false, message: 'Requests from VPNs, proxies, or suspicious networks are not allowed.' },
+          { status: 403 },
+        )
+      }
+    }
+    catch (err) {
+      // Arcjet bir AG servisi. Ulasilamazsa / transport hatasi verirse istegi
+      // DUSURMEYIZ. Eskiden bu cagri try/catch DISINDAYDI: tek bir hata tum
+      // POST'u 500 yapiyor ve iletisim formu tamamen kiriliyordu.
+      // Burada bilincli olarak fail-open secildi — guvenlik kuralindan once
+      // erisilebilirlik. Supheli istekler yine Discord'a dusup elle gorulur.
+      console.warn('[api/contact] Arcjet kontrolu atlandi (fail-open):', err)
+    }
+  }
+
+  // Iki kanal birbirinden bagimsiz. Basari kurali: EN AZ BIRI calistiysa
+  // mesaj kaydedilmistir. Eskiden yalnizca Discord sonucuna bakiliyordu ve
+  // webhook tanimsizken o da yanlislikla `true` donuyordu.
+  const [discordOk, dbOk] = await Promise.all([
+    sendToDiscord(values.data.name, contactEmail, contactPhone, values.data.message),
+    saveMessage({
+      name: values.data.name,
+      email: contactEmail,
+      phone: contactPhone,
+      message: values.data.message,
+    }),
+  ])
+
+  if (!discordOk && !dbOk) {
+    return NextResponse.json(
+      { success: false, message: 'Failed to send message. Please try again later.' },
+      { status: 500 },
+    )
+  }
+
+  return NextResponse.json({ success: true, message: 'Message sent successfully!' }, { status: 200 })
+}

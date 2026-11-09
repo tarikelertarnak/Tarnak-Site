@@ -1,0 +1,69 @@
+'use client'
+
+import type { SiteContent } from '@/lib/content'
+import { FadeUpSection } from '@/components/fade-up-section'
+import { useT } from '@/components/locale-provider'
+import { ProjectsGrid } from '@/components/projects/projects-grid'
+import { Button } from '@/components/ui/button'
+import { FolderIcon, GithubIcon } from '@/components/ui/icons'
+import { Section } from '@/components/ui/section'
+
+export function ProjectsSection({
+  content,
+  githubUsername,
+}: {
+  content: SiteContent
+  githubUsername: string
+}) {
+  const { t } = useT()
+
+  return (
+    <Section className="flex-col pt-[var(--section-space)]" id="projects" framed>
+      <FadeUpSection className="flex w-full flex-col items-center">
+        <div className="flex flex-col items-center gap-2 text-center">
+          <h2 className="inline-flex items-center gap-4 border-b-4 border-primary pb-3 text-3xl font-black uppercase tracking-tight text-primary sm:text-4xl lg:text-5xl">
+            <FolderIcon size={36} className="inline-block" />
+            {content.projects.subtitle}
+          </h2>
+          <p className="max-w-lg text-sm text-foreground-500">
+            {content.projects.description}
+          </p>
+        </div>
+
+        <div className="mt-6 flex flex-row flex-wrap items-center justify-center gap-3">
+          <Button
+            href="/projects"
+            color="primary"
+            variant="solid"
+            endContent={<span aria-hidden="true">→</span>}
+          >
+            {t('projects.viewAll')}
+          </Button>
+          <Button
+            href="https://github.com/tarikelertarnak?tab=repositories"
+            target="_blank"
+            rel="noopener noreferrer"
+            color="primary"
+            variant="solid"
+            startContent={<GithubIcon size={14} />}
+          >
+            {t('projects.githubBtn')}
+          </Button>
+        </div>
+      </FadeUpSection>
+
+      {/*
+        BÖLÜM BOŞLUĞU (2026-10-07) — "Tüm Projeler / GitHub Projeleri"
+        buton satırı ile arama kutusu ARASI BOŞLUK YOKTU, butonlar arama
+        kutusuna yapışıyordu (kullanıcı: "search'a temas ediyor").
+        `--section-gap` (24px) tek kaynak — diğer bölümlerle aynı.
+      */}
+      <div aria-hidden className="h-[var(--section-gap)]" />
+
+      <ProjectsGrid
+        projects={content.projects.items}
+        githubUsername={githubUsername}
+      />
+    </Section>
+  )
+}

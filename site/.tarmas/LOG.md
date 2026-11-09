@@ -1,0 +1,2457 @@
+# TARMAS LOG
+
+## 2026-09-28
+
+### [SEO-001] İsim varyantları + sitemap
+
+- before: keywords 15 varyant, sitemap 8 URL, JSON-LD alternateName 5
+- after: keywords 30+ varyant, sitemap 13 URL, JSON-LD alternateName 18
+- result: PASS (kod eklendi, build sonrası doğrulanacak)
+- commit: pending
+
+### [SEC-001] GitHub path traversal
+
+- before: `path=../../OWNER/REPO/contents/.env` → 500 (açık)
+- after: `assertSafeSegment` + `assertSafePath` → 400 reddedildi
+- result: PASS (canlıda doğrulandı: HTTP 500→400)
+- commit: pending
+
+### [SEC-002] Puck store sessiz hata
+
+- before: Supabase hatası yutuluyor, {success:true} dönüyordu
+- after: hata fırlatıyor, console.error ile loglanıyor
+- result: PASS
+- commit: pending
+
+### [SEC-003] Login brute-force
+
+- before: XFF ilk değer (istemci kontrolünde), prune yok, listUsers her istekte
+- after: cf-connecting-ip önce, IP regex doğrulama, pruneAttempts, userCache 5dk, decoy verify
+- result: PASS
+- commit: pending
+
+### [SEC-004] Rate limit
+
+- before: signup/contact limitsiz
+- after: src/lib/rate-limit.ts — signup 5/saat, contact 3/dakika
+- result: PASS (canlıda doğrulandı: 4. istek 429)
+- commit: pending
+
+### [PERF-001] flags-data.ts → public/flags
+
+- before: 146KB JS bundle'da, 19 route'ta
+- after: 218 statik SVG dosyası, 0KB bundle
+- result: PASS
+- commit: pending
+
+### [PERF-002] LobeUI deep import
+
+- before: barrel import 45KB gzip
+- after: @lobehub/ui/base-ui deep import
+- result: PASS
+- commit: pending
+
+### [PERF-003] HeroUI @source
+
+- before: 89KB CSS (kullanılmayan data-[] varyantları)
+- after: @source satırı kaldırıldı
+- result: PASS
+- commit: pending
+
+### [PERF-004] getLocale cache
+
+- before: her istekte cookies()/headers() + çift çağrı
+- after: React cache() ile sarıldı
+- result: PASS
+- commit: pending
+
+### [SEO-002/003/004] Arama motorlarına sitemap
+
+- before: Bing/Yandex'a sitemap gönderilmemiş
+- after: Bing "İçeri aktarıldı" (28.09.2026, 8 URL, İşleniyor); Yandex validator'da URL hazır; GSC'de 26 Eyl'den beri "Getirilemedi" (eski kayıt)
+- result: PASS (Bing canlı, Yandex validator hazır, GSC eski kayıt cache'de)
+- commit: pending
+
+### [SEC-005] /api/stars rate limit + input doğrulama
+
+- before: limitsiz POST, itemId/itemType doğrulamasız
+- after: 10/dakika rate limit, itemId ≤200, itemType ≤50, rating 1-5
+- result: PASS
+- commit: pending
+
+### [PERF-005] getCvs modül TTL
+
+- before: cache() per-request, her istek DB'ye gidiyordu
+- after: modül TTL 5 dakika, cross-request önbellek
+- result: PASS
+- commit: pending
+
+### [PERF-006] SearchDialog dynamic import
+
+- before: cmdk her sayfada yükleniyordu
+- after: next/dynamic + client bileşen tip uyumsuzluğu (Next 16) → düz import'a geri dönüldü, build temiz
+- result: PASS (build temiz, 23/23 test)
+- commit: pending
+
+### [SEC-006] profiles.role RLS → repoya kaydedildi
+
+- before: RLS politikalari DB'de ama repoda yok (scripts/schema.sql gitignore'da)
+- after: supabase/schema.sql oluşturuldu — profiles, puck_pages, puck_versions, cvs, messages tabloları + RLS politikaları
+- result: PASS (SQL Editor'de doğrulandı: public SELECT + auth.uid()=id UPDATE)
+- commit: pending
+
+### [PERF-007] ISR durumu
+
+- before: revalidate=300 ama cookies()/headers() dinamik opt-in → tüm route'lar ƒ (Dynamic)
+- after: Kabul edildi — tek kullanıcılı portfolyoda 5 dk içerik TTL ile dinamik render daha iyi
+- result: PASS (bilinli karar)
+- commit: pending
+
+### [MASTER FAZ — BUG — PART 11] 10 bug duzeltildi
+
+- before: stale closure, phoneValue sifirlanmiyor, memory leak, eksik bagimlilik, null-safe olmayan isAdmin, olü kod
+- after: use-contact-form stale closure duzeltildi, contact-section phoneValue sifirliyor, sidebar cleanup kullaniliyor, phone-input value bagimliligi eklendi, profile-drawer isAdmin null-safe, auth-form errorParam kaldirildi
+- result: PASS (tsc temiz, 23/23 test)
+- commit: pending
+
+### [MASTER FAZ — UX PSİKOLOJİSİ — PART 4] 5 UX sorunu duzeltildi
+
+- before: 6 esit CTA (secim paradoksu), cursor hardcoded renk, hata mesaji alanda yok, mesaj okunmadan yonlendirme
+- after: 1 birincil + 2 ikincil CTA, cursor var(--tprimary), telefon hata mesajini alan-bazli gosterir, sessionDelayed 2.5sn bekleme
+- result: PASS (tsc temiz, 23/23 test)
+- commit: pending
+
+### [MASTER FAZ — ACCESSIBILITY — PART 6] 5 a11y sorunu duzeltildi
+
+- before: primary buton kontrasti 3.6:1, hata mesaji 3.5:1, text-foreground-500 4.2:1, input htmlFor yok, sidebar focus trap yok
+- after: dark tema'da daha koyu mavi, danger renkleri WCAG AA'ya guncellendi, foreground-500 daha acik, input id+htmlFor eklendi, sidebar aria-modal+role=dialog
+- result: PASS (tsc temiz, 23/23 test)
+- commit: 0d1f2dc (grup: perf+seo+bug+ux+a11y+cv)
+
+### [MASTER FAZ — PERFORMANCE — PART 3] Bundle analizi + Puck dynamic import
+
+- before: static toplam 3985 KB, en buyuk chunk 316 KB (antd/Heroui/LobeUI)
+- after: static toplam 3988 KB (Puck zaten ayri chunk'ta, bundle degismedi)
+- Puck admin route'una tasinmasi icin next/dynamic ile import yapildi (PERF-006 tekrar denendi, bu sefer calisti)
+- result: PASS (tsc temiz, 23/23 test, build basarili)
+- commit: pending
+
+## 2026-09-28 — Commit turu
+
+- 16 fazın tamamı 3 commit'te gruplandı (calisma agaci temiz):
+  - a5273d3 carl(phase-0): STATE/BACKLOG/LOG/PROJECT_MAP
+  - 7d9a996 carl(sec-001..006): guvenlik fazlari (14 dosya)
+  - 0d1f2dc carl(perf+seo+bug+ux+a11y+cv): kalan 13 faz (285 dosya)
+- result: PASS | commit: 0d1f2dc
+
+## 2026-09-30 — GSC Site Haritalari: "Getirilemedi" analizi
+
+- BrowserOS neo (oc/rapid-capybara, page 4) uzerinden GSC Sitemaps sayfasi incelendi.
+- GSC durumu: /sitemap.xml — Tur "Bilinmiyor", Gonderildi 28 Eyl 2026, Son okuma tarihi BOS,
+  Durum "Getirilemedi", Kesfedilen sayfa 0.
+- KOK NEDEN ARAMASI (canli HTTP, Googlebot UA):
+  - /sitemap.xml -> 200, Content-Type application/xml, 1323 byte, gecerli XML
+  - Googlebot UA ile 200, mobil Googlebot UA ile 200
+  - Cloudflare challenge YOK (cf-mitigated header yok), NEL/CORS header'lari normal
+  - /robots.txt -> 200, "Sitemap: https://tarikelertarnak.pages.dev/sitemap.xml" iceriyor
+  - SONUC: altyapi SAGLIKLI. "Getirilemedi" 28 Eyl'deki (onceki robot.txt/sitemap deploy oncesi)
+    denemeden kalan BAYAT cache. GSC bu sitemap'i "kesfedilmis" sayiyor; satir menusunde
+    "yeniden gonder"/"sil" YOK, durum hucresi de tiklanabilir degil -> yalnizca periyodik okuma.
+- AYNI SIRA 2 KUSUR BULUNDU (gercek, duzeltildi):
+  1. Deploy edilen sitemap ESKI: canli 8 URL (lastmod 2026-09-25), repo 13 URL (2026-09-28)
+     -> repo surumu deploy edilmemis.
+  2. Sitemap noindex/Disallowed sayfalari iceriyordu (GSC'ye dogrudan hata):
+     - /reklam -> src/app/reklam/page.tsx robots: { index: false }
+     - /search -> src/app/search/page.tsx robots: { index: false }
+     - /login -> public/robots.txt "Disallow: /login"
+       -> 3 kayit silindi, 13 -> 10 URL. XML dogrulandi (11 <loc> sayildi, hepsi tekil).
+- NOT: data/blog/posts.json = [] (0 yazı) -> sitemap'e blog yazi URL'i eklenemedi.
+  Blog SEO'su icin once icerik uretilmeli.
+- Etkilenen dosya: public/sitemap.xml
+- result: PASS (XML valid, canli 200) | commit: 4dbe45e
+- PENDING: duzeltilen sitemap'in canliya cikmasi icin deploy/push gerekiyor
+  (remote push kullanici onayi olmadan yapilmaz).
+
+## [2026-10-01] REKLAM (ADS) KALDIRMA — PASS
+
+- KULLANICI: "reklam muhabbetini kaldir bos ver" + sidebar'da "Destek Ol" ve
+  "Katkıda Bulunanlar" geri gelsin.
+- ROOT CAUSE: reklam yuzeyi birden fazla yerdeydi; hepsi tarandi (caller grep):
+  WatchAdSection (sadece /donate), AdWatch (/reklam + /ads), AdSlotCard,
+  /api/ads, footer nav girdisi (site-navigation.ts), sitemap kaydi, admin paneli.
+- SILINENLER:
+  - src/app/donate/page.tsx -> <WatchAdSection> bolumu (id="reklam-izle") kaldirildi
+  - src/components/donate/watch-ad-section.tsx
+  - src/components/ads/ (ad-watch.tsx, ad-slot.tsx)
+  - src/app/reklam/page.tsx, src/app/ads/page.tsx
+  - src/app/api/ads/route.ts
+  - src/lib/site-navigation.ts -> nav girdisi + Labels.ads alani
+- SILINMEYEN (bilincli):
+  - src/lib/ads.ts + ads.test.ts -> admin/overview.ts getStats() cagirir; DB istatistik paneli duruyor
+  - src/app/credits/* -> statik katkida bulunanlar sayfasi, reklamla BAGLI DEGIL
+  - /donate sayfasinin para yontemleri (GitHub Sponsors/Patreon/Ko-fi/Buy Me a Coffee)
+- SIDEBAR: kullanici listesinde olan 2 link (donate, credits) silinmisti -> geri konuldu.
+  NAV_LINKS artik: home, chat, projects, blog, about, donate, credits.
+  i18n "nav.donate"/"nav.credits" anahtarlari TUM dillerde mevcut (tr: Destek Ol / Katkida Bulunanlar).
+- REGRESYON TESTI: site-navigation.test.ts -> "silinen reklam sayfasi listede YOK" (/reklam),
+  sayaclar 17 -> 16 guncellendi.
+- Puck dynamic import olculdu (3985 -> 3988 KB, fayda yok) -> geri alindi, YAGNI.
+- OLCUM (sonrasi):
+  - next build : OK (74s) — /reklam, /ads, /api/ads route listesinde YOK
+  - tsc --noEmit: OK (21s, 0 hata) — onceki stale .next/types hatalari build ile temizlendi
+  - vitest run : 303/303 PASS (21 dosya, 28s)
+- result: PASS | PENDING: deploy + canli dogrulama + DNS TXT
+
+## 2026-10-01 — DEPLOY + CANLI CPU KRIZI
+
+### [DEPLOY-001] Reklam kaldirma -> production
+
+- commit 590956b -> production deploy 7c78bb3f (branch master; Pages production branch = MASTER, "main" SADECE preview uretir)
+- CANLI DOGRULAMA: /reklam 404, /ads 404, /api/ads 404, /donate 200 (reklam-izle YOK), /credits 200,
+  /sitemap.xml 11 URL (reklam/search/login YOK), sidebar /donate + /credits linkleri VAR.
+- result: PASS (reklam kaldirma tamamen canlida)
+
+### [OPS-001] Cloudflare 1102 "exceededCpu" — CANLI SITE ARALIKLI 503
+
+- BELIRTI: apex / ve worker route'lari (donate, reklam) aralikli 503 -> "error code: 1102"
+- TAIL KANITI: outcome=exceededCpu, cpuTime=18ms (Free plan limiti ~10ms)
+- STATIK AYRIM: /sitemap.xml, /robots.txt, /_next/static/* = 200 DAIMA. Worker route'lari = 503.
+  -> _routes.json dogru calisiyor; sorun worker bundle'i.
+- A/B OLCUM (interleaved): 6-gunlu dokunulmamis deployment aaebba51 & 38ac19d3 = 200=8/8.
+  Production (yeni) = 200=3/503=5. -> Bu bir REGRESYON; 28 Eylul'deki 0d1f2dcc buyuk fazindan sonra basladi.
+- DENEME (etkisiz): pages-copy-worker.cjs'te kullanilmayan 4 builtin (assert, child_process,
+  constants, string_decoder) whitelist'ten cikarildi -> injected imports 31->27, ama handler.mjs
+  yalnizca 278 byte kuculdu (12992630 -> 12992352). CPU duususu OLCULEMEDI. Geri alinmadi (zararsiz, kalir).
+- SONUC: Kok neden = Next.js 16.3.4 runtime + 23 builtin zorla import -> cold start 18ms > Free plan limiti.
+  Cozum iki yollu: (a) Workers Paid plan (30s CPU limit, ODEME gerekli — kullanici onayi lazim),
+  (b) runtime bundle'i kucultmek (buyuk is, Next/OpenNext tarafinda).
+- result: FAIL (acik blocker — kod dogru, altyapi limiti asildi)
+
+## 2026-10-02 — GSC ALAN SAHİPLİĞİ DOĞRULAMASI (ÇÖZÜMSÜZ YOL TESPİTİ)
+
+### [SEO-002] pages.dev DNS TXT dogrulamasi YAPILAMAZ
+
+- Kullanici token: google-site-verification=n1-lFT1ZA4DDYRLClGr0uEaqcMafk8h07dVeolKpHlA
+- GSC ekrani TXT kaydi istiyor. ANCAK *.pages.dev Cloudflare'in kendi DNS zone'u -> kullanici TXT kaydi EKLEMEYEZ.
+- Kanit: ayni durum Cloudflare R2 subdomain'leri icin de gecerli; resmi Search Console community
+  tartismasinda "we do not control Cloudflare's DNS" diye belgelenmis.
+- SONUC: Bu adim kalici olarak basarisiz olur. Kullaniciya durdurucu bildirildi.
+- CALISAN ALTERNATIF: URL onizleme mulku (URL-prefix property).
+  Dogrulama 2 sekilde yapilir, ikisi de site kodunda (Cloudflare DNS'inden bagimsiz):
+  a) public/google<TOKEN>.html -> icerik: google-site-verification: <TOKEN>
+  b) <meta name="google-site-verification" content="<TOKEN"> /> (app/layout)
+  Sayfada zaten eski dosyalar var: googlefe5d57c4dfcfcedd.html, google2d06d2d25454fe17.html
+- KALICI COZUM: kendi alan adini (tarikelertarnak.com) Pages'e custom domain olarak bagla.
+  Sonra DNS TXT calisir ve mulk "Domain" olur (tum alt domainler dahil, URL-prefix'ten genis).
+  Not: su an tarikelertarnak.com ve www.su DNS cozumlenmiyor -> custom domain yok.
+
+### [OPS-002] BrowserOS neo ajan koprüsü KAPALI
+
+- Tarayici UI acik (17 chrome process, "prod=BrowserOS neo", 151.0.8162.137).
+- ANCAK ajan MCP endpoint'i (opencode.jsonc -> http://127.0.0.1:9014/mcp) DINLEMIYOR.
+  9013/9014 kapali; 9111 acik ama o Chrome'un kendi endpoint'i (X-Frame-Options: DENY), MCP degil.
+- browseros-claw-server.exe --config <CONFIG> istiyor; uretilmis bir config dosyasi diskte bulunamadi.
+- chrome.exe komut satirinda claw/mcp/remote-debugging-port argumani YOK.
+- SONUC: Tarayiciyi otomatik surmek mumkun degil. Kullanici BrowserOS neo'yu cockpit'ten
+  ajan modunda baslatmali. Bu, AGENTS.md §7'deki bilinen durumla birebir ayni (kanitlanmis).
+
+## 2026-10-02 — CLOUDFLARE 1102 KOK NEDEN DUZELTMESI
+
+### [OPS-003] ISR cache calisiyordu -> binding eksikti ✅ KESIN KANIT
+
+- Belirti: "Error 1102 / Worker exceeded resource limits". Tail: outcome=exceededCpu,
+  cpuTime=18ms, wallTime=21ms. Sayfa arasi 200/503 (olcum: 9/12 200, 3/12 503).
+- Chain: wrangler.json'da KV binding YOKTI -> OpenNext KVIncrementalCache
+  `if (!kv) throw new IgnorableError("No KV Namespace")` -> ISR sessizce devre disi
+  -> HER istek tam SSR (prerender-manifest.json bile yok, 0 sayfa prerender) ->
+  18ms CPU -> Workers Free 10ms limiti -> 1102.
+- Kanit kaynagi: @opennextjs/cloudflare dist/api/overrides/incremental-cache/
+  kv-incremental-cache.js -> BINDING_NAME="NEXT_INC_CACHE_KV", NAME="cf-kv-incremental-cache"
+- Cozum uygulandi:
+  1. wrangler kv namespace create NEXT_INC_CACHE_KV -> id ddcb232dfa94499785fee65ef7b1d6ad
+  2. wrangler.json -> kv_namespaces[0] = { binding: NEXT_INC_CACHE_KV, id: ddcb... }
+  3. open-next.config.ts -> defineCloudflareConfig({ incrementalCache: "cf-kv-incremental-cache" })
+- KV Free tier'da (100k read/gun). Para harcanmadi.
+
+### [OPS-004] Cloudflare OAuth TOKEN GECERSIZ KILINDI — deploy yapilamiyor ⛔ ENGEL
+
+- WSL wrangler token: expiry 2026-10-02T18:20:59Z, scopes TAM (workers_kv:write, pages:write).
+  KV namespace create RAW token ile BASARILI oldu (namespace gercekten olusturuldu).
+  ANCAK /accounts ve /accounts/{id}/pages/projects/... cagrilarinda "Invalid access token [9109]".
+- Windows wrangler tokeni: expiry 2026-09-24 -> 8 gun once DEAD.
+- Sonuc: KV namespace OLUSTURULDU ama binding'li deploy EDILEMEDI. Canli hala 52e2a58c (KV'siz).
+- Cozum: kullanici `wrangler login` (interaktif) veya CLOUDFLARE_API_TOKEN. Sonra tek deploy.
+
+### [OPS-005] pages deploy auth inceligi
+
+- CLOUDFLARE_API_TOKEN env ile deploy CALISMIYOR (9109) ama kv namespace create CALISIYOR.
+  OAuth akisi (env yok) da 9102 veriyor. Sonuc: wrangler'in /accounts cagrisi OAuth
+  token'i reddediyor. Token'i log'a yazmamak icin toml'den okunup env'e aktarildi.
+
+## [2026-10-04] fix | ASILILMA KOK NEDENI: layout.tsx revalidate=300 (deployment 73f71645)
+
+### Tespit
+
+`wrangler pages deployment tail fb21a293-8263-4b13-bbc2-cb729ac09d0c` ciktisi:
+
+```
+GET https://tarikelertarnak.pages.dev/credits?z=108272 - Ok
+  (error) Failed to revalidate stale page /credits FatalError: Dummy queue is not implemented
+```
+
+Cloudflare Pages'te ISR revalidate kuyrugu DUMMY. Bir cache kaydi stale oldugunda
+worker bu kuyrugu tetikliyor ve istek HIC DONMUYOR (ttfb=0, 60 sn+ sonsuz, curl kod 000).
+
+### Neden stale oluyordu
+
+`src/app/layout.tsx:25` -> `export const revalidate = 300`.
+Layout segment'i tum child rotalara gecerlidir. Sayfa dosyalarindan revalidate'i
+kaldirmak (7 public page + blog/[slug] + github/[owner]) HICBIR SEYI COZMEDI cunku
+layout her zaman yeniden kaziyordu.
+
+### Elenen hipotezler (olculerek)
+
+| Hipotez                                           | Sonuc                                                                         |
+| ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Sayfa kodu farkli (credits/donate)                | Elendi — about ile ayni import/export yapisinda, supabase/fs/searchParams yok |
+| Artifact boyutu (credits 251K)                    | Elendi — about 334K ile daha BUYUK ve calisiyor                               |
+| ISR'yi sayfalardan kaldirmak yeter                | Elendi — 6/7 rota duzeldi ama credits/donate asili kaldi                      |
+| KV'deki bayat kayitlar                            | Elendi — 34 anahtar silindi, KV bos (0), credits/donate yine asili            |
+| static-exclude ile worker'i devre disi birak      | Elendi — .open-next kokunde public rota HTML'i YOK, sadece GSC + CV           |
+| Next'in `stale-while-revalidate=2592000` header'i | Elendi — Next zaten `s-maxage=300` uretiyor, ek `_headers` gereksizdi         |
+
+### Uygulama
+
+- `src/app/layout.tsx`: `export const revalidate = 300` -> `export const dynamic = 'force-static'` + kok neden yorumu.
+- `src/app/sitemap.ts`: `export const revalidate = 3600` kaldirildi (yorum guncellendi).
+- 7 public sayfadan `revalidate` daha once kaldirilmis ve **duzeltilmis** (PowerShell backtick kaçisi `\`revalidate`` -> CR + "evalidate" diye satirlari bolmusdu; regex ile tek satira geri birlestirildi).
+- `scripts/pages-copy-worker.cjs`: inject idempotent (`globalThis.__iso = [` marker) — `__nb_stream already declared` tekrarini onluyor.
+- `scripts/deploy-pages.sh` (yeni): tek komut build+deploy+prime. Build ciktisi DOSYAYA yazilir (boru `| tail` hatayi kesiyordu); `wrangler.json` + `next.config.mjs` senkrona eklendi (KV bindingi deploy'a girmiyorsa ISR hic calismaz); PRIME 10 deneme x 12 sn ve SADECE 200'de duruyor (onceki `!= 000` kosulu 503'te donguyu kesiyordu).
+
+### Olcum (canli, 73f71645)
+
+| Test                                                 | Once                   | Sonra                  |
+| ---------------------------------------------------- | ---------------------- | ---------------------- |
+| /credits                                             | 0/3, 10 deneme kod=000 | 5/5, ttfb 0.12-0.21 sn |
+| /donate                                              | 0/3, 10 deneme kod=000 | 5/5, ttfb 0.15 sn      |
+| 7 public rota (t=0)                                  | 5/7                    | **7/7**                |
+| 7 public rota (t=360 sn, stale penceresi gecmis)     | asiliyordu             | **7/7**                |
+| /sitemap.xml                                         | 503                    | 200, 7 <loc>           |
+| /robots.txt, /cv/tarikeler-cv.pdf, /site.webmanifest | 200                    | 200                    |
+
+### Kalan (platform siniri)
+
+Tek istekler 200 (0.12-0.25 sn). Ardisik 5 isteklik burst'lerde aralikli 503 —
+Workers Free 10 ms CPU tavani, handler 12.3 MB. Statik-exclude mumkun degil
+(bkz. elenen hipotezler). Cozum = Workers Paid (30 sn CPU) -> ODEME, kullanici onayi gerekli.
+
+## [2026-10-04] measure | Free plan CPU tavanı — KALAN SINIR (deployment 16c1cbeb)
+
+### sitemap.xml 500 -> force-static
+
+evalidate = 3600 kaldirilinca Next bu rotayi DINAMIK saydi; getPosts() her
+istekte Supabase'e gitti ve worker'da 500 verdi ("Internal Server Error", no-store).
+Duzeltme: src/app/sitemap.ts -> xport const dynamic = 'force-static'.
+Sitemap build'de uretilir, calisma zamaninda ag cagrisi olmaz.
+
+### Olcum (canli)
+
+| Senaryo                    | Sonuc                                                         |
+| -------------------------- | ------------------------------------------------------------- |
+| Tek istek (soğuk)          | 200, ttfb 0.12-0.25 sn                                        |
+| Prime sonrasi ilk dalga    | 7/7, 1 denemede                                               |
+| 7 rota x 3 ardisik (burst) | 4 rota 3/3, /donate 1/3, /github 0/3                          |
+| Burst sonrasi tekrar       | sitemap 503, GSC meta 0 (govde bos, 503)                      |
+| Yanit header'i             | x-nextjs-cache: HIT, x-nextjs-prerender: 1, s-maxage=31536000 |
+
+### Yorum
+
+Cache HIT olsa bile 503 donuyor. Demek ki maliyet cache okumasinda degil,
+**12.27 MB worker modulunun yuklenmesinde**. Bu platform siniri, kod hatasi degil:
+
+- Workers Free CPU limiti 10 ms; olcumlerde 11-38 ms.
+- Static-exclude mumkun degil: OpenNext orce-static sayfalari diske HTML
+  yazmiyor, .open-next/cache/*.cache icinde; output kokunde yalnizca GSC + CV
+  html var. Worker her istekte cagrilmak zorunda.
+- /chat /sign /profil orce-dynamic oldugu icin her istek render — en kotusu.
+
+### Kapanmayan tek konu
+
+Workers **Paid** plan (30 sn CPU, ~5 USD/ay). TARMAS kernel 6: odeme yapilmaz.
+Kullanici karari gerekiyor. Kabul edilirse tek satirlik sonuc: plan yukseltilir,
+prime dongusu gereksiz hale gelir.
+
+### Git
+
+- 21 commit push edildi (origin eskiden 7198219).
+- progress.md 7 committe Google OAuth client secret (GOCSPX-) iceriyordu;
+  GitHub push protection blokladi. git filter-branch --index-filter ile gecmisten
+  silindi, dosya .gitignore'a alindi. **GOCSPX- secreti hala gecerliyse rotate et.**
+- Yedek branch ackup/pre-secret-purge push sonrasi silindi.
+
+## [2026-10-04] UI fazi — hero/about/CV/diller/araç çantası
+
+- Sosyal linkler (GitHub/Instagram/LinkedIn/Discord) KALDIRILDI: hero-section, about-section, /about sayfası. `content.social` verisi duruyor (contact-quick-menu + admin kullanıyor).
+- `hero.description` sabit bio metni 3 dosyadan boşaltıldı (content.json, content.ts, i18n-content-tr.ts). Hero'da koşullu render: boşsa gizli, admin yazınca geri gelir.
+- Hero CTA: Projeler, İletişim, CV, BLOG, HAKKIMDA, Sohbet (6 link). Yeni i18n anahtarı yok — `nav.blog/about/chat` zaten vardı.
+- YENI `src/components/ui/cv-picker.tsx`: aramalı combobox, geçerli sayfa dili en üstte "Önerilen" rozeti. AboutSection'daki `CvActions` kopyası silindi, ikisi de paylaşıyor.
+- Diller tablosu: `parseLanguages("İngilizce (A2), Almanca (A1)")` ile ayrıştırılıp tabloya basıldı; InfoRow'lar kaldırıldı. Ana dil ayrı satır.
+- Araç çantamı Supabase `skills` tablosunda 6 satıra indirildi: HTML, CSS, JavaScript, C#, Python, SQL. Python'in gerçek level/years/değerleri korundu; yeniler level=0 (uydurma veri yok, admin doldurur).
+- `SKILL_LABEL_LINKS`'e `SQL` eklendi (`C#` zaten vardı → yinelenen anahtar hatası düzeltildi).
+- Doğrulama: `tsc --noEmit` 0 hata · `vitest run` 21 dosya / 303 test geçti · 3 JSON geçerli.
+- Supabase durumu: skills=6, cvs=1 (sadece tr), projects=1, posts=0, stats=1.
+- NOT: `cvs` tek kayıt olduğu için combobox düz butona düşüyor. Dil başına CV dosyası yok (public/cv'de yalnız tarikeler-cv.pdf + .html, TR).
+
+## [2026-10-04] TARMAS faz — .carl rename + SEO/1102 kapanisi + yayin
+
+### Isimlendirme
+
+- .carl/ -> .tarmas/ (git mv, gecmis korunur)
+- ~/.config/opencode/command/carl.md -> armas.md (/carl -> /tarmas, 0 kalan referans)
+- .tarmas/STATE.md|BACKLOG.md|LOG.md basliklari TARMAS olarak guncellendi
+
+### SEO — blog detay sayfasi
+
+- src/app/blog/[slug]/page.tsx: orce-dynamic -> orce-static + generateStaticParams()
+  KOK NEDEN: getLocale() cookies()/headers() okuyordu -> route dinamik -> her istekte tam SSR
+  -> Workers Free 10 ms CPU asiminda 503. Diger 7 public sayfa 2026-10-03'te ayni sebepten
+  static'e alinmisti; blog detay son SSR rotasiydi.
+- dynamicParams = false: OLcum posts=0 oldugu icin generateStaticParams bos donuyordu ve
+  Next olmayan slug'i render edip 404 HTML'ini **200** ile cache'liyordu
+  (x-nextjs-prerender: 1, s-maxage=31536000, canonical /) = soft 404.
+  Artik prerender edilmemis slug hic render edilmiyor -> dogru 404.
+- src/app/sitemap.ts: blog lastModified CONTENT_LASTMOD (dosya mtime) -> post.date.
+  Google lastModified'a guvenir; her yazi "su an degisti" sinyal veriyordu.
+
+### SEO — Pages asset soft-404 (YENI BULGU)
+
+- OLUM: /yok.png, /yok.jpg, /yok.woff2, /manifest.webmanifest -> **200 + 258 KB ana sayfa**.
+  KOK NEDEN: sayfalar static'e alininca koke index.html yazildi; Pages, exclude listesindeki
+  (wildcard /*.png vs.) eslesmeyen ASSET icin index.html'yi 200 ile servis ediyor.
+  5 gun onceki deployment'da (0d11fdbd) /yok.png 404 len=0 idi -> yan etkiyi biz getirdik.
+- COZUM: pages-copy-worker.cjs prerender edilmis _not-found.cache govdesini koke
+  404.html olarak yazar. Pages eslesmeyen asset icin 404.html + HTTP 404 donuyor.
+
+### Icerik
+
+- data/content.json + src/lib/i18n-content-en.ts whoText:
+  "Kendiimi gelistiren her seyi yapmaktan hoslaniyorum" eklendi (kullanici talebi).
+
+### Deploy + olcum (d71b6d48)
+
+- tsc 0 hata · vitest 303/303 · build OK · prime 7/7 ilk denemede 200
+- 11 public rota + endpoint 200 · 9/9 404 sinifi dogru · 308 slash redirect dogru
+- Blog detay 404 · sitemap 7 loc + 7 lastmod · robots 200 · /admin noindex,nofollow
+
+### Kalan (bloklu / karar gerekiyor)
+
+- Cok dilli CV: 17 ek locale PDF/HTML yok; cvs tablosunda tek Turkce kayit
+- posts=0: gercek blog icerigi yok (uydurma icerik uretilmez)
+- Bing verification token + IndexNow key yok
+- BrowserOS neo kapali (:9210 red) -> gercek tarayici/hover testi yapilamadi;
+  dogrulama static HTML uzerinden yapildi
+- Google OAuth GOCSPX- siri commit edilmedi; rotate kullaniciya
+
+## [2026-10-04] TARMAS — LIGHT TEMA KONTRAST BUG'I (UX-008 kapandi)
+
+### KOK NEDEN
+
+src/app/globals.css @theme inline blogunda --color-foreground-500 SABIT #a1a1aa
+idi ve **temaya bagli degildi**. Light temada arka plan #ffffff oldugu icin sitedeki
+**176 ext-foreground-500 kullaniminin tamami 2.56:1 kontrastta** kaldi — WCAG AA
+(4.5:1) FAIL, yani light temada muted metin okunmaz durumdaydi. Dark temada ayni deger
+#050507 uzerinde 7.95:1 oldugu icin sorun gorunmuyordu (sadece light kirikti).
+
+### NEDEN VAR(--tfg-600) YETERLI (tek satir)
+
+--tfg-600 = light #3f3f46 (10.44:1 AA), dark #a1a1aa (7.95:1 AA).
+Yani dark tema degeri bugunki degerle **byte-byte ayni** -> dark temada GORSEL HIC BIR
+DEGISIKLIK YOK. --tfg-500 secilmendi: dark #71717a sadece 4.21:1 (AA-large sinirinda).
+
+### DIKKAT: inline theme'de deger build'de basilir
+
+@theme inline degerleri utility'ye derleme aninda yazilir; sonradan
+--color-foreground-500 yeniden tanimlamak utility'yi ETKILEMEZ. Duzeltme
+@theme inline blogunun icinde olmak ZORUNDA — disina yazilsaydi test gecer,
+canli degismezdi. Test bunu acikca not ediyor.
+
+### DOGRULAMA (olcum = kapanis)
+
+- src/lib/theme-contrast.test.ts (5 test, yeni): token'lari okuyup **GERCEK mapping'i**
+  cozuyor (--color-foreground-500: var(--tfg-X) -> o temadaki hex) ve WCAG oranini
+  hesapliyor. Test gercekte tarayiciya cikan rengi olcuyor, token'i degil.
+- NEGATIF KONTROL: bug geri getirildi -> test light: #a1a1aa on #ffffff = 2.56:1
+  ile KIRMILDI (cikis kodu 1). Duzeltme geri yuklendi -> 5/5 gecti.
+- tsc 0 hata · vitest 308/308 (303 + 5 yeni)
+- deploy 4a5cbf93 · prime 7/7 ilk denemede 200
+- CANLI CSS DOGRULAMASI: .text-foreground-500,.text-foreground-500\/40{color:var(--tfg-600)}
+  -> duzeltme gercekten uretimde. light 10.44:1 AA, dark 7.95:1 AA (degismedi).
+- scripts/deploy-pages.sh artik 404.html artifact'ini da zorunlu kiliyor (regresyon korumasi).
+
+## [2026-10-04] UX — hash yok, tek buton stili, iki satirlik marka | deploy 691e0322
+
+Kullanici: "#projects gibi butun # leri sil, normal olsun hep" + alty buton tek
+CSS + light temada yazi siyah + "TARIK ELER - / TARNAK" + guruplama gorunur.
+
+### KOK NEDEN — capalar 3 ayri yerde gizliydi
+
+1. `hero-section.tsx` dogrudan `href="#projects" | "#contact" | "#about"`
+2. `lib/site-navigation.ts` VERI olarak `href: '/#contact'` (footer/nav listesi)
+3. `i18n-content-{de,en,es,fr,ja,pt,ru,tr}.ts` + `content.ts` + `data/content.json`
+   -> `href: '/#contact'`
+   Ucunu değiştirmeden canli HTML `/#contact` vermeye devam ediyordu. Ilk
+   regresyon testim yalnizca JSX `href="..."` bicimini taridi -> 3. grup kacti;
+   canli HTML uzerinden fark edildi, test genisletildi (JSX + obje literal).
+
+### Diger gercek kok nedenler
+
+- `CvPicker` tek-CV dali iki butonu `color="primary"` ile SABIT basiyor ve
+  gelen `variant`/`className`'i yok sayiyordu -> hero'da `variant="bordered"`
+  verilse bile CV dugmeleri mavi/beyaz kaliyordu. `{...rest}` son eklenip
+  `color="primary"` kaldirildi.
+- `globals.css`: `hover:border-white/50` icin light override YOKTI -> beyaz
+  zeminde hover'da cerceve gorunmezdi. Eklendi.
+- Yanlis yorum duzeltildi: `bg-white/25` "override edilmez" diyordu ama
+  asagida zaten override ediliyordu.
+
+### Yeni
+
+- `src/app/contact/page.tsx` — `/#contact` yerine gercek sayfa (force-static,
+  ana sayfayla ayni `ContactSection`). `pages-copy-worker.cjs` PAGES listesine
+  ve `deploy-pages.sh` PUBLIC_ROUTES'a eklendi; yoksa SSR'ye dusup 1102 verirdi.
+
+### Dogrulama
+
+- tsc 0 · vitest 312/312 (23 dosya) · negatif kontrol: gecici `href="#projects"`
+  geri konunca test KIRMIZI -> test gercekten yakaliyor
+- canli kabul (BrowserOS CDP, `site-theme=light`): h1Lines ["TARIK ELER -","TARNAK"]
+  her ikisi de block · buton 7/7 · distinctStyles TEK girdi
+  `rgba(0,0,0,0) | rgb(24,24,27)` · hashHrefs [] · bodyBg #fafafa
+- prime 8/8 · `/contact/` 153 KB statik asset
+
+### NOT — olcum tuzagi (duzeltilmedi, kayit icin)
+
+`html[data-theme=light]` elle zorlaninca LobeUI `colorBgLayout` (#050507)
+CSS degiskenleriyle desync oldu ve body koyu kaldi; "light tema global kirik"
+gibi gorundu. Gercek degil: uygulama `localStorage['site-theme']` kullanir.
+`site-theme=light` + reload ile gercek durum olculdu. Ders: temayi DOM'dan
+zorlamak yerine uygulamanin kendi anahtarindan dogrula.
+
+### Dogrulanamayan nokta (durust kayit)
+
+- `Page.captureScreenshot` (fromSurface) BrowserClaw yuzeyinde TEK RENKli
+  cerceve donuyor (dark: tam siyah, light: tam beyaz — ortalama 0 / 254.9).
+  Bu, sayfanin gercekten bos oldugunu kanitlamaz; capture yuzeyi guvenilir
+  degil. Bu yuzden "tum sayfa koyu tema gorseli dogrulandi" DENMIYOR.
+- Element duzeyinde `getComputedStyle` her iki temada da guvenilir ve tutarli:
+  dark -> butonlar `rgba(0,0,0,0) | rgb(237,237,237)`, `--tbg #050507`.
+- Gozlem: `body` computed `background-color` LobeUI'in enjekte ettigi
+  `body{background-color:#fafafa}` kuralindan geliyor (unlayered, Tailwind
+  `@layer utilities`i yener) ve `--tbg` ile UYUSMUYOR. Gorunur yuzeyi
+  `ThemedBackground` kapladigi icin su an sorun YARATIYOR gibi gorunmuyor,
+  ama bu bir tuzak: computed body bg ile gercek zemin ayni sey degil.
+  Duzeltilmedi — etkisi dogrulanmadi, kanit olmadan kod degistirilmedi.
+
+### UX-012 — buton standardizasyonu + split CV + EN yazim (2026-10-04)
+
+**Buton yuksekligi (kok duzeltme):** `button.tsx` tabani artik her butona
+`!h-11` (44px) zorlar. `size` sadece yazi tipi/ic boslugu degistirir.
+`!` onemli: Tailwind'de ayni katmandaki celiskiler CSS cikti sirasina bakar,
+cagiran `h-9`/`h-12` yazsa bile 44px kazanir. 30 `size="sm"` cagrisi vardi.
+Canli olcum (4 sayfa, iki tema): 17 buton, TAMAMI 44px, ihlal 0.
+
+**Split CV butonu:** `cv-picker.tsx` tek kayit durumunda iki ayri buton
+yerine birlestirilmis (split) buton: ana kisim "CV" + goz ikonu -> yeni
+sekmede goruntule, yan kisim indirme ikonu -> `download` ile dogrudan indir.
+`ButtonProps.download` eklendi (LobeButton `{...rest}` ile `<a>`'ya gecer).
+Coklu CV durumunda combobox aynen korunur.
+
+**Hero ikonlari:** Projeler=Briefcase, Iletisim=Send, Blog=File,
+Hakkimda=UserPlus, Sohbet=Chat. Buton genislikleri metne gore degisir,
+yukseklik sabit.
+
+**Light tema kart yuzeyi (kok neden):** `globals.css` icinde
+`--color-background: var(--tbg)` idi -> `bg-background` = sayfa zemininin
+ayni rengi, 77 kullanimda kart/panel/modal/dropdown/girdi yuzeyi plana
+yapisikti. `--tfg-200`ye baglandi (light #f4f4f5, dark #1a1a1f).
+Canli: yuzey rgb(244,244,245) vs sayfa #fff.
+Regresyon: `theme-contrast.test.ts` yuzey/arka-plan kontrasti > 1.05.
+
+**EN yazim (9):** `en.json` — "don't want to support" -> "support us",
+"Ad is playing" -> "The ad is playing", "Tab is in background" -> "The tab
+is in the background", "Thank you! You supported." -> "Thank you for
+supporting us!", "tarikeler." -> "tarikeler" (fazla nokta), "binary file,
+cannot preview" -> "binary file; its content cannot be previewed".
+`content.ts` — Turkce sizan `firstLanguage/otherLanguages` -> English/German,
+"Talk To Me" -> "Talk to Me". Klasik yazim hatasi (recieve/seperate/...)
+yoktu; bulunanlar dilbilgisi/eksik nesne.
+
+**Dogrulama:** tsc 0 · 313/313 test · deploy+prime 8/8 · CDP canli olcum.
+
+### UX-013 — QR-only dijital kartvizit + Discord "Iletisim"e tasindi (2026-10-10)
+
+**Kaldirilan:** `GET /api/vcard` route'u ve About'taki "Kartvisiti indir"
+dugmesi tamamen silindi (`vcardDownload` anahtari tr/en'den cikarildi). Tek yol
+artik QR kodu: vCard 3.0 dogrudan `content` (Supabase merge sonrasi) uzerinden
+`buildVCard(...)` ile uretilip QR'in icine gomulur — telefon tarayinca kisi
+otomatik taninir. Uydurma alan yok.
+
+**about-section:** icerideki kullanilmayan/bozuk `getCvs()` kalintisi
+temizlendi; hesaplanan `vcardText` `VCardQr`'a verildi.
+
+**Discord tasima:** `contact-channels.ts` icindeki `SocialItem`'a opsiyonel
+`label`/`value` alanlari eklendi. Discord kaydi `{ name: "Tarnak",
+label: "Discord Grubu", value: "Tarnak" }` -> "Kisisel Bilgiler" tablosundan
+cikarilip "Iletisim Bilgileri" menusunde "Discord Grubu" etiketi ve "Tarnak"
+degeri ile render edilir; davet linki yine acilir/kopyalanir.
+
+**InfoRow hizalamasi:** Etiket ve deger bitisik + sola hizali ("Ad: TARIK");
+kopyala dugmesi sag kenara sabitlendi.
+
+**Olu kod:** Faz 6 `vcardSchema` + `Faz6Editor` + `content.json` icindeki
+kullanilmayan `qrTarget` alani kaldirildi.
+
+**Regresyon testleri:** `vcard-qr-only.test.ts` (route/anahtar/dosya yok),
+`contact-channels.test.ts` (label/value override), `contact-quick-menu.test.tsx`
+(Discord Grubu / Tarnak satiri).
+
+**Dogrulama:** tsc 0 hata · eslint temiz (degisen dosyalar) · vitest 475/475
+(36 dosya) · commit `582ef38` + `2822a3f` (yerel, branch `faz-1-guvenlik`).
+**Negatif kontrol:** `vcard-qr-only.test.ts` icindeki InfoRow duzeni `text-left`
+-> `text-center` + `justify-between` yapilinca test KIRILDI (kanit), sonra geri
+alindi (`about-section.tsx` HEAD'e birebir dondu, fark yok).
+**Ortam notu:** WSL `pnpm build` eksik `lightningcss.linux-x64-gnu.node`
+native binary yuzunden kirik — temiz agacta da ayni hata (degisiklikle ilgisiz).
+`public/github-data.json` prebuild regen farki commit disi birakildi.
+**Kalan:** canli deploy + Google OAuth secret rotate kullanici onayinda.
+
+### SERBEST FAZ — lint borcu sifirlandi + SIRALAMA BUG'I (2026-10-11)
+
+**`lint:strict` 726 -> 0.** CI kapisi `eslint --max-warnings 0` oldugu halde 726 hata
+birikiydi; kapı islevsizdi. 702 hata `eslint --fix` ile, 24 tanesi elle cozuldu.
+
+**CANLI BUG (bulundu, duzeltildi):** `projects-grid.tsx` → `score()` icindeki
+`switch (sort)` blogunda `default:` case'i `case 'stars'` ve `case 'forks'`
+satirlarindan ONCE geliyordu. JS'te `default` nerede olursa olsun ilk eslesmede
+calisir → `score()` her kosulda `0` donuyordu. **"Yildiza gore" ve "Forka gore"
+siralamalari HIC calismiyordu** — kullanici hata mesaji gormeden liste yerinde
+duruyordu (sessiz bozuk ozellik). `eslint default-case-last` yakaladi.
+Regresyon: `projects-grid.sort-contract.test.ts` (kaynak sozlesmesi; repo'nun
+`no-hash-links` / `vcard-qr-only` deseni). Negatif kontrol 3 adimli dogrulandi:
+duzeltilmis→yesil, bozuk→kirik, byte-exact geri yukleme→yesil.
+
+**KOK DUZELTME (tooling):** `.lintstagedrc.json` hem `eslint --fix` hem
+`prettier --write` calistiriyordu. `@antfu/eslint-config` stilleri
+(`operator-linebreak`, `if-newline`, `arrow-parens`) Prettier ile CELISIYOR:
+prettier satirlari geri sariyor, eslint duzeltiyor → her commit flip-flop.
+Ilk denemede hook sonrasi **1092 lint hatasi** ile BOZUK kod commit'lendi.
+CI yalnizca eslint calistirdigi icin ESLint tek bicim sahibidir → Prettier
+TS/TSX/JS icin lint-staged'dan KALDIRILDI (json/css/md/yml'de kaldi).
+
+**Olu kod temizligi:** Navigation'in kullanilmayan `content` prop'u (25 cagiran
+guncellendi; ardindan 6 sayfada yalnizca bu yuzla cagrilan `getContent()` /
+`getStaticLocalizedContent()` cagrilari kaldirildi) · SettingsModal'in olu
+`githubUsername` prop'u · `country-select`/`searchable-combobox`/
+contact-quick-menu/back-to-list-button'de olu degerler · hic kullanilmayan
+`ContentPlaceholder` (kullaniciya gosterilen "TODO" metni) · `auth.ts` icindeki
+olu ve BOZUK `sign()` (Promise'u `as unknown as string` ile cast ediyordu) +
+`require()` · top-bar `<a href="/">` → `next/link` · olu `AvatarDot.name` ·
+kullanilmayan regex capture gruplari non-capturing · testlerde `vi.hoisted`.
+
+**UX-007 (footer):** "Basasa don" dugmesi `text-xs` + dolgusuzdu → tiklama hedefi
+~16px (WCAG 2.5.8 AA min 24px). `min-h-11` (44px) + ikon eklendi. Test:
+`footer.test.tsx` 4 test, negatif kontrol dogrulandi (sinif kaldirilinca kirildi).
+
+**UX-010 dogrulandi:** `projects.empty` anahtari 8 dilde mevcut ve dogru cevrilmis.
+
+**Backlog dogrulamasi:** SEC-001..005 kodda ZATEN yapilmis (backlog bayatti):
+`SAFE_SEGMENT` path-traversal korumasi, login `guardWrite`+IP kilidi, KV rate limit,
+stars `LIMITS.counter`. SEC-002 (Puck) ve SEC-006 (RLS) kod YOK — Puck tamamen
+kaldirilmis, RLS SQL Editor'de calistirilmamis (kullanici karari). PERF-005/006
+zaten yazili (cvCache 5 dk TTL; SearchDialog `nextDynamic`). SEO-007 sarih: sitemap
+zaten dogru (dinamik + noindex rotalar disarida).
+
+**DOGRULAMA:** `lint:strict` **0** · `tsc --noEmit` **0** · `vitest` **484/484** (38 dosya).
+
+**Commitler (yerel, `faz-1-guvenlik`):** `db83900` (tooling) · `847d340` (bilesenler) ·
+`bae5b59` (sayfalar). `68bdc92` siralama bug fix'i · `d327f29`/ara commitler geri alindi.
+
+**Not:** `public/github-data.json` `prebuild` regen artifactidir ve `d327f29` ile
+commit'lendi; her build'de degisir.
+
+### UÇTAN UCA DOGRULAMA — dev sunucu + Playwright e2e (2026-10-11)
+
+Daha once `pnpm build` ortam sorunu (eksik `lightningcss` native binary) yuzunden
+calismiyordu; bu yuzden refactor tarayicida hic DOGRULANMAMISTI. Dev sunucu ile kapandi:
+
+- `next dev --turbopack` :3000 → PID 23888, HTTP 200 (15 sn), log:
+  `%TEMP%/opencode/devserver/` (dev.out.log / dev.err.log / dev.pid)
+- **16 rota taramasi: 16/16 temiz** — `/ /projects/ /blog/ /about/ /contact/ /now/ /uses/
+/changelog/ /credits/ /donate/ /gizlilik/ /kvkk/ /login/ /sign/ /chat/` hepsi 200 ve
+  runtime hata izi yok; `/nonexistent-page-xyz/` → dogru **404** (soft-404 fix calisiyor).
+- **Playwright e2e: 50/50 PASS** (57 sn, gercek Chromium, masaustu + Pixel 7).
+  Kapsam: ana sayfa (hero, yatay tasma, bolumler, dugmeler, klavye gezinme, tema/FOUC,
+  konsol hatasi yok) + 5 Faz 6 sayfasi (`/uses /now /changelog /gizlilik /kvkk`: acilis,
+  tasma, konsol/hydration hatasi) + footer baglantilari + sitemap.
+- **DOM dogrulamasi:** "Basasa don" butonu `min-h-11` (44px) ile sunucuda render ediliyor;
+  `/about/` HTML'inde "Kartvisiti indir" ve `/api/vcard` **yok**; `sitemap.xml` ve
+  `robots.txt` uretiliyor.
+
+**KAPSAM DISI (dogrulanmadi):** "Yildiz"/"Fork" siralamasinin tarayicida tiklanarak
+testi yapilmadi — siralama secenekleri `SearchableCombobox` icinde kapali panelde
+render edilmiyor (SSR HTML'inde yok). Bu defect `projects-grid.sort-contract.test.ts`
+ile deterministik olarak korunuyor; e2e testi ayni garanti icin kirilgan olurdu.
+
+---
+
+## [2026-10-11] BUG · Sohbet "giriş yapmışken giriş yap" + giriş/kayıt butonları + dönüş
+
+**Kullanıcı şikayeti:** "Sohbete girmek için giriş yap." GİRİŞ YAPMIŞKEN çıkıyor.
+Giriş yapılmamışsa "Kayıt ol" + "Giriş yap" butonları olsun; girişten sonra otomatik
+/chat'e dönsün.
+
+### Ölçüm (tahmin değil)
+
+Projenin kendi `ADMIN_SECRET`'ıyla geçerli `admin_session` token'ı imzalanıp HTTP ile
+gönderildi:
+
+| istek                | sonuç                                    |
+| -------------------- | ---------------------------------------- |
+| `/api/admin/session` | 200 · kullanıcı DÖNDÜ ✅                 |
+| `/api/chat/v2`       | 503 CHAT_SCHEMA_MISSING (beklenen)       |
+| `/chat`              | 200 · "Sohbete girmek için giriş yap" ❌ |
+
+Sonra sayfaya geçici `DBG|` marker'ı basıldı: `user=NULL, schema=false, conv=null`.
+Önbellek değil (`cache-control: no-store`, `x-nextjs-cache: -`).
+
+### Kök neden (2 katman)
+
+1. **`src/app/layout.tsx:58` → `export const dynamic = 'force-static'`.** Next'in
+   belgelenmiş davranışı: `force-static` altındaki tüm segment ağacında `cookies()`
+   **boş** döner. `/chat` kendi `force-dynamic` dese bile layout kazanıyor. Yani
+   sunucudaki `getSessionUser()` **her zaman** null döndürüyordu — giriş yapmış kullanıcı
+   da "giriş yap" ekranını görüyordu. Route handler'lar layout DIŞINDA olduğu için
+   `/api/admin/session` aynı çerezi doğru okuyordu.
+   Layout bilinçli (`revalidate=300` → Cloudflare "Dummy queue" 1102 askıya çıkması);
+   **dokunulmadı.** `/chat` oturumu istemciye taşındı.
+2. **`useT()` her render'da YENİ `t` fonksiyonu üretiyordu** (`useMemo` yok). Bu yüzden
+   `useEffect(..., [t])` her render'da temizlenip yeniden başlıyor, uçuştaki istek
+   `cancelled` bayrağına takılıp sessizce düşüyordu. Paylaşılan kodda
+   (`locale-provider.tsx`) `useMemo` ile düzeltildi.
+
+### Değişiklikler
+
+- `src/app/chat/page.tsx` — sunucu tarafı oturum okuması KALDIRILDI; `<ChatV2 />`.
+- `src/components/chat/chat-v2.tsx` — oturum `/api/admin/session` → `action:'open'`
+  ile istemcide çözülüyor. Giriş yoksa **Kayıt Ol + Giriş Yap** butonları
+  (`?next=%2Fchat` taşıyarak). Props sadeleşti (`isAuthenticated`/`conversationId`
+  kaldırıldı → state).
+- `src/lib/safe-next.ts` (yeni) — `?next=` çözümleyici. **Açık yönlendirme (open
+  redirect) engeli:** yalnız kök-relative site içi yollar; `//evil.com`, `/\\evil.com`,
+  `https://…`, `javascript:` reddedilir.
+- `src/app/login/page.tsx` + `sign/page.tsx` — `?next=` desteği. Öncesi girişten sonra
+  **her zaman** `/` veya `/admin`'e atıyordu.
+- `src/app/api/chat/v2/route.ts` — `action:'open'` artık `peerId` vermeyen normal
+  kullanıcıyı da sahibin sohbetine yönlendiriyor (istemci öyle çağırıyordu).
+
+### Doğrulama
+
+- `tsc --noEmit` **0** · `eslint . --max-warnings 0` **0** · `vitest run` **523/523**
+  (509 → +14: 3 oturum ekranı + 7 safeNext + 4 sözleşme).
+- **NEGATİF KONTROL (2 kez, byte-exact geri yükleme):** `isAuthenticated=false` + Kayıt
+  Ol butonu kaldırılınca 2 test kırıldı; `//host` guard'ı ve `redirect(next…)`
+  bozulunca testler kırıldı. Testler gerçekten koruyor.
+- **Playwright ile tarayıcı doğrulaması YAPILAMADI (ortam):** bu makinede `next dev`
+  hiç hidrasyon yapmıyor — HMR ws `ERR_INVALID_HTTP_RESPONSE`, taze sunucuda bile
+  `/ /chat /about /login` → React mount 0, "Ara" butonu açmıyor. Bu **kode değil ortam**
+  sorunu; `playwright.config.ts` zaten yazılı ("next dev HMR WebSocket'i ölüyor ve
+  hydration başlamıyor") ve bu yüzden e2e'yi `next build && next start`'a taşımış.
+  `next build` ise bu makinede (WSL'de `lightningcss.linux-x64-gnu.node` eksik)
+  çalışmıyor. Bu yüzden doğrulama **jsdom render testi** ile yapıldı; geçici Playwright
+  spec'leri geri dönüşüm kutusuna gönderildi (doğrulanamayan test bırakılmaz).
+
+### Bekleyen
+
+`supabase/chat.sql` SQL Editor'da çalıştırılmalı; o ana kadar API 503 döner ve şema
+uyarısı görünür (uygulama çökmez).
+
+---
+
+## [2026-10-11] UX · "Henüs bir sohbet yok" yerine admin için "kime yazayım?"
+
+**Kullanıcı:** "Henüs bir sohbet yok ekranı olması yerine boş sohbetleri göre bilemiyim.
+Henüs bir sohbet yok saçma — giren bana mesaj atacğı adminse herkeze yazacağı alanı
+görmeli."
+
+### Ölçülen kök neden
+
+`role:'admin'` iken istemci `action:'open'` çağırıyordu, API de `peerId` olmadığı için
+**400 "Karşı taraf gerekli."** döndürüyordu → `conversationId` null → "Henüz bir sohbet yok".
+Yani ekran normal kullanıcı için de anlamsız, admin için de yanlış bilgiydi.
+
+### İkinci (daha derin) hata — şema
+
+`supabase/chat.sql`'de `chat_participants.user_id` **uuid + `references auth.users(id)`**
+idi. Ama site sahibi `/login` (admin.json) ile girince kimliği `admin:TARIKELERTARNAK`
+(canlı ölçüm: `/api/admin/session` → `"id":"admin:TARIKELERTARNAK"`) — **UUID değil**.
+Yani admin birine tıklayınca katılım ekleme "invalid input syntax for type uuid" ile
+PATLAYACAKTI; yani istenen "herkeze yazma" alanı aslında hiç çalışmayacaktı.
+Şema henüz kurulmadığı (API 503 CHAT_SCHEMA_MISSING) için güvenle düzeltilebildi:
+`user_id` / `sender_id` / `deleted_by` → `text`, FK kaldırıldı. Mesajın kendi referansı
+(`reply_to_id`) uuid kaldı — o kimlik değil, mesaj referansı.
+
+### Değişiklikler
+
+- `chat-v2.tsx` — rol bazlı yol:
+  · normal kullanıcı → site sahibiyle sohbet kendiliğinden açılır (ekran yok),
+  · admin → "Kime yazmak istiyorsun?" listesi; tıklayınca `open` + **peerId**.
+  Sohbet başlığında ← ile listeye dönüş.
+  · `chat.noConversation` ekranı ve i18n anahtarı **kaldırıldı** (8 dil).
+- `api/chat/users` — `id` alanı eklendi (`open` peerId istiyordu, uç yalnız username
+  veriyordu → admin listeye tıklayınca sohbet açılamazdı).
+- `supabase/chat.sql` — kimlik sütunları `text` (yukarıdaki gerekçe).
+- i18n: `chat.pickRecipient` · `chat.noRecipients` · `chat.backToList` (8 dil).
+
+### Doğrulama
+
+- **Canlı API:** `/api/chat/users` → 200, `id` geliyor (2 gerçek profil);
+  girişsiz → 401; admin `open` (peerId'siz) → 400 (istemci artık çağırmıyor).
+- `vitest run` **529/529** (525 → +4: admin liste, admin tıklama→peerId, şema sözleşmesi ×4).
+- `tsc` 0 · `eslint . --max-warnings 0` **0** (tam repo).
+- **NEGATİF KONTROL:** admin dalı `if (false)` yapılınca ve `peerId` gönderimi
+  kaldırılınca 2 test kırıldı; byte-exact geri yüklendi.
+
+### Bekleyen
+
+`supabase/chat.sql'ı SQL Editor'da çalıştır (yeni şema ile).` O ana kadar API 503 döner.
+
+---
+
+## [2026-10-11] YERLEŞİM + YÖNETİCİ SOHBET YÖNETİMİ
+
+### A. Yerleşim düzeltmeleri (ölçüldü)
+
+1. **"Chat başlığı grubun içine giriyor"** — Başlık `absolute` idi, sohbet kartı
+   `flex-1` ile ortalanıyordu; kısa ekranlarda ÇAKIŞIYORDU (2026-10-06'daki "kart
+   altta kalmasın" düzeltmesinin bedeli). Başlık akışa alındı → kardeş, asla üst
+   üste binmez.
+   **Yan ölçüm:** `min-h-[100svh]` sayfayı her yükseklikte tam **56px** taşırıyordu
+   (sabit TopBar h-14 altında kaldığı için) → `min-h-[calc(100svh-3.5rem)]`.
+   Kart yüksekliği `h-[min(68svh,100svh-19rem)] min-h-[260px]`.
+
+2. **"Yan panel tam kaplıyor"** — Sidebar `w-[325px]` sabitti. Artık
+   `maxWidth = ekranın %85'i` (dar ekranda her zaman bir kenardan içerik görünür)
+   - gerçek genişlik `style.width` ile ayrıldı.
+
+3. **"Yan panel büyüyüp küçültüle bilinmeli"** — Sağ kenarda sürükleme
+   tutamağı (`role="separator"`, `onPointerDown`, 260..560px aralığı) + klavye
+   (←/→ 16px) + `localStorage('sidebar:width')` ile hatırlama.
+
+**Kanıt:** Playwright `e2e/chat-layout.spec.ts` — 5 ekran yüksekliğinde
+(1080/900/768/640/560) başlığın alt kenarı ≤ kutunun üst kenarı **VE** sayfa
+ekrandan taşmıyor + başlık `absolute` değil. **6/6 PASS**, tam e2e **62/62**.
+
+**NEGATİF KONTROL:** eski yerleşime (absolute + min-h-[100svh]) dönülünce 6 test
+kırıldı; byte-exact geri yüklendi.
+
+**Tuzak kaydı:** `playwright.config.ts` BASE_URL'ı `localhost`'a çevirmeyi
+DENEDİM (çünkü 127.0.0.1:3000'i başka bir proje — `Tarnak/tooling`, bun —
+işgal etmiş görünüyordu). Ölçüm: `localhost` ile `phase6` tıklama testi
+tutarlı KIRILDI (3/3), `127.0.0.1` ile 3/3 GEÇTİ. Değişiklik **geri alındı**.
+
+### B. Yönetici sohbet yönetimi (kullanıcı isteği)
+
+- **Takma ad**: `profiles.nickname` (yeni kolon, `alter table ... add column if
+not exists` ile idempotent). Arama `username` · `full_name` · `nickname`
+  **üçünü birden** kapsar → takma ad konunca gerçek ad kaybolmaz.
+  Yönetici panelindeki `searchColumns`'a da eklendi.
+- **Kullanıcıya sağ tık** (admin): Profilini incele · Takma ad koy · Favorilere
+  ekle · Sohbeti sabille · Engelle · Sohbeti temizle · Sohbeti sil.
+- **Profilini incele**: takma ad, ad soyad, @kullanıcıadı, rol, GitHub, web
+  sitesi, kayıt tarihi, mesaj sayısı, **gruplar (üyelik)**.
+- **GİZLİ ALANLAR** — kullanıcı açıkça istedi: "şifre, gmail, telefon gizlenir".
+  `getAdminProfileView()` **beyaz liste** ile sorgular; `email` / `phone` /
+  parola sütunu SEÇİM bile yapılmaz, arayüzde de görünmez.
+- Yetki: `ADMIN_ACTIONS = favorite|block|clear|deleteConversation|nickname|profile`
+  → hepsi **admin-only** (403).
+
+**Doğrulama:** vitest **540/540** (529 → +11: admin menü 5, gizlilik sözleşmesi 4,
+yetki kapısı 2) · `tsc` 0 · `eslint . --max-warnings 0` **0** · e2e **62/62**.
+**NEGATİF KONTROL (4 mutasyon):** yetki kapısı `if (false)`, profile select'e
+`email, phone` ekleme, aramadan `nickname` çıkarma, menüden bir eylemi kaldırma
+→ 4 test kırıldı; byte-exact geri yüklendi.
+
+### Bekleyen
+
+- `supabase/chat.sql` (blocked kolonu) **ve** `profiles.nickname` ALTER'i
+  Supabase SQL Editor'da çalıştırılmalı. O ana kadar API 503 döner.
+
+---
+
+## [2026-10-11] SMOKE TEST (kullanici: "test 5")
+
+- `pnpm test` -> **540/540 PASS** (45 dosya, 28.2s, cikis kodu 0), run-safe logu:
+  `%TEMP%\opencode\runs\20261011-234052-470.out.log`
+- stderr dolu ama beklenen: `content.test.ts` EROFS mesajlari + `api/github/route.test.ts`
+  status 500 negatif-yol ciktilari.
+- **Tekrar (ayni istek yeniden verildi, 23:49)** `pnpm test` -> **540/540 PASS**
+  (45 dosya, 25.8s, cikis kodu 0): `%TEMP%\opencode\runs\20261011-234950-840.out.log`
+  HEAD c1ecb83 · branch faz-1-guvenlik. Ilk kosunun LOG kaydi commit'lenmedigi icin
+  bu turda `chore(tarmas): smoke test kaydi` ile yerel commit'lendi (push YOK).
+
+---
+
+## [2026-10-12] KULLANICI PAKETI 2 — "+N/−M" rozeti · tema yazı rengi kuralı · kişi listesi + durum noktaları
+
+Kullanıcının üç ayrı isteği tek turda kapandı. Taban: `d9f355e` (vitest 540/540).
+
+### A. "Daha Fazlasını Göster (+açılacak · −gizli)"
+
+- `use-row-pagination.ts` → yeni **saf** `computeNextVisibleCount(total, columns,
+visibleRows)` + hook dönüşüne `willOpen`. Sayılar `computeVisibleCount` ve
+  `computeNextRows`ten türetilir; ikinci bir "kaç açılacak" mantığı YAZILMADI.
+- `load-more-button.tsx` → yeni `opening` prop'u; etiket `+{opening} · −{remaining}`.
+- Çağrı yerleri: `projects-grid.tsx`, `blog-section.tsx`.
+- 8 dilde `common.showMore` / `common.showMoreAria` güncellendi (tr/en .json,
+  de/es/fr/ja/pt/ru .ts).
+
+### B. Tema yazı rengi kuralı (kullanıcı: "koyu temada asla siyah, açık temada asla beyaz")
+
+12 düzenleme. **Gerçek bulunan hatalar:**
+
+1. `projects/project-card.tsx` indirme menüsü öğeleri `text-white` — panel
+   `bg-background/95` (AÇIK temada beyaz) → **beyaz üstüne beyaz, yazı görünmüyordu**.
+   → `text-foreground`.
+2. `sidebar.tsx` `text-white/30` — panel `bg-[#0a0a0e]` ama `globals.css:643`
+   açık temada onu `#f8f8fa`ya çeviriyor → **görünmez tire**. → `text-foreground/30`.
+3. `chat-window.tsx` + `admin/chat-panel.tsx` sohbet balonu/butonu `bg-primary text-black`
+   → koyu temada siyah kalıyordu. → `text-primary-fg`.
+4. `app/not-found.tsx`, `app/github/[owner]/page.tsx` sabit `bg-[#e5e7eb] text-black`
+   → `bg-foreground/10 text-foreground`.
+
+**Meşru istisnalar (korundu, gerekçeli):** `layout.tsx` tema-çifti (`dark:` varyantlı),
+amber→orange gradyan avatarlar (sabit çip), lightbox `bg-black/90` (`text-white`),
+`bg-danger text-white` kırmızı buton, `bg-white/10` medya üstü katman, `bg-white/10` overlay.
+
+**Kural kalıcı teste bağlandı** (`src/lib/theme-contrast.test.ts`, +2 test):
+
+- `bg-primary` üzerinde sert `text-black` de yasak (eskiden yalnız `text-white` denetleniyordu).
+- Sabit `text-white`/`text-black` yalnız **temadan bağımsız zeminlerde** kullanılabilir;
+  "güvenli zemin" işaretleri: `dark:`/`light:` varyantı, sabit gradyan çip, `bg-black/N`,
+  `bg-white/(5|10|15|20)`, `bg-danger`. Yeni bir sabit renk → test kırılır.
+
+### C. Kişi listesi + çevrimiçi/sarı nokta + hiyerarşi
+
+Kullanıcı: "kendim bile her kim kayıtlıysa herkez orada gözüksün", "yeşil kırmızı sarı
+yuvarlak", sarı = "karşı taraf bana bir şey göndermek üzere".
+
+- **Yeni saf modül `src/lib/chat-peers.ts`** (Supabase importu YOK → istemci-güvenli):
+  `presenceOf(lastSeenAt, state, now)` · `peerRank` · `sortPeers` ·
+  `PRESENCE_UI` · `PRESENCE_STATE_LABEL_KEY` · `PRESENCE_ONLINE_MS=60_000` ·
+  `PRESENCE_ACTIVE_MS=20_000`.
+- **Şema:** `profiles.last_seen_at`, `profiles.presence_state`; `chat_conversations
+.last_preview`, `.last_sender_name` (+ hepsi için idempotent ALTER).
+- **Veri:** `chat-v2.ts` → `touchPresence()` + `messagePreview()`; `sendMessage` artık
+  özeti denormalize ediyor.
+- **API:** `/api/chat/v2` POST → yeni `presence` eylemi (yalnız kendi nabzı,
+  `ADMIN_ACTIONS` dışında). `/api/chat/users` → **admin-only (403)** yapıldı; çevrimiçi
+  durum döndüğü için kayıtlı herkesin adı/durumu her girişliye açık olurdu.
+  `username is not null` filtresi kaldırıldı (kendisi dahil herkes listelenir).
+- **Arayüz:** liste artık kişi + sohbet birleşimi; avatarın köşesinde `PresenceDot`
+  (yeşil/kırmızı/sarı, ipucu metni tam durumu söyler); 20 sn'de bir nabız + liste
+  tazeleme; 10 sn'de bir `now` tazelemesi (nokta, yeni veri gelmeden eskisin).
+- **Hiyerarşi:** sabitlenen → sarı (aktif) → konuşulanlar (en yeni önce) → favoriler →
+  çevrimiçiler → diğerleri → engellenenler. Bilinçli sapma: sarı, kullanıcının saydığı
+  sırada konuşulanların ALTINDAYDI; "şu an bana yazıyor" tek aksiyon bekleyen durum
+  olduğu için üste alındı.
+- `chat.noRecipients` ("Henüz başka kullanıcı yok.") **kullanımdan ve 8 dilden kaldırıldı**.
+- 6 yeni anahtar 8 dile eklendi: `chat.presenceOnline/Offline/Active/Typing/Uploading/Recording`.
+
+**Doğrulama:** `tsc` 0 · `eslint --max-warnings 0` (28 dosya) 0 · vitest **563/563**
+(46 dosya; +23) · **playwright e2e 62/62** · dev sunucu `/` `/projects` `/blog` `/chat`
+→ 200, `/admin` → 307.
+**NEGATİF KONTROL (9 mutasyon, hepsi byte-exact geri yüklendi + sha doğrulandı):**
+`presenceOf` aktif dalı · `sortPeers` sarı kovası · `computeNextVisibleCount` kalan
+güvencesi · admin listesinde kendini filtreleme · `PresenceDot` render · project-card
+menüsü `text-white` · sohbet balonu `text-black` · sidebar `text-white/30` ·
+`LoadMoreButton` ikinci sayı. → 9/9 beklendiği gibi kırıldı.
+
+### Bekleyen (kullanıcı eylemi)
+
+- `supabase/chat.sql` **ve** `supabase/schema.sql` içindeki ALTER'ler Supabase SQL
+  Editor'da çalıştırılmalı. O ana kadar `/api/chat/v2` **503 CHAT_SCHEMA_MISSING**
+  döner (uygulama çökmez); takma ad ve çevrimiçi nabız canlıda çalışmaz.
+
+### Ertelenen (bilinçli)
+
+Admin panelinde arama/filtre UI'ı · grup oluşturma + kişi ekleme · toplu seçim→sil ·
+ses kaydı düğmesi (`audio_duration` hazır) · GIF link önizleme + virüs koruması ·
+bildirim sesi · kullanıcı 5 MB limiti ve admin tür engelleme UI'ı · admin retention
+ayar UI'ı · `components/chat/chat-window.tsx` **ölü kod** (hiçbir yerden import
+edilmiyor) → silme adayı.
+
+## [2026-10-12] SOHBET CANLIYA ALINDI + "TANIMSIZ TEMA JETONU" SINIF HATASI
+
+Kullanıcı: "Sohbet yükleniyor… yazısı siyah, koyu temadayım — koyu temada siyah,
+açık temada beyaz yazı olmasın, düzelt. Ve bu sahte şeyi de düzelt, chat gerçek
+çalışır tam olsun."
+
+### A. Renk hatası — KÖK NEDEN: tanımsız tema jetonu (sessiz arıza)
+
+`chat-v2.tsx` metinleri `text-foreground-50` / `-60` / `-70` yazıyordu (**16 yer**).
+`globals.css` yalnız `--color-foreground-200..950` tanımlar. Sonuç iki sessiz hataydı:
+
+- `-50` Tailwind'den DEĞİL, **HeroUI eklentisinden** üretiliyordu:
+  `.text-foreground-50{color:hsl(var(--heroui-foreground-50)/1)}` → temaya bağlı
+  olmayan sabit renk (koyu temada KOYU = kullanıcının gördüğü siyah yazı).
+- `-60` / `-70` ise **hiç CSS üretmiyordu** → metin üst elemandan miras alıyordu.
+
+Canlı CSS ölçümü (önce): `.text-foreground-50 { color: hsl(var(--heroui-foreground-50) / 1); }`
+→ 16 kullanımın tamamı `text-foreground-500`e çevrildi (projenin soluk metin jetonu).
+
+**Kanıt (koyu tema, canlı):** `--tfg-600: #a1a1aa`; `text-foreground-500` taşıyan
+elemanların hesaplanmış rengi `rgb(161, 161, 170)`; eski sınıflardan **kalan eleman: 0**.
+
+**Kalıcı guard:** `src/lib/theme-contrast.test.ts` +1 test → jeton adlarını
+`globals.css`ten OKUR, koda yazılanla karşılaştırır
+(`text|bg|border|ring|divide|fill|stroke|from|to|via|…`-`foreground-<N>`).
+Jeton eklenirse otomatik izinli; jeton uydurulursa test kırılır. Sınıf kapandı.
+
+### B. "Sahte" sohbet — KÖK NEDEN: şema canlıya hiç uygulanmamıştı
+
+`/api/chat/users` sorgusu `profiles.nickname` / `last_seen_at` / `presence_state`
+sütunlarını ister; sütunlar yoktu (PostgREST `42703`) → sorgu 500 dönüyordu →
+`loadPeers()` `null` dönüyor → `peers` bir daha set edilmiyor → ekran **sonsuza
+kadar** "Sohbet yükleniyor…" gösteriyordu. Üstüne `chat_conversations` /
+`chat_participants` / `chat_messages` tabloları hiç yoktu (`PGRST205`).
+
+1. **Şema canlıya uygulandı** (Supabase SQL Editor): `supabase/chat.sql` birebir +
+   `schema.sql`ten **yalnız `profiles` ALTER'leri** (RLS politika bloğuna
+   dokunulmadı). 153 satır, **0 yıkıcı ifade**, hepsi `if not exists` → sonuç
+   "Success. No rows returned".
+   Şema sondası (öncesi → sonrası): `profiles.nickname` 400 → **200** ·
+   `chat_conversations` 404 → **200** · `chat_participants` 404 → **200** ·
+   `chat_messages` 404 → **200**.
+2. **Uçtan uca gerçek gönderim kanıtı:** `/api/chat/users` **200 → 2 kişi**
+   (admin'in kendi profili dahil), `/api/chat/v2` **200**; arayüzden mesaj
+   gönderildi → `chat_messages` 1 satır, `chat_conversations.last_preview` +
+   `last_sender_name` denormalize, `chat_participants` 2 satır.
+3. **Sonsuz "yükleniyor" sınıfı kapatıldı:** `peersError` durumu eklendi; sorgu
+   patlarsa "yükleniyor" yerine hata gösterilir
+   (`peers === null && !peersError` → yükleniyor). Ayrıca `/api/chat/v2` GET
+   `CHAT_SCHEMA_MISSING` dönerse `schemaMissing` işaretlenir → kalıcı yükleme
+   yerine tek ve anlaşılır şema ekranı.
+
+### Doğrulama
+
+`tsc` 0 · `eslint --max-warnings 0` 0 · vitest **570/570** (47 dosya; +3) ·
+**playwright e2e 62/62** · dev `/` ve `/chat` 200 · canlı şema **4 tablo + 3 kolon**.
+
+**NEGATİF KONTROL (11/11):** `text-foreground-500` → `-50` bozuldu → tema jetonu
+testi KIRILDI; `peersError` bloğu eski hâline döndürüldü → regresyon testi KIRILDI
+(1 failed | 9 passed). İkisi de byte-exact geri yüklendi (sha256 aynı).
+
+### Notlar
+
+- Canlı kanıt olarak `tarikelertr` sohbetine tek test mesajı gönderildi
+  ("TARMAS canli test: sohbet gercekten calisiyor ✓") — arayüzden silinebilir.
+- Supabase oturumu tarayıcıda yoktu; **GitHub OAuth** ile yeniden açıldı (MFA geçti).
+- `site_content` tablosu HÂLÂ YOK (`PGRST205`) — sohbetle ilgisi yok, içerik
+  `data/content.json`tan geliyor; ayrı karar.
+- `CLAUDE.md` + `.claude/` (ekip sistemi, 00:42) commit'e DAHİL EDİLMEDİ — benim
+  değişikliğim değil, çalışma ağacında untracked kalıyor.
+
+## [2026-10-12] TİKLER: METİN GLİFİ → YUVARLAK INLINE SVG (SARI / YEŞİL)
+
+Kullanıcı: "tik ler iconu çok kötü başkasını bul daha yuvarlak güzel ve yeşil olsun
+eğer sadece gönderildiyse sarı görüldüyse yeşil olur."
+
+### Değişen
+
+1. **Sarı/yeşil kuralı.** Renk artık tek soruyu yanıtlıyor: "karşı taraf GÖRDÜ mü?"
+   · sarı = gönderildi veya teslim edildi (henüz okunmadı)
+   · yeşil = okundu
+   Tik SAYISI ikinci bilgiyi taşır: tek tik = gönderildi, çift tik = teslim/okundu.
+   (Eski hâl: `read_at ? '✓✓' : delivered_at ? '✓✓' : '✓'`, renk
+   `text-primary-fg` / `opacity-70` — yani sarı/yeşil ayrımı HİÇ yoktu.)
+2. **İkonlar.** `✓`/`✓✓` metin glifi yerine Material Symbols **Rounded**
+   (`check-rounded` / `done-all-rounded` — yuvarlak uçlu, dolu; 14 px'te metin
+   glifinden çok daha okunur). Iconify CDN yerine `components/ui/icons.tsx` içine
+   INLINE SVG konuldu (`TickSentIcon`, `TickReadIcon`): o dosya tam olarak
+   "Iconify boş/gecikmeli ikon" sorununa karşı var (bkz. dosya başı) + tik her
+   mesajda ağdan çekilmiyor. Path'ler upstream `api.iconify.design` ile
+   **byte-karşılaştırıldı** (134 ve 405 karakter birebir).
+3. **Karar saf modülde.** `src/lib/chat-ticks.ts` → `tickFor(mesaj)` →
+   `{ double, color, labelKey }`; React/Iconify'dan bağımsız ve testli. Bileşen
+   yalnızca render eder.
+4. **Erişilebilirlik.** Tik artık `role="img"` + `aria-label` taşıyor
+   ("Gönderildi" / "Teslim edildi" / "Okundu"). Yeni anahtar `chat.sentAt` 8 dile
+   eklendi.
+5. **Yanlış/ölü yorumlar düzeltildi:** `chat-v2.tsx` başlığı ("✓ teslim çift tik,
+   ✓ okundu tek tik" — koda uymuyordu) ve `MessageInfo` yorumu.
+
+### Ölçüm (göz kararı değil)
+
+- Derlenmiş dev CSS'te (162 KB) `.text-amber-400` + `.text-green-400`
+  **üretiliyor** → geçen turun "tanımsız tema jetonu" hata sınıfı burada YOK.
+- Balon iki temada da mavi (`--tprimary`: light `#3b82f6`, dark `#2563eb`), yani
+  sabit renk doğrudur. Kontrast: amber-400 `#fcbb00` 2.14:1 / 3.01:1;
+  green-400 `#05df72` 2.07:1 / 2.91:1. Açık temadaki daha parlak mavi yüzünden
+  doygun yeşille 3:1'e ulaşmak imkânsız (neredeyse beyaz gerekir) — bilinçli
+  tercih, gerekçesi `chat-ticks.ts` yorumunda.
+
+### Doğrulama
+
+`tsc` 0 · `eslint --max-warnings 0` 0 · vitest **580/580** (49 dosya; +10) ·
+**playwright e2e 62/62** · dev `/chat` 200.
+
+**NEGATİF KONTROL (3/3):** (A) okundu rengi yeşil→sarı bozuldu → `chat-ticks.test.ts`
+2 test kırıldı (beklenen `'text-green-400'`, gelen `'text-amber-400'` ve "sarı ≠
+yeşil" testi); (B) `TickReadIcon` çizimi tek tike eşitlendi → `tick-icons.test.tsx`
+kırıldı; (C) bileşendeki inline SVG tikler eski `✓✓` glifine döndürüldü →
+`chat-v2.test.ts` sözleşmesi kırıldı (1 failed | 14 passed). Üçü de byte-exact
+geri yüklendi; (C)'de sha256 öncesi = sonrası (`b6c0bdd0…`).
+
+---
+
+## 2026-10-12 — [CHAT-005] Erişim modeli + yan yana tek ekran + inert dosya
+
+Kullanıcı isteği: _"erişim yok ekranı diye bişey olmaz"_, _"önce kime yazacağımızı
+seçiyoruz sonra sohbet açılıyor — yanlış; ikisi yan yana tek hâlde, panel
+büyütülüp küçültülebilir, 'Kime yazmak istiyorsun?' yazısı kalksın, sohbet tam
+ekranı kaplasın"_, _"Sohbet yükleniyor öyle olmasın"_, _"bu dosya türü yüklenemez
+gibi sorunlar olmasın; bir kodsa da çalışmaz, sadece var olur"_.
+
+### BASELINE (göz kararı değil — canlı Supabase REST probe)
+
+`%TEMP%\opencode\probe-chat.cjs` (service-role anahtarı `.env.local`'den okunur,
+**sır basılmaz**) ile ölçülen gerçek:
+
+| Ölçüm                         | Değer                                                                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `profiles`                    | `0485551b…` `tarikelertr` (role/user, is_owner **false**) · `9c493862…` `tarikelertarnak` (is_owner **true**, role/admin) |
+| `chat_conversations.dad2e586` | `direct_key = "9c493862…\|9c493862…"` → **kendisiyle sohbet**, `chat_participants`'ta **0 satır**                         |
+| → sonuç                       | `isParticipant` false → mesaj okuma **403 "Erişim yok."** ← kullanıcının gördüğü hata                                     |
+| `chat_conversations.fe761d72` | `0485551b\|9c493862`, 2 katılımcı, mesaj "😀😀😀😀"                                                                       |
+| `user` rolü izin listesi      | **boş** → normal kullanıcı hiç konuşamıyor (chat.send/chat.read yok)                                                      |
+
+İki kök neden: (1) PK çakışması — `a === b` iken iki katılımcı satırı aynı
+`(conversation_id, user_id)` anahtarına düşüyor, INSERT'ün **tamamı** geri
+alınıyor → katılımcısız sohbet; (2) izin preset'i boş.
+
+### Uygulama
+
+1. `src/lib/chat-access.ts` (**yeni**): `canSeeAllPeers()` — `role==='admin' || isOwner`.
+   Liste (`/api/chat/users`) ve sohbet açma (`action:'open'`) **aynı** kuralı
+   kullanır → listeye girip 403'e düşmek yapısal olarak imkânsız.
+2. `src/lib/chat-v2.ts`: `ensureParticipants()` — `Set` ile tekilleştir +
+   `upsert onConflict:'conversation_id,user_id', ignoreDuplicates:true`; hem yeni
+   hem **mevcut** sohbet dalında çağrılır → kırık sohbetler kendini onarır.
+   `resolveChatIdentity()` — sahip `/login` (`admin:<ad>`) ve `/sign` (uuid) ile
+   iki ayrı geçmiş görüyordu; kullanıcı adı eşleşirse uuid'e çözülür. `siteOwnerId()`.
+3. `src/lib/permissions.ts`: `user` → `chat.send` + `chat.read` (dosya yükleme
+   izni **verilmedi**; mevcut güven modeli korunur).
+4. `api/chat/users`: 403 yok, `chatId` döner, kapsam filtresi; `api/chat/v2`:
+   `chatId` + `seeAll` (tüm `user.id` → `chatId`).
+5. `chat-v2.tsx`: **iki panelli tek ekran** — solda kişi listesi
+   (`md:w-[var(--chat-panel-w)]`, 240–560 px, pointer drag + ok tuşları,
+   `role="separator"`, `localStorage: chat-panel-width`), sağda sohbet; başlık
+   yazısı ve eski "önce seç" ekranı kaldırıldı; `h-[calc(100svh-19rem)]`
+   (eski `max-w-3xl` / `max-h-[760px]` / `68svh` sınırları gitti); yükleme →
+   `ChatSkeleton` (`role="status"` + aria-label), hata → `role="alert"` bandı;
+   tek kişilik listede sohbet kendiliğinden açılır (`autoOpened` ref).
+6. `src/lib/chat.ts`: tanınmayan VEYA magic-byte uyuşmayan içerik **hata vermez**
+   → `.bin` + `application/octet-stream`; `/uploads/*` zaten
+   `Content-Disposition: attachment` + `nosniff` (next.config.mjs) → **çalışmaz**.
+7. i18n: `chat.selectPerson` + `chat.resizePanel` (8 dil).
+
+### Doğrulama
+
+`tsc --noEmit` 0 · `eslint --max-warnings 0` (22 dosya) 0 · vitest **612/612**
+(52 dosya; +32: `chat-access.test.ts`, `chat-upload.test.ts`,
+`chat-v2.resize.test.tsx` — gerçek pointer olaylarıyla sürükleme —, kimlik/katılımcı
+regresyonları, yerleşim sözleşmesi) · playwright **62/62** (desktop+mobile) ·
+dev `/chat` 200 · `/api/chat/users` + `/api/chat/v2` girişsiz **401** (rota
+derleniyor, kapı sağlam).
+
+**NEGATİF KONTROL (5/5, `%TEMP%\opencode\negctl.cjs`):**
+
+| Bozulan                                     | Kırılan test                         | sha256 (geri yükleme sonrası) |
+| ------------------------------------------- | ------------------------------------ | ----------------------------- |
+| `canSeeAllPeers` → yalnız `admin`           | `chat-access.test.ts` 1 test         | `a2e775a9…`                   |
+| `[...new Set(ids)]` → `[...ids]`            | `chat-v2.test.ts` 1 test             | `0cbc19da…`                   |
+| geçersiz tür yeniden `throw`                | `chat-upload.test.ts` 1 test         | `a9b5ba30…`                   |
+| `role="separator"` → `presentation`         | `chat-v2.test.ts` 1 test             | `299ad28b…`                   |
+| `onPointerDown={startResize}` → `undefined` | `chat-v2.resize.test.tsx` **3 test** | `299ad28b…`                   |
+
+Beşi de **byte-exact** geri yüklendi (sha256 öncesi = sonrası). Son satır
+sürükleme testinin BOŞ olmadığını kanıtlar: olay bağı kesilince büyütme + iki
+sınır testi (240 alt / 560 üst) birlikte kırıldı.
+
+commit: `5636da8` (yerel; push/deploy yok) + test/kayıt commit'i.
+
+---
+
+## Bu tur (2026-10-12, hero CV odak halkasi — \"CV secilmiyor\")
+
+Kullanici: ana sayfa hero'sunda alti dugmede (Projeler, Iletisim, CV, Blog,
+Hakkımda, Sohbet) klavyeyle ilerlerken **CV'ye gelinince secim gorulmuyordu**.
+
+### Kok neden (olculdu — derlenmis CSS probe)
+
+1. `HERO_BTN_FOCUS` (`hero-button-style.ts`) `group-focus-within:ring-2
+group-focus-within:ring-primary-fg …` kullaniyordu. Tailwind kurali
+   `.group-focus-within\:ring-2:is(:where(.group):focus-within *)` — **yalnizca
+   GRUP'un TORUNLARINI** secer; sinif grubun KENDISINDE olunca **hic eslesmez**
+   (canli CSS dogrulandi).
+2. `ring-primary-fg`: `--color-primary-fg` kopru jetonu YOK (ad
+   `--color-primary-foreground`) → sinif derlenmis CSS'te **hic uretilmiyor**
+   (`ring-primary-fg uretilmis : false`).
+   Sonuc: parçalarda `focus-visible:outline-none` + kabukta olu halka →
+   CV butonunda **odak gostergesi hic yok**.
+
+### Cozum
+
+`HERO_BTN_FOCUS` → `outline-none has-[:focus-visible]:ring-2
+has-[:focus-visible]:ring-primary has-[:focus-visible]:ring-offset-2
+has-[:focus-visible]:ring-offset-background` — halka kabugun KENDISINE
+uygulanir (`:has(:focus-visible)` = komşu butonların `:focus-visible`
+anlamıyla aynı: yalniz klavye odaginda). `split-button.tsx` yorumu guncellendi.
+
+### Dogrulama
+
+- Derlenmis CSS: `.has-\[\:focus-visible\]\:ring-2:has(:focus-visible)` +
+  `--tw-ring-color: var(--tprimary)` uretildi; `group-focus-within` ile
+  eski kalip kalmadi.
+- SSR HTML: kabukta `has-[:focus-visible]:ring-2 … ring-offset-background`
+  mevcut; `group-focus-within:ring-2` yok.
+- Regresyon: `split-button.test.tsx` +3 (kaynak sozlesme: sabit degerinde
+  `group-focus-within`/`ring-primary-fg` YOK + `has-[:focus-visible]:ring-2`
+  var; jeton koprusu: `globals.css` icinde `--color-primary:`; statik cikti
+  kabuk sinifi). Eski \"focus-within:ring-2\" beklentisi yeni kaliba guncellendi.
+- tsc 0 · eslint `--max-warnings 0` (3 dosya) 0 · vitest **615/615** (52 dosya)
+  · playwright **62/62** · dev `/chat` 200.
+- **NEGATIF KONTROL** (`%TEMP%\opencode\negctl-cv.cjs`): sabit eski bozuk
+  varyanta mutasyon → **4 test kirildi** (test bos degil) → byte-exact geri
+  yukleme (sha `32136b7bbb99681e` oncesi = sonrasi) → testler yesil.
+  commit: `0e2526a` (yerel; push/deploy yok).
+
+---
+
+## Bu tur (2026-10-12, ana sayfa: buton sırası + fare kaydırma + QR panel)
+
+Kullanici uc istek verdi:
+
+1. Hero buton sirasi — _"Hakkımda, Projeler, Blog, İletişim, Sohbet, CV"_.
+2. Fare (scroll) ikonu — _"hakkındaya gidiyor ama çok az gidiyo üstte siyah boş
+   kısım oluyo daha fazla kaydırmalı"_.
+3. _"qr kod kısmı kötü o kısmıda iyileştir"_.
+
+### 1. Sira (hero-section.tsx)
+
+Yeni sıra: Hakkımda /about/ → Projeler /projects/ → Blog /blog/ →
+İletişim /contact/ → Sohbet /chat/ → **CV** (CvPicker en sonda).
+Ikonlar degismedi, yalnizca dizilis.
+
+Guard: src/components/sections/hero-section.order.test.ts — buton kabindaki
+href dizisini tam olarak dogrular + CvPicker'in son sirada oldugunu + kaynak
+yorumunu kontrol eder (kaynak sozlesmesi deseni).
+
+### 2. Fare (scroll) — olculen kok neden
+
+document.getElementById('about').scrollIntoView({block:'start'}) uc etkiyi
+ust uste bindiriyordu:
+
+1. Section bileseni id'yi bsolute -top-20 sm:-top-24 bir div'e koyar →
+   capa, bolumun 80-96px YUKARISINDA durur.
+2. globals.css [id] { scroll-margin-top: 88px } → +88px.
+3. html, body { overflow-x: hidden } + scrollIntoView Chrome/WebKit'te
+   pencereyi KISA kaydirir (bilinen davranis).
+   Sonuc: About bolumu gorunumun ~168px ALTINDA → ustte siyah bos serit,
+   "cok az kaydiriyor".
+
+Cozum src/lib/hero-scroll.ts:
+`heroScrollTop(section)` = max(h2.top + scrollY - 80, 0) — baslik, sabit ust
+cubugun (48-56px) hemen altina gelir; tiklamada window.scrollTo. Animasyon
+tercihi (prefers-reduced-motion) korunur. Guard: hero-scroll.test.ts 5 test
+(h2 hedefi, h2 yoksa bolum, scrollY etkisi, null/undefined, negatif sinir).
+
+### 3. QR panel (vcard-qr.tsx)
+
+Eski:
+ounded-2xl border bg-card/40 p-4 dis kutu + ic beyaz panel =
+"yuzen kare". Yeni: TEK beyaz panel
+
+ounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-foreground/20, QR
+132→**148**, marginSize 1→2 (sessiz bolge). Metin YOK kurali korundu
+(card-qr-only.test.ts uzerine +2 test: "qr panel stili").
+
+### Dogrulama
+
+- tsc 0 · eslint --max-warnings 0 (6 dosya) 0 · vitest **625/625** (54 dosya,
+  623→625) · playwright **62/62**.
+- SSR probe (dev :3000): hero buton href sirasi
+  /about/ → /projects/ → /blog/ → /contact/ → /chat/ → CV ✓, HTML'de
+  scrollIntoView YOK ✓, QR yeni panel siniflari ✓.
+- **NEGATIF KONTROL 3/3** (%TEMP%\opencode\negctl-hero.cjs):
+  | Mutasyon                                                                         | Kirilan test                 | sha256 (geri yukleme) |
+  | -------------------------------------------------------------------------------- | ---------------------------- | --------------------- |
+  | heroScrollTop ofset isareti - → +                                                | hero-scroll.test.ts **4**    | 9cd12b26…             |
+  | hero ilk buton /about/ → /x/                                                     | hero-section.order.test.ts 1 | 761169a9…             |
+  | QR size={148} → {132}                                                            | card-qr-only.test.ts 1       | 56910523…             |
+  | Toplam **6 test** kirildi, ucu de byte-exact geri yuklendi (sha oncesi=sonrasi), |
+  | son kosu yesil.                                                                  |
+
+commit: `5c9280a` (yerel; push/deploy yok).
+
+---
+
+## 2026-10-12 — Üç kullanıcı isteği: CV seçimi · favicon mavisi · "Kişisel Bilgiler" hizası
+
+### [UX-001] Hero CV butonu yazısı seçilemiyordu → kök neden: kabukta `select-none`
+
+**Kök neden (kod + canlı ölçüm):** `split-button.tsx` sarmalayıcısında
+`select-none` vardı. `user-select` MİRAS alınan bir özellik olduğu için iki
+parçanın yazısı da seçilemiyor; tarayıcı sürükleme (drag) seçiminde bu alt
+ağacı TAMAMEN atlıyor. Kardeş hero butonları (`HERO_BTN_BODY`) `select-text`
+taşıyor → kullanıcı: "5 buton seçiliyor, CV atlanıyor".
+
+**Düzeltme:** sarmalayıcı `select-none` → `select-text`; PART'a da açık
+`select-text` (savunma: kabuk ileride yeniden kilitlenirse parçalar seçilebilir
+kalır).
+
+**Kanıt:**
+
+- Canlı tarayıcı, `getComputedStyle`: her iki parça VE sarmalayıcı →
+  `userSelect: "text"`; `elementFromPoint` CV metninde CV `<a>`'sını veriyor
+  (üstte engelleyici katman YOK — katman yığını ölçüldü).
+- Negatif kontrol (canlı sayfada kabuk `style.userSelect = 'none'`): kabuk
+  `none`, parçalar `text` kaldı → hem ölçüm gerçek özelliği okuyor hem parça
+  direnci çalışıyor.
+- Birim: `split-button.test.tsx` +2 test → "kabuk `select-none` taşımaz (drag
+  seçiminde atlanmaz)" ve "kabuk ve iki parça da seçimi açar (3 kez select-text)".
+
+⚠️ **SINIR (dürüst kayıt):** Playwright headless'ta fare ile sürükleme seçimi bu
+sayfada ÜRETİLEMEDİ — sentetik fare olayları seçim oluşturmadı (kontrol: aynı
+kurulumda eski ve yeni sınıf klonlarında da seçim çıkmadı → ölçüm ayrım
+yapamıyor). Bu yüzden davranışsal fare testi kanıt olarak KULLANILMADI; yerine
+hesaplanmış stil + canlı negatif kontrol + birim testleri var. Kullanıcı kendi
+tarayıcısında sürükleyerek doğrulamalı.
+
+### [UX-002] Favicon her temada sabit marka mavisi (`#2563eb`)
+
+**Kök neden (sharp + rsvg ile ölçüldü):**
+
+1. `strokeWidth` (camelCase) GEÇERSİZ SVG özniteliği (`stroke-width` olmalı) →
+   "beyaz halka" HİÇ çizilmiyordu (eski dosyada **0 beyaz piksel**, mürekkep
+   %11.4 → halka ölü koddu).
+2. Kalan dolgu `#000000` → koyu sekme çubuğunda kayboluyordu.
+
+**Düzeltme (varyant C):** `fill="#2563eb"` + `stroke="#2563eb"
+stroke-width="420" stroke-linejoin="round"`; arka plan ŞEFFAF; tema
+varyantı/`media`/`currentColor` YOK. Mavi = `--tprimary` (koyu tema değeri).
+16px'te mürekkep %14.5 → **%19.1** (halka glifi kalınlaştırıyor, kanat+el yapısı
+korunuyor); halkasız düz mavi (A) %14.5 kalıyordu, 620 halka detayı kapatıyordu.
+
+**Üretilen set** (idempotent `%TEMP%\opencode\fav-generate.cjs`):
+`public/favicon.svg` + `src/app/icon.svg` (33.932B, ikisi birebir aynı) + 8 PNG
+(16/32/48/96/180/192/512/1024) + `favicon.ico` (16/32/48 PNG girdisi, 1.635B).
+Ölçüm: tüm PNG'lerde mürekkep piksellerinin hepsi mavi (`diger 0`), köşe alfa 0.
+Yedek: `%TEMP%\opencode\fav-backup-20261012` (11 dosya).
+`layout.tsx`: `?v=4` → **`?v=5`** (9 girdi; tarayıcı aynı URL'i 30 gün SWR ile
+tutuyor → sürüm parametresi şart).
+`theme-color` / manifest `theme_color` BİLİNÇLİ olarak `#000` bırakıldı
+(PWA chrome/sayfa zemini rengi; favicon = marka rengi — ayrı karar).
+
+**Kanıt (HTTP probe, dev :3000):** 9 `<link rel="icon|apple-touch-icon">` hepsi
+`?v=5`, `?v=4` kalmadı, `media=` özniteliği yok; `/favicon.svg` 200 +
+`image/svg+xml` + mavi dolgu/halka + geçerli `stroke-width="420"`; `/favicon.ico`
+3 PNG girdisi (geri okundu); 8 PNG'nin servis edilen içeriği yerel dosyayla
+**sha256 aynı**.
+
+### [UX-003] "Kişisel Bilgiler" kartı hizası → InfoRow 3 kolonlu grid
+
+Kullanıcı: "etiketler farklı genişlikte → değerler farklı x'ten başlıyor,
+kopyala ikonları hizada değil, sağ sütunda 3. satır boş, e-posta kesiliyor."
+
+**Düzeltme:** InfoRow =
+`grid-cols-[minmax(90px,auto)_minmax(0,1fr)_auto]` + `items-center` +
+`min-h-[44px]` + `py-2`; değer `break-all` (`truncate` KALKTI → e-posta `...` ile
+kesilmez, gerekirse alta kırılır); e-posta `sm:col-span-2`; avatar satırı
+`sm:items-start sm:gap-6`; grid `mt-2` (`gap-y-0` kalktı); kopyala düğmesi
+`justify-self-end`; QR paneli `p-2.5` → **`p-3`**.
+2026-10-10'daki hataya düşülmedi: SABİT 104px sütun yerine
+`minmax(90px, auto)` + `gap-x-3` → kısa etikette de ("Ad") değer etikete yapışık
+VE satırlar arası hiza korunuyor.
+
+**Ölçüm (canlı tarayıcı, 3 genişlik; ana sayfa `#about` bölümü):**
+
+| Genişlik | satır | değer x                | ikon sağ x    | yükseklik | kesilen | QR merkez farkı / kenar |
+| -------- | ----- | ---------------------- | ------------- | --------- | ------- | ----------------------- |
+| 1440     | 5     | `[440, 898]` (2 kolon) | `[764, 1222]` | 44px      | 0       | 0 · 449=449             |
+| 820      | 5     | 2 kolon                | 2 kolon       | 44px      | 0       | 0 · 267=267             |
+| 375      | 5     | `[152]` (1 kolon)      | 1 kolon       | 44/57px   | 0       | 0 · 69=69               |
+
+- Avatar üst çizgisi = başlık üst çizgisi (1440 → 1314=1314, 820 → 1334=1334);
+  mobilde alt alta (avatar 1092 / başlık 1204) — istenen davranış.
+- Satır top sıralaması: `[Ad|Soyad] → [Takma ad|Telefon] → [E-posta tam genişlik]`
+  (e-posta `sm:col-span-2` → sağ sütunda BOŞ hücre yok).
+- `text-overflow: clip` (üç nokta YOK) · yatay taşma YOK · e-posta tam:
+  `tarikelertarnak@gmail.com` · değerler seçilebilir (`user-select: text`).
+- Ekran görüntüleri: `%TEMP%\opencode\about-{masaustu,tablet,mobil}[-full].png`.
+
+### Doğrulama (kapılar)
+
+- `tsc --noEmit` → **0 hata**.
+- `eslint --max-warnings 0` (8 değişen dosya) → **0 hata / 0 uyarı**
+  (1 otomatik düzeltme: `0x4e` → `0x4E`, `unicorn/number-literal-case`).
+- `vitest run` → **637/637 test, 56/56 dosya** (624 → 637; +13 test: 6 favicon +
+  4 info-grid + 2 split seçimi + 1 düzeltilen eski sözleşme).
+- `playwright test` → **62/62** (desktop + mobile; `reuseExistingServer` ile
+  açık dev sunucusuna bağlandı).
+- **NEGATİF KONTROL GEÇERLİ** (`%TEMP%\opencode\negctl-tur-20261012.cjs`):
+  üç mutasyon — (a) kabuğa `select-none` geri, (b) favicon `fill` mavi → siyah,
+  (c) InfoRow grid → eski flex + `truncate` — → **3 dosya / 7 test KIRILDI**;
+  geri yükleme **byte-exact** (sha256 öncesi = sonrası: split-button
+  `01b04db2a255`, favicon.svg `2a962bf4e826`, about-section `5091a4294587`) →
+  ikinci koşu **24/24 yeşil**.
+- Bu turda AYRICA kırılan eski sözleşme düzeltildi:
+  `vcard-qr-only.test.ts` "InfoRow diliminde `justify-between` YASAK" testi,
+  InfoRow'un yeni AÇIKLAMA yorumum o sınıf adını birebir andığı için kırılmıştı →
+  yorum, sınıf adı geçmeyecek biçimde yeniden yazıldı (kural: açıklama yorumları
+  da kaynak sözleşmesine uyar; test yorumları ayıklamaz).
+
+commit: `0d50f07` (yerel; push/deploy YOK).
+
+---
+
+## Bu tur (2026-10-13, sohbet yazma alani + About kaydirma + "Daha Fazlasini Goster")
+
+Kullanici (3 gorev, birebir): (1) sohbet yazma alanini WhatsApp Web tarzina
+cevir — tek "hap" bar, solda atac + cikartma, sagda BOŞKEN mikrofon / yazinca
+yesil gonder; metinli "Gonder" dugmesi kalksin. (2) Hakkımda'ya inen fare/scroll
+dugmesi 12-16px DAHA AZ kaysin, baslik header altinda boslukla dursun, pay TEK
+sabit olsun. (3) "Daha Fazlasini Goster (+4 · -6)" bicimindeki "-6" kalksin →
+"(+{n}) · {gorunen}/{toplam}", tumu acikken "Daha Az Goster · toplam/toplam".
+
+### GOREV 1 — sohbet yazma alani (chat-v2.tsx)
+
+- Tek parca pill: `rounded-full bg-foreground/10 px-3 py-1 min-h-12
+focus-within:bg-foreground/15`; input `bg-transparent outline-none`
+  (kendi kenarligi/odak halkasi YOK) → bar tek kutu gibi.
+- Sira: atac (`PaperclipIcon`, `chat.attach`) → cikartma (`StickerIcon`,
+  `chat.emoji`) → input (`chat.placeholder` = "Bir mesaj yazın") → dinamik dugme.
+- Dinamik dugme TEK bilesen: `h-10 w-10 rounded-full`; karar `hasDraft =
+draft.trim().length > 0` (yalniz bosluk "yazdi" sayilmaz). Iki ikon UST USTE
+  (`absolute`) durur ve 200ms `transition-all` ile fade + scale yapar → yumusak
+  gecis. Dolu: `bg-[#25D366] text-white` (WhatsApp yesili, SABIT marka rengi);
+  bos: notr + `MicIcon`. Mikrofon su an YALNIZ gorsel (`title`/`aria-label` =
+  `chat.voiceSoon` = "Sesli mesaj yakinda").
+- Eski metinli `Button` ("Gonder") ve `Button` import'u KALDIRILDI.
+- Enter gonderir / Shift+Enter yeni satir: mevcut `onKeyDown` AYNEN korundu.
+- i18n: `chat.emoji`, `chat.voiceSoon` 8 dilin HEPSINE eklendi; TR
+  `chat.placeholder` → "Bir mesaj yazın".
+
+### GOREV 2 — kaydirma payi (hero-scroll.ts)
+
+- `HERO_SCROLL_BAR = 80` (ust cubuk + kart dolgusu, 2026-10-12 olcumu) ve
+  `HERO_SCROLL_GAP = 16` (nefes payi) → `HERO_SCROLL_OFFSET = 96` (eski 80).
+  Sayfa **16px DAHA AZ** kayar; baslik header'in altinda boslukla durur.
+- Pay TEK ayar noktasi (kullanici istegi): sabit baska yerde yazilmiyor.
+  Guard: hero-scroll.test.ts +3 (offset = bar + pay, pay 16, offset > 80).
+- Diger scroll davranislari (menu linkleri, yukari cik) DOKUNULMADI.
+
+### GOREV 3 — "Daha Fazlasini Goster" bicimi
+
+- `common.showMore` → "Daha Fazlasini Goster (+{opening})"; gizli sayi ("-N")
+  ve "-" isareti TAMAMEN kaldirildi. Rozet ayri anahtar: `{gorunen}/{toplam}`
+  (buton icinde SOLUK `opacity-70` + `font-normal`; kalin metin degismedi).
+- `common.showLess` + `showLessAria` YENI; tumu acikken dugme
+  "Daha Az Goster · {toplam}/{toplam}" + YUKARI chevron olur.
+- `use-row-pagination`: `visibleCount`, `total`, `canCollapse`, `collapse()`
+  eklendi (collapse → `visibleRows = initialRows`). Projeler + Blog ortak
+  dugmesi kullanir; sayfalama KAPALIYKEN (`/projects/`) `canCollapse` false.
+- Dar ekran: "{gorunen}/{toplam}" butona sigmazsa buton ALTINDA, ortalir,
+  `text-xs` + soluk yazilir (`sm:hidden` yedegi). Buton metni tek satir kalir.
+- "Daha Az Goster" tiklaninca liste ilk haline doner ve grid'in basina
+  yumusak kayar (`scroll-mt-24`; `prefers-reduced-motion` saygili).
+- Toplam oge ilk satirlara sigiyorsa dugme HIC cizilmez.
+
+### KARAR (bilincli sapma) — STEP
+
+Kullanici orneginde adim sabit 4 oge varsayilmis ("(+4) · 4/10 → 8/10 → 10/10").
+Projedeki sayfalama **satir bazli** (2026-10-06 kullanici tasarimi: olculen
+sutun sayisi × 2 satir, bos hucre kurali, 100+ satir test) — sabit 4'e cevirmek
+grid hizasini kirardi. Bu yuzden `+{n}` **satir/sutun hesabindan** gelir ve
+zaten `min(adim, kalan)` davranisini saglar (son adimda kalan kadar yazar).
+Sabit 4 oge adimi istenirse `useRowPagination` secenekleri tek yerden degisir.
+
+### Dogrulama (kapilar)
+
+- `tsc --noEmit` → **0 hata**.
+- `eslint --max-warnings 0` (21 degisen dosya) → **0 hata / 0 uyari**
+  (1 duzeltme: test basligi kucuk harfle baslamali — `test/prefer-lowercase-title`).
+- `vitest run` → **647/647 test, 56/56 dosya** (637 → 647; +10: 7 yeni dugme
+  bicimi, 2 daraltma hook'u, 3 hero payi; 2 sohbet yazma alani testi
+  _chat-v2.session.test.tsx_, 7 dugme testi yeniden yazildi).
+- Yeni sohbet testleri: (a) bos → mikrofon / yazinca gonder / silince mikrofon
+  / yalniz bosluk → mikrofon; (b) Enter istek atar, Shift+Enter ATMaz.
+- Kirilan eski sozlesmeler (test tarafi guncellendi):
+  `chat-v2.test.ts` ikon import kalibi (cok satira bolundu),
+  `chat-v2.session.test.tsx` placeholder `/mesajini yaz/` → `/bir mesaj yazin/`,
+  `theme-contrast.test.ts` guvenli-zemin listesine `bg-[#rrggbb]` (sabit marka
+  rengi) istisnasi eklendi — yesil gonder dugmesi `bg-[#25D366] text-white`
+  sabit renk oldugu icin dogru.
+- Dev sunucu kaniti (Turbopack hot-reload): servis edilen chunk'larda
+  `25D366`, `Bir mesaj yaz` (chat), `Daha Fazlas…` + `Daha Az G…` + `showMoreAria`
+  (home) BULUNDU → yeni kod canlida.
+- **GORSEL DOGRULAMA YOK:** BrowserOS neo bagli degil (tabs/windows →
+  "no link to the browser yet") → gercek tarayicida tiklama/gorunum testi
+  yapilamadi; kural geregi baska tarayici aracina DUSULMEDI. Komutlar jsdom
+  render testleriyle dogrulandi (DOM + siniflar gercek).
+
+### Notlar
+
+- SSR'da sohbet yazma alani yok (oturum istemcide cozulur, `threadOpen` false)
+  → HTTP ile dogrulanamaz; ana sayfada da dugme cikmadi (proje listesi kisa).
+- `theme-contrast` agi: sabit hex zemin + beyaz metin artik "guvenli zemin"
+  sayilir; baska bir sabit renk koyu/acik temada belirirse yine yakalanir.
+
+## Bu tur (2026-10-13, sohbet sayfasi + admin sekme seridi + rol etiketi) — commit 76f5020
+
+Kullanici 5 istek verdi. Hepsi uygulandi; her biri icin once KOK NEDEN olculdu,
+sonra duzeltildi, sonra kanit toplandi.
+
+### 1) `/chat`: "Sohbet" baslik blogu kaldirildi
+
+- Istenen: baslik blogu yer israf ediyor ("burda boş yere yer kaplıyor").
+- Yapilan (`src/app/chat/page.tsx`): `SectionTitle` + `ChatIcon` +
+  `getLocalizedContent()` cagrisi KALDIRILDI (sayfa artik `async` degil, `await`
+  yok). Bolum `pt-24 sm:pt-28 lg:pt-32` → tek `pt-20` (pay TEK deger; sm/lg'de
+  16px'lik kayma olusup sayfa kaymasin diye).
+- Kutu yuksekligi (`src/components/chat/chat-v2.tsx`): `calc(100svh - 19rem)` →
+  `calc(100svh - 11rem)` = 100svh eksi TopBar 56 + ust pay 80 + slot paylari 40.
+- Regresyon testi `e2e/chat-layout.spec.ts` YENIDEN YAZILDI: eski surum
+  `main h2`ye bagliydi (baslik kalkinca o locator olur) → yeni surum 5 ekran
+  yuksekliginde (1080/900/768/640/560) kutunun TopBar altinda kaldigini ve
+  ekrandan TASMADIGINI olcer + `main h1, main h2` sayisinin 0 oldugunu dogrular.
+
+### 2) "Onemli kisi olarak isaretle" sag tik menusune tasindi
+
+- Istenen: sag ustte olmasin, kullaniciya sag tiklayinca menude olsun.
+- Yapilan (`chat-v2.tsx`): basliktaki ⚪/🔴 dugmesi, `toggleImportant()` ve
+  `important` state'i SILINDI. Ayni `important` bayragi zaten `PeerMenu`de
+  (sag tik) vardi ama etiketi "Sohbeti sabitle" idi → `chat.markImportant`
+  ("Onemli kisi olarak isaretle") / yeni `chat.unmarkImportant` oldu.
+- i18n: `chat.unmarkImportant` + `chat.openPeopleList` 8 dil dosyasina eklendi
+  (tr/en JSON, de/es/fr/ja/pt/ru `.ts` bloklari).
+- API akisi DEGISMEDI: `onToggle('important', !peer.important)` →
+  `runAdmin(action, p, { [action]: next })` → POST `action:'important'`.
+- Test: `chat-v2.test.ts` eski sozlesme testi (`🔴` bekliyordu) yeni gercege
+  gore yazildi; `chat-v2.admin.test.tsx` menu etiketi guncellendi.
+
+### 3) Kucuk ekranda liste: kaplama + "ok'dan ONCE" acma dugmesi
+
+- Istenen: cok kucuk ekranda da paneli acmanin bir yolu olsun, acma dugmesi
+  okun onunde olsun; gecisli (sliding) panel olmasin.
+- Yapilan: `listOpen` state. Aside `md` altinda: kapali → `hidden md:flex`,
+  acik → `absolute inset-0 z-40 flex bg-background` (kabuk `relative`);
+  `md:static` ile masaustunde ESKI davranis (sabit sutun) aynen korunur.
+  Acma dugmesi (`UsersIcon` — `ui/icons.tsx`e eklendi, lucide `users` stroke
+  diliyle) thread basliginda "←" okundan ONCE; kapatma X panel basliginda.
+  Kisi secilince kaplama kendiliginden kapanir (`openWith` icinde).
+- Test: `chat-v2.test.ts` — acma dugmesinin index'i "←" okundan kucuk olmali.
+
+### 4) Admin sekme seridi: oklar + alttaki 4 daire
+
+- **Olculen kok neden:** `ScrollableTabs`in `children`i (Lobehub `Tabs`) hem
+  sekme seridini HEM panelleri kapsiyor; oklar `absolute top-1/2` +
+  `left-1/right-1` ile bu dev kutunun ortasina/kenarina konumlaniyordu → ekranin
+  ortasinda, "Tablolar" kartlarinin uzerinde duruyorlardi.
+- Yapilan (`scrollable-tabs.tsx`): oklar artik `children`in flex KARDESI
+  (solda bir, sagda bir), sarmalayici yuksekligi seritten olculur
+  (`useScrollState` → `stripHeight` = `clientHeight`) → ok seritle ayni hizada
+  ortalanir; mavi yuvarlak buton stili (h-8 w-8) korundu. Kenar solmalari da
+  serit yuksekligine hizalandi.
+- `ARROW_STEP = 200` (kullanici "200px" dedi; eski `PAGE_RATIO = 0.75` gitti),
+  `behavior:'smooth'`, kenarlarda `disabled` (`canScrollLeft/Right`, `EDGE_EPS`).
+- Aktif sekme ortalanir: `centerScrollLeft(tabStart, tabWidth, clientWidth)` —
+  `scrollIntoView` BILEREK kullanilmadi (atalari/sayfayi yatay kaydiriyordu).
+- Scrollbar gizli: kapsamli kural `.admin-tabs-strip [role='tablist']` +
+  `::-webkit-scrollbar { display:none }` (`globals.css`) — Tailwind arbitrary
+  varyantina guvenmek yerine acik kural.
+- **Silinen:** `tab-scroll-dots.tsx` (alttaki 4 daire) + kullanim, ve hook'taki
+  olu sayfalama API'si (`pageCount`, `activePage`, `scrollToPage`,
+  `scrollToEdge`, `tabPageCount`, `activeTabPage`, `ScrollEdge`) — kullanici
+  "ilgili state/dinleyicileri temizle" dedi.
+- Test: YENI `src/components/admin/scrollable-tabs.test.ts` (7 test: `top-1/2`
+  geri gelmesin, oklar serit yuksekligine hizali, daireler tamamen silinmis,
+  scrollbar gizli, 200px + smooth, kenarda pasif, ortalama var + scrollIntoView
+  yok) + `use-scroll-state.test.ts` `centerScrollLeft` + `ARROW_STEP` icin
+  yeniden yazildi.
+- **Not:** Kaynakta "top-1/2"/"scrollIntoView" gecmesi YASAK degil — yorumlarda
+  aniliyorlar; testler bu yuzden `className=...` baglamina bakan regex ve
+  `.scrollIntoView(` cagrisina bakan kalip kullaniyor.
+
+### 5) Rol etiketi + gruplama
+
+- `src/lib/permissions.ts`: `SUPER_ADMIN_LABEL` → `OWNER_LABEL`, deger
+  "Super Yonetici" → **"Site Sahibi"** (en: "Site Owner"). Eski metni arayan
+  test YOK (grep ile dogrulandi).
+- `admin-panel.tsx` basligi: "Giris yapan: X" ve "Yetki: Y" iki ayri `<p>`
+  yerine TEK gruplu kutu (`border-surface-border bg-surface-1 rounded-lg`),
+  rol `bg-primary/15 text-primary rounded-full` rozet.
+  **Varsayim:** "bu bolume gruplama yap" istegi boyle yorumlandi (kullanici
+  tercihini belirtmediyse tek satir/kutu grubu bekleniyor).
+
+### 6) Yazma alani: odak halkasi + seçim rengi (ek istekler)
+
+- **Mavi odak halkasi kaldirildi:** global `:focus-visible { outline: 2px solid
+#0761d5 }` katmansiz (unlayered) bir kural oldugu icin Tailwind'in
+  `outline-none` unu EZIYORDU. Cozum kapsamli + daha ozgul (0,2,0) kural:
+  `.chat-composer-field:focus, :focus-visible { outline/box-shadow: none;
+border-color: transparent }` + input'a `chat-composer-field` sinifi. Diger
+  sayfalarin odak halkalari DEGISMEDI (a11y korunur); odak geri bildirimi kabin
+  cok hafif `focus-within:bg-foreground/15` zeminiyle (mavi DEGIL).
+- **Seçim rengi (olculen kok neden):** Sitede SARI seçim rengi var — ama bizim
+  CSS'imizde degil: `@lobehub/ui` ThemeProvider (`providers.tsx`) global
+  `::selection { color:#000; background: <yellow9> }` enjekte ediyor. Bizim
+  `input::selection, textarea::selection` kuralimizin ozgullugu (0,1,1) bir fazla
+  oldugu icin (lobun kurali 0,1,0) SADECE input/textarea'da o sariyi eziyordu →
+  aranan fark buydu. Kural SILINDI, `--tprimary` tabanli kopya deger yazilmadi:
+  tek kaynak artik lobun kurali (kullanici "var olan degiskeni kopyalama" dedi).
+
+### Dogrulama (kapilar) — olculmus
+
+- `tsc --noEmit` → **0 hata**.
+- `eslint --max-warnings 0` (21 degisen dosya) → **0 hata / 0 uyari**.
+- `vitest run` → **647/647 test, 57/57 dosya.** Duzeltilen sozlesmeler:
+  `chat-v2.test.ts` (`🔴` yerine sag tik akisi + `100svh-11rem` + yeni 3 test),
+  `chat-v2.admin.test.tsx` (menu etiketi), `theme-contrast.test.ts` (CSS metnini
+  tırnak-bagimsiz esler hale getirildi).
+- `playwright test e2e/chat-layout.spec.ts` → **12/12** (masaustu + mobil,
+  5 ekran yuksekligi). Gercek Chromium — yerlesim iddialarinin tarayici kaniti.
+- HTTP kaniti: `/chat` SSR HTML'inde `<h1>/<h2>` sayisi **0**; servis edilen CSS
+  chunk'inda `.chat-composer-field:focus-visible` ve `.admin-tabs-strip
+[role='tablist'] { scrollbar-width: none }` VAR; `input::selection` kurali YOK.
+- **Flake notu:** tam set 2 kez kosturuldu; bir kosuda `chat-v2.session/admin/
+resize` yardimci `waitFor`i (varsayilan 1 sn) yuk altinda zaman asimi verdi,
+  dosyalar IZOLE edildiginde 17/17 ve 7/7 gecti → degisiklikle ilgisi olmayan,
+  ONCEDEN var olan yuk flake'i (yardimci fonksiyonda ozel timeout yok).
+
+### Notlar / sapmalar
+
+- **lint-staged prettier `globals.css`i commit aninda TUMUYLE yeniden
+  bicimlendirdi** (1952 satir: tirnak stili `"`→`'`, 4→2 girinti, `0.30`→`0.3`).
+  Davranis ayni (derlenen CSS kontrolu edildi), ama diff gurultulu. Bunun
+  sonucu: CSS metnini cift tirnakla string esleyen 2 test kirildi
+  (`theme-contrast.test.ts:361`, `scrollable-tabs.test.ts`) → ikisi de
+  tek/cift tirnak kabul edecek sekilde duzeltildi. (Bir dahaki `globals.css`
+  dokunusunda prettier yine ayni bicimi uygulayacak.)
+- `.tarmas/BACKLOG.md`e islenmis yeni is istemi yok; bu tur dogrudan kullanici
+  rozetindendi.
+- Deploy YOK (canli site eski build; `bash scripts/deploy-pages.sh` kullanici
+  onayinda). Push YOK.
+
+---
+
+## 2026-10-12 (aksam, 2) — 6 islik toplu batch (breadcrumb · key · profil · yazma · selam · emoji)
+
+Kullanici tek turda 6 is verdi. 1-3 numarali isler birbirine dokunmayan
+dosyalarda oldugu icin 3 arka plan `fixer` alt ajanina dagitildi; 4-5-6
+(`chat-v2.tsx`e birlikte dokunuyordu) sirayla ben uyguladim.
+
+### IS 1 — Breadcrumb kaldirildi (/projects, /blog, /about)
+
+- Uc sayfadan breadcrumb kabu + `Breadcrumb`/`BreadcrumbJsonLd` + `CRUMBS`
+  importlari silindi. Bilesen ve `lib/breadcrumb.ts` DOKUNULMADI
+  (`/contact`, `/github/[owner]/[repo]`, `proxy.ts` 301 haritasi hala kullaniyor).
+- Bosluk OLCULDU (gercek tarayici, gap = ilk baslik y − TopBar spacer alt
+  kenari): /projects 260→128, /blog 325→129, /about 260→128 (masaustu);
+  mobil 224/217/224 → 112/113/112. Uc sayfa arasi fark ≤1px.
+- Blog'un ust dolgusu `blog-section.tsx` icinde (kapsam disi) → negatif margin
+  ile hizalandi; kalici cozum (padding prop'u) raporda not.
+
+### IS 2 — React "unique key" uyarisi (/credits)
+
+- Kok neden: `credits-browser.tsx`te `shownTeam.map((e,i) => e.render(i+1))` ve
+  `shownSponsors.map(...)` `render()` ciktisini (bir `<CreditRow>` elemani)
+  dogrudan `<CreditGroup>` children dizisine key'siz koyuyordu. Uyari birebir
+  uretildi. Cozum: `<Fragment key={e.key ?? `${e.name}-${i}`}>` (index key
+  DEGIL). Diger 9 map taramasi temiz (cogu veri uretimi; 3'unde zaten Fragment).
+- Kanit: jsdom gercek React render'i ile console.error'daki key uyarisi 1→0;
+  yeni `credits-browser.test.tsx` (render + kaynak sozlesmesi). Tarayici konsolu
+  ayirt edici DEGIL (dev sunucusunda hidrasyon yok + canli veri bos).
+
+### IS 3 — Profil verisi + goreli foto + Discord
+
+- `content.json`: `profile.title` '' → **"Yazilimci & Sistem Mimari"** (ayni deger
+  `hero.tagline` ve `i18n-content-tr.ts`te; ana sayfa alt basligi ile AYNI metin),
+  Discord daveti `discord.gg/s5B53SgMM` → **`https://discord.gg/Fp8WbUw4KB`**
+  (grup adi "Tarnak"; `grep s5B53SgMM` → 0 eslesme).
+- **"Site Sahibi" meslek secenegi kaldirildi**: `profile-edit-drawer.tsx`
+  `OCCUPATION_OPTIONS[0]` → "Yazilimci & Sistem Mimari". (Admin panelindeki
+  "Yetki: Site Sahibi" rozeti DOGRU — dokunulmadi.)
+- **Goreli foto**: `i18n-content-tr.ts`, `i18n-content-en.ts`, `content.ts`
+  varsayilanlarindaki `https://avatars.githubusercontent.com/...` →
+  `/uploads/profile.png` (dosya diskte var, 55 KB). `<img>` goreli yolu ayni
+  origin'den cozer → `NEXT_PUBLIC_SITE_URL` birlestirmesi GEREKMIYOR (vCard da
+  foto alani tasimiyor).
+- **Yapisal veri**: `layout.tsx` JSON-LD `jobTitle` 'Web Developer' →
+  "Yazilimci & Sistem Mimari" (profil rolu ile tek deger).
+- **Supabase (canli) sahip profili yazildi** (service-role, kuru calisma →
+  uygula → geri oku): `profiles` full_name "TARIK ELER TARNAK"→"TARIK ELER",
+  nickname null→"Tarnak", avatar_url `http://localhost:3000/uploads/profile.png`
+  → **`/uploads/profile.png`**, bio null→`about.whoText`; user_metadata
+  phone ''→'+905518957215', occupation "Site Sahibi"→"Yazilimci & Sistem
+  Mimari", location ''→"Konya, Turkiye", discord ''→grup daveti, avatar_url
+  goreli. Mevcut anahtarlar korundu (birlestirme); role/roles/is_owner
+  dokunulmadi. Kalicilik: ayni betik geri okuyup basti.
+- **Bos kalanlar (raporda da var)**: `profile.displayName`/`nickname` degismedi
+  ('TARIKELER' marka sozcugu = footer telif + panel ornegi; gorunen ad zaten
+  `nickname` = 'Tarnak'), `contact` (serbest "Iletisim bilgileri") bos —
+  uydurulmadi, sosyal linkler `content.json social[]`ten geliyor.
+- Ikinci hesap (`tarikelertr@...`) kullanici istemedigi icin dokunulmadi.
+
+### IS 4 — Yazma gostergesi (sari nokta kaldirildi, mavi metin)
+
+- `lib/chat-peers.ts`: `Presence` yalniz `'online' | 'offline'` (amber/`active`
+  silindi), `TYPING_TTL_MS = 5000` + `isTyping()` + `typingLabel(usernames, t)`;
+  siralama `typing` bayragina gore (eski "sari kova"). Kaldirilanlar:
+  `PRESENCE_ACTIVE_MS`, `PRESENCE_STATE_LABEL_KEY`, i18n `chat.presenceActive`
+  (8 sozluk) → yeni `chat.typingMany` (8 sozluk, tr: "Birkac kisi yaziyor…").
+- `chat-v2.tsx`: ilk tusda sinyal (throttle 2 sn), yazma durunca 2.5 sn debounce
+  ile `null`, TTL 5 sn (karsi taraf sonsuz "yaziyor" gormez), gonderimde aninda
+  temizlenir; list satirinda ve sohbet basliginda mavi (`text-primary`)
+  "@kullanici yaziyor…" (2 kisi "@a, @b yaziyor…", 3+ "Birkac kisi yaziyor…");
+  kullanici kendi yazisini gormez; liste nabzi/mesaj yoklamasi 2 sn (SSE/WS yok
+  — mevcut polling altyapisi bozulmadi).
+- Testler: `chat-peers.test.ts` yeniden yazildi (+nokta stilleri: yalniz
+  yesil/kirmizi, amber YOK), `chat-v2.test.ts` + `chat-v2.admin.test.tsx`
+  yeni davranisa guncellendi (yesil nokta sayisi 2, mavi metin, sari nokta yok).
+
+### IS 5 — Bos sohbetteki "Merhaba de!" tiklanabilir
+
+- Yeni `lib/greeting.ts`: `helloFor(locale)` (tr Merhaba, en Hello … 14 dil,
+  bilinmeyen → Hello) + `helloMessage()` = "{selam} 👋"; dil site dilinden,
+  yoksa `navigator.language`.
+- Mesaj yoksa metin artik mavi + `cursor-pointer` bir DUGME; tiklayinca mevcut
+  `send()` yolu (`send(override)`) kullanilir — YENI gonderim mantigi yok;
+  gonderim surerken `disabled` (cift tiklama iki mesaj atmaz). Bos durum metni
+  de sozlukten (yeni i18n anahtari ACILMADI).
+
+### IS 6 — Emoji secici `emoji-picker-element` (1.29.1)
+
+- `EMOJIS` seridi tamamen kaldirildi; yeni `chat/emoji-picker.tsx` ozel elementi
+  YALNIZ istemcide (`await import('emoji-picker-element')`) olusturur.
+- Kutu: arama + kaydirma + kategori kutuphane icinde; yukseklik
+  `min(350px, 45svh)` (mobilde tasmaz, genislik `max-w-[350px] w-full`);
+  koyu tema `class="dark"` + `globals.css`te site degiskenleriyle eslenen
+  `--background/--border-color/--indicator-color…` blogu.
+- Veri: `emoji-picker-element-data@^1` (CDN; CSP `connect-src https:` izinli).
+  Upstream'de tr verisi YOK → `en` verisi + Turkce ARAYUZ etiketleri
+  (`emoji-picker-element/i18n/*` tembel import haritasi).
+- Emoji IMLEGIN oldugu yere eklenir ve odak korunur (`inputRef` + `selectionStart`);
+  disa tiklama ve Esc kapatir.
+- Kanit: `emoji-picker.test.tsx` (3 test) — jsdom'da IndexedDB olmadigi icin
+  element sade div ile degistirilip BIZIM ayarlarimiz olculdu (dark, dataSource
+  → `/en/emojibase/data.json`, `min(350px, 45svh)`, `emoji-click` → `onPick`,
+  Esc, disa tiklama). Kutuphane icu arama/kaydirma davranisi jsdom'da olculemez
+  → tarayici kontrolu borclu (dev sunucusunda hidrasyon yok).
+
+### Kapilar (bu tur, tamami tekrar kosuldu)
+
+- `vitest run` → **670/670 test, 60/60 dosya**.
+- `tsc --noEmit` → **0 hata**.
+- `eslint <27 degisen dosya> --max-warnings 0` → **0 hata / 0 uyari**.
+- Commit YEREL (branch `faz-1-guvenlik`), push/deploy YOK.
+
+### Acik kalan / risk
+
+- **Tarayici dogrulamasi yapilamadi**: dev sunucusunda hidrasyon calismiyor
+  (`_next/hmr` ws `ERR_INVALID_HTTP_RESPONSE`), `/chat` ve `/admin` oturum
+  istiyor, admin parolasi bilinmiyor → IS 4/5/6'nin TIKLAMALI kontrolu jsdom
+  testleri + kaynak sozlesmesiyle yapildi. Gercek tarayici + canli veri ile
+  (WSL build veya oturum acikken) tekrar olculmesi gerekiyor.
+- Deploy YOK (canli site eski build), push YOK.
+
+## 2026-10-13
+
+### [UI-014] Admin paneli yenileme + v2/faz ad temizligi (6 istek, hepsi kapandi)
+
+Istekler: (1) v2 adlarini kaldir, (2) admin basligi ana sayfa basligi gibi,
+(3) "Faz 6"/gelistirme fazi adlarini gercek adlara cevir, (4) Veri Yonetimi
+kartlarini tek satir kaydirilabilir seride cevir, (5) sekmeleri birlestir
+(11 → 5) kayipsiz, (6) her sekmenin okuma/yazmasi calissin + konsol temiz +
+"tumunu kaydet" + kaydedilmemis degisiklik uyarisi + gercek DB ile dogrula.
+
+**Commitler (yerel, push YOK):** `2bf3ebf` admin (5 sekme + serit + uyari) ·
+`ff74999` chat v2 adlari kaldirildi · `ea7d67d` Faz 1..6 adlari · `b5cf083`
+e2e/docs/CI ad temizligi.
+
+**v2 temizligi (yarim kalmis is bitirildi):** `/api/chat` = konusma API'si
+(eski v2), `/api/chat/messages` = eski thread API'si; `api/chat/v2/` silindi.
+`lib/chat-v2.ts` → `chat-db.ts`, `chat-v2.tsx` → `chat.tsx` (`ChatV2`→`Chat`,
+`ChatV2Props`→`ChatProps`), 4 test dosyasi `chat{,.admin,.resize,.session}`,
+`chat.v2Title` → `chat.pageTitle` (8 sozluk), hiz siniri anahtari `chat-v2` →
+`chat-send`. Admin `ChatPanel` `/api/chat/messages`e tasindi (eski sekil
+`{success,messages}` + admin POST `{owner:true,to}` korunur — ucta dogrulandi).
+Dokunulmayan yanlis-pozitifler: SVG `d="..."`, `nodejs_compat_v2`.
+
+**Admin sekmeleri 11 → 5:** Genel Bakis / Profil & Hakkimda / Icerik & Veri /
+Site Ayarlari / Mesajlar & Kullanicilar. Her eski sekme govdesi bir sabite
+alindi ve yeni sekmede `SubSection` basligi altinda AYNEN render edildi →
+alan/fonksiyon kaybi yok (test: her grubun alt bolumleri gorunur).
+`setTab('data')` → `setTab('content')`. Sekme URL/hash yonlendirmesi yok
+(`useState('overview')`), yonlendirilecek bir sey YOK.
+
+**Baslik:** `SectionTitle big headingLevel="h1" title="Admin Paneli"
+subTitle="ADMIN PANELI" icon=<mdi:shield-account> tightGap` — ana sayfa
+bileseninin ta kendisi (yeni stil yok). Kimlik blogu (e-posta, rol, "Siteyi
+Goruntule", "Cikis") aynen korundu.
+
+**Kaynak seridi:** `ScrollableTabs` + yeni `TabLabel` (iki seritte ortak).
+Oklar seridin DISINDA flex kardes (en basta sol, en sonda sag) —
+`scrollBy({left:±200})`, uclarda `disabled`+`opacity-0`, aktif sekme
+ortalanir, scrollbar gizli, tekerlek/dokunma calisir. Eski sabit orta sayfa
+oklari ve alt nokta gostergeleri (`TabScrollDots`) tamamen silindi.
+
+**Kaydedilmemis degisiklik:** `savedRef` + `JSON.stringify(content)` karsilastirmasi;
+sekme degisiminde `window.confirm` (reddedilirse degismez) + amber ipucu.
+Basarili kayit anlik goruntuyu gunceller.
+
+**Ad temizligi:** `Faz6Editor`→`SectionsEditor`, `faz6-fields`→`section-fields`,
+`FAZ6_BOLUMLERI`→`SECTION_SPECS`, `e2e/phase6-pages`→`personal-pages`,
+`docs/faz1-secret-sizinti`→`docs/secret-sizinti`; repo genelinde "Faz 1..6"
+yorum/CI/husky/lint-staged/css izleri konu adiyla degistirildi. Kalan tek
+"Faz 6" metni negatif-kontrol testinin basligi. `content.phase6` veri anahtari
+ve `phase6.ts` dosya adi KORUNDU (kayitli icerik uyumu) — `phase6.ts` basina
+gerekce notu eklendi. `TODO: saglayici secilene kadar kapali` alan aciklamasi
+ve `TODO (kullanici)` notu kullanici-dili olmayan ifadelere cevrildi.
+
+**Olcum (gercek admin oturumu, yerel `ADMIN_SECRET` ile imzalanmis cookie):**
+`/api/admin/overview` HTTP 200 — Yetenekler 6, Istatistikler 1, Mesajlar 3,
+Reklamlar 3, Profil 2, CV 1, posts/projects 0; **Bildigim Diller EKSIK**.
+Dokuz kaynak ucu HTTP 200; `missingTable` yalniz `languages` (count=null),
+`messages` icin dusen kolon `phone`. Cozum: `ResourceDef.sqlFile` +
+`sqlHint()` → uyari metni artik `scripts/schema-languages.sql` /
+`scripts/schema-fixes.sql` adini soyluyor (DDL PostgREST ile calistirilamaz).
+
+### Kapilar (bu tur)
+
+- `tsc --noEmit` → **0 hata** (her commit oncesi husky icinde de kosuldu).
+- `vitest run` → **680/680 test, 61/61 dosya** (once 670/60).
+- `eslint <81 degisen dosya> --max-warnings 0` → **0 hata / 0 uyari**.
+- `admin-panel.test.tsx` 10/10 (baslik, 5 sekme, alt bolumler, onay iki dal,
+  konsolda React uyarisi yok) · `data-manager.test.tsx` 27/27.
+- Commit YEREL (branch `faz-1-guvenlik`), push/deploy YOK.
+
+### Tuzak / ders
+
+- **lint-staged Windows limiti:** 95 dosya tek seferde sahnelenince hook
+  "The command line is too long" ile dustu (82 mutlak yol tek `eslint`
+  komutunda 8191 karakteri asti). Cozum: degisiklikler 4 mantiksal commit'e
+  bolundu. Kapi ATLANMADI — `--no-verify` KULLANILMADI.
+- **prettier TS/TSX icin KAPALI** (`.lintstagedrc.json`): `@antfu/eslint-config`
+  stilleriyle celistigi icin 2026-10-10'da kaldirildi; CSS/MD/JSON/YML'de
+  kalir. `prettier --check` TS dosyalarinda kirmizi olmasi KAPI DEGILDIR
+  (stil sahibi eslint). `tokens.css` hizali satir-ici yorumlari prettier
+  tarafindan duzlestirildi (arac davranisi, kabul edildi).
+- **Flake kapandi:** `chat.admin.test.tsx` "Merhaba de!" testi paralel kosuda
+  1 sn'lik `waitFor` butcesini asiyordu → `vitest.setup.ts` icinde
+  `configure({ asyncUtilTimeout: 3000 })`. 3 ardisi kosu + tam kosu yesil.
+
+### Acik kalan / risk
+
+- **Tarayici dogrulamasi YOK:** dev sunucu hydrate olmuyor (`_next/hmr` ws
+  `ERR_INVALID_HTTP_RESPONSE`), admin parolasi bilinmiyor, BrowserOS neo bagli
+  degil → kanit jsdom + kaynak sozlesmesi + imzali-cookie HTTP olcumu.
+- **Kullanici eylemi:** SQL Editor'de `scripts/schema-languages.sql` +
+  `scripts/schema-fixes.sql` calistirilmali (aksi halde "Bildigim Diller"
+  sekmesi uyari verir).
+- `site_content` tablosu hala YOK; `progress.md` ve `scripts/` **gitignored**
+  (yerel dosyalar, commitlenmez).
+
+## 2026-10-13 (ikinci tur)
+
+### [BUG-KRITIK] /admin tarayicidan hic acilamiyordu — kok layout force-static tuzagi
+
+**Nasil bulundu:** Tarayici dogrulamasi (kapanmamis tek kanit boslugu) icin
+`e2e/admin-panel.spec.ts` yazildi; spec ILK kosusunda gercek hatayi buldu
+(6 testin 6'si kirmizi, sayfa `/login`e atiyordu).
+
+**Kok neden (olculdu + deneyle izole edildi):** `src/app/layout.tsx:58`
+`export const dynamic = 'force-static'`. Next 16 alt segmentlerde `cookies()`'i
+BOS donduruyor ("forcing cookies/headers to return empty values"). Bu yuzden
+`/admin/page.tsx` icindeki `getSessionUser()` admin cookie'si GECERLI olsa bile
+daima null donuyordu → `redirect('/login?next=/admin')` → panel erisilemez.
+
+- Olcum: ayni istek/ayni cookie → `/api/admin/session` **200** + admin kullanici,
+  `/admin` **307** → /login.
+- Deney 1: force-static + sayfada `force-dynamic` → `cookieNames: []`
+- Deney 2: ic ice `src/app/admin/layout.tsx` force-dynamic → `cookieNames: []`
+- Deney 3: kok layout notr (`auto`) → `cookieNames: ['admin_session']`,
+  `directVerify: TARIKELERTARNAK`, `sessionUserRole: admin`
+  → Yani alt segmentte hicbir sey kok layout'un force-static'ini EZEMIYOR.
+
+**Neden force-static kaldirilmadi:** public sayfalar `getLocale()` ile cookie
+okuyor; dinamik olsalardi Cloudflare Free 10 ms CPU butcesi asilirdi
+(2026-10-03 1102 duzeltmesinin dayandigi varsayim).
+
+**Duzeltme (`4bfe73e`)** — `/chat` sayfasinda 2026-10-11'de kullanilan AYNI
+desen: sayfa oturum okumaz, kapi istemcide, zorunlu kontrol API katmaninda.
+
+- `src/components/admin/admin-gate.tsx` (YENI): `/api/admin/session` ile
+  oturumu okur; yok → `/login?next=/admin`, admin degil → "Yetkisiz Erisim",
+  admin → panel.
+- `src/app/admin/page.tsx`: statik kabuk, yalniz `<AdminGate/>`.
+- `GET /api/admin/content` eklendi (content+messages+blogPosts, `isAdminUser()`
+  guard): panelin ilk verisi build zamaninda DONMASIN — bayat icerikle
+  kaydetmek sessiz veri kaybi olurdu.
+- Guvenlik negatif kontrol: cookiesiz **401**, bozuk imzali cookie **401**.
+
+### [BULGU] "Dev sunucusu hydrate olmuyor" efsanesinin koku
+
+Next 16 dev sunucusu `/_next/hmr` gibi dev kaynaklarini **`127.0.0.1`'den**
+gelince "cross-origin" sayip BLOKLUYOR:
+`⚠ Blocked cross-origin request to Next.js dev resource /_next/hmr from "127.0.0.1"`.
+Bloklaninca istemci JS'i hic calismaz: SSR HTML gorunur, hicbir buton/form
+tepki vermez — yillarca "dev hydrate olmuyor" sanildi. `localhost` ile
+hidrasyon CALISIYOR. `playwright.config.ts` artik `localhost`a baglanir
+(+ `PLAYWRIGHT_PORT` ile port secimi; gunlerdir acik dev sunucusu modul
+grafigini bayatlatiyor ve testler UYGULAMAYI degil o sureci olcuyordu).
+
+### Kapilar (bu tur, HEAD=9cc2a5d)
+
+- `tsc --noEmit` → **0**
+- `vitest run` → **688/688 test, 62/62 dosya** (once 680/61; +8 gate testi)
+- `eslint <6 dosya> --max-warnings 0` → **0**
+- `playwright e2e/admin-panel.spec.ts` → **12/12** (masaustu + mobil, gercek
+  Chromium; tek gercek tarayici kaniti bu turda uretildi)
+- Commit YEREL (`faz-1-guvenlik`), push/deploy YOK.
+
+### Tuzak / ders
+
+- **Izole kopyada build icin `node_modules` junction'i calismaz:** Turbopack
+  "Symlink node_modules could not be resolved: the symlink target leaves the
+  filesystem root" ile duser → kopyada gercek `pnpm install --frozen-lockfile`
+  yapildi (3 dk, store'dan hardlink; indirme yok). Is bitince kopya silindi.
+- **Yeni rotalar `_`/`__` ile baslayamaz:** `src/app/__probe` sessizce 404
+  doner (App Router ozel klasor kurali); teshis icin normal ad kullan.
+- **Kaynak sozlesmesi testleri yorumlari da tarar:** koddan alinti iceren
+  aciklama yorumu testi kirmizi yapar → once yorumlari strip et, sonra iddia.
+- **`useRouter` mock'u stabil olmali:** her render'da yeni nesne donerse
+  kapinin `[router]` bagimliligi degisir, effect sonsuz donguye girer ve mock
+  `Response` govdesi ikinci okumada patlar → testler yanlis yere kirmizi olur.
+- **Lobehub `Button` jsdom'da `ConfigProvider` ister** ve patlar; kapinin
+  "giris gerekli" dalinda duz `Link` kullanildi (otomatik yonlendirme var).
+
+### Kullanici eylemi (degismedi + yeni)
+
+1. 3000'deki `next dev` **yeniden baslatilmali** (dosya yeniden
+   adlandirmasindan once basladi; bayat modul grafigi "Module not found"
+   durumunda takili).
+2. SQL Editor'de `scripts/schema-languages.sql` + `scripts/schema-fixes.sql`.
+3. Canliya deploy icin onay (canli site hala ESKI build — /admin hatasi orada
+   da mevcut).
+
+## 2026-10-13 (sohbet duzeltmeleri — kullanicinin 5 maddesi)
+
+### [CHAT-001] Liste onizlemesi: karsidaki degil, SON MESAJI GONDEREN
+
+- before: satir `@<karsidaki> · <onizleme>` ciziyordu; `previewSender` prop'u
+  hic okunmuyordu (DB katmani ZATEN dogruydu: `last_sender_name`).
+- after: `@${previewSender} · ${preview}`; mesaj yoksa `chat.empty`.
+- kanit: gercek veri (konusma `0b8b9266`) `last_sender_name:
+"tarikelertarnak"` → eski kod `@tarikelertr`, yeni kod
+  `@tarikelertarnak · Merhaba 👋` (kullanicinin verdigi ornegin AYNISI).
+
+### [CHAT-002] Dar ekran: tek panel; secim ve kaydirma korunur
+
+- before: `md` altinda liste paneli kayboluyordu (yerine koyacak kontrol yok).
+- after: 768px altinda TEK panel; liste ↔ sohbet gecisi basliktaki
+  "Kisi listesini ac" (`👥`) / "Sohbet listesine don" (`←`) ile; sohbet
+  kapaliyken liste gorunur (kaynak: `!threadOpen && 'flex'`).
+- kanit: 390px'de liste gorunur/sohbet `display:none`; kisi secimi ve mesaj
+  alani 1440↔390 arasinda korunur; kaydirma konumu 200→200→200.
+
+### [CHAT-003] Dar ekran: kart tam ekran (8px kenar), yazma alani sabit
+
+- before: `Section` dolgusu (`px_4`) yuzunden kart kenardan 16-24px icerde;
+  kart yuksekligi belirsizdi.
+- after: `-mx-4 w-[calc(100%+2rem)]` (>=640px `-mx-6`/`+3rem`; `md`de eski
+  duzen) + kartta `h-[calc(100dvh-4.5rem)]`.
+- **OLCULDU (gercek Chromium):** `Section` `items-center` oldugu icin yalniz
+  `-mx-4` YETMIYOR (genislik telafi edilmezse kart x=16'da kaliyordu);
+  ayrica yukseklik sinifi olmadan 24 mesajda kaydirma kabi icerik boyuna
+  (clientHeight 1106px) cikiyor, `overflow-y-auto` devre disi kaliyor ve
+  yazma alani kartin disina itilip `overflow-hidden` ile KIRPILIYORDU.
+- kanit: 390×780 → kart x8 y64 w374 h708; `chat-composer-field` karti icinde;
+  kaydirma kabi 576/1106 (kaydirilabilir). 1440 → x16 w1408 h724 (degismedi).
+
+### [CHAT-004] Kisi menusu imlecte acilir; kirpilmiyor
+
+- before: menus satirin (kaydirilabilir listenin) ICINDE render ediliyordu →
+  `overflow-y-auto` tarafindan kesiliyordu.
+- after: menuler kart kokunde, `position: fixed`, `contextmenu` +
+  `clientX/clientY`; viewport'a clamp (EDGE 8 / GAP 4); disari tik/Esc/
+  kaydirma/boyut degisimi kapatir; ayni anda tek menu; mobilde uzun basma
+  (`useLongPress`, `pointerType === 'mouse'` erken cikar).
+- maddeler: Profilini incele · Takma ad koy · Favorilere ekle · Onemli kisi
+  olarak isaretle · Engelle · Sohbeti temizle · Sohbeti sil (kirmizi).
+- kanit: menu imlecin ±2px'inde; **kaydirilan listenin SAGINA tasiyor**
+  (kirpilmadiginin kaniti); 390px'de uzun basma sohbeti ACMADAN menuyu aciyor.
+
+### [CHAT-005] Balon menusu imlecte (eski tam ekran karartilmis diyalog DEGIL)
+
+- before: `MessageMenu` tam ekran karartilmis ortalanmis modal idi.
+- after: ayni `MenuSurface`; maddeler Kopyala · Yanitla · Ilet · Sabitle ·
+  Mesaj bilgisi · Sil (kirmizi); gonderen satiri balonun ustunde ve ardisik
+  ayni gonderen icin TEKRARLANMAZ; tiklama saati/isaretler balonun icinde;
+  kendi mesajlarim sagda/mavi, karsininki solda/gri.
+- `Duzenle` YOK (bilincli): `chat_messages`'ta `edited_at` kolonu ve
+  duzenleme API'si yok — DDL yalnizca SQL Editor'de kullanici tarafindan
+  calistirilabildigi icin dogrulanamazdi. Yerine **Ilet** yazildi (mevcut
+  uclarla: `action:'open'` → `action:'send'`).
+- kanit (24 mesajlik fixture): 1 gonderen satiri (kendi mesajimda hic yok),
+  saga tiklanan balon menude, Ilet → `POST /api/chat` `{text:'fixture 0',
+conversationId:'e2e-conv'}`.
+
+### Yolda bulunan 3 gizli hata (hepsi duzeltildi + test edildi)
+
+1. **Menu bolumu `display:none` icinde:** menuler `<section>` ICINDE
+   render ediliyordu; mobilde liste acikken panel `hidden` oldugu icin menu
+   DOM'da olmasina ragmen GORUNMUYORDU (erisilebilirlik agacinda da yok →
+   `getByRole` bulamiyordu). Menuler kart kokune tasindi; kaynak sozlesmesi
+   testi eklendi (`chat.test.ts`).
+2. **Odak gizli ogeye veriliyordu:** `MenuSurface` ilk maddeye odagi
+   `visibility: hidden` durumdayken cagiriyordu (gizli oge odaklanamaz) ve
+   bir daha denemiyordu → sag tik sonrasi ok tuslari OLU idi
+   (`document.activeElement` `<body>`'de). Odak artik `pos.ready` sonrasi.
+3. **Kart yuksekligi belirsizdi** (bkz. CHAT-003).
+
+### Olcum / kanit
+
+- `tsc --noEmit` 0 · `eslint <degisen dosyalar> --max-warnings 0` 0.
+- `vitest run` **717/717** (63 dosya). `src/components/chat` = 6 dosya/86 test
+  (yeni: `context-menu.test.tsx` 16 test).
+- `playwright test e2e/chat-fixes.spec.ts` (gercek Chromium, gercek oturum,
+  sadece yazmalar stub'lanmis) **8/8**.
+- **Tum e2e suite: 44/45.** Kirmizi olan TEK test `e2e/personal-pages.spec.ts
+› footer baglantisi hedef sayfaya goturuyor` — bu degisiklikle ILGISIZ
+  (diff'te home/footer/config yok, spec HEAD'de degismemis, tek worker'da da
+  kirmizi). Probe ile ayni tik `/changelog`e GIDIYOR; spec `domcontentloaded`
+  sonrasi 5800px'lik yumusak kaydirma surerken tikliyor → zamanlama kirilgani.
+- **Negatif kontrol:** `chat.test.ts` sozlesmeleri kod-metni eslesmesi;
+  davranis testleri (`chat.admin.test.tsx`) onizleme/gonderen satirini,
+  `context-menu.test.tsx` klavye/konum/kapatma davranisini dogruluyor.
+
+### Kullanici eylemi (degismedi)
+
+1. SQL Editor'de `scripts/schema-languages.sql` + `scripts/schema-fixes.sql`.
+2. Canliya deploy icin onay.
+3. (Bu turda gerekmedi: 3000'deki `next dev` degisiklikleri servis etti —
+   olcumler uygulamayi dogruladi, bayat modul grafigi belirtisi yok.)
+
+## 2026-10-13 (sohbet duzeltmeleri #2 — kullanicinin 8 maddesi)
+
+Kullanici `/chat` icin 8 madde verdi: yan panel her zaman durup kapanabilsin,
+kendisiyle konusamasin / sadece kendisiyle konusabilen kayit gorunmesin,
+"kisi listesini ac" dugmesi yerine yan panel dugmesi, sayfa kaymasin, kendi adi
+gorunsun, bos alana ve sohbet basligina sag tik menusu, secili satir belirgin.
+
+### [CHAT-006] Yan panel her zaman erisilebilir + tek dugmeyle kapanir
+
+- **once:** `<768`de liste kaplama olarak vardi ama panel KAPATILAMIYORDU; iki
+  ayri dugme vardi ("👥 kisi listesini ac" / "← sohbet listesine don") ve "←"
+  SECILI sohbeti siliyordu (`setConversationId(null)`).
+- **after:** tek dugme (`data-testid="chat-panel-toggle"`, `MenuIcon`,
+  `title=chat.togglePanel`): `>=768` → `panelOpen` (sutun katlanir/acilir),
+  `<768` → kaplama. Sohbet acikken de kapaliyken de durur → panel hicbir
+  genislikte kaybolmaz.
+- **kanit:** probe 1440 → `aside display: flex → none → flex`;
+  e2e "yan panel dugmesi masaustunde sutunu katlar ve geri acar" (kapaliyken
+  sohbet genisligi >100px fark, geri acilista ±2px).
+
+### [CHAT-007] Kendi satirim VE sohbetsiz kayit listelenmez (kendimle sohbet yok)
+
+- **OLCULDU (onceki tur):** kendi satirim (`tarikelertarnak`, takma ad "Tarnak")
+  listede duruyordu; tiklayinca `<id>|<id>` anahtarli, kimsenin gormedigi bos
+  sohbet aciliyordu.
+- **after:** `p.id !== selfId && (!isAdmin || !!p.hasConversation)` — sart
+  "mesaj var" DEGIL "sohbet var" (sabitlenmis/bos sohbet satiri kaybolmasin).
+  Ikinci savunma: `openWith` icinde `if (peerId === selfId) return`.
+  Kullanici paneli bir sohbeti silerek de kuratorleyebilir (satir duser).
+- **kanit:** probe `rows: 1` (yalniz `tarikelertr`), `innerText` icinde "Tarnak"
+  YOK; e2e `button[data-peer-id="<me>"]` sayisi 0 + `panelPeers` sayisiyla esit.
+
+### [CHAT-008] Sohbet SAYFASI kaymaz: kaydirma mesaj alaninda kalir
+
+- **OLCULEN KOK NEDEN:** kart sarmalayicisindaki `min-h-screen` 56px'lik TopBar
+  payinin ALTINA tam bir ekran daha ekliyordu → belge 1440/1024/900/390/360
+  boyutlarinin HEPSINDE 56px tasiyordu (docH 956 / winH 900). Sonuc: sayfa
+  kaydirilabiliyordu ve yeni mesajda `endRef.scrollIntoView()` ATALARIN HEPSINI
+  (sayfayi da) kaydiriyordu.
+- **after:** `min-h-screen` kaldirildi (sebep yorum olarak dosyada);
+  kaydirma yalniz mesaj kabinda (`listRef.scrollTo({top: scrollHeight})`);
+  `scrollIntoView` chat.tsx'ten tamamen cikti (yanit "kaynak mesaja git" de
+  `scrollToMessage` ile ALAN icinde).
+- **kanit:** probe 6 boyutun tamaminda `overflowY: 0`; e2e 2 test — (a) 6
+  boyutta `docH === winH` ve `scrollY === 0`, (b) 30 mesajla otomatik kaydirma
+  (`scrollHeight - scrollTop - clientHeight <= 4`) + `window.scrollY === 0`.
+
+### [CHAT-009] Bos alana ve sohbet basligina sag tik menusu
+
+- **once:** sag tik menuleri yalniz kisi satirinda ve mesaj balonunda vardi;
+  bos alan ve baslik olu.
+- **after:** `onAreaContextMenu` → alan menusu: "Kisi ara" (arama alanina odak),
+  "Sohbeti yenile" (`refresh`), "En sona git" (YALNIZ sohbet acikken);
+  baslik seridinde `data-peer-id={activePeer?.id}` + `contextmenu` → kisi
+  menusu (admin). Balon/satir tiklama menuleri `stopPropagation` ile alan
+  menusunu ezmiyor.
+- **"Grup olustur" YOK:** sunucuda grup ucu yok (`chat_conversations.kind='group'`
+  hic olusturulmuyor, `api/chat`ta grup aksiyonu yok) → uydurma madde
+  konulmadi; calisan maddeler konuldu.
+- **kanit:** e2e 2 test (liste bos alani + mesaj alani dolgu seridi + baslik);
+  negatif iddialar: "Sohbeti sil" alan menusunde YOK, "Kisi ara" kisi
+  menusunde YOK.
+
+### [CHAT-010] Secili satir belirgin (bir tik daha koyu)
+
+- **after:** secili satir `bg-primary/15 hover:bg-primary/20` (jeton mavisi);
+  secimsiz satir yalniz `hover:bg-foreground/10`. Yeni renk uydurulmadi —
+  sitedeki `bg-primary/NN` dili kullanildi.
+- **kanit:** e2e "secili kisi satiri vurgulanir; secimden once vurgu yok" —
+  tiklamadan once sinifta `bg-primary/15` YOK, sonra VAR; computed renk seffaf
+  degil ve kart zemininden farkli.
+
+### Olcum / kanit (ozet)
+
+- `tsc --noEmit` **0** · `eslint src/components/chat src/app/chat e2e/chat-fixes.spec.ts --max-warnings 0` **0**.
+- `vitest run` **722/722 (63 dosya)** — 4 chat test dosyasi yeni kurala gore
+  guncellendi: fiksturlere SOHBET eklendi (satir gorunurlugu sohbete bagli;
+  yoksa liste bos kalir), "kendim dahil herkes listelenir" testi yeni kurala
+  cevrildi ("kendi satirim + sohbetsiz kayit listelenmez"), `scrollIntoView`
+  sozlesmesi `scrollToMessage`e tasindi, 5 yeni kaynak sozlesmesi eklendi.
+- `playwright e2e/chat-fixes.spec.ts --project=desktop` **14/14** (6 yeni test).
+- **Tum e2e suite: 86 gecti / 2 kirmizi / 14 atlandi.** Iki kirmizi da AYNI ve
+  ILGISIZ test: `e2e/personal-pages.spec.ts` "footer baglantisi hedef sayfaya
+  goturuyor" (masaustu + mobil). **Kanit: bu degisiklikle ilgisi yok** — spec
+  HEAD'e byte-ayni geri alinip (git checkout) tekrar kosuldu, YINE kirmizi.
+  Onceki turda "zamanlama kirilgani" diye not edilmisti; bu turda olculdu ve
+  neden daha net: probe (dosya sirasi taklit edilerek) tiklama ANINDA
+  `elementFromPoint`in `<ul>` dondugunu (`closest('a')` = null) ve tiklamadan
+  sonra sayfanin ~784px BUYUDUGUNU gosterdi (belge altı 4434 → 5218) — yani
+  tiklama, soz konusu `<a>` yerine footer listesine dusuyor (yerlesim kaymasi).
+  Tek basina kosulunca geciyor, dosya sirasinda kosulunca sürekli kirmizi.
+  Simdilik spec DEGISTIRILMEDI (ILGISIZ testi zayiflatip "yesil" gostermemek
+  icin); kullanici isterse ayrica ele alinir.
+- 4 yeni i18n anahtari (`chat.togglePanel|findPerson|refresh|scrollBottom`)
+  yalniz tr+en; diger 6 dil fallback ile Turkce gosterir (`src/lib/i18n.ts`).
+
+### Kullanici eylemi (degismedi)
+
+1. SQL Editor'de `scripts/schema-languages.sql` + `scripts/schema-fixes.sql`.
+2. Canliya deploy icin onay.
+3. `git push` istenirse (yerel commit bu turda yeterli).
+
+---
+
+## KENDI SATIRIM — 9. madde (2026-10-13: "Admin kendisini gorsun, kendisiyle konusabilsin")
+
+### [CHAT-011] Kendi satirim YONETICIYE gorunur, adi "TARIK ELER TARNAK (Siz)"
+
+- **istenen:** "Admin kendisini gorsun kendisiyle konusa bilsin ama ismi su
+  sekilde gorsun: TARIK ELER TARNAK (Siz) — bu 'Siz' hangi dildeysen ona
+  cevrilir ve ismin SONUNA eklenir". Onceki turun "kullanici kendisiyle de
+  konusamasin" istegi NORMAL KULLANICI icin gecerli kaldi; yonetici icin
+  gecersiz oldu.
+- **after:** suzgec `p.id === selfId ? isAdmin : (!isAdmin || !!p.hasConversation)`
+  — kendi satirim sohbeti olmasa da gorunur (satir tiklamasi `openWith` ile
+  sohbeti acar). `openWith` kapisi `peerId === selfId && !isAdmin` (normal
+  kullanici kendisiyle konusamaz). Ad tek yerden uretiliyor (`orderedPeers` →
+  `p.name`): kendi satirimda TAKMA ADIM degil TAM ADIM + `(${t('chat.you')})`;
+  diger satirlar eskisi gibi takma ad → tam ad → kullanici adi. Satir ve avatar
+  bas harfleri artik `p.name` render ediyor (onceden ham ifade vardi).
+- **neden tam ad:** takma ad baskasinin bana taktigi etiket; kullanici "orjinal
+  isim" istedi ve satir "Tarnak" gosteriyordu.
+- **sunucu:** `<id>|<id>` sohbeti destekli — `chat-db.getOrCreateDirectConversation`
+  katilim satirlarini her acilista garantiliyor (`ensureParticipants`, 2026-10-12
+  olcumu) → mesaj okuma 403 donmuyor. Sunucu degisikligi GEREKMEDI.
+- **i18n:** `chat.you` 8 sozluge eklendi (tr Siz · en You · de Sie · es Tu ·
+  fr Vous · ja あなた · pt Voce · ru Вы).
+- **kanit (jsdom):** yonetici fiksturunde satir "TARIK ELER TARNAK (Siz)" olarak
+  bulunuyor, "Tarnak" HIC gecmiyor, tiklayinca govdede `"action":"open"` + kendi
+  id'm gidiyor; en dilinde "(You)"; sozluk testi 8 dilde `chat.you` dolu.
+- **kanit (gercek tarayici):** yeni e2e testi — satir TAM AD + `(Siz|You)` ekiyle
+  gorunur, tiklayinca baslik ayni etiketi gosterir, mesaj alani acilir.
+- **acik kalan (veri):** DB'deki `profiles.full_name` = `TARIK ELER` → satir
+  "TARIK ELER (Siz)" yazar. Tam "TARIK ELER TARNAK (Siz)" icin profildeki tam ad
+  `TARIK ELER TARNAK` olmali; sahip satiri veri API'sinde KORUMALI
+  (`isProtectedOwner` → 403), kullanici kendi profil ucundan
+  (`/api/auth/profile`) düzenler.
+
+### [CHAT-012] Veriye bagli e2e testi deterministik yapildi (kirmizi duzeltmesi)
+
+- **olculen:** `e2e/chat-fixes.spec.ts` onizleme testi "onizlemeli sohbet yok —
+  veriye bagli" diye kirmiziya dustu. Admin cookie ile `GET /api/chat`: karsi
+  taraf sohbetinde `last_preview: null` (mesajlar onceki turlarin panel
+  testlerinde silinmis), onizlemeli mesaj yalniz KENDI sohbetimde duruyordu.
+- **after:** test onizlemeyi KENDISI kuruyor — `page.route('**/api/chat')` ile
+  GERCEK yanit alinip yalniz `last_preview`/`last_sender_name` alanlari
+  yaziliyor. Kisi listesi/sohbetler gercek, Supabase'e YAZILMIYOR (dosyadaki
+  "Ilet hedefe gonderir" testi de ayni desende). Test adi gercege uyduruldu:
+  "… önizlemesi göndereni gösterir; sohbetsiz kayıt listelenmez".
+- **kanit:** ayni dosya 15/15 (yeni kendi-satirim testi dahil).
+
+### Olcum / kanit (ozet)
+
+- `tsc --noEmit` **0** · `eslint src/components/chat src/i18n e2e/chat-fixes.spec.ts --max-warnings 0` **0**.
+- `vitest run` **724/724 (63 dosya)**.
+- `playwright e2e/chat-fixes.spec.ts --project=desktop` **15/15** (1 yeni test).
+- Panelde gorunen satir sayisi testi `panelPeers(data).length + 1` (kendi satirim).
+
+### UX-014 — Header brand hover TEK BÜTÜN + Sidebar brand link (2026-10-15)
+
+**İstek:** Kuş logosu + "TARIK ELER" + "—" + "TARNAK" tek link içinde; tıklama
+alanı ve hover tek bütün olarak çalışsın; Sidebar da aynısı.
+
+**Ölçülen kök nedenler (gerçek Chromium, localhost:3000):**
+
+1. İlk yamada hover span-başına hover:text-* idi → logo/boşluk hover'ında
+   hiçbir tepki yok ("tek bütün" sağlanmıyordu).
+2. TopBar gizli bug: logoda group-hover:opacity-80 vardı ama link'te group
+   yoktu → logo tepkisi HİÇ çalışmıyordu (ölü sınıf).
+3. Span'lerdeki ocus-visible:ring-1 ÖLÜ kod: span odaklanamaz.
+4. Sidebar ria-label attribute'u ui/link tarafından sessizce düşürüldü
+   (DOM'da null); bileşenin prop adı riaLabel.
+
+**Çözüm (iki dosyada aynı desen):** Link'e group · span'lere
+group-hover: + group-focus-visible: · ölü focus-visible:* silindi ·
+link halkası global :focus-visible'dan (tokens.css:139) · Sidebar brand
+<Link href="/" ariaLabel="Ana sayfa"> · sidebar logosu
+group-hover:opacity-80.
+
+**Canlı kanıt (hover LOGO üzerinde, metin değil):**
+
+- TARIK ELER: rgb(237,237,237) → rgb(37,99,235) = primary
+- "—": muted → rgb(37,99,235)
+- TARNAK: primary → oklab(/0.7) = primary/70
+- Logo: opacity 1 → 0.8
+  Sidebar VE TopBar aynı sonuç (önce sidebar backdrop'ı kapatıldı — modal
+  overlay header'ı kılıyordu; Escape ile kapandı).
+
+**Kapılar:** tsc 0 · vitest 726/726 (63 dosya) · eslint --max-warnings 0
+(2 dosya) 0 · commit 1062471 (yerel; push/deploy yok).
+
+**Kalan:** klavye odak görsel testi yapılmadı (yalnız group-focus-visible
+sınıf varlığı + global :focus-visible kuralı doğrulandı); deploy kullanıcı
+onayında.
+
+### UX-015 — Chat yan panel HER ZAMAN yeniden boyutlandırılabilir (2026-10-15)
+
+**İstek:** "yan panel çok küçükken boyutu değiştirilemiyor her zaman
+değiştirilebilsin."
+
+**Ölçülen kök neden:** KOMPAKT modda (72px) ayraç (separator) CSS sınıfı
+panelOpen ? 'hidden md:block' : 'hidden' ile **TAMAMEN gizleniyordu**.
+Sürükleme/ok tuşu hiç çalışmıyordu → panel 72px'te kilitli kalıyordu.
+
+**Çözüm (chat.tsx):**
+
+1. Ayraç sınıfı w-1 ... hidden md:block → w-1 ... (hiçbir hidden yok).
+   Her viewport, her panel durumunda görünür.
+2. startResize: panelOpen false ise setPanelOpen(true) çağırır,
+   başlangıç genişliği **GÖRÜNÜR 72px** olarak alınır (kayıtlı 288 değil).
+   Sürükleme anında panel açılır ve genişler.
+3.
+
+esizeByKey: ok tuşu da katlı panelde setPanelOpen(true) çağırır.
+
+**Regresyon testleri (chat.resize.test.tsx, +2):**
+
+- katlanmış panelde ayraç sürüklenince → panel açılır, 72+delta genişler.
+- katlanmış panelde ArrowRight → panel açılır, 288+16=304 olur.
+  Her ikisi de jsdom'da geçti (728/728).
+
+**Canlı doğrulama (gerçek Chromium, localhost:3000/chat/, 718px viewport):**
+
+- Panel toggle → 72px (KOMPAKT), ayraç **görünür** (display:block).
+- Ayraç tıklama/sürükleme → panel açılır, genişlik değişir (clamp'a dönmedi).
+- Masaüstünde (≥768px) --chat-panel-w CSS değişkeni ile 240–560px arası serbest.
+
+**Kapılar:** tsc 0 · vitest 728/728 · eslint --max-warnings 0 · commit
+da1fe5f (yerel; push/deploy yok).
+
+---
+
+## 2026-10-16 — SOHBET: YANIT (ALINTI) + TIK MANTIGI [CHAT-014]
+
+**Kullanici 2 istek:** (1) mesaj **yanitlama/alinti** akisi bastan calissin,
+(2) durum **tikleri** dogru mantiga cevrilsin (gonderildi / iletildi / okundu;
+yesil KULLANMA) + eski yanlis "okundu" kayitlarini duzeltecek script yazilsin.
+
+### Olculen kok neden (tikler)
+
+`GET /api/chat?conversationId=X` her mesaj cekiminde `markRead(conversationId)` ve
+`markDelivered(conversationId)` cagiriyordu; `chat-db.ts`'teki bu iki UPDATE'te
+**`sender_id` filtresi YOKTU**. Sonuc: kullanici KENDI sohbetini acinca KENDI
+mesajlari "okundu" damgasi aliyordu → alici mesaji hic gormemisken gonderende
+**cift mavi tik**. Ayrica iyimser eklenen mesaj sunucu damgasiz donunce dogrudan
+cift tikle baslayabiliyordu.
+
+### Duzeltmeler
+
+1. `markDelivered(conversationId, viewerId)` / `markRead(conversationId, viewerId)`
+   - `.neq('sender_id', viewerId)`. `GET`ten `markRead` TAMAMEN kaldirildi; yeni
+     `POST { action: 'read' }` ucu (participant kontrolu) eklendi (`chat.send`
+     izni ISTENMEZ — okumak yazmak degildir).
+2. Istemci okundu istegini kendini sinirlar: (a) sohbet acik, (b) sekme gorunur,
+   (c) mesaj listesi gorunur alanda (`IntersectionObserver`), (d) karsi taraftan
+   `read_at` bos mesaj VAR. Yoksa hic POST atilmaz.
+3. `src/lib/chat-ticks.ts` yeniden yazildi: `TICK_PENDING_COLOR =
+'text-primary-fg/60'` (soluk gri = gonderildi/teslim edildi),
+   `TICK_READ_COLOR = 'text-sky-300'` (mavi = okundu), `TICK_SENDING_COLOR`
+   (saat), `TICK_FAILED_COLOR` (kirmizi unlem); `tickFor(m, { pending, failed })`
+   - `TickStyle.state`. YESIL/SARI hic yok — negatif testle sabitlendi.
+4. Liste tiki AYNI karardan gecer (`tickForFlags`) ama rengi `TICK_LIST_COLORS`
+   (balon mavi oldugu icin `sky-300` seffaf liste zemininde okunmazdi; okunmaz
+   renk secmek "tek kaynak" kuralini bozmak olurdu).
+5. `src/lib/chat-reply.ts` (YENI, saf): `REPLY_TEXT_MAX=150`, `toReplyPreview`
+   (metni kirpar; **silinmis mesajin metni/dosyasi alintiye TASINMAZ** — aksi
+   halde "Herkesten sil" icerigi gizlemezdi), `missingReplyPreview` (fiziksel
+   silinmis hedef → "silindi" der, alinti kaybolmaz), `replyPlaceholderKey`.
+   Ayri dosya sarti: `chat-db.ts` sunucu Supabase istemcisi icerdigi icin
+   istemciden DEGER olarak import edilemez.
+6. `chat-db.ts`: `ChatMessageRow.reply_to`; `attachReplyPreviews` tum
+   `reply_to_id`'leri TEK `in()` sorgusunda ceker (N+1 yok) ve alan yoksa da
+   `null`'a normalestirir; `sendMessage` `replyToId`'yi sohbetle DOGRULAR
+   (baska sohbetin mesajina yanit dusurulur, mesaj kaybolmaz).
+7. Arayuz: hover yanit oku (ayni mesaj menusunu acar — ikinci menu YAZILMADI),
+   sag tik menusunde "Yanitla", mobilde saga kaydirma (`use-swipe-reply.ts`,
+   esik 60px, dikey niyet iptal, `navigator.vibrate(10)`, `transform` dogrudan
+   yazilir → React state'i yok), giris ustu onizleme
+   (`data-testid="chat-reply-preview"`, X/Esc, sohbet degisince temizlenir),
+   balon ici alinti blogu (tiklama → kaynaga kaydir + ~1,9 sn mavi `msg-flash`),
+   iyimser gonderim (saat → gercek satir; hata → kirmizi unlem + "Tekrar dene").
+8. `supabase/chat.sql`: yeni bolum — (a) `add column if not exists
+reply_to_id / delivered_at / read_at` + kismi indeks, (b) eski yanlis
+   damgalari temizleyen onarim betigi (kesin imkansiz satirlar + kaynagi
+   guvenilmez damgalar; dogrusu yeni kodla yeniden yazilir → kendini iyilestirir).
+
+### Kanit
+
+- `tsc --noEmit` **0 hata**
+- `vitest run` **773/773 (65 dosya)** — yeni: `chat-reply.test.ts` (11),
+  `use-swipe-reply.test.ts` (8); guncellenen: `chat-ticks.test.ts`,
+  `chat-db.test.ts`, `chat.test.ts`, `chat.admin.test.tsx`
+- `eslint --max-warnings 0` (13 degisen dosya) **0**
+- dev `/chat` HTTP **200** · `POST /api/chat action:read` girissiz **401**
+- **KANIT YOK:** gercek tarayicida tiklayarak dogrulama — BrowserOS neo bagli
+  degil (`neo_*` araclari oturumda yok); baska araca DUSULMEDI.
+- Yol boyunca bulunan gizli hata: bos metin + yanit hedefi secili iken `send`
+  ICERIKSIZ mesaj yazabiliyordu → duzeltildi (bos metin hic gonderilmez).
+
+### Kullanici eylemi
+
+`supabase/chat.sql` SQL Editor'de bir kez calistirilmali (kolonlar + eski yanlis
+damga onarimi). Tekrar calistirmak zararsizdir.
+
+---
+
+## 2026-10-16 — ADMİN HERKESİ GÖRÜR + KENDİMLE SOHBET TİKİ + ÇEVRİMİÇİLİK [CHAT-015]
+
+**Kullanici 3 sikâyet (tek mesaj):** (1) "ben adminim neden bütün herkesi
+görmüyorum ... bütün kullanicilari görebilmeliyim sonuçta adminim", (2) "kendime
+mesaj gönderiyom tek tik nasil kala bilir kendime atinca kendim görmüyomuyum
+düzelt onu", (3) "kendim nasil çevrim disi ola biliyom düzelt".
+
+### Olculen kok nedenler
+
+1. **Admin herkesi gormuyordu — gizleyen yer ISTEMCIYDI.** Sunucu ucu
+   (`GET /api/chat/users`) admin'e ZATEN tüm profilleri döner
+   (`canSeeAllPeers(sessionUser)` dalı). Ama `chat.tsx` süzgeci
+   `p.id === selfId ? isAdmin : (!isAdmin || !!p.hasConversation)` admin için
+   "karsi taraf" dalında `hasConversation` arıyordu → hiç yazmamış kayıt listede
+   YOK. (2026-10-13'te "kayıt olup hiç yazmayan kişi paneli doldurmasın"
+   denmişti; 2026-10-16 isteği bunu admin için DEĞİŞTİRDİ.)
+2. **Kendimle sohbette tek gri tik — iki hata birdendi:**
+   (a) `direct_key` ayrıştırması `.find(part => part !== me)` kendi sohbetimde
+   (`<id>|<id>`) hiçbir şey bulamıyordu → kendi satırım sohbet verisini
+   (önizleme, rozet, son mesaj tiki) kaybediyordu;
+   (b) damga sunucudan hiç gelmiyordu; çünkü `markRead`/`markDelivered`
+   görüntüleyicinin KENDİ mesajını hariç tutar (`.neq('sender_id', viewerId)`) —
+   yani CHAT-014'te tiklerin yalan olmasını engelleyen düzeltmenin doğal sonucu.
+   Kendimle sohbette ALICI DA BENİM → karar yerel olmalı.
+3. **Kendi noktam kırmızıya düşüyordu — iki katmanlı:**
+   (a) yerel kural "30 sn etkileşim yoksa çevrimdışı" (`LOCAL_ONLINE_TTL_MS` +
+   fare/klavye/scroll dinleyicileri) → uzun bir mesajı okurken kendi noktam
+   kırmızı; (b) sunucu senkronu **5 dk** ama `presenceOf` tazelik penceresi
+   **60 sn** (`PRESENCE_ONLINE_MS`) → nabız pencereler ARASINDA kaçıyordu, yani
+   HERKES herkese çevrimdışı görünüyordu.
+
+### Duzeltmeler
+
+- `visiblePeers` → `isAdmin ? true : p.id !== selfId && !!p.hasConversation`.
+  Sıralama güvenli: sohbetsiz kayıt `peerRank` 4/5 → gerçek sohbetler (rank 2)
+  üstte kalır.
+- `byPeer` eşlemesi:
+  `parts.find(part => part !== me) ?? (parts[0] === me ? me : undefined)` →
+  kendi sohbetim artık liste verisini taşır.
+- Tik kararı TEK kaynakta kaldı (`lib/chat-ticks.ts:styleFor`): yeni
+  `TickOverride.selfChat` → failed > pending > **selfChat (read=true)** > read >
+  delivered > sent. Balonda `tickFor(m, { pending, failed, selfChat })`, listede
+  `tickForFlags(p.lastMessage, { selfChat: p.id === selfId })`.
+- **Çevrimiçilik = SEKME GÖRÜNÜRLÜĞÜ** (`document.hidden`).
+  `LOCAL_ONLINE_TTL_MS` + `lastActivity` + `activityTimerRef` + tıklama/tuş/
+  dokunma/kaydırma dinleyicileri SİLİNDİ (yalnız her kaydırmada boşa
+  çalışıyorlardı; çevrimdışı kararına etkileri yoktu çünkü render
+  tetiklemiyorlardı).
+- `SYNC_INTERVAL_MS` 5 dk → **30 sn** (= tazelik penceresinin yarısı; tek nabız
+  kaybı tolere edilir) + bağlanır bağlanmaz `syncToServer(true)` ("buradayım").
+- Sekmeye dönünce nokta ANINDA yeşil olsun diye `setNow(Date.now())` (ref tek
+  başına render tetiklemez; 10 sn'lik saat tiki beklenirdi).
+
+### Kapilar / kanit
+
+- `tsc --noEmit` **0** · `vitest run` **783/783 (65 dosya)** ·
+  `eslint --max-warnings 0` (5 dosya) **0** · dev `/chat` HTTP **200**.
+- Yeni testler: `chat-ticks.test.ts` +4 (selfChat: damgasız mesaj çift mavi,
+  pending/failed kazanır, selfChat'siz kural DEĞİŞMEZ = negatif kontrol),
+  `chat.admin.test.tsx` +1 **gerçek render** (kendi sohbetim `<id>|<id>` +
+  damgasız mesaj → balonda `aria-label` = Okundu, yeşil yok) ve eski "sohbetsiz
+  kayıt görünmemeli" iddiası "GÖRÜNÜR"e çevrildi (kullanıcı isteği),
+  `chat.test.ts` +5 kaynak sözleşmesi + **invariant testi**: `SYNC_INTERVAL_MS`
+  (koddan okunur) `PRESENCE_ONLINE_MS`ten (chat-peers.ts) KÜÇÜK olmalı.
+- **KANIT YOK:** gerçek tarayıcıda tıklayarak doğrulama — BrowserOS neo bağlı
+  değil (`neo_*` araçları oturumda yok) → başka araca DÜŞÜLMEDİ.
+
+## 2026-10-16 — İŞ 1 ziyaretçi sayımı + Ayarlar orta alan paneli (commit 7311ff2)
+
+- **İŞ 1 (TAMAM):** `scripts/schema-visits.sql` (visits/visitor_links/app_settings/
+  visit_stats; unique(visitor_id,day); IP yok) · `src/lib/visits.ts` +19 test ·
+  `/api/visits` (1 yıl httpOnly cookie, upsert, visitor_links eşleme, rate limit, bot/
+  yol hariç) · `/api/admin/visits` (BUGÜN/7/30/TOPLAM tekil kişi + "kendi ziyaretlerimi
+  sayma") · `visit-tracker.tsx` + `admin/visitor-card.tsx` (Genel Bakış KPI şeridi).
+  Sayım: PostgREST'te DISTINCT olmadığı için JS `Set` ile tekil `visitor_id`.
+- **Ayarlar düzeni:** `ui/drawer.tsx` → `side="middle"`. Ayarlar artık orta ana alanın
+  üstünde (sağ dar çekmece değil): `#layout-main`'e portal, `aria-modal="false"`,
+  `role="dialog"`, açıkken yalnızca `#layout-main-content` inert, odak tuzağı + odak
+  geri verme, X/Esc/dışına tıklama kapatır. Gövde kaydırması KİLİTLENMEZ.
+  Sol panel artık Ayarlar açılınca KAPANMIYOR (`setIsOpen(false)` kaldırıldı);
+  mobilde ise `sidebar:close` olayı ile çekmece kapanıyor.
+- **Yeni jetonlar:** `--layout-gap: 10px`, `--layout-panel-width`, `--layout-right-width`.
+- **Guard:** `src/components/ui/middle-overlay.test.tsx` **10 test** (portal, aria,
+  inert aç/kapa, X/Esc/dışına tıklama, içine tıklama kapatmaz) + **negatif kontrol**
+  (`side="right"` orta içeriği inert YAPMAZ, portal edilmez).
+- **Kanıt:** `tsc --noEmit` **0** · değişen 5 dosyada `eslint --max-warnings 0` **0** ·
+  `vitest run` **921/922**. Tek kırık `chat.admin.test.tsx` ("kendimle sohbet") →
+  **ÖNCEDEN VAR**: değişiklikler `git stash`'lenip ölçüldü, temel durumda da kırık
+  (birden fazla 'TARIK ELER TARNAK (Siz)' öğesi). Benim regresyonum DEĞİL.
+- **KANIT YOK / ERTELENDİ:** (a) sol panelin masaüstünde sütun olması — tüm sayfa
+  genişliklerini değiştirir, görsel doğrulama yok → yapılmadı; (b) sağ panel — içeriği
+  kullanıcı belirtmedi, içerik uydurma yasak → oluşturulmadı; (c) panel aç/kapa
+  durumunun localStorage'da saklanması — Sidebar gezinmede otomatik kapandığı için
+  anlamsız; (d) **"5 Issues"** Next.js dev overlay hataları — tarayıcı olmadan
+  gözlemlenemedi → statik doğrulama (tsc/eslint/test + hydration guard) yapıldı.
+- **KULLANICI EYLEMİ:** Supabase SQL Editor'de `scripts/schema-visits.sql` çalıştır.

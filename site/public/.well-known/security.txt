@@ -1,0 +1,18 @@
+Contact: mailto:tarikelertarnak@gmail.com
+Expires: 2027-10-07T00:00:00.000Z
+Preferred-Languages: tr, en
+Canonical: https://tarikelertarnak.pages.dev/.well-known/security.txt
+Policy: https://tarikelertarnak.pages.dev/gizlilik
+
+# Ziyaretçiye gösterilen alan (bulut güvenlik araçları bu alanı okur):
+#   - güvenlik açığı bildirimi: yukarıdaki mailto adresine yazın
+#   - ziyaretçinin ne yapacağı: /gizlilik sayfasındaki süreç
+#
+# TODO(rota-yok): `Policy` içindeki /gizlilik sayfası henüz YOK (404 verir).
+# RFC 9116 Policy alanını isteğe bağlı kılar; 404 veren bir URI bildirmek
+# doğru değil. Gizlilik sayfası yapılana kadar bu satır yorumda tutulmalı.
+#
+# TODO(alan-adi): Gerçek alan adı (pages.dev yerine) alındığında `Canonical`
+# satırı güncellenmelidir — RFC 9116, Canonical'ın sabit ve erişilebilir
+# olmasını şart koşar; iki alan adı birden bildirmek hatadır. `Policy` de
+# gerçek alan adına taşınmalıdır.

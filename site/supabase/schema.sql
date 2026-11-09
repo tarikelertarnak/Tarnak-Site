@@ -1,0 +1,199 @@
+-- ============================================================
+-- TARIK ELER (TARNAK) — Supabase şema + RLS politikaları
+-- Bu dosya repoda tutulur: veritabanı sıfırlansa bile politikalar
+-- buradan yeniden uygulanabilir.
+-- Son güncelleme: 2026-09-28
+-- ============================================================
+
+-- ---------- profiles ----------
+-- Kullanıcı profili. RLS: herkes okur, kullanıcı kendi satırını günceller.
+-- ÖNEMLİ: `role` ve `is_owner` kolonları RLS ile korunur — kullanıcı
+-- kendi yetkisini yükseltemez (UPDATE politikası auth.uid() = id şartı
+-- atıyor ama role/is_owner değişikliği engellenmez; bu yüzden ayrıca
+-- WITH CHECK eklenmelidir — aşağıda).
+
+create table if not exists public.profiles (
+  id          uuid primary key,
+  username    text,
+  full_name   text,
+  avatar_url  text,
+  -- 2026-10-11: admin'in verdiği TAKMA AD. Aramada `username`/`full_name`
+  -- ile BİRLİKTE aranır — takma ad konulduğunda gerçek ad kaybolmaz.
+  nickname    text,
+  -- 2026-10-11: ÇEVRİMİÇİ NABZI. İstemci sohbet sayfası açıkken 20 sn'de bir
+  -- `last_seen_at`i tazeler. Yeşil/kırmızı nokta bundan hesaplanır.
+  last_seen_at    timestamptz,
+  -- SARİ NOKTA: 'typing' | 'uploading' | 'recording'. "Bana bir şey
+  -- gönderecek" demek. Nabız eskiyse yok sayılır (bkz. lib/chat-peers.ts).
+  presence_state  text,
+  role        text not null default 'user',
+  is_owner    boolean not null default false,
+  roles       jsonb not null default '[]'::jsonb,
+  permissions jsonb not null default '[]'::jsonb,
+  limits      jsonb not null default '{}'::jsonb,
+  bio         text,
+  github_handle text,
+  website     text,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.profiles enable row level security;
+
+-- 2026-10-11: `profiles` ZATEN kurulu olanlara da `nickname` eklenir
+-- (idempotent). `create table if not exists` mevcut tabloyu DEĞİŞTİRMEZ.
+alter table public.profiles add column if not exists nickname text;
+
+-- 2026-10-11: çevrimiçi nabzı + sarı nokta durumu (idempotent; `profiles`
+-- zaten kurulu olanlarda `create table if not exists` sütun EKLEMEZ).
+alter table public.profiles add column if not exists last_seen_at timestamptz;
+alter table public.profiles add column if not exists presence_state text;
+
+-- Herkes profilleri okuyabilir (site herkese açık)
+drop policy if exists "public profiles are viewable" on public.profiles;
+create policy "public profiles are viewable"
+  on public.profiles for select
+  using (true);
+
+-- Kullanıcı yalnızca kendi profilini güncelleyebilir.
+-- WITH CHECK: role/is_owner değişikliğini engelle (kullanıcı kendini
+-- admin yapamasın).
+drop policy if exists "users can update own profile" on public.profiles;
+create policy "users can update own profile"
+  on public.profiles for update
+  using (auth.uid() = id)
+  with check (
+    auth.uid() = id
+    and (role is distinct from (select role from public.profiles where id = auth.uid()) or role = (select role from public.profiles where id = auth.uid()))
+  );
+
+-- ---------- puck_pages ----------
+create table if not exists public.puck_pages (
+  page       text primary key,
+  data       jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.puck_pages enable row level security;
+
+drop policy if exists puck_pages_read on public.puck_pages;
+create policy puck_pages_read on public.puck_pages for select using (true);
+
+-- ---------- puck_versions ----------
+create table if not exists public.puck_versions (
+  id         text primary key,
+  page       text not null,
+  name       text not null default '',
+  data       jsonb not null default '{}'::jsonb,
+  ts         timestamptz not null default now()
+);
+
+create index if not exists puck_versions_page_idx on public.puck_versions (page, ts desc);
+
+alter table public.puck_versions enable row level security;
+
+drop policy if exists puck_versions_read on public.puck_versions;
+create policy puck_versions_read on public.puck_versions for select using (true);
+
+-- ---------- cvs ----------
+create table if not exists public.cvs (
+  id         uuid primary key default gen_random_uuid(),
+  label      text not null,
+  lang       text not null default 'tr',
+  href       text not null,
+  sort_order integer not null default 0,
+  is_active  boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists cvs_sort_idx on public.cvs (sort_order);
+
+alter table public.cvs enable row level security;
+
+drop policy if exists cvs_read on public.cvs;
+create policy cvs_read on public.cvs for select using (is_active);
+
+-- ---------- messages (iletişim formu) ----------
+create table if not exists public.messages (
+  id           uuid primary key default gen_random_uuid(),
+  name         text not null,
+  contact_type text not null default 'email',
+  contact_value text not null,
+  message      text not null,
+  created_at   timestamptz not null default now()
+);
+
+-- messages: sadece service-role yazar/okur (kimlik doğrulamasız erişim yok)
+-- RLS yok = anon key ile erişilemez (service-role RLS'yi bypass eder)
+
+-- ---------- stars ----------
+-- Yıldız verisi: service-role ile yazılır, herkese açık okunur.
+-- (stars.json dosyası da var ama DB'ye taşınabilir)
+
+-- ============================================================
+-- Supabase güvenlik + bütünlük düzeltmeleri (2026-11-01)
+-- Advisor raporları üzerinden uygulananlar:
+--   · public.site_content_bak_20261030: RLS açıldı + kilitlendi (KRİTİK)
+--   · RLS'li ama policy'siz 5 tabloya service-role policy'si eklendi
+--   · handle_new_user(): PUBLIC execute izni kaldırıldı (SECURITY DEFINER
+--     kalır, auth trigger'ı Postgres içinden çağırır; /rest/v1/rpc üzerinden
+--     çağrı engellendi)
+--   · protect_owner / touch_updated_at / set_updated_at: search_path=public
+--   · site_content: PostgREST şema cache'i yenilendi (okunabilir)
+-- Tüm uygulama erişimi service-role üzerinden (chat-db.ts, content.ts).
+-- ============================================================
+
+-- site_content (kalıcılık) — service-role üzerinden yazılır/okunur
+create table if not exists public.site_content (
+  id          text primary key default 'main',
+  content     jsonb not null,
+  updated_at  timestamptz not null default now()
+);
+
+insert into public.site_content (id, content)
+values ('main', '{}'::jsonb)
+on conflict (id) do nothing;
+
+alter table public.site_content enable row level security;
+revoke all on public.site_content from anon, authenticated;
+
+-- site_content_bak_20261030: yedek tablo, RLS kapalıydı (kritik açık)
+alter table public.site_content_bak_20261030 enable row level security;
+revoke all on public.site_content_bak_20261030 from anon, authenticated;
+
+-- Chat + audit tabloları: RLS zaten açık, policy'sizdi → service-only
+do $$
+begin
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='chat_conversations') then
+    create policy "chat_conversations service only" on public.chat_conversations
+      for all to service_role using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='chat_messages') then
+    create policy "chat_messages service only" on public.chat_messages
+      for all to service_role using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='chat_participants') then
+    create policy "chat_participants service only" on public.chat_participants
+      for all to service_role using (true) with check (true);
+  end if;
+  if not exists (select 1 from pg_policies where schemaname='public' and tablename='audit_log') then
+    create policy "audit_log service only" on public.audit_log
+      for all to service_role using (true) with check (true);
+  end if;
+end $$;
+
+-- handle_new_user: SECURITY DEFINER (auth trigger'ı içinden çağırır) ama
+-- RPC üzerinden çağrılmamalı → PUBLIC execute izni al
+revoke execute on function public.handle_new_user() from public;
+
+-- search_path mutable düzeltmesi
+alter function public.protect_owner() set search_path = public;
+alter function public.touch_updated_at() set search_path = public;
+alter function public.set_updated_at() set search_path = public;
+
+-- PostgREST şema cache'i yenile (site_content 404 PGRST205 önlemi)
+comment on table public.site_content is 'site content persistence (2026-11-01 security fix)';
+
+-- messages: RLS açık, service-role yazar/okur; phone kolonu var (doğrulandı 2026-11-01)
+alter table public.messages enable row level security;

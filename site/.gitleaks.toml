@@ -1,0 +1,86 @@
+# Gitleaks — commit öncesi sır taraması (Faz 1 · sır yönetimi)
+#
+# Kurulum (tek seferlik):
+#   winget install Gitleaks.Gitleaks        # veya: brew install gitleaks
+#
+# Çalıştırma:
+#   gitleaks detect --redact              # tüm geçmişi tara
+#   gitleaks protect --staged --redact    # commit'e hazırlananları tara (husky bunu çağırır)
+#
+# Bulgu çıkarsa: anahtarı İPTAL ET (Cloudflare/Supabase/GitHub panelinden yenisini
+# üret), sonra dosyayı temizle. Sadece satırı silmek anahtarı güvenli yapmaz.
+
+title = "gitleaks yapılandırması — tarikelertarnak"
+
+[extend]
+# Ek kurallar: yeni sır tipleri çıktığında güncellemek kolay olsun.
+# useDefault = true olduğu için varsayılan kurallar da çalışır.
+useDefault = true
+
+[allowlist]
+description = "Yanlış pozitif azaltma — bunlar sır DEĞİL"
+paths = [
+  # Şablon dosya: değerler boş, gizli değil.
+  '''(^|/)(\.env\.example|.*\.example)$''',
+  # Yerel gizli dosya (gitignore'da ama gitleaks bazen tarar).
+  '''(^|/)\.env(\..+)?$''',
+  # Üretim credentials dosyası — repo dışında, gitignore'lu.
+  '''tarikelertarnak\.pages\.dev\.txt''',
+  # Kilit dosyaları.
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(package-lock\.json|yarn\.lock)$''',
+  # Test/sahte veriler.
+  '''(^|/)(test|tests|__tests__|fixtures)(/|$)''',
+]
+regexes = [
+  # Kullanıcının kendi e-posta adresi (kimlik değil sır) — testlerde kullanılıyor.
+  '''tarikelertarnak@gmail\.com''',
+]
+
+[[rules]]
+id = "supabase-service-role-leak"
+description = "Supabase service_role anahtarı kaynak koda gömülmemeli"
+# service_role JWT'leri eyJ ile başlar ve gövdesi base64url'dir; service_role
+# ayrıcalığını taşıyan tek JSON alanı budur.
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'''
+keywords = [ "eyJ" ]
+
+[[rules]]
+id = "cloudflare-global-api-key"
+description = "Cloudflare Global API Key (37 haneli hex)"
+regex = '''(?i)cloudflare[_-]?(global[_-]?)?api[_-]?key\s*[:=]\s*["']?[a-f0-9]{37}["']?'''
+keywords = [ "cloudflare" ]
+
+[[rules]]
+id = "google-oauth-client-secret"
+description = "Google OAuth client secret (GOCSPX- ile başlar)"
+regex = '''GOCSPX-[A-Za-z0-9_-]{20,}'''
+keywords = [ "GOCSPX" ]
+
+[[rules]]
+id = "github-pat-classic"
+description = "GitHub klasik PAT (ghp_/gho_/ghu_/ghs_/ghr_)"
+regex = '''gh[pousr]_[A-Za-z0-9]{36,}'''
+keywords = [
+  "ghp_",
+  "gho_",
+  "ghu_",
+  "ghs_",
+  "ghr_"
+]
+
+[[rules]]
+id = "github-fine-grained-pat"
+description = "GitHub ince ayarlı PAT (github_pat_)"
+regex = '''github_pat_[A-Za-z0-9_]{50,}'''
+keywords = [ "github_pat_" ]
+
+[[rules]]
+id = "turnstile-or-arcjet-secret-assigned"
+description = "Turnstile/Arcjet SECRET anahtarı kaynak koda yazılmamalı (public olan OK)"
+regex = '''(?i)(turnstile_secret|arcjet_key|secret_key)\s*[:=]\s*["'][A-Za-z0-9_-]{16,}["']'''
+keywords = [
+  "turnstile_secret",
+  "arcjet_key",
+  "secret_key"
+]

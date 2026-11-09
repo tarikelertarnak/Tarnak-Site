@@ -1,0 +1,52 @@
+import type { Metadata } from 'next'
+import { RememberListPath } from '@/components/remember-list-path'
+import { BlogSection } from '@/components/sections/blog-section'
+import { getPosts } from '@/lib/blog'
+import { getStaticLocale } from '@/lib/i18n-server'
+import { siteUrl } from '@/lib/site-url'
+
+// 2026-10-03: ISR KALDIRILDI. revalidate=300 incremental cache (KV) her render'da bir OKUMA+YAZMA yapiyordu; Workers Free 10 ms CPU limitinde bu I/O worker'i asiliyordu (/donate 20 sn+ sonsuz timeout, bazen 200). Sayfa artik tam statik: KV yok, render yok. Admin icerik degisikligi deploy ile yayinlanir.
+export const dynamic = 'force-static'
+
+// 2026-10-04: Bu sayfa HIC metadata tasimiyordu. Next metadata'yi child'dan
+// parent'a MIRAS ALIR, yani blog listesi su anda ana sayfanin title'ini,
+// ana sayfanin description'ini ve — en kotusu — `canonical: '/'` degerini
+// paylasiyordu. Yani /blog sayfasi kendini ana sayfa ilan ediyordu
+// (self-canonical degil, cross-canonical) ve Google'a "bu sayfa / ile ayni"
+// sinyali gidiyordu. Asagida kendi kimligini aliyor.
+export const metadata: Metadata = {
+  title: 'Blog — TARIK ELER - TARNAK',
+  description:
+    'TARIK ELER blog: posts on Next.js, TypeScript, React and AI. Software development notes, projects and learnings.',
+  alternates: { canonical: '/blog' },
+  openGraph: {
+    type: 'website',
+    url: siteUrl('/blog'),
+    title: 'Blog — TARIK ELER - TARNAK',
+    description:
+      'Posts on Next.js, TypeScript, React and AI. Software development notes, projects and learnings.',
+  },
+}
+
+export default async function BlogPage() {
+  const locale = await getStaticLocale()
+  const posts = await getPosts(locale)
+
+  return (
+    <div className="min-h-screen w-full relative">
+      <RememberListPath path="/blog" />
+      <main id="main" className="contents">
+        {/*
+          ÜST BOŞLUK (2026-10-13, breadcrumb kaldırıldı): BlogSection'ın
+          kendi `pt-16 sm:pt-24 lg:pt-32`'si + `framed` iç dolgusu
+          /projects ve /about'tan farklı düşüyor (header→h1 ölçümü
+          blog 105/145/193 px, diğerleri 112/128/128 px). Sarmalayıcı,
+          farkı kapatır → üç sayfa da 113/129/129 px.
+        */}
+        <div className="mt-2 sm:-mt-4 lg:-mt-16">
+          <BlogSection posts={posts} />
+        </div>
+      </main>
+    </div>
+  )
+}

@@ -1,0 +1,78 @@
+▲ Next.js 16.3.4 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.mjs took 29ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 5.0s
+  Running TypeScript ...
+  Finished TypeScript in 6.2s ...
+  Collecting page data using 23 workers ...
+  Generating static pages using 23 workers (0/43) ...
+  Generating static pages using 23 workers (10/43) 
+  Generating static pages using 23 workers (21/43) 
+  Generating static pages using 23 workers (32/43) 
+✓ Generating static pages using 23 workers (43/43) in 2.4s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /about
+├ ƒ /admin
+├ ƒ /admin/puck/[[...puckPath]]
+├ ƒ /ads
+├ ƒ /api/admin/background
+├ ƒ /api/admin/blog
+├ ƒ /api/admin/content
+├ ƒ /api/admin/data/[resource]
+├ ƒ /api/admin/data/[resource]/[id]
+├ ƒ /api/admin/login
+├ ƒ /api/admin/logout
+├ ƒ /api/admin/overview
+├ ƒ /api/admin/password
+├ ƒ /api/admin/profile
+├ ƒ /api/admin/puck
+├ ƒ /api/admin/session
+├ ƒ /api/admin/users
+├ ƒ /api/ads
+├ ƒ /api/auth/google
+├ ƒ /api/auth/login
+├ ƒ /api/auth/logout
+├ ƒ /api/auth/profile
+├ ƒ /api/auth/session
+├ ƒ /api/auth/signup
+├ ƒ /api/chat
+├ ƒ /api/chat/upload
+├ ƒ /api/chat/users
+├ ƒ /api/contact
+├ ƒ /api/credits/leaderboard
+├ ƒ /api/github
+├ ƒ /api/github/file
+├ ƒ /api/github/profile
+├ ƒ /api/github/proxy
+├ ƒ /api/github/releases
+├ ƒ /api/github/repo
+├ ƒ /api/stars
+├ ƒ /auth/callback
+├ ƒ /blog
+├ ƒ /blog/[slug]
+├ ƒ /chat
+├ ƒ /credits
+├ ƒ /donate
+├ ƒ /github
+├ ƒ /github/[owner]
+├ ƒ /github/[owner]/[repo]
+├ ○ /icon.svg
+├ ƒ /login
+├ ƒ /projects
+├ ƒ /puck/[[...puckPath]]
+├ ƒ /reklam
+├ ƒ /search
+└ ƒ /sign
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

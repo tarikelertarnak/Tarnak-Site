@@ -1,0 +1,266 @@
+{
+  "hero": {
+    "name": "TARIK ELER",
+    "tagline": "Yazılımcı & Sistem Mimarı",
+    "badge": "",
+    "description": "",
+    "exploreLabel": "Projeleri Keşfet",
+    "connectLabel": "İletişime Geç",
+    "emoji": "",
+    "stats": [
+      {
+        "label": "Projects",
+        "value": "10+"
+      },
+      {
+        "label": "Technologies",
+        "value": "15+"
+      },
+      {
+        "label": "Focus",
+        "value": "100%"
+      }
+    ],
+    "i18n": {
+      "tagline": {},
+      "exploreLabel": {},
+      "connectLabel": {}
+    }
+  },
+  "nav": {
+    "ctaLabel": "GitHub",
+    "githubRepo": "https://github.com/tarikelertarnak/TARIKELER-TARNAK",
+    "items": [
+      {
+        "title": "Projeler",
+        "href": "/projects"
+      },
+      {
+        "title": "Blog",
+        "href": "/blog"
+      },
+      {
+        "title": "Sohbet",
+        "href": "/chat"
+      },
+      {
+        "title": "İletişim",
+        "href": "/contact/"
+      }
+    ]
+  },
+  "social": [
+    {
+      "name": "GitHub",
+      "href": "https://github.com/tarikelertarnak",
+      "icon": "mdi:github"
+    },
+    {
+      "name": "Instagram",
+      "href": "https://www.instagram.com/tarikeler_tarnak/",
+      "icon": "mdi:instagram"
+    },
+    {
+      "name": "LinkedIn",
+      "href": "https://www.linkedin.com/in/tar%C4%B1k-eler-238698394/",
+      "icon": "mdi:linkedin"
+    },
+    {
+      "name": "YouTube",
+      "href": "https://www.youtube.com/channel/UCuyBHNFeTvBkZryFRfk4CQg",
+      "icon": "mdi:youtube"
+    },
+    {
+      "name": "Discord Channel",
+      "href": "https://discord.gg/UFzppNZxDw",
+      "icon": "mdi:discord",
+      "label": "Discord Channel",
+      "value": "Tarnak"
+    },
+    {
+      "name": "Discord User",
+      "href": "https://discord.com/users/1565472290236268605",
+      "icon": "mdi:discord",
+      "label": "Discord User",
+      "value": "tarikelertarnak"
+    }
+  ],
+  "about": {
+    "subtitle": "HAKKIMDA",
+    "title": "Dünyama Kısa Bir Bakış",
+    "description": "",
+    "whoTitle": "Ben Kimim?",
+    "whoText": "Kod yazmayı ve ürün geliştirmeyi seven bir web geliştiriciyim. Web geliştirme, tasarım ve teknoloji benim için bir tutku. Kendimi geliştiren her şeyi yapmaktan hoşlanıyorum.",
+    "toolboxTitle": "Araç Çantam",
+    "toolboxDescription": "Projeler ve siteler geliştirirken kullandığım teknolojiler.",
+    "toolbox": [
+      {
+        "label": "HTML",
+        "icon": "",
+        "type": "link",
+        "href": "https://developer.mozilla.org/en-US/docs/Web/HTML"
+      },
+      {
+        "label": "CSS",
+        "icon": "",
+        "type": "link",
+        "href": "https://developer.mozilla.org/en-US/docs/Web/CSS"
+      },
+      {
+        "label": "JavaScript",
+        "icon": "",
+        "type": "link",
+        "href": "https://developer.mozilla.org/en-US/docs/Web/JavaScript"
+      },
+      {
+        "label": "C#",
+        "icon": "",
+        "type": "link",
+        "href": "https://learn.microsoft.com/en-us/dotnet/csharp/"
+      },
+      {
+        "label": "Python",
+        "icon": "",
+        "type": "link",
+        "href": "https://www.python.org"
+      },
+      {
+        "label": "SQL",
+        "icon": "",
+        "type": "link",
+        "href": "https://www.postgresql.org/docs/current/sql.html"
+      }
+    ],
+    "beyondTitle": "Kodun Ötesinde",
+    "beyondDescription": "Kod yazmadığım zamanlarda neler yaptığımı, ilgi alanlarımı ve hobilerimi keşfet.",
+    "interests": [
+      {
+        "label": "Donanım",
+        "icon": "mdi:laptop",
+        "content": "Bilgisayarlar ve diğer teknolojilerle uğraşmayı seviyorum."
+      },
+      {
+        "label": "Yapay Zeka",
+        "icon": "mdi:creation",
+        "content": "Yapay zeka ile geliştirdiğim projeler üzerine çalışmayı, yeni modeller ve araçları denemeyi seviyorum."
+      }
+    ],
+    "securityTitle": "",
+    "securityText": "",
+    "securityTools": [],
+    "teamTitle": "EKİBİMİZ",
+    "team": [
+      {
+        "name": "TARIKELER",
+        "role": "Kurucu"
+      },
+      {
+        "name": "TARIKELER-TARNAK",
+        "role": "Altyapı"
+      },
+      {
+        "name": "Fruity Dev",
+        "role": "DevOps"
+      },
+      {
+        "name": "PixelShield",
+        "role": "Güvenlik"
+      },
+      {
+        "name": "Mythora.de",
+        "role": "Operasyon"
+      }
+    ],
+    "cv": {
+      "href": "/cv/tarikeler-cv.pdf",
+      "summary": "Next.js, TypeScript ve yapay zeka ile modern, uçtan uca web deneyimleri üreten web geliştirici. Tasarımdan deploy'a — insanların kullandığı ürünler geliştiriyorum.",
+      "experience": [],
+      "education": [
+        {
+          "role": "11. Sınıf — Teknik Bilişim",
+          "company": "K-Tek (Kılıçarslan Borsa İstanbul Mesleki ve Teknik Anadolu Lisesi)",
+          "period": "Okuyor",
+          "description": "Teknik Bilişim bölümünde 11. sınıf öğrencisiyim."
+        }
+      ]
+    }
+  },
+  "projects": {
+    "subtitle": "PROJELER",
+    "title": "Tüm Projeler",
+    "description": "",
+    "items": []
+  },
+  "github": {
+    "subtitle": "GITHUB",
+    "title": "GitHub Projeleri",
+    "description": "GitHub profilimden canlı çekilen genel depolarım."
+  },
+  "chat": {
+    "subtitle": "SOHBET",
+    "title": "Benimle Sohbet Et",
+    "description": "Bir mesaj bırakın ya da merhaba deyin. Anında görünür."
+  },
+  "profile": {
+    "firstName": "TARIK",
+    "lastName": "ELER",
+    "displayName": "TARIK ELER",
+    "nickname": "TARNAK",
+    "title": "Yazılımcı & Sistem Mimarı",
+    "profileImage": "/uploads/profile.png",
+    "experience": "",
+    "firstLanguage": "Türkçe",
+    "otherLanguages": "İngilizce (A2), Almanca (A1)"
+  },
+  "contact": {
+    "subtitle": "İLETİŞİM",
+    "title": "İletişim",
+    "description": "",
+    "footerText": "",
+    "successTitle": "Mesajın iletildi!",
+    "successText": "Bana ulaştığın için teşekkürler! Mesajını aldım, en kısa sürede sana döneceğim.",
+    "email": "tarikelertarnak@gmail.com",
+    "phone": "+90 5518957215",
+    "location": "https://www.google.com/maps/place/Fetih,+S%C3%B6nmez+Sk.+No:5,+42030+Karatay%2FKonya/@37.8750305,32.5391801,17z/data=!4m6!3m5!1s0x14d09ab31a659e3d:0x594d704ce1aa1698!8m2!3d37.8750305!4d32.5391801!16s%2Fg%2F11c4h6twdh?entry=ttu&g_ep=EgoyMDI2MDkwMi4wIKXMDSoASAFQAw%3D%3D",
+    "locationYandex": "https://yandex.com.tr/maps/101474/konya/?ll=32.539234%2C37.875019&mode=whatshere&utm_source=share&whatshere%5Bpoint%5D=32.539225%2C37.875038&whatshere%5Bzoom%5D=17&z=21"
+  },
+  "settings": {
+    "githubUsername": "tarikelertarnak",
+    "defaultTheme": "system",
+    "backgroundImage": ""
+  },
+  "footer": {
+    "copyright": "TARIK ELER"
+  },
+  "phase6": {
+    "now": {
+      "title": "Now",
+      "intro": "Bu sayfa ne yaptığımı kısa tutar: öğrendiğim konular, üzerinde çalıştığım işler ve takip ettiklerim. Alttaki GitHub bloğu build sırasında otomatik güncellenir.",
+      "updated": "31 Ekim 2026",
+      "learning": [
+        "Next.js 16 App Router: force-static sınırları, prerender ve cache davranışı",
+        "TypeScript strict modda zod ile API sözleşmeleri ve doğrulama katmanları",
+        "Cloudflare Workers'ta 10 ms CPU bütçesine sığan static-first mimari"
+      ],
+      "building": [
+        "Bu portfolyo: kodsuz sayfa düzenleme paneli ve 25 dilli çeviri akışı",
+        "Görsel düzenleme aracı: seç–tıkla–düzenle, panel sayfayı küçültüyor",
+        "Vitest + Playwright regresyon ağı (1100'den fazla birim testi)"
+      ],
+      "reading": [],
+      "listening": []
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "updated": "30 Ekim 2026",
+      "body": "Bu politika, bu portfolyo sitesinde hangi verilerin işlendiğini ve nasıl korunduğunu açıklar. Veri sorumlusu Tarık Eler'dir; iletişim: tarikelertarnak@gmail.com.\n\n1. İşlenen veriler\nİletişim formu: ad, e-posta, isteğe bağlı telefon ve mesaj metni.\nSohbet: seçtiğin görünen ad ve yazdığın mesajlar.\nHesap: Google veya e-posta ile giriş yaparsan e-posta adresi, görünen ad ve oturum bilgisi.\nTeknik kayıtlar: barındırma sağlayıcısının tuttuğu IP adresi ve tarayıcı bilgisi gibi standart erişim kayıtları.\n\n2. Çerezler ve yerel depolama\nYalnızca işlevsel kayıtlar kullanılır: seçtiğin dil (site-locale çerezi), tema ve ses tercihi (tarayıcı yerel depolaması) ve yönetici girişi için oturum çerezi. Sitede reklam ağı, izleme pikseli veya profilleme çerezi bulunmuyor.\n\n3. Amaç ve hukuki sebep\nVeriler yalnızca mesajına yanıt vermek, sohbeti sürdürmek, hesabını çalıştırmak ve sitenin güvenliğini sağlamak için işlenir. Hukuki sebep: sözleşmenin kurulması veya ifası ile meşru menfaat (KVKK m.5/2-c, m.5/2-f).\n\n4. Saklama süresi\nMesajlar ve sohbet kayıtları amaç ortadan kalkınca ya da silinmesini istediğinde silinir. Oturum çerezleri en fazla 7 gün yaşar.\n\n5. Paylaşım\nVeriler satılmaz. Yalnızca hizmet aldığım sağlayıcılar (barındırma: Cloudflare, veritabanı: Supabase, isteğe bağlı giriş: Google) kendi altyapılarında işler.\n\n6. Hakların\nKVKK m.11 kapsamında verilerine erişme, düzeltme, silinmesini isteme ve işlemeye itiraz etme hakkın var. tarikelertarnak@gmail.com adresine yazman yeterli.\n\n7. Değişiklikler\nPolitika güncellendiğinde bu sayfadaki tarih değişir.",
+      "needsLegalReview": true
+    },
+    "kvkk": {
+      "title": "KVKK Notice",
+      "updated": "30 Ekim 2026",
+      "body": "Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) m.10 kapsamındaki aydınlatma yükümlülüğünü yerine getirmek için hazırlanmıştır. Veri sorumlusu: Tarık Eler — tarikelertarnak@gmail.com.\n\n1. İşlenen kişisel veriler\nKimlik ve iletişim: ad, e-posta, isteğe bağlı telefon.\nİşlem güvenliği: IP adresi, tarayıcı bilgisi, oturum kayıtları.\nMüşteri işlem: sohbet mesajları ve iletişim formu içeriği.\n\n2. İşleme amaçları\nİletişim taleplerini yanıtlamak, sohbet hizmetini sunmak, kullanıcı hesabını yönetmek, site güvenliğini ve hizmet sürekliliğini sağlamak.\n\n3. Hukuki sebepler\nKVKK m.5/2-c (sözleşmenin kurulması veya ifası), m.5/2-f (meşru menfaat) ve m.5/2-e (bir hakkın tesisi veya korunması).\n\n4. Aktarım\nSunucuları yurt dışında bulunan hizmet sağlayıcıları (Cloudflare, Supabase, isteğe bağlı Google girişi) kullanılır. Bu aktarım hizmetin teknik zorunluluğudur; veriler pazarlama amacıyla paylaşılmaz ve satılmaz.\n\n5. Toplama yöntemi\nVeriler, sitedeki formlar ve giriş akışları üzerinden elektronik ortamda doğrudan toplanır.\n\n6. KVKK m.11 kapsamındaki haklar\nKişisel verilerinin işlenip işlenmediğini öğrenme, işlenmişse buna ilişkin bilgi talep etme, işlenme amacına uygun kullanılıp kullanılmadığını öğrenme, eksik veya yanlış işlenmişse düzeltilmesini isteme, silinmesini veya yok edilmesini isteme, aktarıldığı üçüncü kişileri öğrenme ve zararın giderilmesini talep etme.\n\n7. Başvuru\nTaleplerini tarikelertarnak@gmail.com adresine iletebilirsin; başvurular en geç 30 gün içinde yanıtlanır.",
+      "needsLegalReview": true
+    }
+  }
+}

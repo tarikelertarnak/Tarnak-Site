@@ -1,0 +1,127 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.log
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# güvenlik: veri dosyaları repo'ya girmesin
+/public/uploads/
+
+# scripts/: toptan yasaklamak build'i kiriyordu.
+# package.json -> postinstall "node scripts/patch-lightningcss.cjs"
+# package.json -> prebuild    "node scripts/fetch-github-data.cjs"
+# Cloudflare Pages klonunda bu dosyalar bulunamayinca build patliyordu.
+# Cozum: klasoru toptan yasaklamak yerine, SIR ICEREN script'leri tek tek disla.
+#
+# ⚠️ DIKKAT — neden `/scripts/*` ve `/scripts/` DEGIL:
+# `/scripts/` klasorun KENDISINI disliyor. Git, dislanan klasorun icine inmez,
+# bu yuzden altindaki `!` istisnalari HICBIR ZAMAN calismaz (git dokumani:
+# "It is not possible to re-include a file if a parent directory of that file
+# is excluded"). Mevcut 4 dosya yalnizca ZATEN TAKIPLI olduklari icin repoda
+# duruyordu; istisna satirlari fiilen no-op idi. `/scripts/*` ise dosyalari
+# dislar ama klasore iner — boylece istisnalar gercekten isler.
+/scripts/*
+!/scripts/patch-lightningcss.cjs
+!/scripts/fetch-github-data.cjs
+!/scripts/gen-countries.cjs
+!/scripts/check-country-map.cjs
+# Tek komutlu Pages deploy (build + deploy + prime). Sır içermez, sürümlenmeli —
+# Cloudflare 1102/asılı sorunlarının ana çözüm yolu bu.
+!/scripts/deploy-pages.sh
+# Reklam semasi sir ICERMEZ (SUPABASE_DB_PW kullanmaz) — repoda kalsin ki
+# baska bir makinede/clone'da sema kaybolmasin.
+!/scripts/schema-ads.sql
+# Onarim migration'i — sir icermez, surumlenmeli.
+!/scripts/schema-fixes.sql
+
+# Bunlar sir/sema iceriyor — repoda kalmasin (SUPABASE_DB_PW kullanirlar)
+scripts/pg-test.mjs
+scripts/apply-schema.mjs
+scripts/verify-schema.mjs
+scripts/auth-config-check.mjs
+scripts/schema.sql
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# OpenNext / Cloudflare
+/.open-next/
+/.wrangler/
+.wrangler/
+*.log
+!progress.md
+
+# dev scripts / watchdog
+dev-watchdog.ps1
+dev-watchdog.log
+start-dev.cmd
+format-minified.js
+
+# screenshots / proof images (root level)
+puck-*.png
+cdp-*.png
+cdp2-*.png
+cdp3-*.png
+home-github.png
+login-check.png
+login-next.png
+
+# rebuild trigger files
+.pages-rebuild.counter
+.pages-rebuild.md
+.rebuild-trigger
+rebuild-trigger.md
+
+# generated lockfiles (keep pnpm-lock.yaml only)
+package-lock.json
+wrangler.json
+
+# Gunluk/surelme dosyasi — gecmiste Google OAuth client secret (GOCSPX-)
+# iceriyordu, GitHub push protection engelledi. Artik yalnizca yerel.
+/progress.md
+
+# Sifre dosyasi — asla GitHub'a GITMEZ
+tarikelertarnak.pages.dev.txt
+
+# Playwright / test artifacts
+test-results/
+playwright-report/
+blob-report/
+.playwright/
+
+*.bak-*
