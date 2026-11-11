@@ -15,11 +15,13 @@ import { Tabs } from '@lobehub/ui/base-ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { DataManager } from '@/components/admin/data-manager'
+import { AiConfigEditor } from '@/components/admin/ai-config-editor'
 import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
 import { HeroLogoField } from '@/components/admin/hero-logo-field'
 import { OverviewPanel } from '@/components/admin/overview-panel'
 import { PageTextEditor } from '@/components/admin/page-text-editor'
 import { PanelCard } from '@/components/admin/panel-card'
+import { SectionsEditor } from '@/components/admin/sections-editor'
 import { ProfilePhotoUploader } from '@/components/admin/profile-photo-uploader'
 import { SaveBar } from '@/components/admin/save-bar'
 import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
@@ -37,6 +39,7 @@ import { clientFetchUserRepos } from '@/lib/github-client'
 import { draftToProject, emptyProjectDraft, projectToDraft, ProjectModal } from '@/components/admin/project-modal'
 import type { ProjectDraft } from '@/components/admin/project-modal'
 import { PAGE_SPECS } from '@/lib/page-text-specs'
+import { SECTION_SPECS } from '@/lib/section-fields'
 import { scrollToElement } from '@/lib/scroll'
 
 type SaveStatus = { type: 'success' | 'error', text: string } | null
@@ -374,6 +377,38 @@ return
     setContent(prev => ({
       ...prev,
       profile: { ...prev.profile, [field]: value },
+    }))
+  }
+
+  /** Üst menü (nav) alanları — 2026-11-11 merge: uzak branch'teki menü düzenleyici. */
+  const setNav = (field: keyof SiteContent['nav'], value: string) => {
+    setContent(prev => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
+  }
+
+  const setNavItem = (
+    index: number,
+    field: keyof SiteContent['nav']['items'][number],
+    value: string,
+  ) => {
+    setContent((prev) => {
+      const items = prev.nav.items.map((item, i) =>
+        i === index ? { ...item, [field]: value } : item,
+      )
+      return { ...prev, nav: { ...prev.nav, items } }
+    })
+  }
+
+  const addNavItem = () => {
+    setContent(prev => ({
+      ...prev,
+      nav: { ...prev.nav, items: [...prev.nav.items, { title: '', href: '' }] },
+    }))
+  }
+
+  const removeNavItem = (index: number) => {
+    setContent(prev => ({
+      ...prev,
+      nav: { ...prev.nav, items: prev.nav.items.filter((_, i) => i !== index) },
     }))
   }
 
@@ -1137,6 +1172,51 @@ return item
           */}
         </Grid>
       </PanelCard>
+      <PanelCard title="Menü (Navigation)">
+        <Grid>
+          <Field label="CTA Buton Yazısı (üst menü)">
+            <Input
+              variant="faded"
+              value={content.nav.ctaLabel}
+              onValueChange={value => setNav('ctaLabel', value)}
+            />
+          </Field>
+          <Field label="CTA Link (örn. GitHub)">
+            <Input
+              variant="faded"
+              value={content.nav.githubRepo}
+              onValueChange={value => setNav('githubRepo', value)}
+            />
+          </Field>
+        </Grid>
+        <div className="mt-4 flex flex-col gap-3">
+          {content.nav.items.map((item, index) => (
+            <ItemCard
+              key={index}
+              title={`Menü Öğesi #${index + 1}`}
+              onRemove={() => removeNavItem(index)}
+            >
+              <Grid>
+                <Field label="Başlık">
+                  <Input
+                    variant="faded"
+                    value={item.title}
+                    onValueChange={value => setNavItem(index, 'title', value)}
+                  />
+                </Field>
+                <Field label="Link (örn. /projects/)">
+                  <Input
+                    variant="faded"
+                    value={item.href}
+                    onValueChange={value => setNavItem(index, 'href', value)}
+                  />
+                </Field>
+              </Grid>
+            </ItemCard>
+          ))}
+          <AddButton onPress={addNavItem} label="Menü Öğesi Düzenle" />
+        </div>
+      </PanelCard>
       <PanelCard title="Arka Plan">
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -1501,6 +1581,38 @@ return item
           setActivePagePath(pagePathById[key] ?? '')
         }}
         items={[
+          ...(pagesMatch(pageQ, { id: 'ai', label: 'YAPAY ZEKA' })
+            ? [{
+                key: 'ai',
+                label: 'YAPAY ZEKA',
+                icon: 'mdi:robot-outline',
+                node: (
+                  <PanelCard title="YAPAY ZEKA">
+                    <AiConfigEditor
+                      content={content}
+                      onChange={setContent}
+                      onSave={() => void save()}
+                    />
+                  </PanelCard>
+                ),
+              }]
+            : []),
+          ...(pagesMatch(pageQ, { id: 'sections', label: 'EK BÖLÜMLERİ' })
+            ? [{
+                key: 'sections',
+                label: 'EK BÖLÜMLERİ',
+                icon: 'mdi:view-grid-plus-outline',
+                node: (
+                  <PanelCard title="EK BÖLÜMLERİ">
+                    <SectionsEditor
+                      specs={SECTION_SPECS}
+                      value={(content.phase6 ?? {}) as Record<string, unknown>}
+                      onChange={phase6 => setContent(prev => ({ ...prev, phase6 }))}
+                    />
+                  </PanelCard>
+                ),
+              }]
+            : []),
           ...(pagesMatch(pageQ, projectsMatch)
             ? [{
                 key: 'projects',
