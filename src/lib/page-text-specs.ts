@@ -141,33 +141,6 @@ export const PAGE_SPECS: PageSpec[] = [
     ],
   },
   {
-    id: 'projects',
-    label: 'Projeler',
-    path: '/projects',
-    icon: 'mdi:folder-outline',
-    groups: [
-      {
-        title: 'Sayfa metinleri',
-        fields: [
-          f('content:projects.subtitle', 'Alt başlık'),
-          f('content:projects.title', 'Başlık'),
-          f('content:projects.description', 'Açıklama', true),
-        ],
-      },
-      {
-        title: 'Arayüz metinleri',
-        fields: [
-          f('dict:projects.title', 'Sayfa başlığı (sözlük)'),
-          f('dict:projects.viewAll', 'Tümünü gör'),
-          f('dict:projects.githubBtn', 'GitHub butonu'),
-          f('dict:projects.search', 'Arama yer tutucusu'),
-          f('dict:projects.empty', 'Boş durum'),
-          f('dict:projects.download', 'İndirme'),
-        ],
-      },
-    ],
-  },
-  {
     id: 'blog',
     label: 'Blog',
     path: '/blog',

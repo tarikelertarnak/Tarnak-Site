@@ -31,11 +31,11 @@ describe('hero bölüm düğmesi sırası', () => {
     ])
   })
 
-  it('cv (CvPicker) en sonda', () => {
-    const picker = block.indexOf('<CvPicker')
+  it('cv butonu en sonda (Sohbet\'ten sonra)', () => {
     const chatHref = block.indexOf('href="/chat/"')
+    const cvIdx = block.indexOf('<CvPicker', chatHref + 1)
     expect(chatHref).toBeGreaterThan(-1)
-    expect(picker).toBeGreaterThan(chatHref)
+    expect(cvIdx).toBeGreaterThan(chatHref)
   })
 
   it('sırayı açıklayan yorum yerinde (kaynak sözleşmesi ipucu)', () => {

@@ -14,17 +14,17 @@ import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { AiConfigEditor } from '@/components/admin/ai-config-editor'
 import { DataManager } from '@/components/admin/data-manager'
+import { AiConfigEditor } from '@/components/admin/ai-config-editor'
 import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
 import { HeroLogoField } from '@/components/admin/hero-logo-field'
 import { OverviewPanel } from '@/components/admin/overview-panel'
 import { PageTextEditor } from '@/components/admin/page-text-editor'
 import { PanelCard } from '@/components/admin/panel-card'
+import { SectionsEditor } from '@/components/admin/sections-editor'
 import { ProfilePhotoUploader } from '@/components/admin/profile-photo-uploader'
 import { SaveBar } from '@/components/admin/save-bar'
 import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
-import { SectionsEditor } from '@/components/admin/sections-editor'
 import { TabLabel } from '@/components/admin/tab-label'
 import { UsersPanel } from '@/components/admin/users-panel'
 import { Button } from '@/components/ui/button'
@@ -36,9 +36,11 @@ import { SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { aboutPageErrors, normalizeAboutPage } from '@/lib/about-page'
 import { clientFetchUserRepos } from '@/lib/github-client'
+import { draftToProject, emptyProjectDraft, projectToDraft, ProjectModal } from '@/components/admin/project-modal'
+import type { ProjectDraft } from '@/components/admin/project-modal'
 import { PAGE_SPECS } from '@/lib/page-text-specs'
-import { scrollToElement } from '@/lib/scroll'
 import { SECTION_SPECS } from '@/lib/section-fields'
+import { scrollToElement } from '@/lib/scroll'
 
 type SaveStatus = { type: 'success' | 'error', text: string } | null
 
@@ -329,9 +331,6 @@ return
   // setHeroI18n KALDIRILDI (2026-10-21): hero dil combobox'ları panelden
   // çıkarıldı; `hero.i18n` sözlüğü veri olarak korunur ama panelden her dil
   // için ayrı metin girilmez.
-  const setNav = (field: keyof SiteContent['nav'], value: string) => {
-    setContent(prev => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
-  }
   const setAbout = (field: keyof SiteContent['about'], value: string) => {
     setContent(prev => ({
       ...prev,
@@ -379,6 +378,11 @@ return
       ...prev,
       profile: { ...prev.profile, [field]: value },
     }))
+  }
+
+  /** Üst menü (nav) alanları — 2026-11-11 merge: uzak branch'teki menü düzenleyici. */
+  const setNav = (field: keyof SiteContent['nav'], value: string) => {
+    setContent(prev => ({ ...prev, nav: { ...prev.nav, [field]: value } }))
   }
 
   const setNavItem = (
@@ -432,6 +436,16 @@ return
         ],
       },
     }))
+  }
+
+  const addLanguage = () => {
+    // Yeni dil satırı ekleme — mevcut şema tek string alanla sınırlı,
+    // kullanıcı "Ana Dil" / "Diğer Diller" inputlarını manuel doldurur.
+  }
+
+  const addContact = () => {
+    // Yeni iletişim kanalı ekleme — mevcut şema tek string alanlarla sınırlı,
+    // kullanıcı input alanlarını manuel doldurur.
   }
 
   const removeInterest = (index: number) => {
@@ -528,25 +542,24 @@ return item
     })
   }
 
-  const addProject = () => {
-    setContent(prev => ({
-      ...prev,
-      projects: {
-        ...prev.projects,
-        items: [
-          ...prev.projects.items,
-          {
-            title: '',
-            notice: '',
-            description: '',
-            projectLink: '',
-            srcLink: '',
-            image: '',
-          },
-        ],
-      },
-    }))
-  }
+  /** "Yeni Proje Ekle" popup'u için ham taslak (2026-11-08, kullanıcı isteği). */
+  const [projectModalOpen, setProjectModalOpen] = useState(false)
+  /** "Yeni Proje Ekle" modalının başlangıç taslağı (modal kendi durumunu yönetir). */
+  const [projectModalDraft, setProjectModalDraft] = useState<ProjectDraft>(emptyProjectDraft)
+
+  /** Proje linki önerileri (mevcut projelerden) — modalın "Proje" alanında. */
+  const linkSuggestions = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of content.projects.items) {
+      const a = p.projectLink?.trim()
+      const b = p.srcLink?.trim()
+      if (a)
+        set.add(a)
+      if (b)
+        set.add(b)
+    }
+    return [...set]
+  }, [content.projects.items])
 
   const removeProject = (index: number) => {
     setContent(prev => ({
@@ -593,7 +606,10 @@ return item
     />
   )
 
-  /** Eski "profile" sekmesinin gövdesi — artık bir grubun alt bölümü. */
+  /** Eski "profile" sekmesinin gövdesi — artık bir grubun alt bölümü.
+   *  2026-11-08 (kullanıcı isteği): Profil sekmesi TEK yerde genişletildi —
+   *  Kişisel Bilgiler · Diller · İletişim · Who Am I? · My Toolbox · CV ·
+   *  Beyond Code · Siber Güvenlik — /about sayfasında görünen her şey. */
   const profilePane = (
     <div className="space-y-4 pt-4">
       <ProfilePhotoUploader
@@ -614,7 +630,7 @@ return item
         }}
         onStatus={setStatus}
       />
-      <PanelCard title="Profil Bilgileri">
+      <PanelCard title="Kişisel Bilgiler">
         <Grid>
           <Field label="Ad (First Name)">
             <Input
@@ -651,10 +667,478 @@ return item
               onValueChange={value => setProfile('title', value)}
             />
           </Field>
+          <Field label="Deneyim (örn. 5+ yıl)">
+            <Input
+              variant="faded"
+              value={content.profile.experience ?? ''}
+              onValueChange={value => setProfile('experience', value)}
+            />
+          </Field>
         </Grid>
         <p className="mt-3 text-xs text-foreground-500">
-          Bu bilgiler Chat üzerinde profil olarak görünür.
+          Bu bilgiler /about sayfasında ve chat profillerinde görünür.
         </p>
+      </PanelCard>
+      <PanelCard title="Diller">
+        <Grid>
+          <Field label="Ana Dil">
+            <Input
+              variant="faded"
+              value={content.profile.firstLanguage ?? ''}
+              onValueChange={value => setProfile('firstLanguage', value)}
+            />
+          </Field>
+          <Field label="Diğer Diller">
+            <Input
+              variant="faded"
+              value={content.profile.otherLanguages ?? ''}
+              onValueChange={value => setProfile('otherLanguages', value)}
+              placeholder="İngilizce (A2), Almanca (A1)"
+            />
+          </Field>
+        </Grid>
+        <AddButton onPress={addLanguage} label="Dil Ekle" />
+        <p className="mt-3 text-xs text-foreground-500">
+          /about sayfasındaki "Diller" tablosu
+          {' '}
+          <strong>Veri Yönetimi → Bildiğim Diller</strong>
+          {' '}
+          tablosundan beslenir (seviye, ikon, sıralama). Yukarıdaki metinler
+          kişisel bilgi satırlarında görünür.
+        </p>
+      </PanelCard>
+      <PanelCard title="İletişim Bilgileri">
+        <Grid>
+          <Field label="E-posta">
+            <Input
+              variant="faded"
+              value={content.contact.email ?? ''}
+              onValueChange={value => setContact('email', value)}
+              placeholder="ornek@gmail.com"
+            />
+          </Field>
+          <Field label="Telefon">
+            <Input
+              variant="faded"
+              value={content.contact.phone ?? ''}
+              onValueChange={value => setContact('phone', value)}
+              placeholder="+90 5xx xxx xx xx"
+            />
+          </Field>
+          <Field label="Konum (adres satırı)">
+            <Input
+              variant="faded"
+              value={content.contact.location ?? ''}
+              onValueChange={value => setContact('location', value)}
+              placeholder="Örn. İstanbul, Türkiye"
+            />
+          </Field>
+          <Field label="Yandex Maps Linki">
+            <Input
+              variant="faded"
+              value={content.contact.locationYandex ?? ''}
+              onValueChange={value => setContact('locationYandex', value)}
+              placeholder="https://yandex.com/maps/..."
+            />
+          </Field>
+        </Grid>
+        <AddButton onPress={addContact} label="İletişim Ekle" />
+        <p className="mt-3 text-xs text-foreground-500">
+          E-posta ve telefon /about Kişisel Bilgiler kartında; Yandex linki
+          iletişim kanalları bölümünde kullanılır.
+        </p>
+      </PanelCard>
+      <PanelCard title="Who Am I?">
+        <Grid>
+          <Field label="Alt Başlık">
+            <Input
+              variant="faded"
+              value={content.about.subtitle}
+              onValueChange={value => setAbout('subtitle', value)}
+            />
+          </Field>
+          <Field label="Başlık">
+            <Input
+              variant="faded"
+              value={content.about.title}
+              onValueChange={value => setAbout('title', value)}
+            />
+          </Field>
+          <Field label="Açıklama">
+            <Input
+              variant="faded"
+              value={content.about.description}
+              onValueChange={value => setAbout('description', value)}
+            />
+          </Field>
+          <Field label="'Who Am I?' Başlığı">
+            <Input
+              variant="faded"
+              value={content.about.whoTitle}
+              onValueChange={value => setAbout('whoTitle', value)}
+            />
+          </Field>
+          <Field label="'Who Am I?' Metni">
+            <Textarea
+              variant="faded"
+              value={content.about.whoText}
+              onValueChange={value => setAbout('whoText', value)}
+              minRows={3}
+            />
+          </Field>
+        </Grid>
+      </PanelCard>
+      <PanelCard title="My Toolbox">
+        <div className="rounded-lg border border-foreground/10 bg-foreground/[0.03] p-3 text-xs text-foreground/60">
+          <p>
+            Sitedeki "Kullandığım Teknolojiler" şeridi artık
+            {' '}
+            <strong>Veri Yönetimi → Yetenekler</strong>
+            {' '}
+            tablosundan
+            yönetiliyor (seviye, açıklama ve ikon otomatik algılama ile). Bu bölümdeki eski JSON editörü kaldırıldı.
+          </p>
+        </div>
+      </PanelCard>
+      <PanelCard title="Siber Güvenlik Bölümü">
+        <Grid>
+          <Field label="Başlık">
+            <Input
+              variant="faded"
+              value={content.about.securityTitle}
+              onValueChange={value => setAbout('securityTitle', value)}
+            />
+          </Field>
+          <Field label="Metin">
+            <Input
+              variant="faded"
+              value={content.about.securityText}
+              onValueChange={value => setAbout('securityText', value)}
+            />
+          </Field>
+        </Grid>
+        <div className="mt-4 flex flex-col gap-3">
+          {content.about.securityTools.map((item, index) => (
+            <ItemCard
+              key={index}
+              title={`Araç #${index + 1}`}
+              onRemove={() => removeSecurityTool(index)}
+            >
+              <Grid>
+                <Field label="İsim">
+                  <Input
+                    variant="faded"
+                    value={item.label}
+                    onValueChange={value =>
+                      setSecurityTool(index, 'label', value)}
+                  />
+                </Field>
+                <Field label="Tip">
+                  <select
+                    value={item.type ?? 'link'}
+                    onChange={e =>
+                      setSecurityTool(index, 'type', e.target.value)}
+                    className="h-10 w-full rounded-lg border border-foreground/20 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
+                  >
+                    <option value="link">Link</option>
+                    <option value="command">
+                      Komut (SVG + tıklayınca kopyala)
+                    </option>
+                  </select>
+                </Field>
+                <Field
+                  label={
+                    item.type === 'command'
+                      ? 'Komut (tıklanınca kopyalanır)'
+                      : 'URL'
+                  }
+                >
+                  <Input
+                    variant="faded"
+                    placeholder={
+                      item.type === 'command'
+                        ? 'örn. nmap -sV target'
+                        : 'https://...'
+                    }
+                    value={item.href ?? ''}
+                    onValueChange={value =>
+                      setSecurityTool(index, 'href', value)}
+                  />
+                </Field>
+              </Grid>
+            </ItemCard>
+          ))}
+          <AddButton onPress={addSecurityTool} label="Araç Düzenle" />
+        </div>
+      </PanelCard>
+      <PanelCard title="Beyond Code (İlgi Alanlarım)">
+        <Grid>
+          <Field label="Başlık">
+            <Input
+              variant="faded"
+              value={content.about.beyondTitle}
+              onValueChange={value => setAbout('beyondTitle', value)}
+            />
+          </Field>
+          <Field label="Açıklama">
+            <Input
+              variant="faded"
+              value={content.about.beyondDescription}
+              onValueChange={value =>
+                setAbout('beyondDescription', value)}
+            />
+          </Field>
+        </Grid>
+        <div className="mt-4 flex flex-col gap-3">
+          {content.about.interests.map((item, index) => (
+            <ItemCard
+              key={index}
+              title={`İlgi Alanı #${index + 1}`}
+              onRemove={() => removeInterest(index)}
+            >
+              <Grid>
+                <Field label="İsim">
+                  <Input
+                    variant="faded"
+                    value={item.label}
+                    onValueChange={value =>
+                      setInterest(index, 'label', value)}
+                  />
+                </Field>
+                <Field label="İkon (iconify)">
+                  <Input
+                    variant="faded"
+                    value={item.icon}
+                    onValueChange={value =>
+                      setInterest(index, 'icon', value)}
+                  />
+                </Field>
+                <Field label="Açıklama">
+                  <Input
+                    variant="faded"
+                    value={item.content}
+                    onValueChange={value =>
+                      setInterest(index, 'content', value)}
+                  />
+                </Field>
+              </Grid>
+            </ItemCard>
+          ))}
+          <AddButton onPress={addInterest} label="İlgi Alanı Düzenle" />
+        </div>
+      </PanelCard>
+      <PanelCard title="CV (Özgeçmiş)">
+        <Field label="CV Dosya Yolu">
+          <Input
+            variant="faded"
+            placeholder="/cv/tarikeler-cv.pdf"
+            value={content.about.cv?.href ?? '/cv/tarikeler-cv.pdf'}
+            onValueChange={value =>
+              setAbout('cv', {
+                ...(content.about.cv ?? {}),
+                href: value,
+              } as any)}
+          />
+        </Field>
+        <Field label="CV Özeti (Summary)">
+          <Textarea
+            variant="faded"
+            minRows={3}
+            value={content.about.cv?.summary ?? ''}
+            onValueChange={value =>
+              setAbout('cv', {
+                ...(content.about.cv ?? {}),
+                summary: value,
+              } as any)}
+          />
+        </Field>
+        <p className="mt-3 text-xs text-foreground-500">
+          CV PDF dosyasını
+          {' '}
+          <code>public/cv/tarikeler-cv.pdf</code>
+          konumuna koy; yukarıdaki yolu bu dosyaya göre ayarla. Özgeçmiş
+          verisi aşağıdan güncellenir.
+        </p>
+        <div className="mt-3 space-y-2">
+          <h4 className="text-sm font-semibold">Deneyim</h4>
+          {(content.about.cv?.experience ?? []).map((entry, index) => (
+            <ItemCard
+              key={index}
+              title={`Deneyim #${index + 1}`}
+              onRemove={() =>
+                setAbout('cv', {
+                  ...(content.about.cv ?? {}),
+                  experience: (content.about.cv?.experience ?? []).filter(
+                    (_, i) => i !== index,
+                  ),
+                } as any)}
+            >
+              <Grid>
+                <Field label="Rol / Görev">
+                  <Input
+                    variant="faded"
+                    value={entry.role}
+                    onValueChange={value =>
+                      setAbout('cv', {
+                        ...(content.about.cv ?? {}),
+                        experience: (
+                          content.about.cv?.experience ?? []
+                        ).map((e, i) =>
+                          i === index ? { ...e, role: value } : e,
+                        ),
+                      } as any)}
+                  />
+                </Field>
+                <Field label="Şirket">
+                  <Input
+                    variant="faded"
+                    value={entry.company}
+                    onValueChange={value =>
+                      setAbout('cv', {
+                        ...(content.about.cv ?? {}),
+                        experience: (
+                          content.about.cv?.experience ?? []
+                        ).map((e, i) =>
+                          i === index ? { ...e, company: value } : e,
+                        ),
+                      } as any)}
+                  />
+                </Field>
+                <Field label="Dönem">
+                  <Input
+                    variant="faded"
+                    value={entry.period}
+                    onValueChange={value =>
+                      setAbout('cv', {
+                        ...(content.about.cv ?? {}),
+                        experience: (
+                          content.about.cv?.experience ?? []
+                        ).map((e, i) =>
+                          i === index ? { ...e, period: value } : e,
+                        ),
+                      } as any)}
+                  />
+                </Field>
+                <Field label="Açıklama">
+                  <Input
+                    variant="faded"
+                    value={entry.description}
+                    onValueChange={value =>
+                      setAbout('cv', {
+                        ...(content.about.cv ?? {}),
+                        experience: (
+                          content.about.cv?.experience ?? []
+                        ).map((e, i) =>
+                          i === index ? { ...e, description: value } : e,
+                        ),
+                      } as any)}
+                  />
+                </Field>
+              </Grid>
+            </ItemCard>
+          ))}
+          <AddButton
+            onPress={() =>
+              setAbout('cv', {
+                ...(content.about.cv ?? {}),
+                experience: [
+                  ...(content.about.cv?.experience ?? []),
+                  { role: '', company: '', period: '', description: '' },
+                ],
+              } as any)}
+            label="Deneyim Düzenle"
+          />
+        </div>
+        <div className="mt-4 space-y-2">
+          <h4 className="text-sm font-semibold">Eğitim</h4>
+          {(content.about.cv?.education ?? []).map((entry, index) => (
+            <ItemCard
+              key={index}
+              title={`Eğitim #${index + 1}`}
+              onRemove={() =>
+                setAbout('cv', {
+                  ...(content.about.cv ?? {}),
+                  education: (content.about.cv?.education ?? []).filter(
+                    (_, i) => i !== index,
+                  ),
+                } as any)}
+            >
+              <Grid>
+                <Field label="Kurum">
+                  <Input
+                    variant="faded"
+                    value={entry.role}
+                    onValueChange={value =>
+                      setAbout('cv', {
+                        ...(content.about.cv ?? {}),
+                        education: (
+                          content.about.cv?.education ?? []
+                        ).map((e, i) =>
+                          i === index ? { ...e, role: value } : e,
+                        ),
+                      } as any)}
+                  />
+                </Field>
+                <Field label="Bölüm / Derece">
+                  <Input
+                    variant="faded"
+                    value={entry.company}
+                    onValueChange={value =>
+                      setAbout('cv', {
+                        ...(content.about.cv ?? {}),
+                        education: (
+                          content.about.cv?.education ?? []
+                        ).map((e, i) =>
+                          i === index ? { ...e, company: value } : e,
+                        ),
+                      } as any)}
+                  />
+                </Field>
+                <Field label="Dönem">
+                  <Input
+                    variant="faded"
+                    value={entry.period}
+                    onValueChange={value =>
+                      setAbout('cv', {
+                        ...(content.about.cv ?? {}),
+                        education: (
+                          content.about.cv?.education ?? []
+                        ).map((e, i) =>
+                          i === index ? { ...e, period: value } : e,
+                        ),
+                      } as any)}
+                  />
+                </Field>
+                <Field label="Açıklama">
+                  <Input
+                    variant="faded"
+                    value={entry.description}
+                    onValueChange={value =>
+                      setAbout('cv', {
+                        ...(content.about.cv ?? {}),
+                        education: (
+                          content.about.cv?.education ?? []
+                        ).map((e, i) =>
+                          i === index ? { ...e, description: value } : e,
+                        ),
+                      } as any)}
+                  />
+                </Field>
+              </Grid>
+            </ItemCard>
+          ))}
+          <AddButton
+            onPress={() =>
+              setAbout('cv', {
+                ...(content.about.cv ?? {}),
+                education: [
+                  ...(content.about.cv?.education ?? []),
+                  { role: '', company: '', period: '', description: '' },
+                ],
+              } as any)}
+            label="Eğitim Düzenle"
+          />
+        </div>
       </PanelCard>
     </div>
   )
@@ -717,16 +1201,14 @@ return item
                   <Input
                     variant="faded"
                     value={item.title}
-                    onValueChange={value =>
-                      setNavItem(index, 'title', value)}
+                    onValueChange={value => setNavItem(index, 'title', value)}
                   />
                 </Field>
                 <Field label="Link (örn. /projects/)">
                   <Input
                     variant="faded"
                     value={item.href}
-                    onValueChange={value =>
-                      setNavItem(index, 'href', value)}
+                    onValueChange={value => setNavItem(index, 'href', value)}
                   />
                 </Field>
               </Grid>
@@ -951,643 +1433,109 @@ return item
     </div>
   )
 
-  /** Eski "about" sekmesinin gövdesi — artık bir grubun alt bölümü. */
-  const aboutPane = (
-    <div className="space-y-4 pt-4">
-      <PanelCard title="Bölüm Başlıkları">
-        <Grid>
-          <Field label="Alt Başlık">
-            <Input
-              variant="faded"
-              value={content.about.subtitle}
-              onValueChange={value => setAbout('subtitle', value)}
-            />
-          </Field>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.about.title}
-              onValueChange={value => setAbout('title', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.about.description}
-              onValueChange={value => setAbout('description', value)}
-            />
-          </Field>
-          <Field label="'Kimim Ben?' Başlığı">
-            <Input
-              variant="faded"
-              value={content.about.whoTitle}
-              onValueChange={value => setAbout('whoTitle', value)}
-            />
-          </Field>
-          <Field label="'Kimim Ben?' Metni">
-            <Textarea
-              variant="faded"
-              value={content.about.whoText}
-              onValueChange={value => setAbout('whoText', value)}
-              minRows={3}
-            />
-          </Field>
-        </Grid>
-      </PanelCard>
-      <PanelCard title="Toolbox (Kullandığım Teknolojiler)">
-        <div className="rounded-lg border border-foreground/10 bg-foreground/[0.03] p-3 text-xs text-foreground/60">
-          <p>
-            Sitedeki "Kullandığım Teknolojiler" şeridi artık
-{' '}
-<strong>Veri Yönetimi → Yetenekler</strong>
-{' '}
-tablosundan
-            yönetiliyor (seviye, açıklama ve ikon otomatik algılama ile). Bu bölümdeki eski JSON editörü kaldırıldı.
-</p>
-        </div>
-      </PanelCard>
-      <PanelCard title="İlgi Alanları (Beyond the Code)">
-        <Grid>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.about.beyondTitle}
-              onValueChange={value => setAbout('beyondTitle', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.about.beyondDescription}
-              onValueChange={value =>
-                setAbout('beyondDescription', value)}
-            />
-          </Field>
-        </Grid>
-        <div className="mt-4 flex flex-col gap-3">
-          {content.about.interests.map((item, index) => (
-            <ItemCard
-              key={index}
-              title={`İlgi Alanı #${index + 1}`}
-              onRemove={() => removeInterest(index)}
-            >
-              <Grid>
-                <Field label="İsim">
-                  <Input
-                    variant="faded"
-                    value={item.label}
-                    onValueChange={value =>
-                      setInterest(index, 'label', value)}
-                  />
-                </Field>
-                <Field label="İkon (iconify)">
-                  <Input
-                    variant="faded"
-                    value={item.icon}
-                    onValueChange={value =>
-                      setInterest(index, 'icon', value)}
-                  />
-                </Field>
-                <Field label="Açıklama">
-                  <Input
-                    variant="faded"
-                    value={item.content}
-                    onValueChange={value =>
-                      setInterest(index, 'content', value)}
-                  />
-                </Field>
-              </Grid>
-            </ItemCard>
-          ))}
-          <AddButton onPress={addInterest} label="İlgi Alanı Düzenle" />
-        </div>
-      </PanelCard>
-      <PanelCard title="Siber Güvenlik Bölümü">
-        <Grid>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.about.securityTitle}
-              onValueChange={value => setAbout('securityTitle', value)}
-            />
-          </Field>
-          <Field label="Metin">
-            <Input
-              variant="faded"
-              value={content.about.securityText}
-              onValueChange={value => setAbout('securityText', value)}
-            />
-          </Field>
-        </Grid>
-        <div className="mt-4 flex flex-col gap-3">
-          {content.about.securityTools.map((item, index) => (
-            <ItemCard
-              key={index}
-              title={`Araç #${index + 1}`}
-              onRemove={() => removeSecurityTool(index)}
-            >
-              <Grid>
-                <Field label="İsim">
-                  <Input
-                    variant="faded"
-                    value={item.label}
-                    onValueChange={value =>
-                      setSecurityTool(index, 'label', value)}
-                  />
-                </Field>
-                <Field label="Tip">
-                  <select
-                    value={item.type ?? 'link'}
-                    onChange={e =>
-                      setSecurityTool(index, 'type', e.target.value)}
-                    className="h-10 w-full rounded-lg border border-foreground/20 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
-                  >
-                    <option value="link">Link</option>
-                    <option value="command">
-                      Komut (SVG + tıklayınca kopyala)
-                    </option>
-                  </select>
-                </Field>
-                <Field
-                  label={
-                    item.type === 'command'
-                      ? 'Komut (tıklanınca kopyalanır)'
-                      : 'URL'
-                  }
-                >
-                  <Input
-                    variant="faded"
-                    placeholder={
-                      item.type === 'command'
-                        ? 'örn. nmap -sV target'
-                        : 'https://...'
-                    }
-                    value={item.href ?? ''}
-                    onValueChange={value =>
-                      setSecurityTool(index, 'href', value)}
-                  />
-                </Field>
-              </Grid>
-            </ItemCard>
-          ))}
-          <AddButton onPress={addSecurityTool} label="Araç Düzenle" />
-        </div>
-      </PanelCard>
-      <PanelCard title="CV (Özgeçmiş)">
-        <Field label="CV Dosya Yolu">
-          <Input
-            variant="faded"
-            placeholder="/cv/tarikeler-cv.pdf"
-            value={content.about.cv?.href ?? '/cv/tarikeler-cv.pdf'}
-            onValueChange={value =>
-              setAbout('cv', {
-                ...(content.about.cv ?? {}),
-                href: value,
-              } as any)}
-          />
-        </Field>
-        <Field label="CV Özeti (Summary)">
-          <Textarea
-            variant="faded"
-            minRows={3}
-            value={content.about.cv?.summary ?? ''}
-            onValueChange={value =>
-              setAbout('cv', {
-                ...(content.about.cv ?? {}),
-                summary: value,
-              } as any)}
-          />
-        </Field>
-        <p className="mt-3 text-xs text-foreground-500">
-          CV PDF dosyasını
-{' '}
-<code>public/cv/tarikeler-cv.pdf</code>
-          konumuna koy; yukarıdaki yolu bu dosyaya göre ayarla. Özgeçmiş
-          verisi aşağıdan güncellenir.
-        </p>
-        <div className="mt-3 space-y-2">
-          <h4 className="text-sm font-semibold">Deneyim</h4>
-          {(content.about.cv?.experience ?? []).map((entry, index) => (
-            <ItemCard
-              key={index}
-              title={`Deneyim #${index + 1}`}
-              onRemove={() =>
-                setAbout('cv', {
-                  ...(content.about.cv ?? {}),
-                  experience: (content.about.cv?.experience ?? []).filter(
-                    (_, i) => i !== index,
-                  ),
-                } as any)}
-            >
-              <Grid>
-                <Field label="Rol / Görev">
-                  <Input
-                    variant="faded"
-                    value={entry.role}
-                    onValueChange={value =>
-                      setAbout('cv', {
-                        ...(content.about.cv ?? {}),
-                        experience: (
-                          content.about.cv?.experience ?? []
-                        ).map((e, i) =>
-                          i === index ? { ...e, role: value } : e,
-                        ),
-                      } as any)}
-                  />
-                </Field>
-                <Field label="Şirket">
-                  <Input
-                    variant="faded"
-                    value={entry.company}
-                    onValueChange={value =>
-                      setAbout('cv', {
-                        ...(content.about.cv ?? {}),
-                        experience: (
-                          content.about.cv?.experience ?? []
-                        ).map((e, i) =>
-                          i === index ? { ...e, company: value } : e,
-                        ),
-                      } as any)}
-                  />
-                </Field>
-                <Field label="Dönem">
-                  <Input
-                    variant="faded"
-                    value={entry.period}
-                    onValueChange={value =>
-                      setAbout('cv', {
-                        ...(content.about.cv ?? {}),
-                        experience: (
-                          content.about.cv?.experience ?? []
-                        ).map((e, i) =>
-                          i === index ? { ...e, period: value } : e,
-                        ),
-                      } as any)}
-                  />
-                </Field>
-                <Field label="Açıklama">
-                  <Input
-                    variant="faded"
-                    value={entry.description}
-                    onValueChange={value =>
-                      setAbout('cv', {
-                        ...(content.about.cv ?? {}),
-                        experience: (
-                          content.about.cv?.experience ?? []
-                        ).map((e, i) =>
-                          i === index ? { ...e, description: value } : e,
-                        ),
-                      } as any)}
-                  />
-                </Field>
-              </Grid>
-            </ItemCard>
-          ))}
-          <AddButton
-            onPress={() =>
-              setAbout('cv', {
-                ...(content.about.cv ?? {}),
-                experience: [
-                  ...(content.about.cv?.experience ?? []),
-                  { role: '', company: '', period: '', description: '' },
-                ],
-              } as any)}
-            label="Deneyim Düzenle"
-          />
-        </div>
-        <div className="mt-4 space-y-2">
-          <h4 className="text-sm font-semibold">Eğitim</h4>
-          {(content.about.cv?.education ?? []).map((entry, index) => (
-            <ItemCard
-              key={index}
-              title={`Eğitim #${index + 1}`}
-              onRemove={() =>
-                setAbout('cv', {
-                  ...(content.about.cv ?? {}),
-                  education: (content.about.cv?.education ?? []).filter(
-                    (_, i) => i !== index,
-                  ),
-                } as any)}
-            >
-              <Grid>
-                <Field label="Rol / Bölüm">
-                  <Input
-                    variant="faded"
-                    value={entry.role}
-                    onValueChange={value =>
-                      setAbout('cv', {
-                        ...(content.about.cv ?? {}),
-                        education: (content.about.cv?.education ?? []).map(
-                          (e, i) =>
-                            i === index ? { ...e, role: value } : e,
-                        ),
-                      } as any)}
-                  />
-                </Field>
-                <Field label="Kurum">
-                  <Input
-                    variant="faded"
-                    value={entry.company}
-                    onValueChange={value =>
-                      setAbout('cv', {
-                        ...(content.about.cv ?? {}),
-                        education: (content.about.cv?.education ?? []).map(
-                          (e, i) =>
-                            i === index ? { ...e, company: value } : e,
-                        ),
-                      } as any)}
-                  />
-                </Field>
-                <Field label="Dönem">
-                  <Input
-                    variant="faded"
-                    value={entry.period}
-                    onValueChange={value =>
-                      setAbout('cv', {
-                        ...(content.about.cv ?? {}),
-                        education: (content.about.cv?.education ?? []).map(
-                          (e, i) =>
-                            i === index ? { ...e, period: value } : e,
-                        ),
-                      } as any)}
-                  />
-                </Field>
-                <Field label="Açıklama">
-                  <Input
-                    variant="faded"
-                    value={entry.description}
-                    onValueChange={value =>
-                      setAbout('cv', {
-                        ...(content.about.cv ?? {}),
-                        education: (content.about.cv?.education ?? []).map(
-                          (e, i) =>
-                            i === index ? { ...e, description: value } : e,
-                        ),
-                      } as any)}
-                  />
-                </Field>
-              </Grid>
-            </ItemCard>
-          ))}
-          <AddButton
-            onPress={() =>
-              setAbout('cv', {
-                ...(content.about.cv ?? {}),
-                education: [
-                  ...(content.about.cv?.education ?? []),
-                  { role: '', company: '', period: '', description: '' },
-                ],
-              } as any)}
-            label="Eğitim Düzenle"
-          />
-        </div>
-      </PanelCard>
-    </div>
-  )
-
-  /** Eski "social" sekmesinin gövdesi — artık bir grubun alt bölümü. */
-  const socialPane = (
-    <div className="space-y-4 pt-4">
-      <PanelCard title="Sosyal Medya Linkleri">
-        <div className="flex flex-col gap-3">
-          {content.social.map((item, index) => (
-            <ItemCard
-              key={index}
-              title={`${item.name || `Sosyal #${index + 1}`}`}
-              onRemove={() => removeSocial(index)}
-            >
-              <Grid>
-                <Field label="İsim">
-                  <Input
-                    variant="faded"
-                    value={item.name}
-                    onValueChange={value =>
-                      setSocial(index, 'name', value)}
-                  />
-                </Field>
-                <Field label="Link">
-                  <Input
-                    variant="faded"
-                    value={item.href}
-                    onValueChange={value =>
-                      setSocial(index, 'href', value)}
-                  />
-                </Field>
-                <Field label="Platform (SVG)">
-                  <select
-                    value={item.icon}
-                    onChange={e =>
-                      setSocial(index, 'icon', e.target.value)}
-                    className="h-10 w-full rounded-lg border border-foreground/20 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary"
-                  >
-                    <option value="mdi:github">GitHub</option>
-                    <option value="mdi:twitter">X / Twitter</option>
-                    <option value="mdi:instagram">Instagram</option>
-                    <option value="mdi:youtube">YouTube</option>
-                    <option value="ic:baseline-tiktok">TikTok</option>
-                    <option value="mdi:discord">Discord</option>
-                    <option value="mdi:linkedin">LinkedIn</option>
-                    <option value="mdi:telegram">Telegram</option>
-                    <option value="mdi:link">Link (jenerik)</option>
-                  </select>
-                </Field>
-              </Grid>
-            </ItemCard>
-          ))}
-          <AddButton onPress={addSocial} label="Sosyal Medya Düzenle" />
-        </div>
-      </PanelCard>
-    </div>
-  )
 
   /** Eski "projects" sekmesinin gövdesi — artık bir grubun alt bölümü. */
+  /**
+   * "Sayfa Düzenle" → PROJELER sekmesi (2026-11-11 yeniden tasarım).
+   *
+   * Satırlar kompakt kart görünümünde; düzenleme ORTAK proje modalında
+   * ("Yeni Proje Ekle" ile aynı bileşen, içerik otomatik dolu).
+   */
   const projectsPane = (
-    <div className="space-y-4 pt-4">
-      <PanelCard title="Bölüm Başlıkları">
-        <Grid>
-          <Field label="Alt Başlık">
-            <Input
-              variant="faded"
-              value={content.projects.subtitle}
-              onValueChange={value => setProjectsMeta('subtitle', value)}
-            />
-          </Field>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.projects.title}
-              onValueChange={value => setProjectsMeta('title', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.projects.description}
-              onValueChange={value =>
-                setProjectsMeta('description', value)}
-            />
-          </Field>
-        </Grid>
-      </PanelCard>
+    <div className="space-y-4">
       <PanelCard title="Projeler">
-        <div className="flex flex-col gap-3">
-          {content.projects.items.map((item, index) => (
-            <ItemCard
-              key={index}
-              id={`admin-project-${index}`}
-              title={`${item.title || `Proje #${index + 1}`}`}
-              onRemove={() => removeProject(index)}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-foreground-500">
+              Sitede görünen projeler. Düzenlemek için satırdaki &quot;Düzenle&quot;ye bas.
+            </p>
+            <Button
+              color="primary"
+              onPress={() => {
+                setProjectModalDraft(emptyProjectDraft())
+                setProjectModalOpen(true)
+              }}
             >
-              <Grid>
-                <Field label="Başlık">
-                  <Input
-                    variant="faded"
-                    value={item.title}
-                    onValueChange={value =>
-                      setProject(index, 'title', value)}
-                  />
-                </Field>
-                <Field label="Rozet (örn. [Under Development])">
-                  <Input
-                    variant="faded"
-                    value={item.notice || ''}
-                    onValueChange={value =>
-                      setProject(index, 'notice', value)}
-                  />
-                </Field>
-                <Field label="Açıklama">
-                  <Textarea
-                    variant="faded"
-                    value={item.description}
-                    onValueChange={value =>
-                      setProject(index, 'description', value)}
-                    minRows={2}
-                  />
-                </Field>
-                <Field label="Proje Linki">
-                  <Input
-                    variant="faded"
-                    value={item.projectLink}
-                    onValueChange={value =>
-                      setProject(index, 'projectLink', value)}
-                  />
-                </Field>
-                <Field label="Kaynak Kod Linki (opsiyonel)">
-                  <Input
-                    variant="faded"
-                    value={item.srcLink || ''}
-                    onValueChange={value =>
-                      setProject(index, 'srcLink', value)}
-                  />
-                </Field>
-                <Field label="Görsel Yolu (örn. /projects/portfolyo.png)">
-                  <Input
-                    variant="faded"
-                    value={item.image}
-                    onValueChange={value =>
-                      setProject(index, 'image', value)}
-                  />
-                </Field>
-              </Grid>
-              <div className="mt-4 flex flex-col gap-3 rounded-lg border border-foreground-200/10 p-3">
-                <p className="text-xs font-semibold text-foreground">
-                  İndirme (Download butonu)
-                </p>
-                <div className="flex flex-row flex-wrap items-center gap-3 text-xs text-foreground-500">
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`downloadMode-${index}`}
-                      checked={(item.downloadMode ?? 'global') === 'global'}
-                      onChange={() =>
-                        setProjectDownloadMode(index, 'global')}
+              Yeni Proje Ekle
+            </Button>
+          </div>
+
+          {content.projects.items.length === 0 ? (
+            <p className="text-xs text-foreground-500">Henüz proje yok.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {content.projects.items.map((item, index) => (
+                <li
+                  key={index}
+                  className="flex items-center gap-3 rounded-lg border border-foreground-200/10 p-3"
+                >
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt=""
+                      className="size-10 shrink-0 rounded-md object-cover"
                     />
-                    Global (tek link)
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`downloadMode-${index}`}
-                      checked={item.downloadMode === 'per-os'}
-                      onChange={() =>
-                        setProjectDownloadMode(index, 'per-os')}
-                    />
-                    İşletim sistemine özel (Windows / macOS / Linux / iOS /
-                    Android)
-                  </label>
-                </div>
-                {(item.downloadMode ?? 'global') === 'global' ? (
-                  <Field label="İndirme Linki / Dosya Yolu">
-                    <Input
-                      variant="faded"
-                      placeholder="/downloads/app.zip veya https://..."
-                      value={item.downloadUrl || ''}
-                      onValueChange={value =>
-                        setProject(index, 'downloadUrl', value)}
-                    />
-                  </Field>
-                ) : (
-                  <Grid>
-                    <Field label="Windows">
-                      <Input
-                        variant="faded"
-                        placeholder="/downloads/setup.exe"
-                        value={item.downloads?.windows || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'windows', value)}
-                      />
-                    </Field>
-                    <Field label="macOS">
-                      <Input
-                        variant="faded"
-                        placeholder="/downloads/app.dmg"
-                        value={item.downloads?.macos || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'macos', value)}
-                      />
-                    </Field>
-                    <Field label="Linux">
-                      <Input
-                        variant="faded"
-                        placeholder="/downloads/app.AppImage"
-                        value={item.downloads?.linux || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'linux', value)}
-                      />
-                    </Field>
-                    <Field label="iOS">
-                      <Input
-                        variant="faded"
-                        placeholder="https://apps.apple.com/..."
-                        value={item.downloads?.ios || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'ios', value)}
-                      />
-                    </Field>
-                    <Field label="Android">
-                      <Input
-                        variant="faded"
-                        placeholder="/downloads/app.apk"
-                        value={item.downloads?.android || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'android', value)}
-                      />
-                    </Field>
-                  </Grid>
-                )}
-                <p className="text-xs text-foreground-500">
-                  Boş bırakırsan Download butonu görünmez. Kullanıcının
-                  işletim sistemi otomatik algılanır ve uygun link/dosya
-                  açılır.
-                </p>
-              </div>
-            </ItemCard>
-          ))}
-          <AddButton onPress={addProject} label="Yeni Proje Ekle" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {item.title || `Proje #${index + 1}`}
+                    </p>
+                    <p className="truncate text-xs text-foreground-500">
+                      {item.description || '—'}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="bordered"
+                    className="h-8 shrink-0 rounded-md text-xs"
+                    startContent={<Icon icon="mdi:pencil" width={14} height={14} />}
+                    onPress={() => {
+                      setProjectModalDraft(projectToDraft(item))
+                      setProjectModalOpen(true)
+                    }}
+                  >
+                    Düzenle
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="bordered"
+                    color="danger"
+                    className="h-8 shrink-0 rounded-md text-xs"
+                    startContent={<Icon icon="mdi:trash-can-outline" width={14} height={14} />}
+                    onPress={() => removeProject(index)}
+                  >
+                    Sil
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </PanelCard>
 
       <GitHubReposAdmin githubRepos={githubRepos} content={content} setContent={setContent} />
+
+      {/* ORTAK proje modalı — "Yeni Proje Ekle" ile aynı bileşen */}
+      <ProjectModal
+        key={projectModalOpen ? 'open' : 'closed'}
+        open={projectModalOpen}
+        onClose={() => setProjectModalOpen(false)}
+        initial={projectModalDraft}
+        suggestions={linkSuggestions}
+        title="Yeni Proje Ekle"
+        saveLabel="Ekle"
+        onSave={(draft) => {
+          setContent(prev => ({
+            ...prev,
+            projects: {
+              ...prev.projects,
+              items: [...prev.projects.items, draftToProject(draft) as ProjectItem],
+            },
+          }))
+          setProjectModalOpen(false)
+          setProjectModalDraft(emptyProjectDraft())
+        }}
+      />
     </div>
   )
 
@@ -1602,155 +1550,18 @@ tablosundan
     />
   )
 
-  /** Eski "phase6" sekmesinin gövdesi — artık bir grubun alt bölümü. */
-  const sectionsPane = (
-    <SectionsEditor
-      specs={SECTION_SPECS}
-      value={(content.phase6 ?? {}) as Record<string, unknown>}
-      onChange={phase6 => setContent(prev => ({ ...prev, phase6 }))}
-    />
-  )
-
   /**
-   * Sayfa bölümü metinleri (2026-10-20, kullanıcı isteği): "Sayfa Düzenle"
-   * sekmesinde TÜM sayfa metinleri düzenlenebilsin diye bu kartlar "Site
-   * Ayarları"ndan (generalPane) buraya taşındı — Ayarlar artık gerçekten
-   * ayar (hero/menü/tema/sosyal/güvenlik) tutar.
+   * "Sayfa Düzenle" sekmesinin gövdesi (2026-11-08, kullanıcı isteği; 2026-11-11
+   * güncelleme: PROJELER metin alanları panelden kaldırıldı — yalnızca proje
+   * yönetimi kaldı): şimdilik YALNIZCA İKİ sayfa — PROJELER ve BLOGLAR.
    */
-  const pageSectionsPane = (
-    <div className="space-y-4">
-      <PanelCard title="GitHub Bölümü">
-        <Grid>
-          <Field label="Alt Başlık">
-            <Input
-              variant="faded"
-              value={content.github.subtitle}
-              onValueChange={value => setGithub('subtitle', value)}
-            />
-          </Field>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.github.title}
-              onValueChange={value => setGithub('title', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.github.description}
-              onValueChange={value => setGithub('description', value)}
-            />
-          </Field>
-          <Field label="GitHub Kullanıcı Adı (projeler otomatik çekilir)">
-            <Input
-              variant="faded"
-              value={content.settings.githubUsername}
-              onValueChange={value =>
-                setSettings('githubUsername', value)}
-            />
-          </Field>
-        </Grid>
-        <p className="mt-3 text-xs text-foreground-500">
-          Kullanıcı adı (örn.
-{' '}
-<span className="font-mono">TARIKTR1099</span>
-          ) yazarsan sitendeki "GitHub Projects" bölümü bu hesabın public
-          repolarını gösterir. Boş bırakırsan bölüm gizlenir.
-        </p>
-      </PanelCard>
-      <PanelCard title="Chat Bölümü">
-        <Grid>
-          <Field label="Alt Başlık">
-            <Input
-              variant="faded"
-              value={content.chat.subtitle}
-              onValueChange={value => setChat('subtitle', value)}
-            />
-          </Field>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.chat.title}
-              onValueChange={value => setChat('title', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.chat.description}
-              onValueChange={value => setChat('description', value)}
-            />
-          </Field>
-        </Grid>
-      </PanelCard>
-      <PanelCard title="İletişim Bölümü">
-        <Grid>
-          <Field label="Başlık">
-            <Input
-              variant="faded"
-              value={content.contact.title}
-              onValueChange={value => setContact('title', value)}
-            />
-          </Field>
-          <Field label="Alt Başlık">
-            <Input
-              variant="faded"
-              value={content.contact.subtitle}
-              onValueChange={value => setContact('subtitle', value)}
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Input
-              variant="faded"
-              value={content.contact.description}
-              onValueChange={value => setContact('description', value)}
-            />
-          </Field>
-          <Field label="Buton Altı Yazısı">
-            <Input
-              variant="faded"
-              value={content.contact.footerText}
-              onValueChange={value => setContact('footerText', value)}
-            />
-          </Field>
-          <Field label="Başarı Başlığı">
-            <Input
-              variant="faded"
-              value={content.contact.successTitle}
-              onValueChange={value => setContact('successTitle', value)}
-            />
-          </Field>
-          <Field label="Başarı Metni">
-            <Input
-              variant="faded"
-              value={content.contact.successText}
-              onValueChange={value => setContact('successText', value)}
-            />
-          </Field>
-        </Grid>
-      </PanelCard>
-      <PanelCard title="Footer">
-        <Field label="Telif Hakkı İsmi">
-          <Input
-            variant="faded"
-            value={content.footer.copyright}
-            onValueChange={value => setFooter('copyright', value)}
-          />
-        </Field>
-      </PanelCard>
-    </div>
-  )
-
-  /**
-   * "Sayfa Düzenle" sekmesinin gövdesi — İÇ SEKMELİ (2026-10-21, kullanıcı:
-   * "Veri Yönetimi gibi alt gruplar açılsın, PROJELER/BLOG şeklinde olsun").
-   *
-   * NEDEN İÇ SEKME: dört alt bölüm alt alta dizilince sayfa çok uzuyordu ve
-   * hepsinin aynı anda yüklenmesi GEREKMİYORDU. `DataManager`'daki desen
-   * (ScrollableTabs + Tabs + TabLabel) burada da kullanılıyor — panelde tek
-   * bir sekme dili kalır, ikinci bir navigasyon icat edilmez.
-   */
+  const projectsMatch = { id: 'projects', label: 'PROJELER' }
+  const blogSpec = PAGE_SPECS.find(p => p.id === 'blog')!
+  const pagesMatch = (q: string, page: { label: string, id: string }) =>
+    !q ||
+    page.label.toLowerCase().includes(q) ||
+    page.id.toLowerCase().includes(q)
+  const pageQ = pageEditSearch.trim().toLowerCase()
   const pagesPane = (
     <div className="space-y-3">
       <div className="pt-2">
@@ -1758,19 +1569,19 @@ tablosundan
           variant="faded"
           value={pageEditSearch}
           onValueChange={setPageEditSearch}
-          placeholder="Sayfa ara (Ana Sayfa, Hakkımda, Blog...)"
+          placeholder="Sayfa ara (Projeler, Bloglar...)"
           aria-label="Sayfa düzenle arama"
           className="w-full"
         />
       </div>
       <PageEditTabs
-        initial={hashPageKey ?? 'ai'}
+        initial={hashPageKey ?? 'projects'}
         onActiveChange={(key) => {
           setActivePageKey(key)
           setActivePagePath(pagePathById[key] ?? '')
         }}
         items={[
-          ...((!pageEditSearch.trim() || 'yapay zeka ai claude prompt github'.includes(pageEditSearch.toLowerCase().trim()))
+          ...(pagesMatch(pageQ, { id: 'ai', label: 'YAPAY ZEKA' })
             ? [{
                 key: 'ai',
                 label: 'YAPAY ZEKA',
@@ -1786,71 +1597,65 @@ tablosundan
                 ),
               }]
             : []),
-          ...PAGE_SPECS.filter((page) => {
-            if (!pageEditSearch.trim())
-return true
-            const q = pageEditSearch.toLowerCase().trim()
-            return page.label.toLowerCase().includes(q) || page.id.toLowerCase().includes(q)
-          }).map((page) => {
-          const extra
-            = page.id === 'about'
-              ? aboutPane
-              : page.id === 'projects'
-                ? projectsPane
-                : page.id === 'blog'
-                  ? blogPane
-                  : null
-          const title = page.label.toLocaleUpperCase('tr')
-          return {
-            key: page.id,
-            label: title,
-            icon: page.icon,
-            node: (
-              <PanelCard title={title}>
-                <div className="space-y-4">
-                  <PageTextEditor
-                    content={content}
-                    _pageId={page.id}
-                    groups={page.groups}
-                    _previewPath={page.path}
-                    onChange={setContent}
-                  />
-                  {extra && (
+          ...(pagesMatch(pageQ, { id: 'sections', label: 'EK BÖLÜMLERİ' })
+            ? [{
+                key: 'sections',
+                label: 'EK BÖLÜMLERİ',
+                icon: 'mdi:view-grid-plus-outline',
+                node: (
+                  <PanelCard title="EK BÖLÜMLERİ">
+                    <SectionsEditor
+                      specs={SECTION_SPECS}
+                      value={(content.phase6 ?? {}) as Record<string, unknown>}
+                      onChange={phase6 => setContent(prev => ({ ...prev, phase6 }))}
+                    />
+                  </PanelCard>
+                ),
+              }]
+            : []),
+          ...(pagesMatch(pageQ, projectsMatch)
+            ? [{
+                key: 'projects',
+                label: 'PROJELER',
+                icon: 'mdi:folder-outline',
+                node: (
+                  <PanelCard title="PROJELER">
                     <div className="space-y-4 border-t border-surface-border pt-4">
-                      {extra}
+                      {projectsPane}
                     </div>
-                  )}
-                </div>
-              </PanelCard>
-            ),
-          }
-        }),
-        {
-          key: 'sections',
-          label: 'SAYFA BÖLÜMLERİ',
-          icon: 'mdi:page-layout-body',
-          node: (
-            <PanelCard title="SAYFA BÖLÜMLERİ">
-              <div className="space-y-4">{pageSectionsPane}</div>
-            </PanelCard>
-          ),
-        },
-        {
-          key: 'extras',
-          label: 'EK BÖLÜMLER',
-          icon: 'mdi:view-timeline-outline',
-          node: (
-            <PanelCard title="EK BÖLÜMLER">
-              <div className="space-y-4">{sectionsPane}</div>
-            </PanelCard>
-          ),
-        },
-      ]}
+                  </PanelCard>
+                ),
+              }]
+            : []),
+          ...(pagesMatch(pageQ, blogSpec)
+            ? [{
+                key: 'blog',
+                label: 'BLOGLAR',
+                icon: blogSpec.icon,
+                node: (
+                  <div className="space-y-4">
+                    {/* PROJELER ile aynı kurgu: içerik kartı + metin kartı */}
+                    <PanelCard title="Bloglar">
+                      {blogPane}
+                    </PanelCard>
+                    <PanelCard title="Blog Metinleri">
+                      <PageTextEditor
+                        content={content}
+                        _pageId="blog"
+                        groups={blogSpec.groups}
+                        _previewPath={blogSpec.path}
+                        onChange={setContent}
+                      />
+                    </PanelCard>
+                  </div>
+                ),
+              }]
+            : []),
+        ]}
       />
     </div>
   )
 
-  /** "Veri Yönetimi" sekmesinin gövdesi — tablo CRUD (2026-10-20). */
   const dataPane = (
     <PanelCard className="w-full p-4">
       <div className="space-y-4 w-full">
@@ -1918,9 +1723,6 @@ return true
         <SubSection title="Genel" icon="mdi:settings-outline">
           {generalPane}
         </SubSection>
-        <SubSection title="Sosyal Medya" icon="mdi:share-variant-outline">
-          {socialPane}
-        </SubSection>
         </div>
       ),
     },
@@ -1955,7 +1757,7 @@ return true
         </div>
       ),
     },
-  ], [aboutPane, blogPane, dataPane, generalPane, overviewPane, pagesPane, profilePane, projectsPane, securityPane, sectionsPane, socialPane, usersPane])
+  ], [blogPane, dataPane, generalPane, overviewPane, pagesPane, profilePane, projectsPane, securityPane, usersPane])
 
   /**
    * Sekme araması için genişletilmiş eşleme.
@@ -1966,16 +1768,11 @@ return true
     profile: ['Profil', 'Profil Bilgileri', 'Fotoğraf'],
     pages: [
       'Sayfa Düzenle',
-      // Yapay Zeka
-      'Yapay Zeka', 'AI', 'Claude', 'Prompt', 'GitHub Push',
-      // PAGE_SPECS sayfa etiketleri
-      'Ana Sayfa', 'Hakkımda', 'Projeler', 'Blog', 'Sohbet', 'İletişim',
-      'Destek', 'Şu An', 'Katkıda Bulunanlar', 'Gizlilik Politikası',
-      'KVKK', 'GitHub', 'Sayfa Bölümleri', 'Ek Bölümler',
-      // Sayfa Düzenle içindeki AboutPageEditor
-      'Hakkımda Sayfası', '/about',
+      'Projeler',
+      'Blog',
+      'Bloglar',
     ],
-    settings: ['Site Ayarları', 'Hero', 'Menü', 'Arka Plan', 'Sosyal Medya', 'Tema', 'Şifre', 'Güvenlik', 'Şifre Değiştir', 'Oturum'],
+    settings: ['Site Ayarları', 'Hero', 'Arka Plan', 'Tema', 'Şifre', 'Güvenlik', 'Şifre Değiştir', 'Oturum'],
   }
 
   /** Arama yazıldığında sadece eşleşen sekmeler görünür. */
@@ -2162,6 +1959,29 @@ return tabItems
           }}
         />
       </div>
+
+      {/* "Yeni Proje Ekle" — ORTAK proje modalı (2026-11-11): GitHub reposundaki
+          "Düzenle" de AYNI modalı kullanır, içeriği otomatik dolu gelir. */}
+      <ProjectModal
+        key={projectModalOpen ? 'open' : 'closed'}
+        open={projectModalOpen}
+        onClose={() => setProjectModalOpen(false)}
+        initial={projectModalDraft}
+        suggestions={linkSuggestions}
+        title="Yeni Proje Ekle"
+        saveLabel="Ekle"
+        onSave={(draft) => {
+          setContent(prev => ({
+            ...prev,
+            projects: {
+              ...prev.projects,
+              items: [...prev.projects.items, draftToProject(draft) as ProjectItem],
+            },
+          }))
+          setProjectModalOpen(false)
+          setProjectModalDraft(emptyProjectDraft())
+        }}
+      />
     </div>
   )
 }
@@ -2264,10 +2084,22 @@ function Grid({ children }: { children: ReactNode }) {
   )
 }
 
-function Field({ label, children }: { label: string, children: ReactNode }) {
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string
+  /** Zorunlu alan — etiketin yanına kırmızı yıldız (2026-11-11 kullanıcı isteği). */
+  required?: boolean
+  children: ReactNode
+}) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs sm:text-sm text-foreground-500">{label}</label>
+      <label className="text-xs sm:text-sm text-foreground-500">
+        {label}
+        {required && <span className="text-danger"> *</span>}
+      </label>
       {children}
     </div>
   )
@@ -2530,15 +2362,21 @@ return
   })
 
   return (
-    <div className="space-y-4 pt-4">
-      <div className="flex flex-row items-center justify-between">
-        <p className="text-sm text-foreground-500">
-{posts.length}
-{' '}
-yazı
-</p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-foreground-500">
+          {posts.length} yazı — düzenlemek için satırdaki "Düzenle"ye bas.
+        </p>
         {!blogModalOpen && (
-          <AddButton onPress={() => { setEditing(emptyPost()); setBlogModalOpen(true) }} label="Yeni Yazı" />
+          <Button
+            color="primary"
+            onPress={() => {
+              setEditing(emptyPost())
+              setBlogModalOpen(true)
+            }}
+          >
+            Yeni Yazı
+          </Button>
         )}
       </div>
 
@@ -2559,7 +2397,7 @@ yazı
         {editing && (
         <div className="space-y-3">
           <Grid>
-            <Field label="Başlık *">
+            <Field label="Başlık" required>
               <Input
                 variant="faded"
                 placeholder="Yazı başlığı"
@@ -2589,7 +2427,7 @@ yazı
                 onValueChange={v => setEditing({ ...editing, date: v })}
               />
             </Field>
-            <Field label="Rozet (opsiyonel)">
+            <Field label="Rozet">
               <Input
                 variant="faded"
                 placeholder="Yeni"
@@ -2665,7 +2503,9 @@ yazı
               </div>
               <Button
                 size="sm"
-                variant="light"
+                variant="bordered"
+                className="h-8 shrink-0 rounded-md text-xs"
+                startContent={<Icon icon="mdi:pencil" width={14} height={14} />}
                 onPress={() => {
                   setEditing({ ...post })
                   setBlogModalOpen(true)
@@ -2676,7 +2516,9 @@ yazı
               <Button
                 size="sm"
                 color="danger"
-                variant="light"
+                variant="bordered"
+                className="h-8 shrink-0 rounded-md text-xs"
+                startContent={<Icon icon="mdi:trash-can-outline" width={14} height={14} />}
                 onPress={() => removePost(post)}
               >
                 Sil

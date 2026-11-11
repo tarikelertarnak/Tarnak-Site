@@ -60,8 +60,19 @@ export default function robots(): MetadataRoute.Robots {
         allow: '/',
         disallow: [...privateRoutes, '/cv/'],
       },
+      /*
+        Arama motorları için AYRI gruplar (2026-11-11, Lighthouse "robots.txt is
+        not valid" düzeltmesi): bir grupta İKİ `User-Agent:` satırı yazılırsa
+        dosya GEÇERSİZ sayılır — grup başına yalnız BİR user-agent olmalı.
+        Bu gruplar /cv/ indirmelerini arama motorlarına AÇIK bırakır.
+      */
       {
-        userAgent: ['GoogleBot', 'Bingbot'],
+        userAgent: 'GoogleBot',
+        allow: '/',
+        disallow: privateRoutes,
+      },
+      {
+        userAgent: 'Bingbot',
         allow: '/',
         disallow: privateRoutes,
       },
