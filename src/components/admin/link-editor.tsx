@@ -89,33 +89,51 @@ export function LinkEditor({
           searchPlaceholder="Kaynak ara..."
           ariaLabel={`${ariaLabel} kaynağı (link veya yükle)`}
         />
-        <Input
-          className="min-w-0 flex-1"
-          variant="faded"
-          value={url}
-          onValueChange={v => {
-            onChange({ url: v })
-            setSuggestOpen(true)
-          }}
-          onFocus={() => setSuggestOpen(true)}
-          placeholder={placeholder}
-          aria-label={ariaLabel}
-        />
-        {kind === 'yukle' && (
-          <Button
-            size="sm"
-            variant="bordered"
-            isLoading={uploading}
-            onPress={() => fileRef.current?.click()}
-            startContent={<Icon icon="mdi:upload" width={16} height={16} />}
-          >
-            Dosya seç
-          </Button>
+        {kind === 'link' ? (
+          <Input
+            className="min-w-0 flex-1"
+            variant="faded"
+            value={url}
+            onValueChange={v => {
+              onChange({ url: v })
+              setSuggestOpen(true)
+            }}
+            onFocus={() => setSuggestOpen(true)}
+            placeholder={placeholder}
+            aria-label={ariaLabel}
+          />
+        ) : (
+          /*
+            YÜKLE modu — link inputu YOK: dosya seçilir, yüklenen yol
+            salt-okunur olarak burada görünür (2026-11-11, kullanıcı isteği:
+            "yükle dersem link kısmı gitmeli, özelleşmeli").
+          */
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-dashed border-foreground/20 bg-foreground/[0.02] px-3 py-1.5">
+            <Icon
+              icon="mdi:upload-outline"
+              width={16}
+              height={16}
+              className="shrink-0 text-foreground/40"
+            />
+            <span className="min-w-0 flex-1 truncate text-xs text-foreground-500">
+              {url || 'Dosya seç — yüklenen dosya yolu burada görünür'}
+            </span>
+            <Button
+              size="sm"
+              variant="bordered"
+              isLoading={uploading}
+              onPress={() => fileRef.current?.click()}
+              startContent={<Icon icon="mdi:file-upload-outline" width={16} height={16} />}
+            >
+              Dosya seç
+            </Button>
+          </div>
         )}
       </div>
 
+
       {/* Öneri listesi — mevcut linkler */}
-      {suggestOpen && filtered.length > 0 && (
+      {kind === 'link' && suggestOpen && filtered.length > 0 && (
         <ul
           role="listbox"
           aria-label="Mevcut linkler"

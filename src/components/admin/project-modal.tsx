@@ -175,7 +175,8 @@ export function ProjectModal({
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Proje ve Kaynak Kod Linki ALT ALTA (2026-11-11, kullanıcı isteği) */}
+        <div className="flex flex-col gap-4">
           <div>
             <label className="mb-1 block text-xs text-foreground-500">Proje</label>
             <LinkEditor
