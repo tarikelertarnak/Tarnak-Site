@@ -270,7 +270,7 @@ function ListeEditor({
               </Alan>
               {donem
                 ? (
-                    <Alan etiket="Dönem / yıl (opsiyonel)">
+                    <Alan etiket="Dönem / yıl">
                       <Input
                         value={item.period}
                         onValueChange={v => guncelle(i, { period: v })}

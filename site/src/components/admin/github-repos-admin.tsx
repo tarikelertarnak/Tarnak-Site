@@ -3,14 +3,18 @@
 import type { ProjectItem, SiteContent } from '@/lib/content'
 import type { GitHubRepo } from '@/lib/github'
 import { Icon } from '@iconify/react'
+import { useState } from 'react'
 import { PanelCard } from '@/components/admin/panel-card'
+import {
+  draftToProject,
+  emptyProjectDraft,
+  projectToDraft,
+  ProjectModal,
+} from '@/components/admin/project-modal'
+import type { ProjectDraft } from '@/components/admin/project-modal'
 import { VisibilitySwitch } from '@/components/admin/visibility-switch'
 import { Button } from '@/components/ui/button'
-import { Modal } from '@/components/ui/modal'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/components/ui/cn'
-import { useState } from 'react'
 
 interface Props {
   githubRepos: GitHubRepo[]
@@ -18,8 +22,19 @@ interface Props {
   setContent: React.Dispatch<React.SetStateAction<SiteContent>>
 }
 
+/**
+ * GitHub Repoları kartı (2026-11-11 yeniden tasarım).
+ *
+ * · "Düzenle" → ORTAK proje modalı ("Yeni Proje Ekle" ile AYNI), içeriği
+ *   otomatik dolu: başlık/açıklama/linkler + ETİKETLER (repo topics) +
+ *   LİSANS (repo.license).
+ * · Düzen site dilinde: satır kartı, küçük "Düzenle" butonu, harici bağlantı.
+ */
 export function GitHubReposAdmin({ githubRepos, content, setContent }: Props) {
   const items = content.projects.items
+  const [modalOpen, setModalOpen] = useState(false)
+  const [draft, setDraft] = useState<ProjectDraft>(emptyProjectDraft())
+  const [editingIdx, setEditingIdx] = useState<number | null>(null)
 
   const setProject = (index: number, patch: Partial<ProjectItem>) => {
     setContent(prev => ({
@@ -39,66 +54,40 @@ export function GitHubReposAdmin({ githubRepos, content, setContent }: Props) {
 
   const visibleCount = items.filter(isVisible).length
 
-  /** Popup editing state: index of repo being edited (null = create new). */
-  const [editingIdx, setEditingIdx] = useState<number | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [draft, setDraft] = useState<{
-    title: string
-    description: string
-    projectLink: string
-    srcLink: string
-    image: string
-    tags: string
-    visible: boolean
-  }>({
-    title: '',
-    description: '',
-    projectLink: '',
-    srcLink: '',
-    image: '',
-    tags: '',
-    visible: true,
-  })
-
-  const openEdit = (idx: number | null) => {
-    setEditingIdx(idx)
-    setModalOpen(true)
-    if (idx === null) {
-      // create new from selected GitHub repo (first matching visible repo)
-      setDraft({ title: '', description: '', projectLink: '', srcLink: '', image: '', tags: '', visible: true })
-    } else {
-      const item = items[idx]
+  /** Repoyu düzenle / yeni proje olarak ekle — modal içeriği OTOMATİK dolar. */
+  const openForRepo = (repo: GitHubRepo) => {
+    const idx = items.findIndex(p => p.title === repo.name)
+    if (idx >= 0) {
+      setEditingIdx(idx)
       setDraft({
-        title: item.title,
-        description: item.description ?? '',
-        projectLink: item.projectLink,
-        srcLink: item.srcLink ?? '',
-        image: item.image,
-        tags: (item.tags ?? []).join(', '),
-        visible: isVisible(item),
+        ...projectToDraft(items[idx]),
+        // Etiketler: kayıttakiler varsa onlar, yoksa GitHub topics.
+        tags: items[idx].tags?.length ? items[idx].tags! : (repo.topics ?? []),
+        license: items[idx].license ?? repo.license ?? '',
       })
     }
+    else {
+      setEditingIdx(null)
+      setDraft({
+        ...emptyProjectDraft(),
+        title: repo.name,
+        description: repo.description ?? '',
+        projectLink: repo.url,
+        srcLink: repo.url,
+        license: repo.license ?? '',
+        tags: repo.topics ?? [],
+      })
+    }
+    setModalOpen(true)
   }
 
-  const saveDraft = () => {
-    const tags = draft.tags
-      .split(',')
-      .map(t => t.trim())
-      .filter(Boolean)
-    const patch: Partial<ProjectItem> = {
-      title: draft.title.trim(),
-      description: draft.description.trim(),
-      projectLink: draft.projectLink.trim(),
-      srcLink: draft.srcLink.trim() || undefined,
-      image: draft.image.trim(),
-      tags,
-      visible: draft.visible,
-      isVisible: draft.visible,
-      hidden: !draft.visible,
-    }
+  const save = (d: ProjectDraft) => {
+    const patch = draftToProject(d)
     if (editingIdx === null) {
-      // append new project (don't dup by title)
-      if (items.some(p => p.title === patch.title)) return
+      if (items.some(p => p.title === patch.title)) {
+        setModalOpen(false)
+        return
+      }
       setContent(prev => ({
         ...prev,
         projects: {
@@ -106,24 +95,26 @@ export function GitHubReposAdmin({ githubRepos, content, setContent }: Props) {
           items: [{ ...patch } as ProjectItem, ...prev.projects.items],
         },
       }))
-    } else {
+    }
+    else {
       setProject(editingIdx, patch)
     }
-    setEditingIdx(null)
     setModalOpen(false)
   }
 
   return (
     <PanelCard title={`GitHub Repoları (${githubRepos.length})${items.length ? ` · ${visibleCount} görünür / ${items.length} toplam` : ''}`}>
       <p className="mb-3 text-xs text-foreground-500">
-        GitHub hesabındaki public repo'lar. Sitede görünürlüğünü switch ile ayarla; "Düzenle" ile formu doldur.
+        GitHub hesabındaki public repo'lar. &quot;Düzenle&quot; formu doldurur; sitede
+        görünürlüğü switch ile ayarla.
       </p>
+
       {githubRepos.length === 0 ? (
         <p className="text-xs text-foreground-500">
           Repo listesi yükleniyor veya alınamıyor (GitHub kullanıcı adı ayarla: Site › GitHub Kullanıcı Adı).
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
+        <ul className="flex flex-col gap-2">
           {githubRepos.map((repo) => {
             const idx = items.findIndex(p => p.title === repo.name)
             const inSite = idx >= 0
@@ -131,10 +122,10 @@ export function GitHubReposAdmin({ githubRepos, content, setContent }: Props) {
             const hidden = item ? !isVisible(item) : false
 
             return (
-              <div
+              <li
                 key={repo.name}
                 className={cn(
-                  'flex flex-row items-center gap-3 rounded-lg border border-foreground-200/10 p-2.5',
+                  'flex flex-row items-center gap-3 rounded-lg border border-foreground-200/10 p-3',
                   hidden && 'opacity-60',
                 )}
               >
@@ -152,12 +143,12 @@ export function GitHubReposAdmin({ githubRepos, content, setContent }: Props) {
                   )}
                   <p className="mt-0.5 text-[10px] text-foreground-600">
                     ★{' '}
-                    {repo.stars}{' '}
-                    ·{' '}
-                    {repo.forks} fork ·{' '}
-                    {repo.language ?? '—'}
+                    {repo.stars}
+                    {' · '}
+                    {repo.forks} fork · {repo.language ?? '—'}
                   </p>
                 </div>
+
                 <div className="flex shrink-0 items-center gap-2">
                   {inSite && item && (
                     <VisibilitySwitch
@@ -174,103 +165,37 @@ export function GitHubReposAdmin({ githubRepos, content, setContent }: Props) {
                   <Button
                     size="sm"
                     variant="bordered"
-                    startContent={<Icon icon="mdi:pencil" width={16} height={16} />}
-                    onPress={() => openEdit(inSite ? idx : null)}
+                    className="h-8 rounded-md text-xs"
+                    startContent={<Icon icon="mdi:pencil" width={14} height={14} />}
+                    onPress={() => openForRepo(repo)}
                   >
                     Düzenle
                   </Button>
+                  <a
+                    href={repo.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="shrink-0 text-xs text-foreground-500 transition-colors hover:text-primary"
+                  >
+                    GitHub ↗
+                  </a>
                 </div>
-                <a
-                  href={repo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 text-xs text-foreground-500 transition-colors hover:text-primary"
-                >
-                  GitHub ↗
-                </a>
-              </div>
+              </li>
             )
           })}
-        </div>
+        </ul>
       )}
 
-      {/* Popup editor modal */}
-      <Modal
+      {/* ORTAK proje modalı — "Yeni Proje Ekle" ile aynı bileşen */}
+      <ProjectModal
+        key={modalOpen ? 'open' : 'closed'}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        initial={draft}
+        onSave={save}
         title={editingIdx === null ? 'Yeni Proje Ekle' : 'Projeyi Düzenle'}
-        maxWidth="max-w-lg"
-      >
-        <div className="space-y-3">
-          <Input
-            variant="faded"
-            label="Başlık"
-            value={draft.title}
-            onValueChange={v => setDraft({ ...draft, title: v })}
-            placeholder="Proje adı"
-          />
-          <Textarea
-            variant="faded"
-            label="Açıklama"
-            minRows={2}
-            value={draft.description}
-            onValueChange={v => setDraft({ ...draft, description: v })}
-            placeholder="Kısa açıklama…"
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              variant="faded"
-              label="Proje Linki"
-              value={draft.projectLink}
-              onValueChange={v => setDraft({ ...draft, projectLink: v })}
-              placeholder="/projects/… veya https://…"
-            />
-            <Input
-              variant="faded"
-              label="Kaynak Linki"
-              value={draft.srcLink}
-              onValueChange={v => setDraft({ ...draft, srcLink: v })}
-              placeholder="GitHub repo URL"
-            />
-          </div>
-          <Input
-            variant="faded"
-            label="Görsel URL"
-            value={draft.image}
-            onValueChange={v => setDraft({ ...draft, image: v })}
-            placeholder="https://…/image.png"
-          />
-          <Input
-            variant="faded"
-            label="Etiketler (virgülle ayr)"
-            value={draft.tags}
-            onValueChange={v => setDraft({ ...draft, tags: v })}
-            placeholder="typescript, nextjs, opensource"
-          />
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={draft.visible}
-              onChange={e => setDraft({ ...draft, visible: e.target.checked })}
-              className="h-4 w-4 shrink-0 rounded border-foreground-500 text-primary focus:ring-primary"
-            />
-            <span className="text-sm text-foreground">Sitede görünür</span>
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 pt-3 border-t border-surface-border">
-          <Button variant="bordered" size="sm" onPress={() => setEditingIdx(null)}>
-            Vazgeç
-          </Button>
-          <Button
-            color="primary"
-            size="sm"
-            onPress={saveDraft}
-            isDisabled={!draft.title.trim()}
-          >
-            Kaydet
-          </Button>
-        </div>
-      </Modal>
+        saveLabel={editingIdx === null ? 'Ekle' : 'Kaydet'}
+      />
     </PanelCard>
   )
 }

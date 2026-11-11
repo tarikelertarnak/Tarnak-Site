@@ -34,6 +34,8 @@ import { SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { aboutPageErrors, normalizeAboutPage } from '@/lib/about-page'
 import { clientFetchUserRepos } from '@/lib/github-client'
+import { draftToProject, emptyProjectDraft, projectToDraft, ProjectModal } from '@/components/admin/project-modal'
+import type { ProjectDraft } from '@/components/admin/project-modal'
 import { PAGE_SPECS } from '@/lib/page-text-specs'
 import { scrollToElement } from '@/lib/scroll'
 
@@ -507,37 +509,22 @@ return item
 
   /** "Yeni Proje Ekle" popup'u için ham taslak (2026-11-08, kullanıcı isteği). */
   const [projectModalOpen, setProjectModalOpen] = useState(false)
-  const [newProjectDraft, setNewProjectDraft] = useState<{
-    title: string
-    projectLink: string
-    srcLink: string
-    image: string
-    description: string
-  }>({ title: '', projectLink: '', srcLink: '', image: '', description: '' })
+  /** "Yeni Proje Ekle" modalının başlangıç taslağı (modal kendi durumunu yönetir). */
+  const [projectModalDraft, setProjectModalDraft] = useState<ProjectDraft>(emptyProjectDraft)
 
-  const commitNewProject = () => {
-    if (!newProjectDraft.title.trim())
-      return
-    setContent(prev => ({
-      ...prev,
-      projects: {
-        ...prev.projects,
-        items: [
-          ...prev.projects.items,
-          {
-            title: newProjectDraft.title.trim(),
-            notice: '',
-            description: newProjectDraft.description.trim(),
-            projectLink: newProjectDraft.projectLink.trim(),
-            srcLink: newProjectDraft.srcLink.trim(),
-            image: newProjectDraft.image.trim(),
-          },
-        ],
-      },
-    }))
-    setProjectModalOpen(false)
-    setNewProjectDraft({ title: '', projectLink: '', srcLink: '', image: '', description: '' })
-  }
+  /** Proje linki önerileri (mevcut projelerden) — modalın "Proje" alanında. */
+  const linkSuggestions = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of content.projects.items) {
+      const a = p.projectLink?.trim()
+      const b = p.srcLink?.trim()
+      if (a)
+        set.add(a)
+      if (b)
+        set.add(b)
+    }
+    return [...set]
+  }, [content.projects.items])
 
   const removeProject = (index: number) => {
     setContent(prev => ({
@@ -1368,167 +1355,107 @@ return item
 
 
   /** Eski "projects" sekmesinin gövdesi — artık bir grubun alt bölümü. */
+  /**
+   * "Sayfa Düzenle" → PROJELER sekmesi (2026-11-11 yeniden tasarım).
+   *
+   * Satırlar kompakt kart görünümünde; düzenleme ORTAK proje modalında
+   * ("Yeni Proje Ekle" ile aynı bileşen, içerik otomatik dolu).
+   */
   const projectsPane = (
-    <div className="space-y-4 pt-4">
+    <div className="space-y-4">
       <PanelCard title="Projeler">
-        <div className="flex flex-col gap-3">
-          {content.projects.items.map((item, index) => (
-            <ItemCard
-              key={index}
-              id={`admin-project-${index}`}
-              title={`${item.title || `Proje #${index + 1}`}`}
-              onRemove={() => removeProject(index)}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-foreground-500">
+              Sitede görünen projeler. Düzenlemek için satırdaki &quot;Düzenle&quot;ye bas.
+            </p>
+            <Button
+              color="primary"
+              onPress={() => {
+                setProjectModalDraft(emptyProjectDraft())
+                setProjectModalOpen(true)
+              }}
             >
-              <Grid>
-                <Field label="Başlık">
-                  <Input
-                    variant="faded"
-                    value={item.title}
-                    onValueChange={value =>
-                      setProject(index, 'title', value)}
-                  />
-                </Field>
-                <Field label="Rozet (örn. [Under Development])">
-                  <Input
-                    variant="faded"
-                    value={item.notice || ''}
-                    onValueChange={value =>
-                      setProject(index, 'notice', value)}
-                  />
-                </Field>
-                <Field label="Açıklama">
-                  <Textarea
-                    variant="faded"
-                    value={item.description}
-                    onValueChange={value =>
-                      setProject(index, 'description', value)}
-                    minRows={2}
-                  />
-                </Field>
-                <Field label="Proje Linki">
-                  <Input
-                    variant="faded"
-                    value={item.projectLink}
-                    onValueChange={value =>
-                      setProject(index, 'projectLink', value)}
-                  />
-                </Field>
-                <Field label="Kaynak Kod Linki (opsiyonel)">
-                  <Input
-                    variant="faded"
-                    value={item.srcLink || ''}
-                    onValueChange={value =>
-                      setProject(index, 'srcLink', value)}
-                  />
-                </Field>
-                <Field label="Görsel Yolu (örn. /projects/portfolyo.png)">
-                  <Input
-                    variant="faded"
-                    value={item.image}
-                    onValueChange={value =>
-                      setProject(index, 'image', value)}
-                  />
-                </Field>
-              </Grid>
-              <div className="mt-4 flex flex-col gap-3 rounded-lg border border-foreground-200/10 p-3">
-                <p className="text-xs font-semibold text-foreground">
-                  İndirme (Download butonu)
-                </p>
-                <div className="flex flex-row flex-wrap items-center gap-3 text-xs text-foreground-500">
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`downloadMode-${index}`}
-                      checked={(item.downloadMode ?? 'global') === 'global'}
-                      onChange={() =>
-                        setProjectDownloadMode(index, 'global')}
+              Yeni Proje Ekle
+            </Button>
+          </div>
+
+          {content.projects.items.length === 0 ? (
+            <p className="text-xs text-foreground-500">Henüz proje yok.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {content.projects.items.map((item, index) => (
+                <li
+                  key={index}
+                  className="flex items-center gap-3 rounded-lg border border-foreground-200/10 p-3"
+                >
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt=""
+                      className="size-10 shrink-0 rounded-md object-cover"
                     />
-                    Global (tek link)
-                  </label>
-                  <label className="flex items-center gap-1.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`downloadMode-${index}`}
-                      checked={item.downloadMode === 'per-os'}
-                      onChange={() =>
-                        setProjectDownloadMode(index, 'per-os')}
-                    />
-                    İşletim sistemine özel (Windows / macOS / Linux / iOS /
-                    Android)
-                  </label>
-                </div>
-                {(item.downloadMode ?? 'global') === 'global' ? (
-                  <Field label="İndirme Linki / Dosya Yolu">
-                    <Input
-                      variant="faded"
-                      placeholder="/downloads/app.zip veya https://..."
-                      value={item.downloadUrl || ''}
-                      onValueChange={value =>
-                        setProject(index, 'downloadUrl', value)}
-                    />
-                  </Field>
-                ) : (
-                  <Grid>
-                    <Field label="Windows">
-                      <Input
-                        variant="faded"
-                        placeholder="/downloads/setup.exe"
-                        value={item.downloads?.windows || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'windows', value)}
-                      />
-                    </Field>
-                    <Field label="macOS">
-                      <Input
-                        variant="faded"
-                        placeholder="/downloads/app.dmg"
-                        value={item.downloads?.macos || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'macos', value)}
-                      />
-                    </Field>
-                    <Field label="Linux">
-                      <Input
-                        variant="faded"
-                        placeholder="/downloads/app.AppImage"
-                        value={item.downloads?.linux || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'linux', value)}
-                      />
-                    </Field>
-                    <Field label="iOS">
-                      <Input
-                        variant="faded"
-                        placeholder="https://apps.apple.com/..."
-                        value={item.downloads?.ios || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'ios', value)}
-                      />
-                    </Field>
-                    <Field label="Android">
-                      <Input
-                        variant="faded"
-                        placeholder="/downloads/app.apk"
-                        value={item.downloads?.android || ''}
-                        onValueChange={value =>
-                          setProjectDownloadOs(index, 'android', value)}
-                      />
-                    </Field>
-                  </Grid>
-                )}
-                <p className="text-xs text-foreground-500">
-                  Boş bırakırsan Download butonu görünmez. Kullanıcının
-                  işletim sistemi otomatik algılanır ve uygun link/dosya
-                  açılır.
-                </p>
-              </div>
-            </ItemCard>
-          ))}
-          <AddButton onPress={() => setProjectModalOpen(true)} label="Yeni Proje Ekle" />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {item.title || `Proje #${index + 1}`}
+                    </p>
+                    <p className="truncate text-xs text-foreground-500">
+                      {item.description || '—'}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="bordered"
+                    className="h-8 shrink-0 rounded-md text-xs"
+                    startContent={<Icon icon="mdi:pencil" width={14} height={14} />}
+                    onPress={() => {
+                      setProjectModalDraft(projectToDraft(item))
+                      setProjectModalOpen(true)
+                    }}
+                  >
+                    Düzenle
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="bordered"
+                    color="danger"
+                    className="h-8 shrink-0 rounded-md text-xs"
+                    startContent={<Icon icon="mdi:trash-can-outline" width={14} height={14} />}
+                    onPress={() => removeProject(index)}
+                  >
+                    Sil
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </PanelCard>
 
       <GitHubReposAdmin githubRepos={githubRepos} content={content} setContent={setContent} />
+
+      {/* ORTAK proje modalı — "Yeni Proje Ekle" ile aynı bileşen */}
+      <ProjectModal
+        key={projectModalOpen ? 'open' : 'closed'}
+        open={projectModalOpen}
+        onClose={() => setProjectModalOpen(false)}
+        initial={projectModalDraft}
+        suggestions={linkSuggestions}
+        title="Yeni Proje Ekle"
+        saveLabel="Ekle"
+        onSave={(draft) => {
+          setContent(prev => ({
+            ...prev,
+            projects: {
+              ...prev.projects,
+              items: [...prev.projects.items, draftToProject(draft) as ProjectItem],
+            },
+          }))
+          setProjectModalOpen(false)
+          setProjectModalDraft(emptyProjectDraft())
+        }}
+      />
     </div>
   )
 
@@ -1544,14 +1471,11 @@ return item
   )
 
   /**
-   * "Sayfa Düzenle" sekmesinin gövdesi (2026-11-08, kullanıcı isteği):
-   * şimdilik YALNIZCA İKİ sayfa — PROJELER ve BLOGLAR. Ana Sayfa · Hakkımda ·
-   * Sohbet · İletişim · Destek · Şu An · KVKK… editörden kaldırıldı; o içerik
-   * zaten VERİ YÖNETİMİ tablolarında, PROFİL sekmesi ve diğer sekmelerde
-   * düzenleniyor. İki iç-sekme `DataManager` desenindeki `ScrollableTabs`
-   * ile çizilir.
+   * "Sayfa Düzenle" sekmesinin gövdesi (2026-11-08, kullanıcı isteği; 2026-11-11
+   * güncelleme: PROJELER metin alanları panelden kaldırıldı — yalnızca proje
+   * yönetimi kaldı): şimdilik YALNIZCA İKİ sayfa — PROJELER ve BLOGLAR.
    */
-  const projectsSpec = PAGE_SPECS.find(p => p.id === 'projects')!
+  const projectsMatch = { id: 'projects', label: 'PROJELER' }
   const blogSpec = PAGE_SPECS.find(p => p.id === 'blog')!
   const pagesMatch = (q: string, page: { label: string, id: string }) =>
     !q ||
@@ -1577,24 +1501,15 @@ return item
           setActivePagePath(pagePathById[key] ?? '')
         }}
         items={[
-          ...(pagesMatch(pageQ, projectsSpec)
+          ...(pagesMatch(pageQ, projectsMatch)
             ? [{
                 key: 'projects',
                 label: 'PROJELER',
-                icon: projectsSpec.icon,
+                icon: 'mdi:folder-outline',
                 node: (
                   <PanelCard title="PROJELER">
-                    <div className="space-y-4">
-                      <PageTextEditor
-                        content={content}
-                        _pageId="projects"
-                        groups={projectsSpec.groups}
-                        _previewPath={projectsSpec.path}
-                        onChange={setContent}
-                      />
-                      <div className="space-y-4 border-t border-surface-border pt-4">
-                        {projectsPane}
-                      </div>
+                    <div className="space-y-4 border-t border-surface-border pt-4">
+                      {projectsPane}
                     </div>
                   </PanelCard>
                 ),
@@ -1606,8 +1521,12 @@ return item
                 label: 'BLOGLAR',
                 icon: blogSpec.icon,
                 node: (
-                  <PanelCard title="BLOGLAR">
-                    <div className="space-y-4">
+                  <div className="space-y-4">
+                    {/* PROJELER ile aynı kurgu: içerik kartı + metin kartı */}
+                    <PanelCard title="Bloglar">
+                      {blogPane}
+                    </PanelCard>
+                    <PanelCard title="Blog Metinleri">
                       <PageTextEditor
                         content={content}
                         _pageId="blog"
@@ -1615,11 +1534,8 @@ return item
                         _previewPath={blogSpec.path}
                         onChange={setContent}
                       />
-                      <div className="space-y-4 border-t border-surface-border pt-4">
-                        {blogPane}
-                      </div>
-                    </div>
-                  </PanelCard>
+                    </PanelCard>
+                  </div>
                 ),
               }]
             : []),
@@ -1932,80 +1848,28 @@ return tabItems
         />
       </div>
 
-      {/* "Yeni Proje Ekle" popup'u (2026-11-08, kullanıcı istekte):
-          AddButton yerine modal açılır; alanlar doldurulup kaydedilince
-          proje listesine eklenir ve popup kapanır. */}
-      <Modal
+      {/* "Yeni Proje Ekle" — ORTAK proje modalı (2026-11-11): GitHub reposundaki
+          "Düzenle" de AYNI modalı kullanır, içeriği otomatik dolu gelir. */}
+      <ProjectModal
+        key={projectModalOpen ? 'open' : 'closed'}
         open={projectModalOpen}
-        onClose={() => {
-          setProjectModalOpen(false)
-          setNewProjectDraft({ title: '', projectLink: '', srcLink: '', image: '', description: '' })
-        }}
+        onClose={() => setProjectModalOpen(false)}
+        initial={projectModalDraft}
+        suggestions={linkSuggestions}
         title="Yeni Proje Ekle"
-        maxWidth="max-w-lg"
-      >
-        <div className="flex flex-col gap-3">
-          <Field label="Başlık *">
-            <Input
-              variant="faded"
-              value={newProjectDraft.title}
-              onValueChange={v => setNewProjectDraft(d => ({ ...d, title: v }))}
-              placeholder="Proje adı"
-            />
-          </Field>
-          <Field label="Açıklama">
-            <Textarea
-              variant="faded"
-              value={newProjectDraft.description}
-              onChange={e => setNewProjectDraft(d => ({ ...d, description: e.target.value }))}
-              placeholder="Proje açıklaması"
-              minRows={2}
-            />
-          </Field>
-          <Field label="Proje Linki">
-            <Input
-              variant="faded"
-              value={newProjectDraft.projectLink}
-              onValueChange={v => setNewProjectDraft(d => ({ ...d, projectLink: v }))}
-              placeholder="https://"
-            />
-          </Field>
-          <Field label="Kaynak Kod Linki (opsiyonel)">
-            <Input
-              variant="faded"
-              value={newProjectDraft.srcLink}
-              onValueChange={v => setNewProjectDraft(d => ({ ...d, srcLink: v }))}
-              placeholder="https://github.com/..."
-            />
-          </Field>
-          <Field label="Görsel Yolu">
-            <Input
-              variant="faded"
-              value={newProjectDraft.image}
-              onValueChange={v => setNewProjectDraft(d => ({ ...d, image: v }))}
-              placeholder="/projects/portfolyo.png"
-            />
-          </Field>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="bordered"
-              onPress={() => {
-                setProjectModalOpen(false)
-                setNewProjectDraft({ title: '', projectLink: '', srcLink: '', image: '', description: '' })
-              }}
-            >
-              İptal
-            </Button>
-            <Button
-              color="primary"
-              onPress={commitNewProject}
-              isDisabled={!newProjectDraft.title.trim()}
-            >
-              Ekle
-            </Button>
-          </div>
-        </div>
-      </Modal>
+        saveLabel="Ekle"
+        onSave={(draft) => {
+          setContent(prev => ({
+            ...prev,
+            projects: {
+              ...prev.projects,
+              items: [...prev.projects.items, draftToProject(draft) as ProjectItem],
+            },
+          }))
+          setProjectModalOpen(false)
+          setProjectModalDraft(emptyProjectDraft())
+        }}
+      />
     </div>
   )
 }
@@ -2108,10 +1972,22 @@ function Grid({ children }: { children: ReactNode }) {
   )
 }
 
-function Field({ label, children }: { label: string, children: ReactNode }) {
+function Field({
+  label,
+  required,
+  children,
+}: {
+  label: string
+  /** Zorunlu alan — etiketin yanına kırmızı yıldız (2026-11-11 kullanıcı isteği). */
+  required?: boolean
+  children: ReactNode
+}) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs sm:text-sm text-foreground-500">{label}</label>
+      <label className="text-xs sm:text-sm text-foreground-500">
+        {label}
+        {required && <span className="text-danger"> *</span>}
+      </label>
       {children}
     </div>
   )
@@ -2374,15 +2250,21 @@ return
   })
 
   return (
-    <div className="space-y-4 pt-4">
-      <div className="flex flex-row items-center justify-between">
-        <p className="text-sm text-foreground-500">
-{posts.length}
-{' '}
-yazı
-</p>
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-xs text-foreground-500">
+          {posts.length} yazı — düzenlemek için satırdaki "Düzenle"ye bas.
+        </p>
         {!blogModalOpen && (
-          <AddButton onPress={() => { setEditing(emptyPost()); setBlogModalOpen(true) }} label="Yeni Yazı" />
+          <Button
+            color="primary"
+            onPress={() => {
+              setEditing(emptyPost())
+              setBlogModalOpen(true)
+            }}
+          >
+            Yeni Yazı
+          </Button>
         )}
       </div>
 
@@ -2403,7 +2285,7 @@ yazı
         {editing && (
         <div className="space-y-3">
           <Grid>
-            <Field label="Başlık *">
+            <Field label="Başlık" required>
               <Input
                 variant="faded"
                 placeholder="Yazı başlığı"
@@ -2433,7 +2315,7 @@ yazı
                 onValueChange={v => setEditing({ ...editing, date: v })}
               />
             </Field>
-            <Field label="Rozet (opsiyonel)">
+            <Field label="Rozet">
               <Input
                 variant="faded"
                 placeholder="Yeni"
@@ -2509,7 +2391,9 @@ yazı
               </div>
               <Button
                 size="sm"
-                variant="light"
+                variant="bordered"
+                className="h-8 shrink-0 rounded-md text-xs"
+                startContent={<Icon icon="mdi:pencil" width={14} height={14} />}
                 onPress={() => {
                   setEditing({ ...post })
                   setBlogModalOpen(true)
@@ -2520,7 +2404,9 @@ yazı
               <Button
                 size="sm"
                 color="danger"
-                variant="light"
+                variant="bordered"
+                className="h-8 shrink-0 rounded-md text-xs"
+                startContent={<Icon icon="mdi:trash-can-outline" width={14} height={14} />}
                 onPress={() => removePost(post)}
               >
                 Sil

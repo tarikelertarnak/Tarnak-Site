@@ -81,6 +81,7 @@ export function CvPicker({
             href,
             'download': true,
             'aria-label': t('about.cvDownload'),
+            'className': 'relative hover:ring-2 hover:ring-primary-fg hover:ring-inset',
             'children': <DownloadIcon size={16} />,
           },
         ]}
@@ -128,7 +129,7 @@ export function CvPicker({
                   download
                   aria-label={t('about.cvDownload')}
                   onClick={() => setOpen(false)}
-                  className="mr-1 flex size-7 shrink-0 items-center justify-center rounded-md text-foreground/60 no-underline transition-colors hover:bg-primary/15 hover:text-primary"
+                  className="mr-1 flex size-7 shrink-0 items-center justify-center rounded-full text-foreground/60 no-underline transition-all hover:bg-primary/10 hover:text-primary hover:ring-2 hover:ring-primary"
                 >
                   <DownloadIcon size={14} />
                 </a>

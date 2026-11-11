@@ -116,7 +116,7 @@ describe('isListField / coerceFieldValue', () => {
 
 describe('pAGE_SPECS', () => {
   it('istenen her sayfa için ayrı spec var', () => {
-    for (const id of ['home', 'about', 'projects', 'blog', 'chat', 'contact', 'donate', 'now', 'credits', 'privacy', 'kvkk', 'github']) {
+    for (const id of ['home', 'about', 'blog', 'chat', 'contact', 'donate', 'now', 'credits', 'privacy', 'kvkk', 'github']) {
       expect(findPage(id), `${id} spec'i yok`).toBeTruthy()
     }
   })

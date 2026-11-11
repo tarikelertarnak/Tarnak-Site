@@ -33,7 +33,7 @@ describe('hero bölüm düğmesi sırası', () => {
 
   it('cv butonu en sonda (Sohbet\'ten sonra)', () => {
     const chatHref = block.indexOf('href="/chat/"')
-    const cvIdx = block.indexOf('CV', chatHref + 1)
+    const cvIdx = block.indexOf('<CvPicker', chatHref + 1)
     expect(chatHref).toBeGreaterThan(-1)
     expect(cvIdx).toBeGreaterThan(chatHref)
   })

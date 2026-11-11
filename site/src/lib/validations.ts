@@ -123,9 +123,32 @@ const projectItem = z.object({
   description: z.string().max(2000),
   projectLink: z.string().max(500),
   srcLink: z.string().max(500).optional(),
+  /** Link kaynağı: 'link' (dış adres) | 'yukle' (sunucuya yüklenmiş dosya). */
+  projectLinkKind: z.enum(['link', 'yukle']).optional(),
+  srcLinkKind: z.enum(['link', 'yukle']).optional(),
   image: z.string().max(500),
   /** Multiple media (image/gif/video URLs). Falls back to `image` when empty. */
   media: z.array(z.string().max(500)).max(12).optional(),
+  /**
+   * Medya listesi (2026-11-11): tür + kaynak + etiket + adres.
+   * `media` alanı bundan türetilir.
+   */
+  mediaItems: z
+    .array(
+      z.object({
+        type: z.enum(['resim', 'video', 'gif']),
+        kind: z.enum(['link', 'yukle']),
+        label: z.string().max(60),
+        url: z.string().max(500),
+      }),
+    )
+    .max(12)
+    .optional(),
+  /**
+   * Lisans (2026-11-11): zod'da YOKTU → kayıtta sessizce siliniyordu.
+   * SPDX kimliği (örn. "MIT", "Apache-2.0"); "Proprietary" da serbesttir.
+   */
+  license: z.string().max(60).optional(),
   stars: z.number().int().nonnegative().optional(),
   /** Öne çıkan proje, listenin en üstünde sabitlenir */
   pinned: z.boolean().optional(),
@@ -147,9 +170,27 @@ const projectItem = z.object({
   downloads: z
     .object({
       windows: z.string().max(500).optional(),
+      // macos/ios 2026-11-11'de eklendi: zod bilinmeyen anahtarı SESSİZCE
+      // siliyordu → per-os macOS/iOS linkleri kayıtta kayboluyordu.
+      macos: z.string().max(500).optional(),
+      ios: z.string().max(500).optional(),
       android: z.string().max(500).optional(),
       linux: z.string().max(500).optional(),
     })
+    .optional(),
+  /**
+   * İndirme satırları (cihaz adı + destek sürümü + link) — 2026-11-11.
+   * Zod alanı tanımazsa SESSİZCE silinir (bkz. §zod 4 tuzağı).
+   */
+  downloadRows: z
+    .array(
+      z.object({
+        device: z.string().max(60),
+        version: z.string().max(40),
+        url: z.string().max(500),
+      }),
+    )
+    .max(20)
     .optional(),
 })
 
