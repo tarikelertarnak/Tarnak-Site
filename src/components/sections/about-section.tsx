@@ -223,10 +223,10 @@ export function AboutSection({
               />
             </Tilt3D>
               <div className="flex w-full flex-col gap-1">
-                <h3 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+                <h2 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
                   <UserIcon size={20} className="text-primary" />
                   {t('about.infoCardTitle')}
-                </h3>
+                </h2>
                 <div className="mt-2 grid w-full grid-cols-1 sm:grid-cols-2 gap-x-8">
                   {/*
                     AD / SOYAD (2026-10-05, kullanıcı).
@@ -358,9 +358,9 @@ export function AboutSection({
           {/* Languages: structured table. Data stays a plain string
               ("İngilizce (A2), Almanca (A1)") — parsed here, no schema churn. */}
           <BentoBoxItem bare className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4 border-t border-foreground/10 pt-8">
-            <h3 className="text-base sm:text-lg font-semibold">
+            <h2 className="text-base sm:text-lg font-semibold">
               {t('about.languagesTitle')}
-            </h3>
+            </h2>
             {/*
                 DİLLER KARTI (2026-10-06 + 2026-10-07 düzeltmeleri):
 
@@ -410,10 +410,10 @@ export function AboutSection({
           <BentoBoxItem bare className="col-span-1 sm:col-span-2 lg:col-span-3 gap-4 border-t border-foreground/10 pt-8">
             <div className="flex w-full flex-col gap-4">
               <div className="flex w-full flex-row flex-wrap items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
+                <h2 className="flex items-center gap-2 text-base sm:text-lg font-semibold">
                   <FileIcon size={20} className="text-primary" />
                   {about.whoTitle}
-                </h3>
+                </h2>
                 <CvPicker cvs={cvs} size="sm" color="primary" />
               </div>
               <p className="text-xs sm:text-sm text-foreground-500 leading-relaxed">
@@ -441,9 +441,9 @@ export function AboutSection({
           </BentoBoxItem>
 
           <BentoBoxItem bare className="col-span-1 sm:col-span-2 lg:col-span-3 border-t border-foreground/10 pt-8">
-            <h3 className="text-base sm:text-lg font-semibold">
+            <h2 className="text-base sm:text-lg font-semibold">
               {about.toolboxTitle}
-            </h3>
+            </h2>
             <p className="mt-2 text-xs sm:text-sm text-foreground-500">
               {about.toolboxDescription}
             </p>
@@ -457,9 +457,9 @@ export function AboutSection({
           </BentoBoxItem>
 
           <BentoBoxItem bare className="col-span-1 sm:col-span-2 lg:col-span-3 border-t border-foreground/10 pt-8">
-            <h3 className="text-base sm:text-lg font-semibold">
+            <h2 className="text-base sm:text-lg font-semibold">
               {about.beyondTitle}
-            </h3>
+            </h2>
             <p className="mt-2 text-xs sm:text-sm text-foreground-500">
               {about.beyondDescription}
             </p>
