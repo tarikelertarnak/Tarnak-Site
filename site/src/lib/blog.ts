@@ -119,6 +119,13 @@ async function fetchPostsMerged(): Promise<BlogPost[]> {
           'id, slug, title, excerpt, content, tags, cover, published, created_at, updated_at',
         )
         .eq('published', true)
+        // 2026-11-12: ZAMAN AŞIMI YOKTU — ağ asılı kalınca (blocked/slow DNS)
+        // bu promise hiç çözülmüyor, RSC akışı tamamlanmıyor ve /blog sayfası
+        // SONSUZA DEK iskelet (fallback) olarak kalıyordu: içerik React'ın
+        // gizli streaming kutusunda (`<div hidden id="S:0">`) trapped, kullanıcı
+        // boş sayfa görüyordu. `abortSignal` ile istek 8 sn'de düşer → hata
+        // yakalanır → yerel yazılara düşülür (catch bloğu).
+        .abortSignal(AbortSignal.timeout(8000))
       if (!error && data?.length) {
         const localPosts = new Map(local.map(p => [p.slug, p]))
         const bySlug = new Map<string, BlogPost>()

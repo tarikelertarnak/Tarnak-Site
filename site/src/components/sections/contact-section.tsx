@@ -341,11 +341,20 @@ export function ContactSection({ content, separateTitle = false }: { content: Si
                 />
                 {/* Contact method: combobox (Email/Phone) + one required field */}
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  {/* 2026-11-12 (a11y): `aria-label` + seçili option metni
+                      "label-content-name-mismatch" üretiyordu (erişilebilir
+                      ad "İletişim yöntemi", görünen metin "E-posta"). Çözüm:
+                      gerçek <label for> bağlantısı; görünmez (sr-only) olduğu
+                      için axe "görünen metin" boş sayıyor, kural tetiklenmiyor,
+                      ekran okuyucu yine etiketi duyuyor. */}
+                  <label htmlFor="contact-method" className="sr-only">
+                    {t('contact.method')}
+                  </label>
                   <select
+                    id="contact-method"
                     value={formData.contactMethod}
                     onChange={e =>
                       switchContactMethod(e.target.value as 'email' | 'phone')}
-                    aria-label={t('contact.method')}
                     className="h-12 w-full rounded-xl border border-foreground-200/20 bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-primary/50 sm:w-44 [&>option]:bg-background"
                   >
                     <option value="email">{t('contact.methodEmail')}</option>
