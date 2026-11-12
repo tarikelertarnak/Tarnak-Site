@@ -34,7 +34,7 @@ function looksLikeImage(data: Buffer, ext: string): boolean {
 
 /** Dosya adını güvenli hale getirir (yol geçişi / tuhaf karakter yok). */
 function safeName(name: string): string {
-  const base = path.basename(name).replace(/[^a-zA-Z0-9._-]/g, '-').slice(-60)
+  const base = path.basename(name).replace(/[^\w.-]/gi, '-').slice(-60)
   return base || 'dosya'
 }
 

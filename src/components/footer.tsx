@@ -1,14 +1,11 @@
 'use client'
 
 import type { SiteContent } from '@/lib/content'
-import { useMemo } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { useLocalizedContent, useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { ChevronUpIcon } from '@/components/ui/icons'
-import { Link } from '@/components/ui/link'
 import { scrollToTop } from '@/lib/scroll'
-import { buildSiteNavigation } from '@/lib/site-navigation'
 
 /**
  * Alt bilgi (footer).
@@ -37,11 +34,6 @@ export function Footer({ content: rawContent }: { content: SiteContent }) {
   // gereksiz uzatiyordu. Bu yuzden bosluk duruma gore veriliyor.
   const hasMusicPlayer = Boolean(content.settings?.musicSrc)
   const year = new Date().getFullYear()
-
-  const groups = useMemo(
-    () => buildSiteNavigation(t, content.nav.items),
-    [t, content.nav.items],
-  )
 
   return (
     <footer
@@ -74,57 +66,23 @@ export function Footer({ content: rawContent }: { content: SiteContent }) {
                   (`profile`) birleştiriliyor.
                 */}
                 <span className="select-text text-lg font-bold text-primary">
-                  {`${content.profile.firstName} ${content.profile.lastName} - ${content.profile.nickname.toUpperCase()}`}
+                  {`${content.profile.firstName} ${content.profile.lastName} — ${content.profile.nickname.toUpperCase()}`}
                 </span>
                 {/* Kisa slogan — footer'a uzun "hakkımda" paragrafı koymak
                     düzeni bozuyordu; tam metin Hakkımda bölümünde zaten var. */}
                 <p className="max-w-sm text-xs leading-relaxed text-foreground-500 sm:text-sm">
                   {content.hero.tagline}
                 </p>
+                {content.about?.description && (
+                  <p className="mt-2 max-w-sm text-[11px] leading-relaxed text-foreground-400 sm:text-[12px]">
+                    {content.about.description}
+                  </p>
+                )}
                 <div className="mt-1">
                   <ContactQuickMenu content={content} />
                 </div>
               </div>
 
-              {/* GEZINME — tum sayfalar, bolumler ve hesap baglantilari.
-                  Uc alt kolon: dar ekranda tek, genis ekranda yan yana.
-
-                  2026-10-31 (kullanici): "sade, dikey bir liste" — linklerin
-                  yanindaki ok/harici ikon KALDIRILDI, ok/nokta hizalamasi yok.
-                  Renk: varsayilan soluk gri (acik tema neutral-500, koyu tema
-                  neutral-400 = #a1a1aa), hover'da net beyaz/siyah; gecis
-                  `transition-colors duration-200`. Basliklar daha kucuk ve
-                  soluk: 10px, genis harf araligi, neutral tonlari. */}
-              <nav
-                aria-label={t('footer.navigate')}
-                className="flex flex-col gap-5 lg:col-span-8"
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-neutral-500 dark:text-neutral-500">
-                  {t('footer.navigate')}
-                </p>
-
-                <div className="grid grid-cols-2 gap-x-6 gap-y-7 sm:grid-cols-3">
-                  {groups.map(group => (
-                    <div key={group.id} className="flex flex-col gap-2.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
-                        {group.title}
-                      </p>
-                      <ul className="flex flex-col gap-1.5">
-                        {group.entries.map(entry => (
-                          <li key={entry.id}>
-                            <Link
-                              href={entry.href}
-                              className="block py-0.5 text-[15px] leading-6 text-neutral-500 no-underline transition-colors duration-200 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
-                            >
-                              {entry.label}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </nav>
             </div>
 
             {/* Alt satir. `-mx` + `px` ile ayirici kartin TAM genisliginde kalir;

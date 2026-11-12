@@ -1,5 +1,6 @@
 'use client'
 
+import type { ProjectDraft } from '@/components/admin/project-modal'
 import type { ProjectItem, SiteContent } from '@/lib/content'
 import type { GitHubRepo } from '@/lib/github'
 import { Icon } from '@iconify/react'
@@ -8,10 +9,9 @@ import { PanelCard } from '@/components/admin/panel-card'
 import {
   draftToProject,
   emptyProjectDraft,
-  projectToDraft,
   ProjectModal,
+  projectToDraft,
 } from '@/components/admin/project-modal'
-import type { ProjectDraft } from '@/components/admin/project-modal'
 import { VisibilitySwitch } from '@/components/admin/visibility-switch'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/components/ui/cn'
@@ -142,10 +142,14 @@ export function GitHubReposAdmin({ githubRepos, content, setContent }: Props) {
                     <p className="truncate text-xs text-foreground-500">{repo.description}</p>
                   )}
                   <p className="mt-0.5 text-[10px] text-foreground-600">
-                    ★{' '}
+                    ★
+{' '}
                     {repo.stars}
                     {' · '}
-                    {repo.forks} fork · {repo.language ?? '—'}
+                    {repo.forks}
+{' '}
+fork ·
+{repo.language ?? '—'}
                   </p>
                 </div>
 

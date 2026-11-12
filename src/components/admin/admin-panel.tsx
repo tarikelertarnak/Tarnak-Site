@@ -1,12 +1,12 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import type { ProjectDraft } from '@/components/admin/project-modal'
 import type {
   BlogPost,
   InterestItem,
   ProjectItem,
   SiteContent,
-  SocialItem,
   ToolboxItem,
 } from '@/lib/content'
 import type { GitHubRepo } from '@/lib/github'
@@ -14,17 +14,18 @@ import { Icon } from '@iconify/react'
 import { Tabs } from '@lobehub/ui/base-ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { DataManager } from '@/components/admin/data-manager'
 import { AiConfigEditor } from '@/components/admin/ai-config-editor'
+import { DataManager } from '@/components/admin/data-manager'
 import { GitHubReposAdmin } from '@/components/admin/github-repos-admin'
 import { HeroLogoField } from '@/components/admin/hero-logo-field'
 import { OverviewPanel } from '@/components/admin/overview-panel'
 import { PageTextEditor } from '@/components/admin/page-text-editor'
 import { PanelCard } from '@/components/admin/panel-card'
-import { SectionsEditor } from '@/components/admin/sections-editor'
 import { ProfilePhotoUploader } from '@/components/admin/profile-photo-uploader'
+import { draftToProject, emptyProjectDraft, ProjectModal, projectToDraft } from '@/components/admin/project-modal'
 import { SaveBar } from '@/components/admin/save-bar'
 import { ScrollableTabs } from '@/components/admin/scrollable-tabs'
+import { SectionsEditor } from '@/components/admin/sections-editor'
 import { TabLabel } from '@/components/admin/tab-label'
 import { UsersPanel } from '@/components/admin/users-panel'
 import { Button } from '@/components/ui/button'
@@ -36,11 +37,9 @@ import { SectionTitle } from '@/components/ui/section'
 import { Textarea } from '@/components/ui/textarea'
 import { aboutPageErrors, normalizeAboutPage } from '@/lib/about-page'
 import { clientFetchUserRepos } from '@/lib/github-client'
-import { draftToProject, emptyProjectDraft, projectToDraft, ProjectModal } from '@/components/admin/project-modal'
-import type { ProjectDraft } from '@/components/admin/project-modal'
 import { PAGE_SPECS } from '@/lib/page-text-specs'
-import { SECTION_SPECS } from '@/lib/section-fields'
 import { scrollToElement } from '@/lib/scroll'
+import { SECTION_SPECS } from '@/lib/section-fields'
 
 type SaveStatus = { type: 'success' | 'error', text: string } | null
 
@@ -337,25 +336,10 @@ return
       about: { ...prev.about, [field]: value },
     }))
   }
-  const setProjectsMeta = (
-    field: 'subtitle' | 'title' | 'description',
-    value: string,
-  ) => {
-    setContent(prev => ({
-      ...prev,
-      projects: { ...prev.projects, [field]: value },
-    }))
-  }
   const setContact = (field: keyof SiteContent['contact'], value: string) => {
     setContent(prev => ({
       ...prev,
       contact: { ...prev.contact, [field]: value },
-    }))
-  }
-  const setFooter = (field: keyof SiteContent['footer'], value: string) => {
-    setContent(prev => ({
-      ...prev,
-      footer: { ...prev.footer, [field]: value },
     }))
   }
   const setSettings = (field: keyof SiteContent['settings'], value: string) => {
@@ -363,15 +347,6 @@ return
       ...prev,
       settings: { ...prev.settings, [field]: value },
     }))
-  }
-  const setGithub = (field: keyof SiteContent['github'], value: string) => {
-    setContent(prev => ({
-      ...prev,
-      github: { ...prev.github, [field]: value },
-    }))
-  }
-  const setChat = (field: keyof SiteContent['chat'], value: string) => {
-    setContent(prev => ({ ...prev, chat: { ...prev.chat, [field]: value } }))
   }
   const setProfile = (field: keyof SiteContent['profile'], value: string) => {
     setContent(prev => ({
@@ -494,54 +469,6 @@ return
     }))
   }
 
-  const setProject = (
-    index: number,
-    field: keyof ProjectItem,
-    value: string,
-  ) => {
-    setContent((prev) => {
-      const items = prev.projects.items.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item,
-      )
-      return { ...prev, projects: { ...prev.projects, items } }
-    })
-  }
-
-  const setProjectDownloadMode = (index: number, mode: 'global' | 'per-os') => {
-    setContent((prev) => {
-      const items = prev.projects.items.map((item, i) => {
-        if (i !== index)
-return item
-        if (mode === 'global') {
-          const { downloads: _drop, ...rest } = item
-          return { ...rest, downloadMode: 'global' as const }
-        }
-        return {
-          ...item,
-          downloadMode: 'per-os' as const,
-          downloads: item.downloads ?? {},
-        }
-      })
-      return { ...prev, projects: { ...prev.projects, items } }
-    })
-  }
-
-  const setProjectDownloadOs = (
-    index: number,
-    os: 'windows' | 'macos' | 'linux' | 'ios' | 'android',
-    value: string,
-  ) => {
-    setContent((prev) => {
-      const items = prev.projects.items.map((item, i) => {
-        if (i !== index)
-return item
-        const downloads = { ...(item.downloads ?? {}), [os]: value }
-        return { ...item, downloads }
-      })
-      return { ...prev, projects: { ...prev.projects, items } }
-    })
-  }
-
   /** "Yeni Proje Ekle" popup'u için ham taslak (2026-11-08, kullanıcı isteği). */
   const [projectModalOpen, setProjectModalOpen] = useState(false)
   /** "Yeni Proje Ekle" modalının başlangıç taslağı (modal kendi durumunu yönetir). */
@@ -568,29 +495,6 @@ return item
         ...prev.projects,
         items: prev.projects.items.filter((_, i) => i !== index),
       },
-    }))
-  }
-
-  const setSocial = (index: number, field: keyof SocialItem, value: string) => {
-    setContent((prev) => {
-      const social = prev.social.map((item, i) =>
-        i === index ? { ...item, [field]: value } : item,
-      )
-      return { ...prev, social }
-    })
-  }
-
-  const addSocial = () => {
-    setContent(prev => ({
-      ...prev,
-      social: [...prev.social, { name: '', href: '', icon: 'mdi:github' }],
-    }))
-  }
-
-  const removeSocial = (index: number) => {
-    setContent(prev => ({
-      ...prev,
-      social: prev.social.filter((_, i) => i !== index),
     }))
   }
 
@@ -1433,7 +1337,6 @@ return item
     </div>
   )
 
-
   /** Eski "projects" sekmesinin gövdesi — artık bir grubun alt bölümü. */
   /**
    * "Sayfa Düzenle" → PROJELER sekmesi (2026-11-11 yeniden tasarım).
@@ -1558,9 +1461,9 @@ return item
   const projectsMatch = { id: 'projects', label: 'PROJELER' }
   const blogSpec = PAGE_SPECS.find(p => p.id === 'blog')!
   const pagesMatch = (q: string, page: { label: string, id: string }) =>
-    !q ||
-    page.label.toLowerCase().includes(q) ||
-    page.id.toLowerCase().includes(q)
+    !q
+    || page.label.toLowerCase().includes(q)
+    || page.id.toLowerCase().includes(q)
   const pageQ = pageEditSearch.trim().toLowerCase()
   const pagesPane = (
     <div className="space-y-3">
@@ -2365,8 +2268,10 @@ return
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-foreground-500">
-          {posts.length} yazı — düzenlemek için satırdaki "Düzenle"ye bas.
-        </p>
+          {posts.length}
+{' '}
+yazı — düzenlemek için satırdaki "Düzenle"ye bas.
+</p>
         {!blogModalOpen && (
           <Button
             color="primary"
