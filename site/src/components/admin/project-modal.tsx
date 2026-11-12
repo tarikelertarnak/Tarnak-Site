@@ -1,9 +1,9 @@
 'use client'
 
-import type { ProjectItem } from '@/lib/content'
 import type { DownloadRow } from '@/components/admin/download-fields'
 import type { LinkKind } from '@/components/admin/link-editor'
 import type { MediaItem } from '@/components/admin/media-editor'
+import type { ProjectItem } from '@/lib/content'
 import { useState } from 'react'
 import { DEVICE_OS_KEYS, DownloadFields } from '@/components/admin/download-fields'
 import { LicensePicker } from '@/components/admin/license-picker'

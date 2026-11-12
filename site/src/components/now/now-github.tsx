@@ -3,8 +3,8 @@
 import type { ContributionCalendar } from '@/lib/github-contributions'
 import type { GithubSnapshotStats } from '@/lib/github-snapshot'
 import { useT } from '@/components/locale-provider'
-import { GithubIcon } from '@/components/ui/icons'
 import { ContributionGraph } from '@/components/now/contribution-graph'
+import { GithubIcon } from '@/components/ui/icons'
 
 /**
  * `/now` sayfasının GitHub bloğu (2026-10-31).

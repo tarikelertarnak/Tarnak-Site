@@ -80,7 +80,8 @@ export function formatValue(v: unknown): string {
   return String(v)
 }
 
-function CopyButton({ value }: { value: string }) {  const [copied, setCopied] = useState(false)
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false)
   return (
     <button
       type="button"
@@ -428,9 +429,13 @@ function InspectBody({
       <Section title="Hesaba Giriş">
         <p className="mb-2 text-[11px] leading-snug text-foreground-500">
           Site sahibinin satırı: sihirli bağlantı (≈1 saat geçerli) üretir ve
-          kullanıcının hesabını <strong>yeni sekmede</strong> açar. Şifre hiç
+          kullanıcının hesabını
+{' '}
+<strong>yeni sekmede</strong>
+{' '}
+açar. Şifre hiç
           kimseye açıklanmaz. İşlem denetim kaydına yazılır.
-        </p>
+</p>
         <Button
           size="sm"
           color="primary"

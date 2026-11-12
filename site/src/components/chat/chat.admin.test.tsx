@@ -386,7 +386,8 @@ describe('admin kullanıcı menüsü', () => {
     )
     await waitFor(() => expect(document.querySelector('[role="status"]')).toBeNull())
     // Satır + (tek kişi olduğu için) başlık aynı etiketi taşır.
-    expect(screen.getAllByText('TARIK ELER TARNAK (You)').length).toBeGreaterThan(0)  })
+    expect(screen.getAllByText('TARIK ELER TARNAK (You)').length).toBeGreaterThan(0)
+})
 
   it('sekiz sözlükte de "chat.you" var (dile göre çeviri)', () => {
     for (const l of ['tr', 'en', 'de', 'es', 'fr', 'ja', 'pt', 'ru'] as const) {

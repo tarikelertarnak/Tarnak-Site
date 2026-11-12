@@ -26,7 +26,7 @@ export function createAdminClient(): SupabaseClient {
       fetch: Object.assign(
         (input: RequestInfo | URL, init?: RequestInit) =>
           globalThis.fetch(input, { ...(init || {}), signal: AbortSignal.timeout(25_000) }),
-        { preconnect: () => {} }
+        { preconnect: () => {} },
       ) as unknown as typeof globalThis.fetch,
     },
   })

@@ -18,11 +18,11 @@ import { cn } from '@/components/ui/cn'
 import {
   BanIcon,
   BellIcon,
+  BellOffIcon,
+  ChevronDownIcon,
   ClockIcon,
   CloseIcon,
   CopyIcon,
-  BellOffIcon,
-  ChevronDownIcon,
   DownloadIcon,
   EditIcon,
   ErrorIcon,
@@ -33,13 +33,10 @@ import {
   LockIcon,
   MenuIcon,
   MoreVerticalIcon,
-  MicIcon,
-  MuteIcon,
   PaperclipIcon,
   PinIcon,
   PlusIcon,
   PollIcon,
-  QuoteIcon,
   ReplyIcon,
   SearchIcon,
   SendIcon,
@@ -500,6 +497,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   /** Lightbox aç: tüm medya (görsel+video) — tıklanandan başla. */
   function openGallery(clicked: UiMessage) {
     const avatarOf = (senderId: string) =>
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
       (peers ?? []).find(p => p.id === senderId)?.avatarUrl ?? null
     const items: LightboxItem[] = []
     for (const m of messages) {
@@ -1179,6 +1177,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
 
   function requestPin(target: UiMessage) {
     if (target.pinned) {
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
       void act('pin', { messageId: target.id, pinned: false }).then(() => load())
       return
     }
@@ -1209,6 +1208,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
     }
     setPinDialog(null)
     await act('pin', { messageId: target.id, pinned: true, until })
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
     await load()
   }
 
@@ -1287,11 +1287,13 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
 
   /** Sohbeti dışa aktar: mevcut konuşmayı .txt olarak indirir. */
   function exportChat() {
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
     if (!activePeer || messages.length === 0) {
       setNotice('Dışa aktarılacak mesaj yok.')
       return
     }
     const lines = [
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
       `Sohbet: ${activePeer.name}`,
       `Dışa aktarım: ${new Date().toLocaleString('tr')}`,
       '',
@@ -1317,6 +1319,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
     a.download = `sohbet-${(activePeer.name || 'cikti').replace(/[\\/:*?"<>|\s]+/g, '-')}-${Date.now()}.txt`
     a.click()
     URL.revokeObjectURL(url)
@@ -2133,7 +2136,6 @@ return
     await deliver(m.id, m.text ?? '', m.reply_to_id ?? undefined)
   }
 
-
   /** Dosya yükle + gönder. `text` verilirse mesaj kutusuna ALTYAZI olarak girer
       (WhatsApp mantığı) — upload sonrası POST'a `text` eklenir. */
   async function uploadFile(file: File, text?: string) {
@@ -2786,7 +2788,8 @@ return
             mesaja kayar, sıradaki sabit öne geçer; sağdaki ok arama listesi açar;
             raptiye İKONU RENGİSİZ (kullanıcı isteği). */}
         {threadOpen && pinActive && (
-          <div className="relative border-b border-foreground/10 bg-foreground/[0.06]"
+          <div
+            className="relative border-b border-foreground/10 bg-foreground/[0.06]"
             onContextMenu={(e) => {
               e.preventDefault()
               setPinBannerMenu({ x: e.clientX, y: e.clientY })
@@ -3024,9 +3027,12 @@ return
                 - new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()) / 86400000,
             )
             const dateStr = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`
-            if (dayDiff === 0) return `${dateStr} (${t('chat.today')})`
-            if (dayDiff === 1) return `${dateStr} (${t('chat.yesterday')})`
-            if (dayDiff === 2) return `${dateStr} (${t('chat.twoDaysAgo')})`
+            if (dayDiff === 0)
+return `${dateStr} (${t('chat.today')})`
+            if (dayDiff === 1)
+return `${dateStr} (${t('chat.yesterday')})`
+            if (dayDiff === 2)
+return `${dateStr} (${t('chat.twoDaysAgo')})`
             return dateStr
           })()
 
@@ -3659,7 +3665,9 @@ jumpToMessage(m.id)
                   onClick={addPollOption}
                   className="self-start rounded-md px-3 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
                 >
-                  + {t('chat.pollAddOption')}
+                  +
+{' '}
+{t('chat.pollAddOption')}
                 </button>
               </div>
               <div className="flex items-center justify-between gap-2">
@@ -3810,7 +3818,7 @@ jumpToMessage(m.id)
               setError(t('chat.error'))
             }
           }}
-           onDelete={async () => {
+          onDelete={async () => {
             const peer = menu.peer
             setMenu(null)
             await runAdmin('deleteConversation', peer)
@@ -4614,7 +4622,6 @@ function ConfirmDelete({ onDeleteAll, onDeleteMe, onCancel, labels }: {
   )
 }
 
-
 /**
  * Süre seçici diyaloğu (2026-11-08, WhatsApp "Sessize al" paritesi): sabitleme
  * ve bildirim sessizliğinin ORTAK seçicisi — 24 saat · 7 gün · Her zaman ·
@@ -4694,7 +4701,7 @@ function DurationDialog({
                 type="datetime-local"
                 value={customAt}
                 min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
-                onChange={e => {
+                onChange={(e) => {
                   onCustomAt(e.target.value)
                   onChoice('custom')
                 }}

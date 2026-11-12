@@ -1,14 +1,11 @@
 'use client'
 
 import type { SiteContent } from '@/lib/content'
-import { useMemo } from 'react'
 import { ContactQuickMenu } from '@/components/contact-quick-menu'
 import { useLocalizedContent, useT } from '@/components/locale-provider'
 import { cn } from '@/components/ui/cn'
 import { ChevronUpIcon } from '@/components/ui/icons'
-import { Link } from '@/components/ui/link'
 import { scrollToTop } from '@/lib/scroll'
-import { buildSiteNavigation } from '@/lib/site-navigation'
 
 /**
  * Alt bilgi (footer).
@@ -37,11 +34,6 @@ export function Footer({ content: rawContent }: { content: SiteContent }) {
   // gereksiz uzatiyordu. Bu yuzden bosluk duruma gore veriliyor.
   const hasMusicPlayer = Boolean(content.settings?.musicSrc)
   const year = new Date().getFullYear()
-
-  const groups = useMemo(
-    () => buildSiteNavigation(t, content.nav.items),
-    [t, content.nav.items],
-  )
 
   return (
     <footer

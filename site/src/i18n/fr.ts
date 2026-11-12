@@ -89,7 +89,7 @@ const fr: Record<string, string> = {
   'chat.resizePanel': 'Redimensionner le panneau',
   'chat.block': 'Block',
   'chat.clearConversation': 'Effacer la conversation',
-  'chat.clearConversationDesc': "Nettoie uniquement votre vue ; l'autre côté n'est pas affecté. Les messages masqués ne réapparaîtront pas.",
+  'chat.clearConversationDesc': 'Nettoie uniquement votre vue ; l\'autre côté n\'est pas affecté. Les messages masqués ne réapparaîtront pas.',
   'chat.deleteConversation': 'Réinitialiser la conversation',
   'chat.favorite': 'Add to favorites',
   'chat.filter': 'Filtrer',

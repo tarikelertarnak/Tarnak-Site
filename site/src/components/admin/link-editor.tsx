@@ -94,7 +94,7 @@ export function LinkEditor({
             className="min-w-0 flex-1"
             variant="faded"
             value={url}
-            onValueChange={v => {
+            onValueChange={(v) => {
               onChange({ url: v })
               setSuggestOpen(true)
             }}
@@ -130,7 +130,6 @@ export function LinkEditor({
           </div>
         )}
       </div>
-
 
       {/* Öneri listesi — mevcut linkler */}
       {kind === 'link' && suggestOpen && filtered.length > 0 && (

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
+import { PAGE_SPECS } from '@/lib/page-text-specs'
 import { isAdminUser } from '@/lib/supabase/session'
 import { contentSchema } from '@/lib/validations'
-import { PAGE_SPECS } from '@/lib/page-text-specs'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -54,10 +54,12 @@ export async function POST(req: Request) {
 </script>`
 
     if (html.includes('</body>')) {
-      html = html.replace('</body>', previewScript + '\n</body>')
-    } else if (html.includes('</html>')) {
-      html = html.replace('</html>', previewScript + '\n</html>')
-    } else {
+      html = html.replace('</body>', `${previewScript}\n</body>`)
+    }
+ else if (html.includes('</html>')) {
+      html = html.replace('</html>', `${previewScript}\n</html>`)
+    }
+ else {
       html = html + previewScript
     }
 
@@ -81,4 +83,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, message: e?.message || 'Preview hatası' }, { status: 500 })
   }
 }
-

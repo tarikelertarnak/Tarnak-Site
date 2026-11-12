@@ -97,7 +97,11 @@ export function MediaEditor({
           {label}
         </span>
         {list.length > 0 && (
-          <span className="text-[11px] text-foreground-400">{list.length} öğe</span>
+          <span className="text-[11px] text-foreground-400">
+{list.length}
+{' '}
+öğe
+</span>
         )}
       </div>
 

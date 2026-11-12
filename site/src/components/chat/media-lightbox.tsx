@@ -279,7 +279,7 @@ export function MediaLightbox({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        onClick={e => {
+        onClick={(e) => {
           // Boş alana tıklayınca KAPAT (yan panel gibi) — medyanın/okun üstünde değil.
           if (e.target === e.currentTarget) {
             onClose()

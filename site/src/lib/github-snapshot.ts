@@ -1,3 +1,4 @@
+import type { ContributionCalendar } from './github-contributions'
 /**
  * Build sırasında üretilen GitHub anlık görüntüsü (2026-10-31).
  *
@@ -13,7 +14,6 @@
  */
 import contributionsRaw from '../../public/github-contributions.json'
 import githubRaw from '../../public/github-data.json'
-import type { ContributionCalendar } from './github-contributions'
 import { normalizeContributions } from './github-contributions'
 
 export interface GithubSnapshotStats {
