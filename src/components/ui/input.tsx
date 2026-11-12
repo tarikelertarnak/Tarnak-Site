@@ -15,6 +15,9 @@ export interface InputProps {
   'value': string
   'onValueChange'?: (value: string) => void
   'onChange'?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  /** Odak olayları (2026-11-11): öneri listesi gibi akışlarda gerekiyor. */
+  'onFocus'?: (e: React.FocusEvent<HTMLInputElement>) => void
+  'onBlur'?: (e: React.FocusEvent<HTMLInputElement>) => void
   'isInvalid'?: boolean
   'errorMessage'?: ReactNode
   'required'?: boolean

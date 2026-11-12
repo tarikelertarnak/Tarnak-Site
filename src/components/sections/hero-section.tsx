@@ -44,6 +44,14 @@ const item: Variants = {
   },
 }
 
+/**
+ * Seçim (`::selection`) vurgusu satır kutusuna sığar — büyük harflerin
+ * üstünü/altını kesiyordu. `inline-block` + dikey padding vurguyu gliflerin
+ * üstüne/altına taşarır; `-my` aynı miktarı çektiği için layout hiç değişmez.
+ * 2026-11-11, kullanıcı: "seçim harflerin önüne geliyor".
+ */
+const selPadding = 'inline-block py-[0.3em] -my-[0.3em]'
+
 export function HeroSection({
   content,
   cvs,
@@ -212,37 +220,50 @@ export function HeroSection({
         </Tilt3D>
 
           {/*
-            Name + TARNAK: aynı tipografi (font-black / uppercase /
-            tracking-tighter / text-primary), iki satır:
-            "TARIK ELER -" / "TARNAK".
+            Name / — / TARNAK üç satır (2026-11-11, birlikte yeniden tasarlandı).
 
-            ⚠️ `select-none` KALDIRILDI (2026-10-07, kullanıcı: "yazısını
-            kendim yazdım seçilmedi"). Kullanıcı başlığı seçip
-            kopyalamak istiyor — `select-none` bunu imkânsız kılıyordu.
+            Neden flex-col: 3 satırın yatay ortası TEK kaynak (`items-center`).
+            Satırlar içerik kadar küçülür; hizalama ve taşma aynı anda düzelir.
+            Per-satır `leading-[0.95]` — h1 satır kutusunu şişiren eski
+            `leading-[1.05]`+`overflow-visible` hack'ine gerek kalmadı.
+
+            SEÇİM VURGUSU: `selPadding` sabiti (modül) — 4 span'da aynı sınıflar.
+
+            AYRAÇ: `0.42em` göreli em dash → her ekranda ad/takma adla orantılı
+            kalır, ayrıca margin yönetimi gerektirmez; soluk (text-foreground/40)
+            → hiyerarşi: ad > takma ad > ayraç.
           */}
-          <motion.div variants={item} className="w-full">
+          <motion.div variants={item} className="w-full min-w-0">
             <h1
               onClick={triggerActive}
               className={[
-                'font-black uppercase leading-[0.95] tracking-tighter',
+                'flex cursor-pointer select-text flex-col items-center',
+                'font-black uppercase tracking-tighter',
                 'text-5xl sm:text-7xl md:text-7xl lg:text-8xl',
-                'cursor-pointer',
                 active ? 'hero-click-primary' : '',
               ].join(' ')}
             >
-              {/* TARIK ELER */}
-              <span className="group/name block select-text">
-                <span className="inline text-foreground transition-colors group-hover/name:text-primary">
+              {/* TARIK ELER — satır 1 */}
+              <span className="group/name block leading-[0.95]">
+                <span className={`${selPadding} text-foreground transition-colors group-hover/name:text-primary`}>
                   {name.split(' ')[0]}
                 </span>
                 {' '}
-                <span className="inline text-foreground transition-colors group-hover/name:text-primary">
+                <span className={`${selPadding} text-foreground transition-colors group-hover/name:text-primary`}>
                   {name.split(' ').slice(1).join(' ')}
                 </span>
               </span>
-              {/* TARNAK */}
-              <span className="group/nick relative z-20 block select-text">
-                <span className="inline text-foreground transition-colors group-hover/nick:text-primary">
+              {/* AYRAÇ — 2 satıra orantılı em dash (0.42em), ortada, aria-hidden */}
+              <span
+                aria-hidden="true"
+                className="block font-black leading-none text-foreground/40"
+                style={{ fontSize: '0.42em' }}
+              >
+                <span className={selPadding}>—</span>
+              </span>
+              {/* TARNAK — satır 3 */}
+              <span className="group/nick block leading-[0.95]">
+                <span className={`${selPadding} text-foreground transition-colors group-hover/nick:text-primary`}>
                   {content.profile.nickname.toUpperCase()}
                 </span>
               </span>

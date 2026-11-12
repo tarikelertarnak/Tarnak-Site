@@ -245,13 +245,20 @@ export function GithubExplorer({ username }: { username: string }) {
             <div className="flex w-full flex-row flex-wrap items-center gap-2">
               {/* Sorting — on the left */}
               <span className="flex flex-row flex-wrap items-center gap-1.5">
-                <span className="hidden sm:inline text-[11px] font-medium uppercase tracking-wider text-foreground-500">
+                {/* 2026-11-12 (a11y): görünür "Sırala:" metni butonun erişilebilir
+                    adıyla aynı olsun diye gerçek <label for> yapıldı; eski
+                    `aria-label="Sırala"` seçili option metniyle çelişiyordu
+                    (label-content-name-mismatch). */}
+                <label
+                  htmlFor="github-sort"
+                  className="hidden sm:inline text-[11px] font-medium uppercase tracking-wider text-foreground-500"
+                >
                   {isEn ? 'Sort:' : 'Sırala:'}
-                </span>
+                </label>
                 <select
+                  id="github-sort"
                   value={sort}
                   onChange={e => setSort(e.target.value as SortKey)}
-                  aria-label={isEn ? 'Sort' : 'Sırala'}
                   className="h-9 cursor-pointer rounded-full border border-foreground-200/15 bg-background px-3 text-xs font-medium text-foreground/85 outline-none transition-colors hover:border-primary/40 focus:border-primary/60"
                 >
                   {(isEn ? SORT_OPTIONS_EN : SORT_OPTIONS_TR).map(opt => (

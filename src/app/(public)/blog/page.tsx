@@ -35,7 +35,10 @@ export default async function BlogPage() {
   return (
     <div className="min-h-screen w-full relative">
       <RememberListPath path="/blog" />
-      <main id="main" className="contents">
+      {/* `display:contents` landmark'ı erişilebilirlik ağacından çıkarıyordu
+          (Lighthouse: "Document does not have a main landmark") → normal blok.
+          İç `div` zaten boşluk/margin'ı taşıdığı için düzen değişmez. */}
+      <main id="main" className="w-full">
         {/*
           ÜST BOŞLUK (2026-10-13, breadcrumb kaldırıldı): BlogSection'ın
           kendi `pt-16 sm:pt-24 lg:pt-32`'si + `framed` iç dolgusu

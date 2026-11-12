@@ -18,6 +18,8 @@ import { cn } from '@/components/ui/cn'
 import {
   BanIcon,
   BellIcon,
+  BellOffIcon,
+  ChevronDownIcon,
   ClockIcon,
   CloseIcon,
   CopyIcon,
@@ -30,13 +32,13 @@ import {
   InfoIcon,
   LockIcon,
   MenuIcon,
-  MicIcon,
-  MuteIcon,
+  MoreVerticalIcon,
   PaperclipIcon,
   PinIcon,
   PlusIcon,
-  QuoteIcon,
+  PollIcon,
   ReplyIcon,
+  SearchIcon,
   SendIcon,
   SmileFaceIcon,
   StarIcon,
@@ -173,38 +175,19 @@ function mediaKindOf(m: ChatMessageRow): 'image' | 'audio' | 'video' | null {
  */
 function MediaCaption({
   fileName,
-  url,
   mine,
-  label,
 }: {
   fileName: string | null
-  url: string
   mine: boolean
-  label: string
 }) {
   if (!fileName) {
     return null
   }
   return (
-    <div className={cn('mt-1 flex items-center gap-1.5', mine ? 'justify-end' : 'justify-start')}>
-      <span className={cn('max-w-48 truncate font-mono text-[10px]', mine ? 'text-primary-fg/70' : 'text-foreground-500')}>
+    <div className={cn('mb-1 flex items-center gap-1.5', mine ? 'justify-end' : 'justify-start')}>
+      <span className={cn('font-mono text-[10px] leading-tight break-all whitespace-normal text-left', mine ? 'text-primary-fg/75' : 'text-foreground-500')}>
         {fileName}
       </span>
-      <a
-        href={url}
-        download={fileName}
-        onClick={e => e.stopPropagation()}
-        aria-label={label}
-        title={label}
-        className={cn(
-          'flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full transition-colors',
-          mine
-            ? 'text-primary-fg/80 hover:bg-white/10 hover:text-primary-fg'
-            : 'text-foreground-500 hover:bg-foreground/10 hover:text-foreground',
-        )}
-      >
-        <DownloadIcon size={12} />
-      </a>
     </div>
   )
 }
@@ -271,6 +254,53 @@ function quoteAccent(senderId: string, isMine: boolean, onOwnBubble: boolean) {
   return QUOTE_ACCENTS[hash % QUOTE_ACCENTS.length]
 }
 
+/**
+ * Bırakılan dosyaları toplar (2026-11-08, kullanıcı isteği). Klasör bırakılırsa
+ * `webkitGetAsEntry` ile içine girilir; tek tek File alıp kuyruğa eklenir.
+ * `DataTransfer.files` yalnız düz dosya verir — dizinlerde boş döner, o yüzden
+ * girişlere bakılır; hiçbir giriş yoksa `.files` yedeği döner.
+ */
+async function collectDroppedFiles(dt: DataTransfer): Promise<File[]> {
+  const items = [...dt.items]
+  const entries = items
+    .map(item => (typeof item.webkitGetAsEntry === 'function' ? item.webkitGetAsEntry() : null))
+    .filter((e): e is FileSystemEntry => !!e)
+  if (entries.length === 0) {
+    return [...dt.files]
+  }
+  const files: File[] = []
+  const walk = async (entry: FileSystemEntry): Promise<void> => {
+    if (entry.isFile) {
+      const file = await new Promise<File>((resolve, reject) => {
+        (entry as FileSystemFileEntry).file(resolve, reject)
+      })
+      files.push(file)
+      return
+    }
+    if (entry.isDirectory) {
+      const reader = (entry as FileSystemDirectoryEntry).createReader()
+      // readEntries en fazla ~100 satır döndürür — tükenene kadar döngü.
+      while (true) {
+        const batch = await new Promise<FileSystemEntry[]>((resolve, reject) => {
+          reader.readEntries(resolve, reject)
+        })
+        if (batch.length === 0) {
+          break
+        }
+        for (const child of batch) {
+          // eslint-disable-next-line no-await-in-loop -- sıralı okuma
+          await walk(child)
+        }
+      }
+    }
+  }
+  for (const entry of entries) {
+    // eslint-disable-next-line no-await-in-loop -- sıralı toparla
+    await walk(entry)
+  }
+  return files
+}
+
 /** Kaydırma sonrası vurgulanan mesajın parlaması (ms). */
 const FLASH_MS = 1_900
 
@@ -327,6 +357,8 @@ interface Peer {
   blocked?: boolean
   /** Son mesaj zamanı (sohbetin `updated_at`i) — "konuştumuz zamana göre". */
   lastMessageAt?: string | null
+  /** Sessiz: `chat_participants.muted_until` (gelecekteyse sessiz). */
+  mutedUntil?: string | null
   /**
    * Kişiyle bir SOBET var mı (2026-10-13). Yoksa yönetici listesinde satır
    * çıkmaz: kayıt olup hiç yazmayan kişi paneli doldurmaz (kullanıcı isteği).
@@ -361,6 +393,8 @@ interface ConversationLite {
   kind?: string | null
   /** Okunmamış sayısı (sunucu türetir). */
   unread?: number
+  /** Sessiz: `chat_participants.muted_until`. */
+  mutedUntil?: string | null
   /** Son mesajın damgaları (sunucu türetir). */
   last?: {
     sender_id: string
@@ -405,15 +439,17 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   const [menu, setMenu] = useState<
     | { kind: 'peer', peer: Peer, x: number, y: number }
     | { kind: 'message', message: ChatMessageRow, x: number, y: number }
-    /** Boş alana sağ tık / uzun basma (2026-10-13 kullanıcı isteği). */
+    /** Boş alana sağ tık / uzun basma (2026-10-13 kullanıcı istekte). */
     | { kind: 'area', x: number, y: number }
     /** Kişi listesi süzgeci (filtre düğmesi — arama kutusunun yanı). */
     | { kind: 'filter', x: number, y: number }
+    /** Yan panel üç nokta menüsü (2026-11-08, WhatsApp tarzı). */
+    | { kind: 'panel', x: number, y: number }
     | null
   >(null)
   /** "İlet" (forward) hedef seçimi — mesajı başka bir kişiye gönderir. */
   const [forwardMsg, setForwardMsg] = useState<ChatMessageRow | null>(null)
-  const [infoMsg, setInfoMsg] = useState<ChatMessageRow | null>(null)
+  const [infoMsgId, setInfoMsgId] = useState<string | null>(null)
   const [confirmMsg, setConfirmMsg] = useState<ChatMessageRow | null>(null)
   /** Kaydırılıp vurgulanan mesaj (aynı mesaja tekrar tıklanınca animasyon yeniden oynar). */
   const [flashId, setFlashId] = useState<string | null>(null)
@@ -425,18 +461,22 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   const [reactionPanelFor, setReactionPanelFor] = useState<string | null>(null)
   /** Görsel/video lightbox: tıklanan medya — tüm medya listesi + sıradaki indeks. */
   const [gallery, setGallery] = useState<{ items: LightboxItem[], index: number } | null>(null)
-  /**
-       Sesli mesaj kaydı (2026-11-08): WhatsApp tarzı — mikrofona bas → kayıt,
-      çöp kutusu ile iptal, yeşil düğme ile gönder. `MediaRecorder` cihazdaysa.
-   */
-  const [recording, setRecording] = useState(false)
-  const [elapsed, setElapsed] = useState(0)
-  const recorderRef = useRef<MediaRecorder | null>(null)
-  const recordStreamRef = useRef<MediaStream | null>(null)
-  const recordChunksRef = useRef<BlobPart[]>([])
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const waveformRafRef = useRef(0)
-  const audioCtxRef = useRef<AudioContext | null>(null)
+  /** Sabit REAKSİYON diyaloğu (2026-11-08): "Sabitlemenizin ne kadar süre kalacağını seçin". */
+  const [pinDialog, setPinDialog] = useState<UiMessage | null>(null)
+  const [pinChoice, setPinChoice] = useState<'24h' | '7d' | 'forever' | 'custom'>('7d')
+  const [pinCustomAt, setPinCustomAt] = useState('')
+  /** Bildirim sessizliği diyaloğu (2026-11-08): pin'le aynı süre seçici. */
+  const [mutePeer, setMutePeer] = useState<Peer | null>(null)
+  const [muteChoice, setMuteChoice] = useState<'24h' | '7d' | 'forever' | 'custom'>('7d')
+  const [muteCustomAt, setMuteCustomAt] = useState('')
+  /** Üstteki sabit paneli: sıradaki sabitin indeksi + arama listesi. */
+  const [pinCursor, setPinCursor] = useState(0)
+  const [pinListOpen, setPinListOpen] = useState(false)
+  const [pinSearchQ, setPinSearchQ] = useState('')
+  /** Üstteki sabit şeridine sağ tık → "Sabitlemeyi kaldır / Süresini değiştir". */
+  const [pinBannerMenu, setPinBannerMenu] = useState<{ x: number, y: number } | null>(null)
+  /** Admin'in "Sohbeti Temizle"den döndürebilmesi için geri-al damgası. */
+  const [undoClear, setUndoClear] = useState<{ conversationId: string } | null>(null)
   /** Anketler: messageId -> anket verisi. `user_vote` seçilen seçenek indeksi veya null. */
   const [polls, setPolls] = useState<Record<string, {
     question: string
@@ -445,13 +485,20 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
     user_vote: number | null
   }>>({})
   /** Anket oluşturma taslağı: null → yok, dolu → form açık. */
-  const [pollDraft, setPollDraft] = useState<{ question: string, options: string[] } | null>(null)
+  const [pollDraft, setPollDraft] = useState<{
+    question: string
+    options: string[]
+    multiple: boolean
+  } | null>(null)
   // "Ekle" (kâğıt kıskacı) düğmesinin açılır menüsü: Dosya / Klasör / Anket…
   const [attachMenuOpen, setAttachMenuOpen] = useState(false)
   // "Açık konu (thread)" state'i KALDIRILDI (2026-11-08, kullanıcı isteği).
 
   /** Lightbox aç: tüm medya (görsel+video) — tıklanandan başla. */
   function openGallery(clicked: UiMessage) {
+    const avatarOf = (senderId: string) =>
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
+      (peers ?? []).find(p => p.id === senderId)?.avatarUrl ?? null
     const items: LightboxItem[] = []
     for (const m of messages) {
       const k = mediaKindOf(m)
@@ -466,6 +513,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
           fileName: m.file_name,
           createdAt: m.created_at,
           senderName: m.sender_name,
+          senderAvatarUrl: avatarOf(m.sender_id),
           pinned: m.pinned,
         })
       }
@@ -479,6 +527,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
           fileName: clicked.file_name,
           createdAt: clicked.created_at,
           senderName: clicked.sender_name,
+          senderAvatarUrl: avatarOf(clicked.sender_id),
           pinned: clicked.pinned,
         })
       }
@@ -544,6 +593,28 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   const folderRef = useRef<HTMLInputElement>(null)
   /** "Ekle" açılır menüsünün dışa tıklama yakalayıcısı. */
   const attachMenuRef = useRef<HTMLDivElement>(null)
+  /**
+   * Aşama dosyaları (2026-11-08, kullanıcı isteği): bırakılan/eklenen
+   * dosyalar WhatsApp gibi ÖNCE mesajın üstünde çip olarak durur; gönder
+   * basınca altyazısıyla birlikte gider, kişi ✕ ile çıkarabilir.
+   */
+  const [staged, setStaged] = useState<Array<{ id: string, file: File }>>([])
+  const stagedSeqRef = useRef(0)
+  /** Sürükle-bırak overlay'i: dosyalar karta sürüklenince gösterilir. */
+  const [dropActive, setDropActive] = useState(false)
+  const queueFiles = (files: File[]) => {
+    setStaged((prev) => {
+      const next = [...prev]
+      for (const file of files) {
+        if (next.length >= 20) {
+          break
+        }
+        stagedSeqRef.current += 1
+        next.push({ id: `staged-${stagedSeqRef.current}-${file.name}`, file })
+      }
+      return next
+    })
+  }
 
   // "Ekle" menüsüne dışarı tıklayınca kapanır.
   useEffect(() => {
@@ -562,6 +633,8 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
   const inputRef = useRef<HTMLInputElement>(null)
   /** Mesaj alanı: kaydırma BURADA olur, sayfada değil (bkz. `scrollToBottom`). */
   const listRef = useRef<HTMLDivElement>(null)
+  /** Sohbeti sessizde mi — `showBrowserNotification` denetimi `load()` içinde. */
+  const mutedRef = useRef(false)
   /** Kişi arama alanı — "Kişi ara" menü maddesi odağı buraya verir. */
   const searchRef = useRef<HTMLInputElement>(null)
   /** Liste saatini tazele — nokta rengi yeni veri gelmeden de eskisin (yeşil → kırmızı). */
@@ -688,6 +761,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
         blocked: !!conv?.blocked,
         kind: conv?.kind ?? null,
         lastMessageAt: conv?.updated_at ?? null,
+        mutedUntil: conv?.mutedUntil ?? null,
         preview: conv?.last_preview ?? null,
         previewSender: conv?.last_sender_name ?? null,
         // Rozet + tik (sunucu türetir; `me` ile karşılaştırma BURADA).
@@ -1085,6 +1159,184 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
     requestAnimationFrame(() => setFlashId(id))
   }
 
+  /* SABİTLE (2026-11-08, kullanıcı isteği): WhatsApp tarzı. Sabitler üstte
+     şerit olur, tıklayınca ilgili mesaja gider ve sıradaki sabit öne geçer;
+     ok açılır menüde arama ile seçilir. Süre dolan sabit listede görünmez
+     (sunucu `pinned_until`'e bakar). */
+  const pinned = messages.filter(m => m.pinned)
+  const infoMsg = infoMsgId ? messages.find(m => m.id === infoMsgId) ?? null : null
+  /* OKUNMAMIŞLAR (2026-11-08): başkasından gelen, `read_at` damgası OLMAYAN
+     mesajlar — WhatsApp'taki "N okunmamış mesaj" bölücüsü ile aynı mantık. */
+  const unreadMessages = messages.filter(m => m.sender_id !== myId && !m.read_at)
+  const pinActive = pinned.length > 0
+    ? pinned[((pinCursor % pinned.length) + pinned.length) % pinned.length]
+    : null
+  const pinFiltered = pinned.filter(m =>
+    (m.text ?? '').toLowerCase().includes(pinSearchQ.trim().toLowerCase()),
+  )
+
+  function requestPin(target: UiMessage) {
+    if (target.pinned) {
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
+      void act('pin', { messageId: target.id, pinned: false }).then(() => load())
+      return
+    }
+    setPinChoice('7d')
+    setPinCustomAt('')
+    setPinDialog(target)
+  }
+
+  async function confirmPin() {
+    const target = pinDialog
+    if (!target) {
+      return
+    }
+    let until: string | null = null
+    if (pinChoice === '24h') {
+      until = new Date(Date.now() + 86_400_000).toISOString()
+    }
+    else if (pinChoice === '7d') {
+      until = new Date(Date.now() + 7 * 86_400_000).toISOString()
+    }
+    else if (pinChoice === 'custom') {
+      const at = new Date(pinCustomAt).getTime()
+      if (!pinCustomAt || Number.isNaN(at) || at <= Date.now()) {
+        setNotice('Geçerli bir tarih-saat seçin.')
+        return
+      }
+      until = new Date(at).toISOString()
+    }
+    setPinDialog(null)
+    await act('pin', { messageId: target.id, pinned: true, until })
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
+    await load()
+  }
+
+  /* BİLDİRİM SESSİ (2026-11-08, WhatsApp "Sessize al"): komut satırından "Sohbeti
+     dışa aktar" ile aynı aile — sağ tık menüsünden açılır, pin seçici ile aynı
+     süre diyaloğunu kullanır; sunucu `chat_participants.muted_until` yazar. */
+  async function muteCall(peer: Peer, until: string | null) {
+    const opened = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'open', peerId: peer.id }),
+    })
+    const openJson = await opened.json()
+    const cid = openJson?.conversation?.id as string | undefined
+    if (!cid) {
+      setError(openJson?.message ?? t('chat.error'))
+      return
+    }
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mute', conversationId: cid, until }),
+    })
+    const json = await res.json()
+    if (!res.ok || !json.success) {
+      setError(json?.message ?? t('chat.error'))
+      return
+    }
+    setPeers(prev => prev?.map(p => (p.id === peer.id ? { ...p, mutedUntil: json.mutedUntil ?? null } : p)) ?? null)
+  }
+
+  function isPeerMuted(peer: Peer | null | undefined) {
+    return !!peer?.mutedUntil && new Date(peer.mutedUntil).getTime() > Date.now()
+  }
+
+  async function toggleMutePeer(peer: Peer) {
+    try {
+      if (isPeerMuted(peer)) {
+        await muteCall(peer, null)
+        setNotice('Bildirimler tekrar açık.')
+        return
+      }
+      setMuteChoice('7d')
+      setMuteCustomAt('')
+      setMutePeer(peer)
+    }
+    catch {
+      setError(t('chat.error'))
+    }
+  }
+
+  async function confirmMute() {
+    const peer = mutePeer
+    if (!peer) {
+      return
+    }
+    let until: string | null = null
+    if (muteChoice === '24h') {
+      until = new Date(Date.now() + 86_400_000).toISOString()
+    }
+    else if (muteChoice === '7d') {
+      until = new Date(Date.now() + 7 * 86_400_000).toISOString()
+    }
+    else if (muteChoice === 'custom') {
+      const at = new Date(muteCustomAt).getTime()
+      if (!muteCustomAt || Number.isNaN(at) || at <= Date.now()) {
+        setNotice('Geçerli bir tarih-saat seçin.')
+        return
+      }
+      until = new Date(at).toISOString()
+    }
+    setMutePeer(null)
+    await muteCall(peer, until)
+    setNotice('Bildirimler sessize alındı.')
+  }
+
+  /** Sohbeti dışa aktar: mevcut konuşmayı .txt olarak indirir. */
+  function exportChat() {
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
+    if (!activePeer || messages.length === 0) {
+      setNotice('Dışa aktarılacak mesaj yok.')
+      return
+    }
+    const lines = [
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
+      `Sohbet: ${activePeer.name}`,
+      `Dışa aktarım: ${new Date().toLocaleString('tr')}`,
+      '',
+    ]
+    for (const m of messages) {
+      const time = new Date(m.created_at).toLocaleString('tr', {
+        day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      })
+      const who = m.sender_id === myId ? 'Ben' : (m.sender_name || 'Karşı taraf')
+      const body = m.text?.trim()
+        || (m.kind === 'image'
+          ? '[Fotoğraf]'
+          : m.kind === 'audio'
+            ? '[Sesli mesaj]'
+            : m.kind === 'video'
+              ? '[Video]'
+              : m.kind === 'poll'
+                ? '[Anket]'
+                : `[Dosya: ${m.file_name ?? ''}]`)
+      lines.push(`[${time}] ${who}: ${body}`)
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+  // eslint-disable-next-line ts/no-use-before-define -- fonksiyon bildirimi; çağrı yalnızca render sonrası (olay anında) olduğu için TDZ riski yok
+    a.download = `sohbet-${(activePeer.name || 'cikti').replace(/[\\/:*?"<>|\s]+/g, '-')}-${Date.now()}.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const pinLabel = (m: UiMessage) =>
+    m.text?.trim()
+    || (m.kind === 'image'
+      ? '📷 Fotoğraf'
+      : m.kind === 'audio'
+        ? '🎤 Sesli mesaj'
+        : m.kind === 'video'
+          ? '🎬 Video'
+          : m.kind === 'poll'
+            ? '📊 Anket'
+            : (m.file_name ?? '📎 Dosya'))
+
   /** Bir kişiye tıklanınca doğrudan sohbeti açar (idempotent). */
   const openWith = useCallback(async (peerId: string) => {
     // KENDİMLE SOHBET: yalnız YÖNETİCİ açabilir (2026-10-13 kullanıcı isteği:
@@ -1386,7 +1638,7 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
         m => !seen.has(m.id) && m.sender_id !== (myId || selfId),
       )
       for (const m of server) seen.add(m.id)
-      if (!firstLoad && incoming.length > 0) {
+      if (!firstLoad && incoming.length > 0 && !mutedRef.current) {
         const last = incoming[incoming.length - 1]
         showBrowserNotification(
           last.sender_name?.trim() || t('chat.newMessage'),
@@ -1443,6 +1695,13 @@ export function Chat({ nextPath = '/chat', onConfigUpdate, onMessageClick }: Cha
     setLoading(true)
     load()
   }, [load])
+
+  /* Sesiz sohbet: ref'i tazele — `load()` bildirim kapısı buradan okur (early
+     return'lerden ÖNCE burada durmalı ki hook sayısı kararsız olmasın). */
+  useEffect(() => {
+    const me = (peers ?? []).find(p => p.id === activePeerId)
+    mutedRef.current = !!me?.mutedUntil && new Date(me.mutedUntil).getTime() > Date.now()
+  }, [peers, activePeerId])
 
   /**
    * "Sohbeti yenile" (boş alan menüsü): liste 2 sn'de bir kendiliğinden
@@ -1775,6 +2034,27 @@ return
   async function send(override?: string) {
     const text = (override ?? draft).trim()
     const target = replyLive
+    /*
+      2026-11-08 (kullanıcı isteği): aşamadaki dosyalar HEPSİ BİRDEN önce gönderilir
+      (altyazısıyla); metin yanında varsa aşamaya bitişik mesaj kutusuna girer, ayrı
+      mesaj oluşmaz. Yalnız metin geliyorsa eski yanıt akışı çalışır.
+    */
+    if (staged.length > 0) {
+      const toSend = staged
+      const caption = text || undefined
+      setStaged([])
+      setSending(true)
+      for (const item of toSend) {
+        // eslint-disable-next-line no-await-in-loop -- WhatsApp gibi sıralı gönderim
+        await uploadFile(item.file, caption)
+      }
+      if (!override) {
+        setDraft('')
+      }
+      setReplyTo(null)
+      setSending(false)
+      return
+    }
     // Boş metin GÖNDERİLMEZ: yanıt hedefi seçili olsa bile içeriksiz bir mesaj
     // yazılmaz (medya `uploadFile` yolundan gider).
     if (!text || sending || !conversationId) {
@@ -1856,122 +2136,9 @@ return
     await deliver(m.id, m.text ?? '', m.reply_to_id ?? undefined)
   }
 
-  /** Kaydı başlat (2026-11-08, kullanıcı isteği). İzin yoksa hata bandı gösterir. */
-  async function startRecording() {
-    if (recording || sending || !conversationId) {
-      return
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']
-        .find(m => MediaRecorder.isTypeSupported(m))
-      const recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined)
-      recordChunksRef.current = []
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          recordChunksRef.current.push(e.data)
-        }
-      }
-      recorder.start(250)
-      recorderRef.current = recorder
-      recordStreamRef.current = stream
-      setRecording(true)
-      setElapsed(0)
-      // Canlı dalga biçimi: AnalyserNode → canvas çubukları
-      const AudioContextCtor = window.AudioContext
-        ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-      const ctx = new AudioContextCtor()
-      audioCtxRef.current = ctx
-      const source = ctx.createMediaStreamSource(stream)
-      const analyser = ctx.createAnalyser()
-      analyser.fftSize = 256
-      analyser.smoothingTimeConstant = 0.82
-      source.connect(analyser)
-      const freq = new Uint8Array(analyser.frequencyBinCount)
-      const draw = () => {
-        const canvas = canvasRef.current
-        if (!canvas || !recorderRef.current) {
-          return
-        }
-        const c = canvas.getContext('2d')
-        if (!c) {
-          waveformRafRef.current = requestAnimationFrame(draw)
-          return
-        }
-        analyser.getByteFrequencyData(freq)
-        const w = canvas.width
-        const h = canvas.height
-        const bars = 44
-        const step = Math.max(1, Math.floor(freq.length / bars))
-        const bw = Math.floor(w / bars) - 2
-        c.clearRect(0, 0, w, h)
-        c.fillStyle = '#f87171'
-        for (let i = 0; i < bars; i++) {
-          const v = freq[Math.min(freq.length - 1, i * step)] / 255
-          const bh = Math.max(2, v * h)
-          c.beginPath()
-          c.roundRect(i * (w / bars), (h - bh) / 2, bw, bh, bw / 2)
-          c.fill()
-        }
-        waveformRafRef.current = requestAnimationFrame(draw)
-      }
-      waveformRafRef.current = requestAnimationFrame(draw)
-    }
-    catch {
-      setError(t('chat.micDenied'))
-    }
-  }
-
-  /** Kaydı bitir: `send=true` → ses dosyası yükle+gönder; `false` → iptal. */
-  function stopRecording(send: boolean) {
-    const recorder = recorderRef.current
-    if (!recorder) {
-      return
-    }
-    recorder.onstop = () => {
-      const mime = recorder.mimeType || 'audio/webm'
-      const blob = new Blob(recordChunksRef.current, { type: mime })
-      cleanupRecording()
-      if (!send || blob.size === 0) {
-        return
-      }
-      const ext = mime.includes('ogg') ? 'ogg' : mime.includes('mp4') ? 'm4a' : 'webm'
-      const file = new File([blob], `ses-kaydi-${Date.now()}.${ext}`, { type: mime })
-      void uploadFile(file)
-    }
-    try {
-      recorder.stop()
-    }
-    catch {
-      cleanupRecording()
-    }
-  }
-
-  function cleanupRecording() {
-    cancelAnimationFrame(waveformRafRef.current)
-    recordStreamRef.current?.getTracks().forEach(t => t.stop())
-    recordStreamRef.current = null
-    recorderRef.current = null
-    void audioCtxRef.current?.close().catch(() => {})
-    audioCtxRef.current = null
-    recordChunksRef.current = []
-    setRecording(false)
-    setElapsed(0)
-  }
-
-  /** Kayıt süresi sayacı (250 ms'de bir güncellenir). */
-  useEffect(() => {
-    if (!recording) {
-      return
-    }
-    const started = Date.now()
-    const id = window.setInterval(() => {
-      setElapsed(Math.floor((Date.now() - started) / 1000))
-    }, 250)
-    return () => window.clearInterval(id)
-  }, [recording])
-
-  async function uploadFile(file: File) {
+  /** Dosya yükle + gönder. `text` verilirse mesaj kutusuna ALTYAZI olarak girer
+      (WhatsApp mantığı) — upload sonrası POST'a `text` eklenir. */
+  async function uploadFile(file: File, text?: string) {
     if (!conversationId) {
       return
     }
@@ -2008,6 +2175,8 @@ return
           file: upJson.file,
           // Medya da YANITLANABİLİR (2026-10-16) — taslakta bekleyen yanıt düşmez.
           replyToId: target?.id,
+          // Altyazı (WhatsApp mantığı): aşamadaki dosyalar metinle gönderilebilir.
+          ...(text?.trim() ? { text: text.trim() } : {}),
         }),
       })
       const json = await res.json()
@@ -2257,7 +2426,41 @@ return
       */
       className="relative flex h-full min-h-[260px] w-full overflow-hidden rounded-2xl border border-foreground/10 bg-background"
       style={{ '--chat-panel-w': `${panelWidth}px` } as CSSProperties}
+      onDragEnter={(e) => {
+        if ([...e.dataTransfer.types].includes('Files')) {
+          e.preventDefault()
+          setDropActive(true)
+        }
+      }}
+      onDragOver={(e) => {
+        e.preventDefault()
+      }}
+      onDragLeave={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+          setDropActive(false)
+        }
+      }}
+      onDrop={(e) => {
+        e.preventDefault()
+        setDropActive(false)
+        void collectDroppedFiles(e.dataTransfer).then((files) => {
+          if (files.length > 0) {
+            queueFiles(files.slice(0, 20))
+          }
+        })
+      }}
     >
+      {/* Sürükle-bırak overlay: bırakılınca aşamaya girer */}
+      {dropActive && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[60] flex items-center justify-center rounded-2xl border-2 border-dashed border-primary/60 bg-primary/10"
+        >
+          <p className="rounded-full bg-background/90 px-4 py-2 text-sm font-medium text-primary shadow">
+            {t('chat.dropFiles')}
+          </p>
+        </div>
+      )}
       {/*
         BİLDİRİM İZİN ŞERİDİ (2026-10-30, kullanıcı: "chat kısmına girince
         bildirim açmayı istesin"). İzin `default` iken görünür; "Aç" gerçek
@@ -2331,6 +2534,19 @@ return
               aria-label={t('chat.searchPeople')}
               className="w-full min-w-0 flex-1 rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
             />
+            <button
+              type="button"
+              aria-label={t('chat.panelOptions')}
+              title={t('chat.panelOptions')}
+              aria-expanded={menu?.kind === 'panel'}
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect()
+                setMenu({ kind: 'panel', x: r.right - 220, y: r.bottom + 4 })
+              }}
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <MoreVerticalIcon size={18} />
+            </button>
           </div>
         )}
 
@@ -2429,15 +2645,18 @@ return
                             </span>
                           )}
                     </span>
-                    {(p.important || p.favorite || p.blocked) && (
+                    {(p.important || p.favorite || p.blocked
+                      || (!!p.mutedUntil && new Date(p.mutedUntil).getTime() > Date.now())) && (
                       <span className="ml-auto shrink-0 text-xs" aria-hidden="true">
-                      {p.blocked ? (
-                        <BanIcon size={12} className="text-foreground-400" />
-                      ) : p.important ? (
-                        <PinIcon size={12} className="text-foreground-400" />
-                      ) : (
-                        <StarIcon size={12} className="text-foreground-400" />
-                      )}
+                      {!!p.mutedUntil && new Date(p.mutedUntil).getTime() > Date.now()
+                        ? <BellOffIcon size={12} className="text-foreground-400" />
+                        : p.blocked ? (
+                          <BanIcon size={12} className="text-foreground-400" />
+                        ) : p.important ? (
+                          <PinIcon size={12} className="text-foreground-400" />
+                        ) : (
+                          <StarIcon size={12} className="text-foreground-400" />
+                        )}
                       </span>
                     )}
                   </>
@@ -2526,6 +2745,23 @@ return
                 </>
               )
             : <span className="min-w-0 flex-1 truncate text-sm font-semibold">{t('chat.pageTitle')}</span>}
+          {/* ⋮ — açık sohbetin SAĞ ÜSTÜNDE üç nokta (2026-11-08, WhatsApp tarzı):
+              sağ tıktaki kişi menüsüyle aynı seçenekler burada da olur. */}
+          {activePeer && (
+            <button
+              type="button"
+              aria-label={t('chat.options')}
+              title={t('chat.options')}
+              aria-expanded={menu?.kind === 'peer' && menu.peer.id === activePeer.id}
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect()
+                setMenu({ kind: 'peer', peer: activePeer, x: r.right - 240, y: r.bottom + 4 })
+              }}
+              className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-lg text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <MoreVerticalIcon size={19} />
+            </button>
+          )}
           {/*
             "Önemli kişi olarak işaretle" ARTIK BURADA DEĞİL (2026-10-13 kullanıcı
             isteği): o kişiye SAĞ TIK menüsünde durur (bkz. PeerMenu).
@@ -2546,6 +2782,143 @@ return
           <p role="status" className="border-b border-foreground/10 bg-foreground/5 px-4 py-2 text-xs text-foreground-500">
             {notice}
           </p>
+        )}
+
+        {/* SABİTLENENLER ŞERİDİ (2026-11-08): WhatsApp tarzı — tıklayınca ilgili
+            mesaja kayar, sıradaki sabit öne geçer; sağdaki ok arama listesi açar;
+            raptiye İKONU RENGİSİZ (kullanıcı isteği). */}
+        {threadOpen && pinActive && (
+          <div
+            className="relative border-b border-foreground/10 bg-foreground/[0.06]"
+            onContextMenu={(e) => {
+              e.preventDefault()
+              setPinBannerMenu({ x: e.clientX, y: e.clientY })
+            }}
+          >
+            <div className="flex items-center gap-2 px-3 py-1.5">
+              <PinIcon size={15} className="shrink-0 text-foreground-500" aria-hidden />
+              <button
+                type="button"
+                className="min-w-0 flex-1 cursor-pointer truncate text-left text-[12px] leading-snug text-foreground-600 hover:text-foreground"
+                onClick={() => {
+                  jumpToMessage(pinActive.id)
+                  setPinCursor(c => (pinned.length ? (c + 1) % pinned.length : 0))
+                }}
+                title={pinLabel(pinActive)}
+              >
+                {pinLabel(pinActive)}
+              </button>
+              <span className="shrink-0 text-[10px] tabular-nums text-foreground-500">
+                {(((pinCursor % pinned.length) + pinned.length) % pinned.length) + 1}
+                /
+                {pinned.length}
+              </span>
+              <button
+                type="button"
+                aria-label="Sabitlenmiş mesajlar"
+                title="Sabitlenmiş mesajlar"
+                aria-expanded={pinListOpen}
+                onClick={() => {
+                  setPinListOpen(o => !o)
+                  setPinSearchQ('')
+                }}
+                className="flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+              >
+                <ChevronDownIcon size={18} />
+              </button>
+            </div>
+            {pinListOpen && (
+              <div
+                className="absolute right-2 top-full z-40 mt-1 w-72 overflow-hidden rounded-xl border border-foreground/15 bg-background shadow-2xl shadow-black/40"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-1.5 border-b border-foreground/10 px-2.5 py-2">
+                  <SearchIcon size={14} className="shrink-0 text-foreground-500" />
+                  <input
+                    autoFocus
+                    value={pinSearchQ}
+                    onChange={e => setPinSearchQ(e.target.value)}
+                    placeholder="Sabitlenmiş mesajlarda ara…"
+                    aria-label="Sabitlenmiş mesajlarda ara"
+                    className="h-7 w-full bg-transparent text-xs outline-none placeholder:text-foreground-500"
+                  />
+                </div>
+                <ul className="max-h-64 overflow-y-auto py-1">
+                  {pinFiltered.length === 0 && (
+                    <li className="px-3 py-3 text-center text-[11px] text-foreground-500">Sonuç yok</li>
+                  )}
+                  {pinFiltered.map(m => (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const i = pinned.findIndex(p => p.id === m.id)
+                          setPinCursor(i >= 0 ? i : 0)
+                          jumpToMessage(m.id)
+                          setPinListOpen(false)
+                        }}
+                        className="flex w-full cursor-pointer items-start gap-2 px-3 py-2 text-left transition-colors hover:bg-foreground/5"
+                      >
+                        <PinIcon size={13} className="mt-0.5 shrink-0 text-foreground-400" />
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-xs">{pinLabel(m)}</span>
+                          <span className="block text-[10px] text-foreground-500">
+                            {new Date(m.created_at).toLocaleString('tr', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* OKUNMAMIŞ BÖLÜCÜ (2026-11-08, WhatsApp): pin şeridinin ALTINDA;
+            başkasından gelen okunmamışları sayar, tıklayınca İLK okunmamışa kayar.
+            Görünce 'read' işlenir → sayı düşer ve bölücü kaybolur. */}
+        {threadOpen && unreadMessages.length > 0 && (
+          <div className="flex items-center justify-center border-b border-foreground/10 py-1.5">
+            <button
+              type="button"
+              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-foreground/10 bg-foreground/10 px-3 py-1 text-[11px] font-semibold text-foreground-600 shadow-sm transition-colors hover:bg-foreground/20 hover:text-foreground"
+              onClick={() => jumpToMessage(unreadMessages[0].id)}
+            >
+              <ChevronDownIcon size={14} />
+              {t('chat.unreadCount').replace('{n}', String(unreadMessages.length))}
+            </button>
+          </div>
+        )}
+
+        {/* ADMIN "Sohbeti Temizle" GERİ AL (2026-11-08, kullanıcı isteği): sıradan
+            kullanıcı için geri dönüş yoktur; admin kendi temizliğini geri sarabilir. */}
+        {isAdmin && undoClear && (
+          <div role="status" className="flex items-center justify-between gap-3 border-b border-foreground/10 bg-foreground/5 px-4 py-2 text-xs">
+            <span>Sohbet senin için temizlendi.</span>
+            <button
+              type="button"
+              className="cursor-pointer rounded-md px-2 py-1 font-semibold text-primary transition-colors hover:bg-primary/10"
+              onClick={() => {
+                void (async () => {
+                  try {
+                    await fetch('/api/chat', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'unhide', conversationId: undoClear.conversationId }),
+                    })
+                    setUndoClear(null)
+                    await load()
+                  }
+                  catch {
+                    setError(t('chat.error'))
+                  }
+                })()
+              }}
+            >
+              Geri al
+            </button>
+          </div>
         )}
 
         {/* mesajlar — kaydırma BURADA olur, sayfada değil (bkz. scrollToBottom).
@@ -2599,8 +2972,12 @@ return
                   void send(helloMessage(helloLocale))
                 }}
                 disabled={sending}
-                className="cursor-pointer rounded-lg px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10 disabled:cursor-not-allowed disabled:opacity-60"
+                className={cn(
+                  'inline-flex items-center justify-center gap-1.5 cursor-pointer rounded-lg border border-primary-fg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary/90',
+                  sending && 'cursor-not-allowed opacity-60',
+                )}
               >
+                <SendIcon size={16} />
                 {t('chat.emptyThread')}
               </button>
             </div>
@@ -2635,10 +3012,29 @@ return
                 : quote.text || t(replyPlaceholderKey(quote.kind)))
             : ''
 
-          /* TARİH AYIRICI (2026-11-02): önceki mesaj farklı gündeyse ayırıcı göster. */
+          /* TARİH AYIRICI (2026-11-02): önceki mesaj farklı gündeyse ayırıcı göster.
+             2026-11-08 kullanıcı isteği: "8.11.2026 (Bugün)" biçimi — gün adı yerine
+             sayısal tarih; bugün/dün/dünün öncesi aynı gündeyse parantez eklenir. */
           const prevDay = i > 0 ? new Date(messages[i - 1].created_at).toDateString() : null
           const currDay = new Date(m.created_at).toDateString()
           const showDateSeparator = i === 0 || prevDay !== currDay
+
+          const dateLabel = (() => {
+            const d = new Date(m.created_at)
+            const now = new Date()
+            const dayDiff = Math.floor(
+              (new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+                - new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()) / 86400000,
+            )
+            const dateStr = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`
+            if (dayDiff === 0)
+return `${dateStr} (${t('chat.today')})`
+            if (dayDiff === 1)
+return `${dateStr} (${t('chat.yesterday')})`
+            if (dayDiff === 2)
+return `${dateStr} (${t('chat.twoDaysAgo')})`
+            return dateStr
+          })()
 
           return (
             <React.Fragment key={m.id}>
@@ -2647,13 +3043,9 @@ return
                   {/* Tarihten ÖNCE ve SONRA çizgi (2026-11-08, kullanıcı isteği) */}
                   <span aria-hidden className="h-px min-w-0 flex-1 bg-foreground/15" />
                   <span
-                    className="shrink-0 text-[10px] font-medium text-foreground-400 uppercase tracking-wider"
+                    className="shrink-0 rounded-full border border-foreground/10 bg-foreground/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-500 shadow-sm"
                   >
-                    {new Date(m.created_at).toLocaleDateString('tr-TR', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                    })}
+                    {dateLabel}
                   </span>
                   <span aria-hidden className="h-px min-w-0 flex-1 bg-foreground/15" />
                 </div>
@@ -2662,7 +3054,7 @@ return
                 key={m.id}
                 data-replied={replied || undefined}
                 className={cn(
-                'relative flex flex-col rounded-xl',
+                'relative flex w-full flex-col rounded-xl group/msg',
                 mine ? 'items-end' : 'items-start',
                 // Vurgu: alıntıya tıklanınca kaydırılan mesaj ~2 sn parlar.
                 flashId === m.id && 'msg-flash',
@@ -2763,8 +3155,9 @@ jumpToMessage(m.id)
                       )}
                     </button>
                   )}
-                  {mediaKindOf(m) === 'image' && m.file_url && (
+                  {!m.deleted_for_all && mediaKindOf(m) === 'image' && m.file_url && (
                     <>
+                      <MediaCaption fileName={m.file_name ?? null} mine={mine} />
                       {/* Sohbet görselleri kullanıcı yüklemesi; next/image gerekmez.
                           Tıklanınca lightbox açılır (ad/benzeri, ok tuşları, zoom, tekerlek). */}
                       <button
@@ -2781,29 +3174,28 @@ jumpToMessage(m.id)
                           className="mb-1 max-h-48 rounded-lg object-cover"
                         />
                       </button>
-                      <MediaCaption fileName={m.file_name ?? null} url={m.file_url} mine={mine} label={t('chat.download')} />
                     </>
                   )}
-                  {mediaKindOf(m) === 'audio' && m.file_url && (
+                  {!m.deleted_for_all && mediaKindOf(m) === 'audio' && m.file_url && (
                     <>
+                      <MediaCaption fileName={m.file_name ?? null} mine={mine} />
                       <AudioMessage src={m.file_url} fileName={m.file_name} mine={mine} />
-                      <MediaCaption fileName={m.file_name ?? null} url={m.file_url} mine={mine} label={t('chat.download')} />
                     </>
                   )}
-                  {mediaKindOf(m) === 'video' && m.file_url && (
+                  {!m.deleted_for_all && mediaKindOf(m) === 'video' && m.file_url && (
                     <>
-                      <VideoMessage src={m.file_url} fileName={m.file_name} mine={mine} />
-                      <MediaCaption fileName={m.file_name ?? null} url={m.file_url} mine={mine} label={t('chat.download')} />
+                      <MediaCaption fileName={m.file_name ?? null} mine={mine} />
+                      <VideoMessage src={m.file_url} fileName={m.file_name} mine={mine} onOpen={() => openGallery(m)} />
                     </>
                   )}
-                  {m.kind === 'file' && m.file_url && (
+                  {!m.deleted_for_all && m.kind === 'file' && m.file_url && (
                     <a href={m.file_url} target="_blank" rel="noopener noreferrer" className="mb-1 underline">
                       <PaperclipIcon size={14} className="text-foreground-400" />
                       {' '}
                       {m.file_name}
                     </a>
                   )}
-                  {m.kind === 'poll' && polls[m.id] && (
+                  {!m.deleted_for_all && m.kind === 'poll' && polls[m.id] && (
                     <div className="mb-2 mt-1 p-3 rounded-lg border border-foreground/10 bg-foreground/5">
                       <div className="mb-2 text-xs font-semibold text-foreground">
                         {t('chat.poll')}
@@ -2851,7 +3243,7 @@ jumpToMessage(m.id)
                     ? <em className="opacity-70">{t('chat.deletedByYou')}</em>
                     : (
                         <>
-                          {m.pinned && <span className="mr-1">📌</span>}
+                          {m.pinned && <PinIcon size={12} className="mr-1 inline-block text-foreground-400 align-[-1px]" />}
                           <span className="break-words">{m.text}</span>
                         </>
                       )}
@@ -2891,11 +3283,8 @@ jumpToMessage(m.id)
                         ))}
                   </span>
                 </div>
-                {/* Mesaj menüsü düğmesi (2026-10-16). Sağ tıkla AYNI menüyü
-                    açar — ikinci bir menü yazılmaz.
-                    2026-10-31: `group-hover` ile gizlenme kaldırıldı — düğme
-                    her zaman görünür (kullanıcı: "grup özelliğini her yerden
-                    kaldır"). */}
+                {/* Mesaj menüsü (yanıt) — HER ZAMAN görünmez; yalnız satırın
+                    üzerindeyken (y ve x genişliği: yan panele kadar) belirir. */}
                 <button
                   type="button"
                   data-testid="chat-reply-button"
@@ -2905,7 +3294,7 @@ jumpToMessage(m.id)
                     e.stopPropagation()
                     startReply(m.id)
                   }}
-                  className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                  className="pointer-events-none shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 opacity-0 transition-opacity duration-150 hover:bg-foreground/10 hover:text-foreground focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover/msg:pointer-events-auto group-hover/msg:opacity-100"
                 >
                   <ReplyIcon size={16} />
                 </button>
@@ -2920,65 +3309,64 @@ jumpToMessage(m.id)
                     setPickerFor(null)
                     setReactionPanelFor(null)
                   }}
-                  className="shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                  className="pointer-events-none shrink-0 cursor-pointer rounded-full p-1.5 text-foreground-500 opacity-0 transition-opacity duration-150 hover:bg-foreground/10 hover:text-foreground focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover/msg:pointer-events-auto group-hover/msg:opacity-100"
                 >
                   <SmileFaceIcon size={16} />
                 </button>
-                {/* Tepki şeridi (hover gibi davranır: tıkla-aç') */}
-                {stripFor === m.id && (
+                {/* Tepki: şerit + picker "+"ya bitişik açılır (2026-11-08, kullanıcı isteği) */}
+                {(stripFor === m.id || pickerFor === m.id) && (
                   <div
                     data-reaction-popover
                     className={cn(
-                      'absolute bottom-full z-30 mb-1 flex items-center gap-0.5 rounded-full border border-foreground/10 bg-background px-1.5 py-1 shadow-xl',
-                      mine ? 'right-0' : 'left-0',
+                      'absolute top-full z-30 mt-1 flex flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background shadow-xl',
+                      mine ? 'right-0 items-end' : 'left-0 items-start',
                     )}
                     onClick={e => e.stopPropagation()}
                   >
-                    {QUICK_REACTIONS.map(emoji => (
+                    <div className="flex items-center gap-0.5 px-1.5 py-1">
+                      {QUICK_REACTIONS.map(emoji => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => {
+                            void reactTo(m.id, emoji)
+                            setStripFor(null)
+                            setPickerFor(null)
+                          }}
+                          aria-label={emoji}
+                          className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-lg transition-transform hover:scale-125"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
                       <button
-                        key={emoji}
                         type="button"
-                        onClick={() => {
-                          void reactTo(m.id, emoji)
-                          setStripFor(null)
-                        }}
-                        aria-label={emoji}
-                        className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-lg transition-transform hover:scale-125"
+                        onClick={() => setPickerFor(prev => (prev === m.id ? null : m.id))}
+                        aria-pressed={pickerFor === m.id}
+                        aria-label={t('chat.addReaction')}
+                        title={t('chat.addReaction')}
+                        className={cn(
+                          'flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground',
+                          pickerFor === m.id && 'bg-foreground/10 text-foreground',
+                        )}
                       >
-                        {emoji}
+                        <PlusIcon size={16} />
                       </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPickerFor(m.id)
-                        setStripFor(null)
-                      }}
-                      aria-label={t('chat.addReaction')}
-                      className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
-                    >
-                      <PlusIcon size={16} />
-                    </button>
-                  </div>
-                )}
-                {/* Tam seçici — emoji-picker-element, "İfade Ara" + Son ifadeler + kategoriler */}
-                {pickerFor === m.id && (
-                  <div
-                    data-reaction-popover
-                    className={cn(
-                      'absolute bottom-full z-30 mb-1 w-[320px] overflow-hidden rounded-xl shadow-2xl',
-                      mine ? 'right-0' : 'left-0',
+                    </div>
+                    {/* Tam seçici — her zaman "+"nın hemen altında, bitişik */}
+                    {pickerFor === m.id && (
+                      <div className="w-[320px] border-t border-foreground/10 bg-surface-1">
+                        <EmojiPicker
+                          locale={locale}
+                          onPick={(emoji) => {
+                            void reactTo(m.id, emoji)
+                            setPickerFor(null)
+                            setStripFor(null)
+                          }}
+                          onClose={() => setPickerFor(null)}
+                        />
+                      </div>
                     )}
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <EmojiPicker
-                      locale={locale}
-                      onPick={(emoji) => {
-                        void reactTo(m.id, emoji)
-                        setPickerFor(null)
-                      }}
-                      onClose={() => setPickerFor(null)}
-                    />
                   </div>
                 )}
               </div>
@@ -3119,43 +3507,39 @@ jumpToMessage(m.id)
             </button>
           </div>
         )}
-        {/* Sesli mesaj kayıt çubuğu (2026-11-08): WhatsApp düzeni — iptal · kırmızı nokta · süre · dalga biçimi · gönder */}
-        {recording ? (
-          <div
-            className="shrink-0 flex min-h-12 items-center gap-2 rounded-full bg-foreground/10 px-3 py-1"
-            role="status"
-            aria-live="polite"
-          >
-            <button
-              type="button"
-              onClick={() => stopRecording(false)}
-              aria-label={t('common.cancel')}
-              className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full text-foreground-500 transition-colors hover:bg-foreground/10 hover:text-foreground"
-            >
-              <TrashIcon size={20} />
-            </button>
-            <span className="flex h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-red-500" aria-hidden />
-            <span className="shrink-0 text-xs font-medium tabular-nums text-foreground">
-{Math.floor(elapsed / 60)}
-:
-{String(elapsed % 60).padStart(2, '0')}
-</span>
-            <canvas
-              ref={canvasRef}
-              width={560}
-              height={44}
-              className="h-8 w-full min-w-0 flex-1"
-            />
-            <button
-              type="button"
-              onClick={() => stopRecording(true)}
-              aria-label={t('chat.send')}
-              className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full bg-[#25D366] text-white transition-colors hover:brightness-95"
-            >
-              <SendIcon size={18} />
-            </button>
+        {/* AŞAMALI DOSYALAR (2026-11-08, kullanıcı isteği): eklenen/bırakılan dosyalar
+            hemen gönderilmez; gönder butonuna basmadan önce ✕ ile çıkarılabilir;
+            metin, altyazı olur (WhatsApp). */}
+        {staged.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {staged.map(({ id, file }) => (
+              <span
+                key={id}
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-foreground/15 bg-foreground/10 py-1 pr-1 pl-2 text-[11px] text-foreground-600"
+              >
+                {file.type.startsWith('image/')
+                  ? (
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt=""
+                        className="h-6 w-6 shrink-0 rounded object-cover"
+                      />
+                    )
+                  : <PaperclipIcon size={12} className="shrink-0 text-foreground-400" />}
+                <span className="max-w-40 truncate" title={file.name}>{file.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setStaged(prev => prev.filter(x => x.id !== id))}
+                  aria-label={t('common.remove')}
+                  title={t('common.remove')}
+                  className="flex h-5 w-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-foreground-500 transition-colors hover:bg-foreground/15 hover:text-foreground"
+                >
+                  <CloseIcon size={11} />
+                </button>
+              </span>
+            ))}
           </div>
-        ) : (
+        )}
         <div className="shrink-0 flex min-h-12 items-center gap-1 rounded-full bg-foreground/10 px-3 py-1 transition-colors focus-within:bg-foreground/15">
           {/* WhatsApp tarzı tek parça "hap" yazma alanı (2026-10-13, kullanıcı):
               ikonlar ve giriş aynı kutunun içinde; sağ uç boşken MİKROFON, yazınca GÖNDER. */}
@@ -3163,25 +3547,26 @@ jumpToMessage(m.id)
             ref={fileRef}
             type="file"
             hidden
+            multiple
             onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) {
-                uploadFile(f)
+              const files = [...(e.target.files ?? [])].slice(0, 20)
+              if (files.length > 0) {
+                queueFiles(files)
               }
               e.target.value = ''
             }}
           />
-          {/* Klasör seçimi — içindeki tüm dosyalar sırayla mesaj olur (en fazla 20). */}
+          {/* Klasör seçimi — içindeki tüm dosyalar kuyruğa girer; sırayla gönderilir. */}
           <input
             ref={folderRef}
             type="file"
             hidden
             multiple
             {...({ webkitdirectory: '' } as any)}
-            onChange={async (e) => {
+            onChange={(e) => {
               const files = [...(e.target.files ?? [])].slice(0, 20)
-              for (const f of files) {
-                await uploadFile(f)
+              if (files.length > 0) {
+                queueFiles(files)
               }
               e.target.value = ''
             }}
@@ -3219,11 +3604,11 @@ jumpToMessage(m.id)
                   type="button"
                   onClick={() => {
                     setAttachMenuOpen(false)
-                    setPollDraft(p => (p ? null : { question: '', options: ['', ''] }))
+                    setPollDraft(p => (p ? null : { question: '', options: ['', ''], multiple: false }))
                   }}
                   className="flex w-full cursor-pointer items-center gap-2.5 px-3 py-2.5 text-left text-sm text-foreground/80 transition-colors hover:bg-foreground/5"
                 >
-                  <span aria-hidden className="w-4 text-center text-base leading-4">📊</span>
+                  <PollIcon size={16} className="shrink-0 text-foreground-500" />
                   {t('chat.attachPoll')}
                 </button>
               </div>
@@ -3239,58 +3624,71 @@ jumpToMessage(m.id)
           >
             <StickerIcon size={20} />
           </button>
-          <button
-            type="button"
-            onClick={() => setPollDraft(pollDraft ? null : { question: '', options: ['', ''] })}
-            aria-label={t('chat.pollCreate')}
-            title={t('chat.pollCreate')}
-            className="grid h-9 w-9 shrink-0 cursor-pointer place-items-center rounded-full text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            📊
-          </button>
           {pollDraft && (
-            <div className="flex w-full flex-col gap-2 pt-2">
-              <input
-                value={pollDraft.question}
-                onChange={e => setPollQuestion(e.target.value)}
-                placeholder={t('chat.pollQuestion')}
-                className="w-full min-w-0 rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
-              />
-              <div className="flex w-full gap-2">
+            <div className="flex w-full flex-col gap-2 pt-2 max-h-72 overflow-y-auto">
+              <div className="flex items-center gap-2">
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wider text-foreground-500">
+                  {t('chat.pollQuestion')}
+                </span>
+                <input
+                  value={pollDraft.question}
+                  onChange={e => setPollQuestion(e.target.value)}
+                  placeholder={t('chat.pollQuestionPlaceholder')}
+                  className="min-w-0 flex-1 rounded-md border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
+                />
+              </div>
+              <div className="flex w-full flex-col gap-1.5">
+                <span className="shrink-0 text-xs font-semibold uppercase tracking-wider text-foreground-500">
+                  {t('chat.pollOptions')}
+                </span>
                 {pollDraft.options.map((opt, i) => (
-                  <div key={i} className="flex-1 flex gap-1">
+                  <div key={i} className="flex items-center gap-1.5">
                     <input
                       value={opt}
                       onChange={e => setPollOption(i, e.target.value)}
-                      placeholder={t('chat.pollOption')}
-                      className="min-w-0 flex-1 rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
+                      placeholder={t('chat.pollOptionPlaceholder', { n: i + 1 })}
+                      className="min-w-0 flex-1 rounded-md border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-primary"
                     />
                     <button
                       type="button"
                       onClick={() => removePollOption(i)}
                       disabled={pollDraft.options.length <= 2}
-                      className="shrink-0 rounded-lg p-1.5 text-foreground/50 transition-colors hover:bg-foreground/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="shrink-0 rounded-md p-1 text-foreground/50 transition-colors hover:bg-foreground/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                      title={t('chat.pollRemove')}
                     >
-                      ✕
+                      <CloseIcon size={14} />
                     </button>
                   </div>
                 ))}
                 <button
                   type="button"
                   onClick={addPollOption}
-                  className="shrink-0 rounded-lg p-1.5 text-foreground/60 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                  className="self-start rounded-md px-3 py-1 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
                 >
                   +
+{' '}
+{t('chat.pollAddOption')}
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={sendPoll}
-                disabled={sending || !pollDraft.question.trim() || pollDraft.options.some(o => !o.trim())}
-                className="w-full h-10 shrink-0 cursor-pointer rounded-lg bg-primary px-4 text-sm font-medium text-primary-fg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t('chat.pollCreate')}
-              </button>
+              <div className="flex items-center justify-between gap-2">
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-foreground-700">
+                  <input
+                    type="checkbox"
+                    checked={pollDraft.multiple}
+                    onChange={e => setPollDraft(d => d ? { ...d, multiple: e.target.checked } : null)}
+                    className="rounded border-foreground/20"
+                  />
+                  {t('chat.pollMultiple')}
+                </label>
+                <button
+                  type="button"
+                  onClick={sendPoll}
+                  disabled={sending || !pollDraft.question.trim() || pollDraft.options.some(o => !o.trim())}
+                  className="h-9 shrink-0 cursor-pointer rounded-md bg-primary px-4 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {t('chat.pollCreate')}
+                </button>
+              </div>
             </div>
           )}
           <input
@@ -3313,35 +3711,18 @@ jumpToMessage(m.id)
           />
           <button
             type="button"
-            data-testid="chat-mic-send-btn"
-            onClick={() => {
-              if (hasDraft) {
-                send()
-              }
-              else {
-                void startRecording()
-              }
-            }}
-            disabled={sending}
-            aria-label={hasDraft ? t('chat.send') : t('common.record')}
-            title={hasDraft ? t('chat.send') : t('common.record')}
+            data-testid="chat-send-btn"
+            onClick={() => send()}
+            disabled={sending || !hasDraft}
+            aria-label={t('chat.send')}
+            title={t('chat.send')}
             className={`grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${sendBtnClass}`}
           >
-            {/* İki ikon üst üste durur; yalnızca 200 ms fade ile yer değiştirir
-                (2026-10-31: `scale` küçülüp büyüme efekti kaldırıldı). */}
-            <span className="relative grid h-5 w-5 place-items-center">
-              <MicIcon
-                size={20}
-                className={`absolute transition-opacity duration-200 ${hasDraft ? 'opacity-0' : 'opacity-100'}`}
-              />
-              <SendIcon
-                size={18}
-                className={`absolute transition-opacity duration-200 ${hasDraft ? 'opacity-100' : 'opacity-0'}`}
-              />
-            </span>
+            <SendIcon size={18} />
           </button>
         </div>
-        )}
+        </div>
+      )}
         {/* Emoji seçici (2026-10-12): aramalı, kaydırılabilir, koyu tema —
             `emoji-picker-element`. Eski 16 emojili şerit kaldırıldı. */}
         {showEmoji && (
@@ -3351,14 +3732,12 @@ jumpToMessage(m.id)
             onClose={() => setShowEmoji(false)}
           />
         )}
-          </div>
-        )}
 
       {/* Mesaj Bilgisi paneli: Okundu · Teslim edildi · Tarih (GG.AA.YYYY) */}
       {infoMsg && (
         <MessageInfo
           message={infoMsg}
-          onClose={() => setInfoMsg(null)}
+          onClose={() => setInfoMsgId(null)}
           labels={{
             title: t('chat.info'),
             read: t('chat.readAt'),
@@ -3378,6 +3757,7 @@ jumpToMessage(m.id)
           x={menu.x}
           y={menu.y}
           t={t}
+          isAdmin={isAdmin}
           onClose={() => setMenu(null)}
           onNicknameSave={async (nickname) => {
             const peer = menu.peer
@@ -3408,12 +3788,50 @@ jumpToMessage(m.id)
           onClear={async () => {
             const peer = menu.peer
             setMenu(null)
-            await runAdmin('clear', peer)
+            try {
+              const opened = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'open', peerId: peer.id }),
+              })
+              const openJson = await opened.json()
+              const cid = openJson?.conversation?.id as string | undefined
+              if (!cid) {
+                setError(openJson?.message ?? t('chat.error'))
+                return
+              }
+              const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'clear', conversationId: cid, userId: peer.id }),
+              })
+              if (!res.ok) {
+                setError(t('chat.error'))
+                return
+              }
+              await load()
+              if (isAdmin) {
+                setUndoClear({ conversationId: cid })
+              }
+            }
+            catch {
+              setError(t('chat.error'))
+            }
           }}
           onDelete={async () => {
             const peer = menu.peer
             setMenu(null)
             await runAdmin('deleteConversation', peer)
+          }}
+          canExport={menu.peer.id === activePeerId}
+          onToggleMute={() => {
+            const peer = menu.peer
+            setMenu(null)
+            void toggleMutePeer(peer)
+          }}
+          onExport={() => {
+            setMenu(null)
+            exportChat()
           }}
         />
       )}
@@ -3427,8 +3845,8 @@ jumpToMessage(m.id)
           onReply={() => { startReply(menu.message.id); setMenu(null) }}
           onCopy={() => copy(menu.message.text ?? '')}
           onForward={() => { setForwardMsg(menu.message); setMenu(null) }}
-          onPin={() => { act('pin', { messageId: menu.message.id, pinned: !menu.message.pinned }); setMenu(null) }}
-          onInfo={() => { setInfoMsg(menu.message); setMenu(null) }}
+          onPin={() => { const msg = menu.message; setMenu(null); requestPin(msg) }}
+          onInfo={() => { setInfoMsgId(menu.message.id); setMenu(null) }}
           onDelete={() => { setConfirmMsg(menu.message); setMenu(null) }}
           onReact={() => {
             // "Tepki Ekle" → şeridi aç (2026-11-08: tepki artık çalışır)
@@ -3450,12 +3868,48 @@ jumpToMessage(m.id)
         />
       )}
 
+      {/* PIN ŞERİDİ sağ tık menüsü (2026-11-08): sabitlemeyi kaldır / süresini değiştir */}
+      {pinBannerMenu && pinActive && (
+        <MenuSurface x={pinBannerMenu.x} y={pinBannerMenu.y} onClose={() => setPinBannerMenu(null)} label="Sabit">
+          <MenuItem
+            icon={<PinIcon size={14} className="text-foreground-400" />}
+            label="Sabitlemeyi kaldır"
+            onSelect={() => {
+              const id = pinActive.id
+              setPinBannerMenu(null)
+              void act('pin', { messageId: id, pinned: false }).then(() => load())
+            }}
+          />
+          <MenuItem
+            icon={<ClockIcon size={14} className="text-foreground-400" />}
+            label="Süresini değiştir"
+            onSelect={() => {
+              setPinBannerMenu(null)
+              setPinChoice('7d')
+              setPinCustomAt('')
+              setPinDialog(pinActive)
+            }}
+          />
+        </MenuSurface>
+      )}
+
       {/*
         BOŞ ALAN MENÜSÜ (2026-10-13 kullanıcı isteği: "boş bir yere sağ
         tıkladığımda da bir şeyler çıksın — mantıklı konulabilecek şeyler").
         Bugün ÇALIŞAN maddeler konuldu; "grup oluştur" sunucuda karşılığı
         olmadığı için yok (grup ucu gelince buraya eklenir).
       */}
+      {/* Yan panel üç nokta menüsü (2026-11-08): Yeni Grup, Yıldızlı Mesajlar, Kişileri Seç, Bildirimleri Sessize Al, Sohbeti Sıfırla, Grup Oluştur */}
+      {menu?.kind === 'panel' && (
+        <MenuSurface x={menu.x} y={menu.y} onClose={() => setMenu(null)} label={t('chat.panelOptions')}>
+          <MenuItem icon="🆕" label={t('chat.panelNewGroup')} onSelect={() => { setMenu(null) }} />
+          <MenuItem icon="⭐" label={t('chat.panelStarred')} onSelect={() => { setMenu(null) }} />
+          <MenuItem icon="👥" label={t('chat.panelSelectContacts')} onSelect={() => { setMenu(null) }} />
+          <MenuItem icon="🔕" label={t('chat.panelMuteNotifications')} onSelect={() => { setMenu(null) }} />
+          <MenuItem icon="🔄" label={t('chat.panelResetChat')} onSelect={() => { setMenu(null) }} />
+          <MenuItem icon="👥" label={t('chat.panelCreateGroup')} onSelect={() => { setMenu(null) }} />
+        </MenuSurface>
+      )}
       {menu?.kind === 'area' && (
         <MenuSurface x={menu.x} y={menu.y} onClose={() => setMenu(null)} label={t('chat.chats')}>
           <MenuItem
@@ -3495,6 +3949,7 @@ jumpToMessage(m.id)
             title: t('chat.forwardTitle'),
             cancel: t('chat.cancel'),
             empty: t('chat.noMatch'),
+            search: t('chat.findPerson'),
           }}
           onCancel={() => setForwardMsg(null)}
           onPick={async (peer) => {
@@ -3520,6 +3975,40 @@ jumpToMessage(m.id)
         />
       )}
 
+      {/* SABİTLE DİYALOĞU (2026-11-08, kullanıcı isteği): WhatsApp tarzı
+          süre seçici — 24 saat · 7 gün · Her zaman · özel tarih-saat. */}
+      {pinDialog && (
+        <DurationDialog
+          ariaLabel="Sabitleme süresi"
+          title="Sabitlemenizin ne kadar süre kalacağını seçin"
+          subtitle="Dilediğiniz zaman sabitlemeyi kaldırabilirsiniz."
+          confirmLabel="Sabitle"
+          radioName="pin-choice"
+          choice={pinChoice}
+          onChoice={setPinChoice}
+          customAt={pinCustomAt}
+          onCustomAt={setPinCustomAt}
+          onConfirm={() => void confirmPin()}
+          onCancel={() => setPinDialog(null)}
+        />
+      )}
+      {/* BİLDİRİM SESSİ diyaloğu (2026-11-08, WhatsApp "Sessize al"): pin ile aynı seçici */}
+      {mutePeer && (
+        <DurationDialog
+          ariaLabel="Bildirim sessizliği"
+          title="Bildirimleri ne kadar süre sessize alacağınızı seçin"
+          subtitle="Dilediğiniz zaman sessizliği kaldırabilirsiniz."
+          confirmLabel="Sessize al"
+          radioName="mute-choice"
+          choice={muteChoice}
+          onChoice={setMuteChoice}
+          customAt={muteCustomAt}
+          onCustomAt={setMuteCustomAt}
+          onConfirm={() => void confirmMute()}
+          onCancel={() => setMutePeer(null)}
+        />
+      )}
+
       {/* MEDYA LIGHTBOX (2026-11-08, kullanıcı isteği): WhatsApp tarzı —
           tekerlekle büyüt, ileri/geri gizlenir, altta thumbnail şeridi,
           üst bar: büyüt · yanıtla · sabitle · tepki · ilet · indir · mesaja git. */}
@@ -3535,7 +4024,9 @@ jumpToMessage(m.id)
           }}
           onPin={(id) => {
             const target = messages.find(x => x.id === id)
-            void act('pin', { messageId: id, pinned: !target?.pinned })
+            if (target) {
+              requestPin(target)
+            }
             setGallery(g => (g
               ? { ...g, items: g.items.map(it => (it.id === id ? { ...it, pinned: !it.pinned } : it)) }
               : null))
@@ -3695,20 +4186,27 @@ function MessageInfo({ message, onClose, labels }: {
  * Önceden `absolute top-2 right-2` ile satırın sağ üst köşesine çakılıydı ve
  * kaydırılan listenin İÇİNDE render edildiği için uzun listede kırpılabiliyordu.
  */
-function PeerMenu({ peer, x, y, t, onClose, onNicknameSave, onProfile, onToggle, onClear, onDelete }: {
+function PeerMenu({ peer, x, y, t, isAdmin, onClose, onNicknameSave, onProfile, onToggle, onClear, onDelete, onToggleMute, onExport, canExport = true }: {
   peer: Peer
   x: number
   y: number
   t: (key: string) => string
+  /** Admin → "Sohbeti Sıfırla" (tamamını sil) görünür; normal kullanıcı yalnız "Sohbeti Temizle" (kendisi için) görür. */
+  isAdmin: boolean
   onClose: () => void
   onNicknameSave: (nickname: string) => void | Promise<void>
   onProfile: () => void
   onToggle: (action: 'favorite' | 'important' | 'block', next: boolean) => void | Promise<void>
   onClear: () => void | Promise<void>
   onDelete: () => void | Promise<void>
+  onToggleMute: () => void
+  onExport: () => void
+  /** Yalnız açık sohbet (export içeriği anlık listeden üretilir). */
+  canExport?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(peer.nickname ?? '')
+  const mutedNow = !!peer.mutedUntil && new Date(peer.mutedUntil).getTime() > Date.now()
 
   return (
     <MenuSurface x={x} y={y} onClose={onClose} label={t('chat.chats')}>
@@ -3764,8 +4262,45 @@ function PeerMenu({ peer, x, y, t, onClose, onNicknameSave, onProfile, onToggle,
                 label={peer.blocked ? t('chat.unblock') : t('chat.block')}
                 onSelect={() => onToggle('block', !peer.blocked)}
               />
-              <MenuItem icon={<TrashIcon size={14} className="text-foreground-400" />} label={t('chat.clearConversation')} onSelect={() => onClear()} />
-              <MenuItem icon={<TrashIcon size={14} className="text-foreground-400" />} label={t('chat.deleteConversation')} danger onSelect={() => onDelete()} />
+              {/* Bildirimleri sessize al + Sohbeti dışa aktar (2026-11-08) */}
+              <MenuItem
+                icon={<BellOffIcon size={14} className="text-foreground-400" />}
+                label={mutedNow ? t('chat.unmuteNotifications') : t('chat.muteNotifications')}
+                onSelect={() => onToggleMute()}
+              />
+              {canExport && (
+                <MenuItem
+                  icon={<DownloadIcon size={14} className="text-foreground-400" />}
+                  label={t('chat.exportChat')}
+                  onSelect={() => onExport()}
+                />
+              )}
+              {/* Sohbeti Temizle — KENDİ görünümünü temizler, karşı taraf etkilenmez;
+                  (i) ne yaptığını yazar. Sohbeti Sıfırla yalnızda ADMINDE: tümüyle siler. */}
+              <div className="flex items-center gap-1">
+                <MenuItem
+                  icon={<TrashIcon size={14} className="text-foreground-400" />}
+                  label={t('chat.clearConversation')}
+                  onSelect={() => onClear()}
+                />
+                <button
+                  type="button"
+                  title={t('chat.clearConversationDesc')}
+                  aria-label={t('chat.clearConversationDesc')}
+                  className="shrink-0 cursor-help rounded-full p-1.5 text-foreground-400 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <InfoIcon size={13} />
+                </button>
+              </div>
+              {isAdmin && (
+                <MenuItem
+                  icon={<TrashIcon size={14} className="text-danger" />}
+                  label={t('chat.deleteConversation')}
+                  danger
+                  onSelect={() => onDelete()}
+                />
+              )}
             </>
           )}
     </MenuSurface>
@@ -3946,21 +4481,25 @@ function MessageMenu({ message, x, y, onClose, onReply, onCopy, onForward, onPin
       )}
       <MenuItem icon={<SmileFaceIcon size={14} className="text-foreground-400" />} label={labels.react || 'Tepki Ekle'} onSelect={onReact} />
       <MenuItem icon={<ReplyIcon size={14} className="text-foreground-400" />} label={labels.reply} onSelect={onReply} />
-      <MenuItem icon={<QuoteIcon size={14} className="text-foreground-400" />} label={labels.quote || 'Alıntıla'} onSelect={() => { onClose() }} />
       {message.file_url && (
-        <MenuItem icon={<DownloadIcon size={14} className="text-foreground-400" />} label={labels.download || 'İndir'} onSelect={() => { onClose() }} />
+        <MenuItem
+          icon={<DownloadIcon size={14} className="text-foreground-400" />}
+          label={labels.download || 'İndir'}
+          onSelect={() => {
+            // Gerçek indirme (2026-11-08): <a download> programatik olarak
+            // tıklanır — buton içinde link yuvalaması yok.
+            const a = document.createElement('a')
+            a.href = message.file_url!
+            a.download = message.file_name ?? ''
+            a.click()
+            onClose()
+          }}
+        />
       )}
       <MenuItem icon={<PinIcon size={14} className="text-foreground-400" />} label={labels.pin} onSelect={onPin} />
       <MenuItem icon={<CopyIcon size={14} className="text-foreground-400" />} label={labels.copy} disabled={!message.text} onSelect={onCopy} />
-      <MenuItem icon={<ClockIcon size={14} className="text-foreground-400" />} label={labels.resend || 'Tekrar Gönder'} onSelect={() => { onClose() }} />
-      <MenuItem icon={<EditIcon size={14} className="text-foreground-400" />} label={labels.edit || 'Düzenle'} onSelect={() => { onClose() }} />
-      <MenuItem icon={<ClockIcon size={14} className="text-foreground-400" />} label={labels.remind || 'Hatırlat'} onSelect={() => { onClose() }} />
-      <MenuItem icon={<ForwardIcon size={14} className="text-foreground-400" />} label={labels.save || 'Sonra İçin Kaydet'} onSelect={() => { onClose() }} />
-      <MenuItem icon={<ForwardIcon size={14} className="text-foreground-400" />} label={labels.flag || 'Bildir'} onSelect={() => { onClose() }} />
-      <MenuItem icon={<MuteIcon size={14} className="text-foreground-400" />} label={labels.mute || 'Sustur'} onSelect={() => { onClose() }} />
       <MenuItem icon={<InfoIcon size={14} className="text-foreground-400" />} label={labels.info} onSelect={onInfo} />
       <MenuItem icon={<ForwardIcon size={14} className="text-foreground-400" />} label={labels.forward} onSelect={onForward} />
-      <MenuItem icon={<BanIcon size={14} className="text-foreground-400" />} label={labels.block || 'Engelle'} onSelect={() => { onClose() }} />
       <MenuItem icon={<TrashIcon size={14} className="text-foreground-400" />} label={labels.delete} danger onSelect={onDelete} />
     </MenuSurface>
   )
@@ -3973,10 +4512,13 @@ function MessageMenu({ message, x, y, onClose, onReply, onCopy, onForward, onPin
  */
 function ForwardPicker({ peers, labels, onCancel, onPick }: {
   peers: Peer[]
-  labels: { title: string, cancel: string, empty: string }
+  labels: { title: string, cancel: string, empty: string, search: string }
   onCancel: () => void
   onPick: (peer: Peer) => void | Promise<void>
 }) {
+  /** Arama metni — kullanıcı `@username`, ad, takma ad ile süzebilir (2026-11-08). */
+  const [query, setQuery] = useState('')
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -3987,6 +4529,14 @@ function ForwardPicker({ peers, labels, onCancel, onPick }: {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [onCancel])
+
+  const normalized = query.trim().toLocaleLowerCase('tr')
+  const visible = normalized
+    ? peers.filter((p) => {
+        const hay = `${p.username} ${p.nickname ?? ''} ${p.fullName ?? ''}`.toLocaleLowerCase('tr')
+        return hay.includes(normalized)
+      })
+    : peers
 
   return (
     <div
@@ -4003,11 +4553,22 @@ function ForwardPicker({ peers, labels, onCancel, onPick }: {
         <p className="border-b border-foreground/10 px-4 py-3 text-sm font-semibold">
           {labels.title}
         </p>
+        <div className="border-b border-foreground/10 p-2">
+          <input
+            type="search"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder={labels.search}
+            aria-label={labels.search}
+            autoFocus
+            className="w-full rounded-lg border border-foreground/10 bg-transparent px-3 py-2 text-sm outline-none placeholder:text-foreground-500 focus-visible:border-primary"
+          />
+        </div>
         <div className="max-h-72 overflow-y-auto">
-          {peers.length === 0 && (
+          {visible.length === 0 && (
             <p className="px-4 py-3 text-sm text-foreground-500">{labels.empty}</p>
           )}
-          {peers.map(p => (
+          {visible.map(p => (
             <button
               key={p.id}
               type="button"
@@ -4054,6 +4615,117 @@ function ConfirmDelete({ onDeleteAll, onDeleteMe, onCancel, labels }: {
           </button>
           <button type="button" onClick={onCancel} className="cursor-pointer px-4 py-2.5 text-left text-sm hover:bg-foreground/10">
             {labels.cancel}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Süre seçici diyaloğu (2026-11-08, WhatsApp "Sessize al" paritesi): sabitleme
+ * ve bildirim sessizliğinin ORTAK seçicisi — 24 saat · 7 gün · Her zaman ·
+ * özel tarih-saat. Seçilen süre ISO damgasına dönüştürülür (null = süresiz).
+ */
+function DurationDialog({
+  ariaLabel,
+  title,
+  subtitle,
+  confirmLabel,
+  radioName,
+  choice,
+  onChoice,
+  customAt,
+  onCustomAt,
+  onConfirm,
+  onCancel,
+}: {
+  ariaLabel: string
+  title: string
+  subtitle: string
+  confirmLabel: string
+  radioName: string
+  choice: '24h' | '7d' | 'forever' | 'custom'
+  onChoice: (c: '24h' | '7d' | 'forever' | 'custom') => void
+  customAt: string
+  onCustomAt: (v: string) => void
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60"
+      role="dialog"
+      aria-modal="true"
+      aria-label={ariaLabel}
+      onClick={onCancel}
+    >
+      <div
+        className="w-[min(92vw,420px)] overflow-hidden rounded-2xl border border-foreground/15 bg-background text-foreground shadow-2xl shadow-black/50"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="px-5 pt-4 pb-1">
+          <p className="text-[17px] font-semibold leading-snug">{title}</p>
+          <p className="mt-1 text-[13px] text-foreground-500">{subtitle}</p>
+        </div>
+        <ul className="flex flex-col gap-0.5 px-3 py-2" role="radiogroup" aria-label={ariaLabel}>
+          {([
+            { key: '24h', label: '24 saat' },
+            { key: '7d', label: '7 gün' },
+            { key: 'forever', label: 'Her zaman' },
+          ] as const).map(opt => (
+            <li key={opt.key}>
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-foreground/5">
+                <input
+                  type="radio"
+                  name={radioName}
+                  checked={choice === opt.key}
+                  onChange={() => onChoice(opt.key)}
+                  className="size-[18px] accent-primary"
+                />
+                <span className="text-sm">{opt.label}</span>
+              </label>
+            </li>
+          ))}
+          <li>
+            <label className="flex cursor-pointer items-center gap-3 rounded-xl px-2 py-2.5 transition-colors hover:bg-foreground/5">
+              <input
+                type="radio"
+                name={radioName}
+                checked={choice === 'custom'}
+                onChange={() => onChoice('custom')}
+                className="size-[18px] accent-primary"
+              />
+              <span className="flex-1 text-sm">Özel tarih-saat</span>
+              <input
+                type="datetime-local"
+                value={customAt}
+                min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                onChange={(e) => {
+                  onCustomAt(e.target.value)
+                  onChoice('custom')
+                }}
+                onClick={e => e.stopPropagation()}
+                aria-label="Özel tarih-saat"
+                className="rounded-md border border-foreground/15 bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+              />
+            </label>
+          </li>
+        </ul>
+        <div className="flex items-center justify-end gap-1 px-4 pt-1 pb-4">
+          <button
+            type="button"
+            className="cursor-pointer rounded-full px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/10"
+            onClick={onCancel}
+          >
+            İptal
+          </button>
+          <button
+            type="button"
+            className="cursor-pointer rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-fg transition-colors hover:bg-primary/90"
+            onClick={onConfirm}
+          >
+            {confirmLabel}
           </button>
         </div>
       </div>

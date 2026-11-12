@@ -55,6 +55,8 @@ export interface SplitButtonPartProps {
   /** Sabit kare genişlikte ikon yarı (ikon ortalanır). */
   'iconOnly'?: boolean
   'ref'?: React.Ref<HTMLButtonElement>
+  /** Parça üstünde ek sınıf (hover çerçevesi vb.) — 2026-11-11, CV indir butonu. */
+  'className'?: string
 }
 
 /** Sağ (ikon) yarının kare genişliği — 40px buton yüksekliğiyle aynı. */
@@ -178,7 +180,8 @@ return null
           = p.iconOnly ?? (i === lastIndex && !hasContentPart(parts, i))
         const base = cn(PART,
           i === 0 ? 'rounded-l-md' : i === lastIndex ? 'rounded-r-md' : '',
-          isIcon ? ICON_PART : MAIN_PART)
+          isIcon ? ICON_PART : MAIN_PART,
+          p.className)
 
         const inner = (
           <>

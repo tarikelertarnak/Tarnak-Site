@@ -99,9 +99,27 @@ export interface ProjectItem {
   description: string
   projectLink: string
   srcLink?: string
+  /**
+   * Proje linkinin kaynağı (2026-11-11): 'link' = dış adres, 'yukle' = sunucuya
+   * yüklenmiş dosya. Admin'de medya editörüyle aynı "Link | Yükle" seçimi.
+   */
+  projectLinkKind?: 'link' | 'yukle'
+  /** Kaynak kod linki için aynı ayrım. */
+  srcLinkKind?: 'link' | 'yukle'
   image: string
   /** Multiple media (image/gif/video URLs). Falls back to `image` when empty. */
   media?: string[]
+  /**
+   * Medya listesi (2026-11-11, kullanıcı isteği): her öğede tür
+   * (resim/video/gif), kaynak (link/yükle), etiket ve adres.
+   * `media` alanı bu listeden türetilir (kart hâlâ `media`'yı okur).
+   */
+  mediaItems?: {
+    type: 'resim' | 'video' | 'gif'
+    kind: 'link' | 'yukle'
+    label: string
+    url: string
+  }[]
   /** Star count if GitHub repo (for popularity sorting) */
   stars?: number
   /** Fork count if GitHub repo */
@@ -161,6 +179,16 @@ export interface ProjectItem {
     ios?: string
     android?: string
   }
+  /**
+   * İndirme satırları (2026-11-11, kullanıcı isteği): cihaz adı + destek
+   * sürümü (x32/x64/amd64 vb.) + link. Admin panelinde "windows · x64 — link"
+   * satırları olarak düzenlenir; cihaz adı serbest metindir (Ubuntu vb.).
+   */
+  downloadRows?: {
+    device: string
+    version: string
+    url: string
+  }[]
   /** Tags (for filtering/searching) */
   tags?: string[]
   /**
